@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=MacMenu
+Comment=Fast macOS-inspired application launcher for XFCE
+Exec=macmenu
+Icon=macmenu
+Terminal=false
+Categories=Utility;
+StartupNotify=false
+X-MacMenu-Managed=true

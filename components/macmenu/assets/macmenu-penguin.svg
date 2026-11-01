@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="MacMenu penguin">
+  <title>MacMenu — Linux penguin</title>
+  <!-- Original, single-ink mark. Clear space is part of the illustration. -->
+  <g fill="#ffffff">
+    <path d="M39 60C28 61 18 81 16 97c-1 7 2 12 7 11 9-2 17-17 23-28Zm50 0c11 1 21 21 23 37 1 7-2 12-7 11-9-2-17-17-23-28Z"/>
+    <path fill-rule="evenodd" d="M64 12c-18 0-30 14-30 34 0 10 3 18 8 24-7 11-12 22-12 32 0 12 12 16 34 16s34-4 34-16c0-10-5-21-12-32 5-6 8-14 8-24 0-20-12-34-30-34ZM54 38a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Zm20 0a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7ZM58 52l6 7 6-7-6-2Zm6 17c-13 0-21 11-21 23 0 12 9 19 21 19s21-7 21-19c0-12-8-23-21-23Z"/>
+    <path d="M49 110c-11-3-18 4-18 8 0 7 20 7 29 1l4-6c-5 0-10-1-15-3Zm30 0c11-3 18 4 18 8 0 7-20 7-29 1l-4-6c5 0 10-1 15-3Z"/>
+  </g>
+</svg>

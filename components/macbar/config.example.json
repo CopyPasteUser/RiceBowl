@@ -1,0 +1,8 @@
+{
+  "theme": "dark",
+  "height": 30,
+  "menu_command": ["macmenu", "--toggle"],
+  "control_center_command": ["macos-control-center", "--toggle"],
+  "menu_icon": "",
+  "show_battery_percent": true
+}

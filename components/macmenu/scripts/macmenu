@@ -1,0 +1,14 @@
+#!/bin/sh
+# Installed inside the user-owned application directory.
+# A resident GApplication can toggle directly over D-Bus. Avoid starting the
+# Python interpreter and importing GTK for every XFCE Super-key press.
+if [ "$#" -eq 0 ] || { [ "$#" -eq 1 ] && [ "$1" = "--toggle" ]; }; then
+    if command -v gapplication >/dev/null 2>&1 &&
+        gapplication launch io.github.xfce.MacMenu >/dev/null 2>&1; then
+        exit 0
+    fi
+fi
+# Cold start and all non-toggle CLI actions retain the regular Python path.
+RESOLVED_PATH=$(readlink -f -- "$0")
+APP_ROOT=$(CDPATH= cd -- "$(dirname -- "$RESOLVED_PATH")" && pwd)
+PYTHONPATH="$APP_ROOT${PYTHONPATH:+:$PYTHONPATH}" exec /usr/bin/python3 -m macmenu "$@"

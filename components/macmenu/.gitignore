@@ -1,0 +1,19 @@
+# Python and local test state
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+
+# Local settings, logs, backups and release staging
+*.log
+.library-*/
+.macmenu-stage-*/
+MacMenu-XFCE-*.zip
+MacMenu-XFCE_*.deb
+*.tar.gz
+
+# Local tools and workspace noise
+.DS_Store
+.idea/
+.vscode/

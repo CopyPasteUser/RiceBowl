@@ -1,0 +1,25 @@
+name: MacBar checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install GTK3 system dependencies
+        run: sudo apt-get update && sudo apt-get install -y python3-gi gir1.2-gtk-3.0
+      - name: Test Python, installer and rollback
+        run: /usr/bin/python3 -m unittest discover -s tests -v
+      - name: Check syntax
+        run: |
+          /usr/bin/python3 -m py_compile macbar.py status.py measure.py
+          sh -n install.sh uninstall.sh

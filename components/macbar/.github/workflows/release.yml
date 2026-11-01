@@ -1,0 +1,43 @@
+name: MacBar release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install GTK3 system dependencies
+        run: sudo apt-get update && sudo apt-get install -y python3-gi gir1.2-gtk-3.0
+      - name: Verify release
+        run: |
+          /usr/bin/python3 -m unittest discover -s tests -v
+          /usr/bin/python3 -m py_compile macbar.py status.py measure.py
+          sh -n install.sh uninstall.sh
+      - name: Build standalone source ZIP
+        run: |
+          mkdir -p dist/MacBar
+          cp macbar.py status.py measure.py install.sh uninstall.sh config.example.json README.md DESIGN.md ROADMAP.md CHANGELOG.md LICENSE SECURITY.md CONTRIBUTING.md dist/MacBar/
+          cp -R tests dist/MacBar/
+          chmod +x dist/MacBar/install.sh dist/MacBar/uninstall.sh
+          cd dist
+          zip -q -r "MacBar-${GITHUB_REF_NAME}.zip" MacBar -x '*/__pycache__/*' '*.pyc'
+          sha256sum "MacBar-${GITHUB_REF_NAME}.zip" > "MacBar-${GITHUB_REF_NAME}.zip.sha256"
+      - name: Publish or update GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" "dist/MacBar-${GITHUB_REF_NAME}.zip" "dist/MacBar-${GITHUB_REF_NAME}.zip.sha256" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" "dist/MacBar-${GITHUB_REF_NAME}.zip" "dist/MacBar-${GITHUB_REF_NAME}.zip.sha256" --generate-notes
+          fi

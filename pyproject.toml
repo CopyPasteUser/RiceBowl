@@ -1,0 +1,14 @@
+[project]
+name = "macos-xfce-rice"
+version = "0.1.0"
+description = "Native macOS-inspired XFCE rice with a safe installer and unified settings manager"
+requires-python = ">=3.10"
+dependencies = []
+license = "MIT"
+
+[tool.ruff]
+line-length = 105
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]

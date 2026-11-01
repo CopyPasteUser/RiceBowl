@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.venv/
+.ruff_cache/
+.pytest_cache/
+*.log
+*.bak
+*.zip
+*.deb
+.coverage
+dist/
+build/
+local-config/
+diagnostics/

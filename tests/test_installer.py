@@ -1,0 +1,90 @@
+import os
+import tempfile
+import unittest
+from pathlib import Path
+from unittest import mock
+
+from macrice.installer import (
+    InstallOptions, InstallationError, _check_existing, _check_entrypoints,
+    _write_entrypoints, install, plan, project_root,
+)
+
+
+class InstallerTests(unittest.TestCase):
+    def test_plan_preserves_xfce_panel_by_default(self):
+        commands = dict(plan(project_root(), InstallOptions()))
+        self.assertIn("--start-hidden", commands["Control Center"])
+        self.assertNotIn("--autostart", commands["MacBar"])
+        self.assertNotIn("--replace-xfce", " ".join(map(str, commands.values())))
+        self.assertIn("--no-start", dict(plan(project_root(), InstallOptions(no_start=True)))["Control Center"])
+        self.assertIn("--autostart", dict(plan(project_root(), InstallOptions(bar_autostart=True)))["MacBar"])
+
+    def test_unmanaged_existing_directory_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "macrice"
+            path.mkdir()
+            (path / "user-file.txt").write_text("preserve me")
+            with self.assertRaises(InstallationError):
+                _check_existing(path)
+            self.assertEqual((path / "user-file.txt").read_text(), "preserve me")
+
+    def test_dry_run_is_read_only(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            with mock.patch.dict(os.environ, {
+                "XDG_DATA_HOME": str(base / "data"),
+                "XDG_BIN_HOME": str(base / "bin"),
+                "XDG_CONFIG_HOME": str(base / "config"),
+            }), mock.patch("macrice.installer._check_system_package"):
+                lines = []
+                self.assertIsNone(install(InstallOptions(dry_run=True), output=lines.append))
+                self.assertTrue(any("Plank" in line for line in lines))
+                self.assertFalse((base / "data").exists())
+                self.assertFalse((base / "config").exists())
+
+    def test_wrapper_and_desktop_entry_are_user_local(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            installed = base / "data" / "macrice"
+            installed.mkdir(parents=True)
+            (installed / "launcher.py").write_text("# test")
+            with mock.patch.dict(os.environ, {
+                "XDG_DATA_HOME": str(base / "data"), "XDG_BIN_HOME": str(base / "bin"),
+            }):
+                _write_entrypoints(installed)
+                wrapper = base / "bin" / "macrice"
+                self.assertIn(str(installed / "launcher.py"), wrapper.read_text())
+                self.assertTrue(os.access(wrapper, os.X_OK))
+                entry = (base / "data/applications/macrice.desktop").read_text()
+                self.assertIn("Name=MacRice Settings", entry)
+                self.assertNotIn("sudo", entry)
+
+    def test_unmanaged_launcher_is_never_overwritten(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            binary = base / "bin/macrice"
+            binary.parent.mkdir()
+            binary.write_text("#!/bin/sh\necho user's program\n")
+            with mock.patch.dict(os.environ, {
+                "XDG_DATA_HOME": str(base / "data"), "XDG_BIN_HOME": str(base / "bin"),
+            }):
+                with self.assertRaises(InstallationError):
+                    _check_entrypoints()
+                self.assertEqual(binary.read_text(), "#!/bin/sh\necho user's program\n")
+
+    def test_unmanaged_desktop_entry_is_never_overwritten(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            desktop = base / "data/applications/macrice.desktop"
+            desktop.parent.mkdir(parents=True)
+            desktop.write_text("[Desktop Entry]\nName=User App\n")
+            with mock.patch.dict(os.environ, {
+                "XDG_DATA_HOME": str(base / "data"), "XDG_BIN_HOME": str(base / "bin"),
+            }):
+                with self.assertRaises(InstallationError):
+                    _check_entrypoints()
+                self.assertEqual(desktop.read_text(), "[Desktop Entry]\nName=User App\n")
+
+
+if __name__ == "__main__":
+    unittest.main()
