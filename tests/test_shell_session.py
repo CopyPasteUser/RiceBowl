@@ -1,32 +1,42 @@
-"""Switch the running RiceHub taskbar without overlapping two shells."""
-
+"""Session switching regression tests (no actual desktop processes are touched)."""
 import unittest
 from unittest import mock
+from macrice import shell_session as s
 
-from macrice.shell_session import sync_theme
-
-
-class ShellSessionTests(unittest.TestCase):
+class SessionTests(unittest.TestCase):
     @mock.patch.dict("os.environ", {"DISPLAY": ":99"})
-    @mock.patch("macrice.shell_session.subprocess.Popen")
-    @mock.patch("macrice.shell_session.subprocess.run")
-    def test_quits_other_shell_before_starting_new_one(self, run, popen):
-        order = []
-        run.side_effect = lambda argv, **kwargs: (order.append(("quit", argv[-2:])),
-                                                   mock.Mock(returncode=0))[1]
-        popen.side_effect = lambda argv, **kwargs: order.append(("start", argv[-1]))
-        self.assertEqual(sync_theme("RiceHub-Aero"), ())
-        self.assertEqual(order, [("quit", ["windows10-shell", "--quit"]),
-                                 ("start", "aero-shell")])
+    @mock.patch.object(s, "_start", return_value=[])
+    @mock.patch.object(s, "_stop", return_value=[])
+    @mock.patch.object(s, "_shell", return_value=[])
+    @mock.patch.object(s.shutil, "which", return_value="/usr/bin/example")
+    def test_mac_to_aero_stops_plank_and_macbar(self, which, shell, stop, start):
+        self.assertEqual(s.sync_theme("RiceHub-Aero"), ())
+        self.assertEqual([c.args[0] for c in stop.call_args_list], ["plank", "macbar"])
+        self.assertEqual(shell.call_args_list[-1], mock.call("aero", False))
+        start.assert_not_called()
 
     @mock.patch.dict("os.environ", {"DISPLAY": ":99"})
-    @mock.patch("macrice.shell_session.subprocess.Popen")
-    @mock.patch("macrice.shell_session.subprocess.run")
-    def test_failed_quit_does_not_start_overlapping_taskbar(self, run, popen):
-        run.return_value = mock.Mock(returncode=1, stderr="could not reach shell")
-        self.assertTrue(sync_theme("RiceHub-Ten-Light"))
-        popen.assert_not_called()
+    @mock.patch.object(s, "_start", return_value=[])
+    @mock.patch.object(s, "_stop", return_value=[])
+    @mock.patch.object(s, "_shell", return_value=[])
+    @mock.patch.object(s.shutil, "which", return_value="/usr/bin/example")
+    def test_aero_to_mac_starts_both(self, which, shell, stop, start):
+        self.assertEqual(s.sync_theme("WhiteSur-Light"), ())
+        self.assertEqual([c.args[0] for c in start.call_args_list], ["plank", "macbar"])
+        stop.assert_not_called()
 
+    @mock.patch.dict("os.environ", {}, clear=True)
+    @mock.patch.object(s, "_stop")
+    def test_no_display_no_actions(self, stop):
+        self.assertEqual(s.sync_theme("RiceHub-Aero"), ())
+        stop.assert_not_called()
+
+    @mock.patch.dict("os.environ", {"DISPLAY": ":99"})
+    @mock.patch.object(s, "_stop", return_value=["plank did not exit"])
+    @mock.patch.object(s, "_shell", return_value=[])
+    def test_stop_failure_blocks_new_shell(self, shell, stop):
+        self.assertEqual(s.sync_theme("RiceHub-Aero"), ("plank did not exit",))
+        self.assertNotIn(mock.call("aero", False), shell.call_args_list)
 
 if __name__ == "__main__":
     unittest.main()

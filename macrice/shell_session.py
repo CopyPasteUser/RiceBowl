@@ -1,45 +1,126 @@
-"""Start the selected RiceHub shell and quit the inactive managed shell.
+"""Coordinate RiceHub taskbars, Plank and MacBar in an X11 session.
 
-Only targets RiceHub's own Gtk.Application IDs. Never kills xfce4-panel or
-other user processes. The X11 session must already be running.
+Plank is user-owned: never change its launchers or its autostart file.
+Instead a RiceHub login reconciler corrects the chosen session after login.
 """
-
 from __future__ import annotations
 
 import os
+import shutil
+import signal
 import subprocess
 import sys
+import time
+from pathlib import Path
 
 from .installer import project_root
 
-
 SHELLS = {"aero": "aero-shell", "ten": "windows10-shell"}
+MAC_THEMES = ("WhiteSur-Dark", "WhiteSur-Light")
+
+
+def _processes(name: str) -> list[int]:
+    """Exact executable-name match, restricted to the current UID."""
+    try:
+        result = subprocess.run(["pgrep", "-x", "-u", str(os.getuid()), name],
+                                capture_output=True, text=True, timeout=3, check=False)
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+    if result.returncode not in (0, 1):
+        return []
+    return [int(p) for p in result.stdout.split() if p.isdecimal() and int(p) != os.getpid()]
+
+
+def _stop(name: str) -> list[str]:
+    errors = []
+    for pid in _processes(name):
+        try:
+            os.kill(pid, signal.SIGTERM)
+        except ProcessLookupError:
+            continue
+        except PermissionError as exc:
+            errors.append(f"{name} PID {pid}: {exc}")
+    if not errors:
+        for _ in range(15):
+            if not _processes(name):
+                break
+            time.sleep(0.1)
+        else:
+            errors.append(f"{name} did not exit")
+    return errors
+
+
+def _start(name: str, argv: list[str]) -> list[str]:
+    if _processes(name):
+        return []
+    try:
+        proc = subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                                stderr=subprocess.DEVNULL, start_new_session=True)
+        time.sleep(0.08)
+        if proc.poll() is not None and proc.returncode != 0:
+            return [f"{name} exited with status {proc.returncode}"]
+    except OSError as exc:
+        return [f"Cannot start {name}: {exc}"]
+    return []
+
+
+def _shell(profile: str, quit: bool) -> list[str]:
+    argv = [sys.executable, str(project_root() / "launcher.py"), SHELLS[profile]]
+    if quit:
+        argv.append("--quit")
+        try:
+            result = subprocess.run(argv, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                                    stderr=subprocess.PIPE, text=True, timeout=4, check=False)
+            return [] if result.returncode == 0 else [f"{profile} taskbar: {result.stderr.strip()[:160]}"]
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            return [f"{profile} taskbar: {exc}"]
+    try:
+        subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                         stderr=subprocess.DEVNULL, start_new_session=True)
+        return []
+    except OSError as exc:
+        return [f"{profile} taskbar: {exc}"]
 
 
 def sync_theme(theme: str) -> tuple[str, ...]:
+    """Reconcile the live session; no process or desktop changes without DISPLAY."""
     if not os.environ.get("DISPLAY"):
         return ()
     desired = "aero" if theme == "RiceHub-Aero" else "ten" if theme in (
         "RiceHub-Ten-Dark", "RiceHub-Ten-Light") else None
+    mac = theme in MAC_THEMES
     warnings = []
-    # A quit is a remote Gtk.Application command; wait for it to finish before
-    # starting another taskbar, otherwise the docks can briefly overlap.
-    for profile, command in SHELLS.items():
-        if profile == desired:
-            continue
-        argv = [sys.executable, str(project_root() / "launcher.py"), command, "--quit"]
-        try:
-            result = subprocess.run(argv, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                                    stderr=subprocess.PIPE, text=True, timeout=4, check=False)
-            if result.returncode:
-                warnings.append(f"{profile} taskbar did not quit: {result.stderr.strip()[:160]}")
-        except (OSError, subprocess.TimeoutExpired) as exc:
-            warnings.append(f"{profile} taskbar did not quit: {exc}")
-    if desired is not None and not warnings:
-        try:
-            subprocess.Popen([sys.executable, str(project_root() / "launcher.py"), SHELLS[desired]],
-                             stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                             stderr=subprocess.DEVNULL, start_new_session=True)
-        except OSError as exc:
-            warnings.append(f"Could not start {desired} taskbar: {exc}")
+    # Exit inactive GTK shells before launching the replacement.
+    for profile in SHELLS:
+        if profile != desired:
+            warnings.extend(_shell(profile, True))
+    if warnings:
+        return tuple(warnings)
+    if desired:
+        # Plank may have been started by XFCE autostart, not by RiceHub.
+        warnings.extend(_stop("plank"))
+        warnings.extend(_stop("macbar"))
+        if not warnings:
+            warnings.extend(_shell(desired, False))
+    elif mac:
+        for name in ("plank", "macbar"):
+            executable = shutil.which(name)
+            if executable:
+                warnings.extend(_start(name, [executable]))
+            else:
+                warnings.append(f"{name} executable not found")
     return tuple(warnings)
+
+
+def login_reconcile() -> tuple[str, ...]:
+    """Run after XFCE autostart; user's Plank autostart remains unchanged."""
+    if not os.environ.get("DISPLAY"):
+        return ()
+    try:
+        result = subprocess.run(["xfconf-query", "-c", "xsettings", "-p", "/Net/ThemeName"],
+                                capture_output=True, text=True, timeout=4, check=False)
+        if result.returncode:
+            return (f"Cannot detect selected theme: {result.stderr.strip()[:160]}",)
+        return sync_theme(result.stdout.strip())
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return (f"Cannot inspect session: {exc}",)
