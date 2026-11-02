@@ -124,3 +124,24 @@ def login_reconcile() -> tuple[str, ...]:
         return sync_theme(result.stdout.strip())
     except (OSError, subprocess.TimeoutExpired) as exc:
         return (f"Cannot inspect session: {exc}",)
+
+def install_login_reconciler(config_root: Path | None = None) -> None:
+    """Opt-in user-local late autostart. Preserve all existing user entries."""
+    from .environment import config_home, bin_home
+    root = config_root or config_home()
+    target = root / "autostart/ricehub-session-sync.desktop"
+    command = bin_home() / "macrice"
+    content = ("[Desktop Entry]\\nType=Application\\nName=RiceHub Session Reconcile\\n"
+               f"Exec={command} session-sync\\n"
+               "OnlyShowIn=XFCE;\\nTerminal=false\\n"
+               "X-XFCE-Autostart-Delay=12\\n"
+               "# RiceHub managed session reconcile\\n")
+    content = content.replace("\\n", "\n")
+    if target.is_symlink() or target.parent.is_symlink():
+        raise OSError("Unmanaged session autostart symlink")
+    if target.exists() and target.read_text(encoding="utf-8") != content:
+        raise OSError("Existing session autostart was customized; refusing overwrite")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    if not target.exists():
+        with target.open("x", encoding="utf-8") as f:
+            f.write(content)

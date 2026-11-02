@@ -52,6 +52,7 @@ def parser() -> argparse.ArgumentParser:
     ten_shell = commands.add_parser("windows10-shell", help="Run or quit the Windows 10-inspired taskbar and Start menu")
     ten_shell.add_argument("--quit", action="store_true")
     aero.add_argument("--quit", action="store_true", help="Stop the resident Aero taskbar")
+    commands.add_parser("session-sync", help="Reconcile active rice after XFCE autostart")
     commands.add_parser("status", help="Show installed components and the detected appearance")
     commands.add_parser("inspect", help="Print a safe, read-only JSON appearance report")
     installer = commands.add_parser("install", help="Install or repair the three bundled apps; preserve Plank")
@@ -91,6 +92,12 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "windows10-shell":
             from .ten_shell import run
             return run(["ricehub-ten-shell"] + (["--quit"] if args.quit else []))
+        if args.command == "session-sync":
+            from .shell_session import login_reconcile
+            warnings = login_reconcile()
+            for warning in warnings:
+                print("Session warning:", warning, file=sys.stderr)
+            return 1 if warnings else 0
         if args.command == "rice":
             from .rice import RiceError, apply as apply_rice, plan as plan_rice, restore as restore_rice
             if args.action == "restore":
@@ -119,6 +126,11 @@ def main(argv: list[str] | None = None) -> int:
                 print("Themes, icons, fonts and wallpaper were validated; this was read-only.")
             else:
                 print("Rice applied; backup:", apply_rice(args.style))
+                from .shell_session import install_login_reconciler
+                try:
+                    install_login_reconciler()
+                except OSError as exc:
+                    print("Session autostart warning:", exc, file=sys.stderr)
                 from .shell_session import sync_theme
                 from .rice import STYLES
                 for warning in sync_theme(STYLES[args.style].gtk):

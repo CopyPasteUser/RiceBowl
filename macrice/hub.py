@@ -633,7 +633,13 @@ def run() -> int:
 
         def _after_apply(self, backup, style_id):
             from .shell_session import sync_theme
-            warnings = sync_theme(STYLES[style_id].gtk)
+            from .shell_session import install_login_reconciler
+            try:
+                install_login_reconciler()
+                startup_warnings = ()
+            except OSError as exc:
+                startup_warnings = (f"Login sync: {exc}",)
+            warnings = startup_warnings + sync_theme(STYLES[style_id].gtk)
             if warnings:
                 self._notify("Rice saved, but taskbar switching needs attention: " + "; ".join(warnings), error=True)
             else:
