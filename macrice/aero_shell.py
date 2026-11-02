@@ -7,6 +7,15 @@ Uses the installed Gio .desktop catalog; does not poll the process table.
 from __future__ import annotations
 
 from pathlib import Path
+import ctypes
+import ctypes.util
+import logging
+import os
+import shutil
+import subprocess
+
+from .aero_layout import PANEL_HEIGHT, bottom_strut, menu_geometry, select_windows, task_capacity
+from .aero_pins import PIN_LIMIT, PinConfigError, load_pins, pin_file, save_pins
 
 
 APP_ID = "io.github.copypasteuser.RiceHub.AeroShell"
@@ -21,6 +30,25 @@ def app_catalog(Gio):
         if name and name.casefold() not in result:
             result[name.casefold()] = app
     return tuple(sorted(result.values(), key=lambda app: (app.get_display_name() or app.get_name()).casefold()))
+
+
+def default_pins(apps) -> tuple[str, ...]:
+    """Prefer the user's installed file manager, browser and terminal."""
+    selected = []
+    for keyword in ("file manager", "browser", "terminal"):
+        for app in apps:
+            identifier = app.get_id()
+            label = (app.get_display_name() or app.get_name() or "").casefold()
+            if keyword in label and identifier and identifier not in selected:
+                selected.append(identifier)
+                break
+    return tuple(selected)
+
+
+def matching_apps(apps, query: str):
+    needle = query.casefold().strip()
+    return tuple(app for app in apps if needle in
+                 (app.get_display_name() or app.get_name() or "").casefold())
 
 
 CSS = b"""
@@ -49,7 +77,13 @@ CSS = b"""
 .aero-tray-icon { background: transparent; border: 0; padding: 3px; }
 .aero-tray-icon:hover { background: rgba(255,255,255,.22); border-radius: 4px; }
 .aero-glass { background-image: linear-gradient(to bottom, rgba(205,242,255,.79), rgba(94,172,221,.83) 48%, rgba(26,81,139,.90)); }
-.aero-time { color: #fff; font-size: 12px; font-weight: bold; }
+.aero-time { color: #fff; font-size: 11px; font-weight: bold; }
+.aero-quick { background: transparent; border: 1px solid transparent; color: white; border-radius: 4px; padding: 4px; }
+.aero-quick:hover, .aero-quick:focus { border-color: #d0f4ff; background: rgba(255,255,255,.24); }
+.aero-desktop { background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.5); border-radius: 2px; min-width: 11px; padding: 2px; }
+.aero-desktop:hover, .aero-desktop:focus { background: rgba(255,255,255,.47); }
+.aero-menu-footer { border-top: 1px solid #96c1dd; padding-top: 8px; }
+.aero-menu-power { color: #fff; border-radius: 4px; border: 1px solid #f4b99e; background-image: linear-gradient(to bottom, #fa946c, #c65530); padding: 6px 10px; }
 .aero-menu-root { background: #eaf4fb; border: 1px solid #5e9bcc; border-radius: 8px; }
 .aero-menu-heading { color: #244e6e; font-size: 20px; font-weight: bold; }
 .aero-menu-sub { color: #577d9c; font-size: 12px; }
@@ -85,6 +119,14 @@ def run(argv: list[str] | None = None) -> int:
             self._overflow_windows = ()
             self._menu_focused = False
             self._tray = None
+            self._pin_count = 0
+            self._pinned_ids = ()
+            self._pin_config_path = pin_file()
+            self._task_capacity = 0
+            self.show_desktop_button = None
+            self._app_page_size = 24
+            self._smoke = False
+            self._smoke_failed = False
 
         def do_command_line(self, command_line):
             args = command_line.get_arguments()
@@ -92,7 +134,10 @@ def run(argv: list[str] | None = None) -> int:
                 if self.bar is not None:
                     self.quit()
                 return 0
+            self._smoke = "--smoke-test" in args
             self.activate()
+            if self._smoke:
+                GLib.timeout_add(850, self._smoke_check)
             return 0
 
         def do_activate(self):
@@ -105,20 +150,195 @@ def run(argv: list[str] | None = None) -> int:
                 Gdk.Screen.get_default(), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
             self._provider = provider
             self.apps = app_catalog(Gio)
+            try:
+                saved = load_pins(self._pin_config_path)
+            except (PinConfigError, OSError) as exc:
+                logging.getLogger(__name__).warning("Aero pins are unavailable: %s", exc)
+                saved = None
+            self._pinned_ids = default_pins(self.apps) if saved is None else saved
             self._create_taskbar()
             self._create_menu()
             self.connect("shutdown", self._shutdown)
             self._window_tracker = create_window_tracker(GLib.idle_add, self._windows_changed)
+            if self.show_desktop_button is not None:
+                self.show_desktop_button.set_sensitive(self._window_tracker is not None)
+            screen = Gdk.Screen.get_default()
+            screen.connect("monitors-changed", self._screen_changed)
+            screen.connect("size-changed", self._screen_changed)
             self._catalog_monitor = Gio.AppInfoMonitor.get()
             self._catalog_monitor.connect("changed", self._catalog_changed)
+
+        def _smoke_check(self):
+            """Exercise actual GTK construction, menu open/search and close under Xvfb."""
+            try:
+                assert self.bar is not None and self.bar.get_visible()
+                assert self.menu is not None and not self.menu.get_visible()
+                self._toggle_menu()
+                assert self.menu.get_visible()
+                self.search.set_text("unlikely-app-id-ricehub-smoke-39083")
+                assert self.results.get_children()
+                self._hide_menu()
+                assert not self.menu.get_visible()
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._smoke_failed = True
+            self.quit()
+            return False
 
         def _shutdown(self, *_args):
             if self._tray is not None:
                 self._tray.close()
                 self._tray = None
 
+        def _screen_changed(self, *_args):
+            rect = self._desktop_rect()
+            self.bar.resize(rect.width, PANEL_HEIGHT)
+            self.bar.move(rect.x, rect.y + rect.height - PANEL_HEIGHT)
+            if self.bar.get_realized():
+                self._reserve_workarea(self.bar)
+            self._task_capacity = task_capacity(rect.width, self._pin_count)
+            if self._window_tracker is not None:
+                from .aero_windows import is_task_window
+                screen = self._window_tracker.screen
+                self._windows_changed(tuple(
+                    win for win in screen.get_windows()
+                    if is_task_window(win, self._window_tracker.wnck)
+                ), screen.get_active_window())
+            if self.menu.get_visible():
+                self._hide_menu()
+
+        def _render_pins(self):
+            for child in self.pinned_box.get_children():
+                self.pinned_box.remove(child)
+            by_id = {app.get_id(): app for app in self.apps if app.get_id()}
+            for identifier in self._pinned_ids:
+                app = by_id.get(identifier)
+                if app is None:
+                    continue
+                btn = self._class(Gtk.Button(), "aero-pin")
+                icon = app.get_icon()
+                btn.set_image(Gtk.Image.new_from_gicon(icon, Gtk.IconSize.LARGE_TOOLBAR) if icon else
+                              self._icon("application-x-executable"))
+                name = app.get_display_name() or app.get_name() or identifier
+                btn.set_tooltip_text(name)
+                btn.get_accessible().set_name("Launch " + name)
+                btn.connect("clicked", lambda _btn, selected=app: self._launch(selected))
+                btn.connect("button-press-event", lambda widget, event, selected=app:
+                            self._pin_context(widget, selected, event))
+                self.pinned_box.pack_start(btn, False, False, 0)
+            self.pinned_box.show_all()
+
+        def _pin_context(self, widget, app, event=None):
+            if event is not None and event.button != 3:
+                return False
+            identifier = app.get_id()
+            if not identifier:
+                return False
+            menu = Gtk.Menu()
+            pinned = identifier in self._pinned_ids
+            label = "Unpin from taskbar" if pinned else "Pin to taskbar"
+            item = Gtk.MenuItem(label=label)
+            item.set_sensitive(pinned or len(self._pinned_ids) < PIN_LIMIT)
+            item.connect("activate", lambda _item: self._change_pin(identifier, not pinned))
+            menu.append(item)
+            menu.show_all()
+            if event is not None:
+                menu.popup_at_pointer(event)
+            else:
+                menu.popup_at_widget(widget, Gdk.Gravity.SOUTH_WEST, Gdk.Gravity.NORTH_WEST, None)
+            return True
+
+        def _change_pin(self, identifier, add):
+            candidate = list(self._pinned_ids)
+            if add and identifier not in candidate:
+                candidate.append(identifier)
+            elif not add and identifier in candidate:
+                candidate.remove(identifier)
+            else:
+                return
+            try:
+                save_pins(self._pin_config_path, candidate)
+            except (PinConfigError, OSError) as exc:
+                self._error("Unable to save taskbar pins: " + str(exc))
+                return
+            self._pinned_ids = tuple(candidate)
+            self._render_pins()
+            self._pin_count = len(candidate)
+            self._task_capacity = task_capacity(self._desktop_rect().width, self._pin_count)
+            if self._window_tracker is not None:
+                from .aero_windows import is_task_window
+                screen = self._window_tracker.screen
+                self._windows_changed(tuple(
+                    win for win in screen.get_windows()
+                    if is_task_window(win, self._window_tracker.wnck)
+                ), screen.get_active_window())
+
+        def _reserve_workarea(self, widget, *_args):
+            """Reserve the bottom strip on X11, but never change XFCE panel settings."""
+            if os.environ.get("RICEHUB_AERO_RESERVE", "1") == "0":
+                return
+            try:
+                gi.require_version("GdkX11", "3.0")
+                from gi.repository import GdkX11
+                rect = self._desktop_rect()
+                props = bottom_strut(rect.x, rect.y, rect.width, rect.height,
+                                     Gdk.Screen.get_default().get_height())
+                library = ctypes.util.find_library("X11")
+                if not library:
+                    return
+                lib = ctypes.CDLL(library)
+                lib.XOpenDisplay.restype = ctypes.c_void_p
+                lib.XOpenDisplay.argtypes = [ctypes.c_char_p]
+                lib.XInternAtom.restype = ctypes.c_ulong
+                lib.XInternAtom.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_int]
+                lib.XChangeProperty.argtypes = [ctypes.c_void_p, ctypes.c_ulong, ctypes.c_ulong,
+                                                ctypes.c_ulong, ctypes.c_int, ctypes.c_int,
+                                                ctypes.c_void_p, ctypes.c_int]
+                lib.XCloseDisplay.argtypes = [ctypes.c_void_p]
+                lib.XFlush.argtypes = [ctypes.c_void_p]
+                display = lib.XOpenDisplay(None)
+                if not display:
+                    return
+                try:
+                    xid = GdkX11.X11Window.get_xid(widget.get_window())
+                    cardinal = lib.XInternAtom(display, b"CARDINAL", 0)
+                    for name, values in zip(("_NET_WM_STRUT", "_NET_WM_STRUT_PARTIAL"), props):
+                        atom = lib.XInternAtom(display, name.encode("ascii"), 0)
+                        data = (ctypes.c_ulong * len(values))(*values)
+                        lib.XChangeProperty(display, xid, atom, cardinal, 32, 0, data, len(values))
+                    lib.XFlush(display)
+                finally:
+                    lib.XCloseDisplay(display)
+            except (OSError, AttributeError, RuntimeError, TypeError, ValueError) as exc:
+                logging.getLogger(__name__).warning("Aero workarea reservation unavailable: %s", exc)
+
+        def _open_tool(self, command):
+            """Open a known XFCE utility without a shell or implicit system changes."""
+            allowed = ("xfce4-settings-manager", "xfce4-session-logout",
+                       "nm-connection-editor", "pavucontrol", "xfce4-display-settings")
+            if command not in allowed:
+                return
+            executable = shutil.which(command)
+            if not executable:
+                self._error(command + " is not installed.")
+                return
+            try:
+                subprocess.Popen([executable], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                                 stderr=subprocess.DEVNULL, close_fds=True, start_new_session=True)
+                self._hide_menu()
+            except OSError as exc:
+                self._error(str(exc))
+
+        def _show_desktop(self, *_args):
+            if self._window_tracker is not None:
+                screen = self._window_tracker.screen
+                screen.toggle_showing_desktop(not screen.get_showing_desktop())
+                self._hide_menu()
+
         def _catalog_changed(self, *_args):
             self.apps = app_catalog(Gio)
+            self._render_pins()
             self._populate(self.search.get_text())
 
         def _class(self, widget, name):
@@ -144,72 +364,81 @@ def run(argv: list[str] | None = None) -> int:
             win.set_type_hint(Gdk.WindowTypeHint.DOCK)
             win.set_keep_above(True)
             win.set_accept_focus(False)
-            win.set_size_request(rect.width, 53)
-            win.move(rect.x, rect.y + rect.height - 53)
+            win.set_default_size(rect.width, PANEL_HEIGHT)
+            win.move(rect.x, rect.y + rect.height - PANEL_HEIGHT)
 
             row = self._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8), "aero-taskbar")
-            if __import__("os").environ.get("RICEHUB_AERO_GLASS") == "1":
+            if os.environ.get("RICEHUB_AERO_GLASS") == "1":
                 row.get_style_context().add_class("aero-glass")
             start = self._class(Gtk.Button(), "aero-start")
             contents = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
             logo = project_root() / "assets/aero-penguin.svg"
-            if logo.exists():
+            try:
                 img = Gtk.Image.new_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_scale(
                     str(logo), 34, 34, True))
-                contents.pack_start(img, False, False, 0)
+            except (GLib.Error, OSError):
+                img = self._icon("start-here", Gtk.IconSize.LARGE_TOOLBAR)
+            contents.pack_start(img, False, False, 0)
             contents.pack_start(Gtk.Label(label="Start"), False, False, 0)
             start.add(contents)
             start.get_accessible().set_name("Toggle Aero Start menu")
             start.connect("clicked", lambda _button: self._toggle_menu())
             row.pack_start(start, False, False, 4)
             self.start_button = start
-            for wanted in ("file manager", "browser", "terminal"):
-                app = next((a for a in self.apps if wanted in (a.get_display_name() or "").casefold()), None)
-                if not app:
-                    continue
-                btn = self._class(Gtk.Button(), "aero-pin")
-                icon = app.get_icon()
-                btn.set_image(Gtk.Image.new_from_gicon(icon, Gtk.IconSize.LARGE_TOOLBAR) if icon else
-                              self._icon("application-x-executable"))
-                btn.set_tooltip_text(app.get_display_name())
-                btn.get_accessible().set_name("Launch " + app.get_display_name())
-                btn.connect("clicked", lambda _btn, selected=app: self._launch(selected))
-                row.pack_start(btn, False, False, 0)
+            self.pinned_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
+            row.pack_start(self.pinned_box, False, False, 0)
+            self._render_pins()
+            self._pin_count = len(self._pinned_ids)
             self.tasks = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
-            self._task_capacity = max(2, min(9, (rect.width - 410) // 160))
+            self._task_capacity = task_capacity(rect.width, self._pin_count)
             self.overflow_button = self._class(Gtk.Button(), "aero-task-overflow")
             self.overflow_button.get_accessible().set_name("Show other running windows")
             self.overflow_button.connect("clicked", self._show_overflow)
             row.pack_start(self.tasks, False, False, 4)
             row.pack_start(Gtk.Box(), True, True, 0)
+            desktop = self._class(Gtk.Button(), "aero-desktop")
+            desktop.set_tooltip_text("Show desktop / restore windows")
+            desktop.get_accessible().set_name("Show desktop or restore windows")
+            desktop.connect("clicked", self._show_desktop)
+            row.pack_end(desktop, False, False, 0)
+            self.show_desktop_button = desktop
             clock = self._class(Gtk.Label(), "aero-time")
-            row.pack_end(clock, False, False, 12)
-            if __import__("os").environ.get("RICEHUB_AERO_TRAY", "1") != "0":
+            clock.set_justify(Gtk.Justification.CENTER)
+            row.pack_end(clock, False, False, 6)
+            for label, icon, command in (
+                ("Network connections", "network-wireless", "nm-connection-editor"),
+                ("Sound settings", "audio-volume-high", "pavucontrol"),
+            ):
+                if shutil.which(command):
+                    quick = self._class(Gtk.Button(), "aero-quick")
+                    quick.set_image(self._icon(icon, Gtk.IconSize.MENU))
+                    quick.set_tooltip_text(label)
+                    quick.get_accessible().set_name(label)
+                    quick.connect("clicked", lambda _btn, cmd=command: self._open_tool(cmd))
+                    row.pack_end(quick, False, False, 0)
+            if os.environ.get("RICEHUB_AERO_TRAY", "1") != "0":
                 tray_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
                 row.pack_end(tray_box, False, False, 4)
                 try:
                     from .aero_tray import StatusNotifierTray
                     self._tray = StatusNotifierTray(tray_box, Gtk, Gio, GLib, GdkPixbuf)
                 except (GLib.Error, RuntimeError, OSError) as exc:
-                    import logging
                     logging.getLogger(__name__).warning("Optional Aero tray unavailable: %s", exc)
             def update_clock():
-                clock.set_text(GLib.DateTime.new_now_local().format("%a %H:%M"))
+                clock.set_text(GLib.DateTime.new_now_local().format("%H:%M\n%d %b"))
                 return True
             update_clock()
             GLib.timeout_add_seconds(30, update_clock)
             win.add(row)
+            win.connect("realize", self._reserve_workarea)
             win.show_all()
-            win.move(rect.x, rect.y + rect.height - 53)
+            win.move(rect.x, rect.y + rect.height - PANEL_HEIGHT)
             self.bar = win
 
         def _windows_changed(self, windows, active):
             """Keep task buttons stable across title, state and focus changes."""
-            visible = list(windows[:self._task_capacity])
-            if active in windows and active not in visible:
-                visible[-1] = active
+            visible, self._overflow_windows = select_windows(tuple(windows), active, self._task_capacity)
             visible_ids = tuple(window.get_xid() for window in visible)
-            self._overflow_windows = tuple(window for window in windows if window not in visible)
             if visible_ids != self._visible_window_ids:
                 for child in self.tasks.get_children():
                     self.tasks.remove(child)
@@ -282,14 +511,16 @@ def run(argv: list[str] | None = None) -> int:
             menu.set_type_hint(Gdk.WindowTypeHint.UTILITY)
             menu.set_transient_for(self.bar)
             menu.set_keep_above(True)
-            menu.set_default_size(490, 505)
+            rect = self._desktop_rect()
+            _, _, menu_w, menu_h = menu_geometry(rect.x, rect.y, rect.width, rect.height)
+            menu.set_default_size(menu_w, menu_h)
             body = self._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL), "aero-menu-root")
             main = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
             main.set_margin_start(14)
             main.set_margin_top(14)
             main.set_margin_bottom(10)
             main.set_margin_end(10)
-            main.set_size_request(320, -1)
+            main.set_size_request(min(320, max(180, menu_w - 36)), -1)
             main.pack_start(self._class(Gtk.Label(label="Programs", xalign=0), "aero-menu-heading"), False, False, 0)
             search = self._class(Gtk.SearchEntry(), "aero-menu-search")
             search.set_placeholder_text("Search programs")
@@ -297,14 +528,17 @@ def run(argv: list[str] | None = None) -> int:
             main.pack_start(search, False, False, 0)
             scroller = Gtk.ScrolledWindow()
             scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-            scroller.set_min_content_height(340)
+            scroller.set_min_content_height(max(85, min(340, menu_h - 160)))
             self.results = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
             scroller.add(self.results)
             main.pack_start(scroller, True, True, 0)
             body.pack_start(main, True, True, 0)
             side = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12), "aero-menu-side")
-            logo = Gtk.Image.new_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_scale(
-                str(project_root() / "assets/aero-penguin.svg"), 70, 70, True))
+            try:
+                logo = Gtk.Image.new_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_scale(
+                    str(project_root() / "assets/aero-penguin.svg"), 70, 70, True))
+            except (GLib.Error, OSError):
+                logo = self._icon("start-here", Gtk.IconSize.DIALOG)
             side.pack_start(logo, False, False, 0)
             for title, icon, uri in (
                 ("Home", "user-home", Path.home().as_uri()),
@@ -316,11 +550,28 @@ def run(argv: list[str] | None = None) -> int:
                 btn.set_always_show_image(True)
                 btn.connect("clicked", lambda _btn, address=uri: self._open_uri(address))
                 side.pack_start(btn, False, False, 0)
-            body.pack_start(side, False, False, 0)
+            if menu_w >= 470:
+                body.pack_start(side, False, False, 0)
+            footer = self._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8), "aero-menu-footer")
+            footer.set_margin_top(6)
+            if shutil.which("xfce4-settings-manager"):
+                settings = self._class(Gtk.Button(label="Control Panel"), "aero-menu-app")
+                settings.connect("clicked", lambda _btn: self._open_tool("xfce4-settings-manager"))
+                footer.pack_start(settings, True, True, 0)
+            if shutil.which("xfce4-session-logout"):
+                power = self._class(Gtk.Button(label="Log off…"), "aero-menu-power")
+                power.set_tooltip_text("Open XFCE's session dialog; no immediate logout")
+                power.connect("clicked", lambda _btn: self._open_tool("xfce4-session-logout"))
+                footer.pack_end(power, False, False, 0)
+            main.pack_end(footer, False, False, 0)
             menu.add(body)
             menu.connect("focus-in-event", self._menu_focus_in)
             menu.connect("focus-out-event", self._menu_focus_out)
-            search.connect("search-changed", lambda *_: self._populate(search.get_text()))
+            def update_search(*_args):
+                self._app_page_size = 24
+                self._populate(search.get_text())
+            search.connect("search-changed", update_search)
+            menu.connect("key-press-event", lambda _widget, event: self._search_key(event))
             search.connect("key-press-event", lambda _widget, event: self._search_key(event))
             self.menu = menu
             self.search = search
@@ -329,12 +580,11 @@ def run(argv: list[str] | None = None) -> int:
         def _populate(self, query):
             for child in self.results.get_children():
                 self.results.remove(child)
-            matches = [app for app in self.apps if query.casefold().strip() in
-                       (app.get_display_name() or app.get_name()).casefold()][:24]
+            matches = matching_apps(self.apps, query)
             if not matches:
                 self.results.pack_start(self._class(Gtk.Label(label="No matching applications", xalign=0),
                                                      "aero-menu-sub"), False, False, 8)
-            for app in matches:
+            for app in matches[:self._app_page_size]:
                 btn = self._class(Gtk.Button(), "aero-menu-app")
                 row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
                 icon = app.get_icon()
@@ -343,12 +593,31 @@ def run(argv: list[str] | None = None) -> int:
                 row.pack_start(Gtk.Label(label=app.get_display_name(), xalign=0), True, True, 0)
                 btn.add(row)
                 btn.connect("clicked", lambda _btn, selected=app: self._launch(selected))
+                btn.connect("button-press-event", lambda widget, event, selected=app:
+                            self._pin_context(widget, selected, event))
+                btn.connect("popup-menu", lambda widget, selected=app: self._pin_context(widget, selected))
                 self.results.pack_start(btn, False, False, 0)
+            if len(matches) > self._app_page_size:
+                more = self._class(Gtk.Button(label="All Programs · Show more"), "aero-menu-app")
+                more.get_accessible().set_name("Show more installed applications")
+                def expand(_button):
+                    self._app_page_size += 24
+                    self._populate(self.search.get_text())
+                more.connect("clicked", expand)
+                self.results.pack_start(more, False, False, 0)
             self.results.show_all()
 
         def _search_key(self, event):
             if event.keyval == Gdk.KEY_Escape:
                 self._hide_menu()
+                return True
+            if self.search.is_focus() and event.keyval in (Gdk.KEY_Return, Gdk.KEY_KP_Enter):
+                apps = matching_apps(self.apps, self.search.get_text())
+                if apps:
+                    self._launch(apps[0])
+                    return True
+            if event.keyval == Gdk.KEY_Down and self.results.get_children():
+                self.results.get_children()[0].grab_focus()
                 return True
             return False
 
@@ -376,8 +645,13 @@ def run(argv: list[str] | None = None) -> int:
             self._menu_focused = False
             self._menu_opened_at = GLib.get_monotonic_time()
             self.search.set_text("")
+            x, y, w, h = menu_geometry(rect.x, rect.y, rect.width, rect.height)
+            if w < 180 or h < 180:
+                self._error("The display is too small for the Aero Start menu.")
+                return
             self.menu.show_all()
-            self.menu.move(rect.x + 8, rect.y + rect.height - 53 - 505)
+            self.menu.resize(w, h)
+            self.menu.move(x, y)
             self.menu.present()
             self.search.grab_focus()
 
@@ -403,4 +677,6 @@ def run(argv: list[str] | None = None) -> int:
             dialog.run()
             dialog.destroy()
 
-    return AeroShell().run(argv or ["ricehub-aero-shell"])
+    app = AeroShell()
+    result = app.run(argv or ["ricehub-aero-shell"])
+    return 1 if app._smoke_failed else result

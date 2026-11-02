@@ -7,7 +7,7 @@ from pathlib import Path
 from unittest import mock
 
 from macrice.aero import (AeroAssetError, autostart_file, preflight, read_autostart)
-from macrice.aero_shell import CSS, app_catalog
+from macrice.aero_shell import CSS, app_catalog, matching_apps
 from macrice.installer import project_root
 from macrice.rice import RiceError, STYLES, apply, plan, restore
 from tests.test_rice import FakeBackend, setup_apps
@@ -100,6 +100,21 @@ class AeroTests(unittest.TestCase):
         for contents in (CSS, (project_root() / "assets/themes/RiceHub-Aero/gtk-3.0/gtk.css").read_bytes()):
             provider = Gtk.CssProvider()
             provider.load_from_data(contents)
+
+    def test_start_search_is_case_insensitive_and_unpaginated(self):
+        class App:
+            def __init__(self, name):
+                self.name = name
+            def get_display_name(self):
+                return self.name
+            def get_name(self):
+                return self.name
+        apps = tuple(App("Browser " + str(i)) for i in range(100))
+        self.assertEqual(len(matching_apps(apps, "BROWSER")), 100)
+        self.assertEqual([a.name for a in matching_apps(apps, "browser 9")],
+                         ["Browser 9", "Browser 90", "Browser 91", "Browser 92",
+                          "Browser 93", "Browser 94", "Browser 95", "Browser 96",
+                          "Browser 97", "Browser 98", "Browser 99"])
 
     def test_program_catalog_filters_hidden_apps_and_deduplicates_names(self):
         class App:

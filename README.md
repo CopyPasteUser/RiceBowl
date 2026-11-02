@@ -4,7 +4,7 @@
 
 RiceHub is a small, native Linux app for turning an ordinary XFCE desktop into something personal. It started with a love of macOS's clean interface and XFCE's speed. The goal is bigger now: one friendly place to discover, preview, apply and eventually share complete desktop styles — without swapping out your desktop environment.
 
-**The macOS-inspired rice works today.** Windows 7 now has two experimental, reversible Aero-inspired styles, an original Linux penguin and a working GTK Start menu. Windows 10 and 11 are still **Coming soon**. RiceHub `0.2.1 RC1` remains an early release, not a pixel-perfect multi-OS theme engine.
+**The macOS-inspired rice works today.** Windows 7 now has two reversible Aero-inspired styles and a substantially extended GTK Start/taskbar implementation. Windows 10 and 11 remain **Coming soon**. RiceHub `0.3.0 RC2` is a release candidate, not a pixel-perfect multi-OS emulator or a physically validated stable release.
 
 ## Meet RiceHub
 
@@ -26,7 +26,9 @@ The two included [Aero Meadow](assets/wallpapers/aero-meadow.jpg) and [Aero Casc
 - A matching glass Plank theme. While Aero is selected, Plank moves to an autohiding left edge so it doesn't overlap the taskbar; the previous dock preferences are restorable.
 - A user-local login autostart entry, created only when you apply an Aero rice and removed when returning to macOS.
 
-The taskbar is still experimental: **a system tray and guaranteed compositor blur are not implemented yet**. Automatic Start-menu dismissal on focus loss is best-effort on X11; the Start button and Escape always close it. Existing independently running MacBar or other panels are not forcibly terminated. RiceHub contains no copied Microsoft visual assets.
+The Aero shell now includes **experimental StatusNotifier tray icons**, **Show Desktop**, user-pinnable taskbar programs (persistent across logins), an adaptive Start menu, accessible keyboard search, native network/sound shortcuts and an opt-in translucent gradient. It can reserve the X11 bottom workarea for maximized windows. **Legacy XEmbed icons and true compositor blur are not supported.** The Start button and Escape close the menu; focus dismissal remains best-effort under X11. Existing MacBar or XFCE Panel instances are never forcibly terminated.
+
+**[Explore every Windows 7 component and visual asset](WINDOWS7.md)** — complete file-by-file inventory, installation, customizations, verification, genuine screenshot gallery and open limitations. RiceHub contains no copied Microsoft visual assets.
 
 For live window buttons on Linux Mint XFCE, install the optional Wnck3 introspection package:
 
@@ -63,7 +65,7 @@ The hub itself is written with Python and GTK3. It opens when you need it and do
 | macOS-inspired | Aurora Night, Aurora Day, Liquid Glass Night, Liquid Glass Day, Classic Aqua | **Available (preview)** |
 | Windows 10-inspired | Classic productivity desktop | **Coming soon** |
 | Windows 11-inspired | Centered taskbar and launcher | **Coming soon** |
-| Windows 7-inspired | Aero Meadow, Aero Cascade | **Experimental and installable** |
+| Windows 7-inspired | Aero Meadow, Aero Cascade | **Aero release candidate** |
 
 The working macOS rice brings together [MacMenu](components/macmenu/), [Control Center](components/control-center/), [MacBar](components/macbar/), Plank, Thunar, WhiteSur-based GTK/window themes, icons and Aurora wallpapers. All three bundled apps keep their own tested installers. Plank remains a system package and your pinned dock items are preserved.
 
@@ -122,7 +124,7 @@ For your XFCE shortcuts, use `macmenu --toggle` and `macos-control-center-toggle
 
 ## Where this is going
 
-The first goal is a dependable macOS rice and a useful central manager. The experimental Windows 7 rice now shares its safe apply/restore engine and offers optional live window switching; next come tray handling, deeper XFCE panel integration and Windows 10/11 styles. See the [RiceHub product roadmap](RICEHUB.md) and [MacRice engine roadmap](ROADMAP.md).
+The first goal is a dependable macOS rice and a useful central manager. The Windows 7 Aero candidate shares the safe apply/restore engine and adds a user-configurable taskbar and optional SNI tray. Physical Mint XFCE testing and compatibility work remain before a stable Aero 1.0; Windows 10 and 11 are separate future rices. See the [RiceHub product roadmap](RICEHUB.md) and [MacRice engine roadmap](ROADMAP.md).
 
 The existing MacMenu, Control Center and MacBar repositories have not been deleted. Their code stays independently testable while RiceHub becomes the main home for complete rices.
 

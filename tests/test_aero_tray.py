@@ -1,7 +1,7 @@
 """Protocol-level tests for Aero SNI logic without a D-Bus session."""
 import unittest
 
-from macrice.aero_tray import parse_item_id, registration_id, pixel_rgba, MAX_ITEMS, WATCHER_XML
+from macrice.aero_tray import parse_item_id, registration_id, pixel_rgba, MAX_ITEMS, WATCHER_XML, unpack_variant
 
 
 class AeroTrayTests(unittest.TestCase):
@@ -15,6 +15,14 @@ class AeroTrayTests(unittest.TestCase):
         self.assertEqual(registration_id("/StatusNotifierItem", ":1.25"), ":1.25/StatusNotifierItem")
         self.assertEqual(registration_id("org.example.Tray", ":1.25"), "org.example.Tray")
         self.assertIsNone(registration_id("/../x", ":1.25"))
+
+    def test_variant_unpack_accepts_nested_variant_and_plain_python_values(self):
+        class FakeVariant:
+            def unpack(self):
+                return ["org.example.Tray"]
+        self.assertEqual(unpack_variant(FakeVariant()), ["org.example.Tray"])
+        self.assertEqual(unpack_variant(["org.example.Tray"]), ["org.example.Tray"])
+        self.assertEqual(unpack_variant("Active"), "Active")
 
     def test_argb_conversion_and_bounds(self):
         self.assertEqual(pixel_rgba(1, 1, bytes([255, 12, 34, 56])), bytes([12, 34, 56, 255]))

@@ -1,6 +1,6 @@
 # RiceHub · Desktop styles for XFCE
 
-RiceHub is the beginning of a bigger idea: one lightweight home for complete XFCE rices inspired by operating systems we know and love. The project is built around **a working system first, an honest roadmap second**. The macOS implementation comes from the existing MacRice projects. Version 0.2 adds two experimental Windows 7-inspired Aero styles that can be applied and restored through the same engine.
+RiceHub is the beginning of a bigger idea: one lightweight home for complete XFCE rices inspired by operating systems we know and love. The project is built around **a working system first, an honest roadmap second**. The macOS implementation comes from the existing MacRice projects. Version 0.3 RC2 adds a feature-rich Windows 7 Aero shell on the same reversible engine, with virtual-GTK CI; physical Mint/XFCE acceptance is still open.
 
 ## First launch
 
@@ -37,7 +37,7 @@ The desktop remains usable if your XFCE configuration is different, but **the fu
 
 Windows 10 and 11 are **read-only descriptions**. Windows 7 can be applied only after a read-only preflight and explicit confirmation. The *separate Windows 7 preview dialog* is still a harmless demo. An Aero apply installs only original assets in the user's home, saves a restore snapshot, and changes the selected XFCE, Plank and session appearance. It does not install packages or overwrite third-party themes.
 
-The experimental Aero taskbar includes pinned launchers, a clock, searchable Start menu and **optional live window switching**. Install `gir1.2-wnck-3.0` on Linux Mint XFCE to enable event-driven Wnck window buttons (activate, minimize, restore and overflow); without it, pinned launchers still work. An **experimental StatusNotifier (SNI) tray** is available by default, using an existing watcher when present or a session-local fallback when none exists. Legacy XEmbed tray icons remain unsupported. Set `RICEHUB_AERO_TRAY=0` to disable the host. Optional `RICEHUB_AERO_GLASS=1` enables a more translucent gradient; it does **not** provide background blur and depends on the compositor for its visual result. If MacBar is already running, RiceHub doesn't force-kill it.
+The Aero taskbar includes persistent right-click pins, a two-line clock, bounded/paged searchable Start menu, Show Desktop, native settings shortcuts and **optional live window switching**. Install `gir1.2-wnck-3.0` on Linux Mint XFCE to enable event-driven Wnck window buttons (activate, minimize, restore and overflow); without it, pinned launchers still work. An **experimental StatusNotifier (SNI) tray** is available by default, using an existing watcher when present or a session-local fallback when none exists. Legacy XEmbed tray icons remain unsupported. Set `RICEHUB_AERO_TRAY=0` to disable the host. Optional `RICEHUB_AERO_GLASS=1` enables a more translucent gradient; it does **not** provide background blur and depends on the compositor for its visual result. The Aero shell can reserve the bottom X11 workarea using EWMH, opt-out with `RICEHUB_AERO_RESERVE=0`; existing XFCE panels and MacBar are never force-killed. For all individual components and assets, see [WINDOWS7.md](WINDOWS7.md).
 
 ### Genuine interface screenshots
 
@@ -69,6 +69,16 @@ These are real GTK3 application captures from XFCE/X11. The [macOS + Plank overv
 - [x] Reversible Aero apply/restore, managed session autostart and non-overlapping Plank configuration.
 - [x] Updated RiceHub and Start menu screenshots; illustrative macOS + Plank desktop overview.
 - [ ] Physical Mint XFCE / X11 hardware tests of window decorations and compositor variations.
+
+**0.3 RC2 — Windows 7 Aero feature-complete candidate**
+
+- [x] Persistent user-configurable taskbar pins with atomic, validated preference storage.
+- [x] Responsive Start placement, paged all-program catalog, keyboard search and safe XFCE actions.
+- [x] Show Desktop, date and time, native sound/network shortcuts, task overflow and X11 bottom workarea reservation.
+- [x] Experimental SNI tray with bounded icon processing, hover tooltips and correctly positioned context menu calls.
+- [x] GTK/X11 real-launch smoke test in GitHub CI, plus pure-logic regression coverage for pins, layout and D-Bus values.
+- [x] Full Windows 7 component/asset inventory and release acceptance checklist.
+- [ ] Physical X11 hardware validation, current screenshots of every feature, SNI interoperability and measured resource budgets.
 
 **0.3 — dependable switching and onboarding**
 
