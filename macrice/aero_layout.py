@@ -28,7 +28,7 @@ def task_capacity(width: int, pinned: int, tray_reserve: int = 185) -> int:
     Task overflow is mandatory when there is no space; never force the
     panel larger than the monitor solely to display window titles.
     """
-    reserved = 125 + min(max(pinned, 0), 4) * 48 + max(tray_reserve, 0)
+    reserved = 125 + min(max(pinned, 0), 6) * 48 + max(tray_reserve, 0)
     return max(0, min(9, (width - reserved) // 145))
 
 
