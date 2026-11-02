@@ -202,11 +202,11 @@ def run(argv: list[str] | None = None) -> int:
             win.set_type_hint(Gdk.WindowTypeHint.DOCK)
             win.set_keep_above(True)
             win.set_accept_focus(False)
-            win.set_size_request(rect.width, 53)
-            win.move(rect.x, rect.y + rect.height - 53)
+            win.set_default_size(rect.width, PANEL_HEIGHT)
+            win.move(rect.x, rect.y + rect.height - PANEL_HEIGHT)
 
             row = self._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8), "aero-taskbar")
-            if __import__("os").environ.get("RICEHUB_AERO_GLASS") == "1":
+            if os.environ.get("RICEHUB_AERO_GLASS") == "1":
                 row.get_style_context().add_class("aero-glass")
             start = self._class(Gtk.Button(), "aero-start")
             contents = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
@@ -221,10 +221,12 @@ def run(argv: list[str] | None = None) -> int:
             start.connect("clicked", lambda _button: self._toggle_menu())
             row.pack_start(start, False, False, 4)
             self.start_button = start
+            pinned_ids = set()
             for wanted in ("file manager", "browser", "terminal"):
                 app = next((a for a in self.apps if wanted in (a.get_display_name() or "").casefold()), None)
-                if not app:
+                if not app or app.get_id() in pinned_ids:
                     continue
+                pinned_ids.add(app.get_id())
                 btn = self._class(Gtk.Button(), "aero-pin")
                 icon = app.get_icon()
                 btn.set_image(Gtk.Image.new_from_gicon(icon, Gtk.IconSize.LARGE_TOOLBAR) if icon else
@@ -233,41 +235,56 @@ def run(argv: list[str] | None = None) -> int:
                 btn.get_accessible().set_name("Launch " + app.get_display_name())
                 btn.connect("clicked", lambda _btn, selected=app: self._launch(selected))
                 row.pack_start(btn, False, False, 0)
+            self._pin_count = len(pinned_ids)
             self.tasks = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
-            self._task_capacity = max(2, min(9, (rect.width - 410) // 160))
+            self._task_capacity = task_capacity(rect.width, self._pin_count)
             self.overflow_button = self._class(Gtk.Button(), "aero-task-overflow")
             self.overflow_button.get_accessible().set_name("Show other running windows")
             self.overflow_button.connect("clicked", self._show_overflow)
             row.pack_start(self.tasks, False, False, 4)
             row.pack_start(Gtk.Box(), True, True, 0)
+            desktop = self._class(Gtk.Button(), "aero-desktop")
+            desktop.set_tooltip_text("Show desktop / restore windows")
+            desktop.get_accessible().set_name("Show desktop or restore windows")
+            desktop.connect("clicked", self._show_desktop)
+            row.pack_end(desktop, False, False, 0)
+            self.show_desktop_button = desktop
             clock = self._class(Gtk.Label(), "aero-time")
-            row.pack_end(clock, False, False, 12)
-            if __import__("os").environ.get("RICEHUB_AERO_TRAY", "1") != "0":
+            clock.set_justify(Gtk.Justification.CENTER)
+            row.pack_end(clock, False, False, 6)
+            for label, icon, command in (
+                ("Network connections", "network-wireless", "nm-connection-editor"),
+                ("Sound settings", "audio-volume-high", "pavucontrol"),
+            ):
+                if shutil.which(command):
+                    quick = self._class(Gtk.Button(), "aero-quick")
+                    quick.set_image(self._icon(icon, Gtk.IconSize.MENU))
+                    quick.set_tooltip_text(label)
+                    quick.get_accessible().set_name(label)
+                    quick.connect("clicked", lambda _btn, cmd=command: self._open_tool(cmd))
+                    row.pack_end(quick, False, False, 0)
+            if os.environ.get("RICEHUB_AERO_TRAY", "1") != "0":
                 tray_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
                 row.pack_end(tray_box, False, False, 4)
                 try:
                     from .aero_tray import StatusNotifierTray
                     self._tray = StatusNotifierTray(tray_box, Gtk, Gio, GLib, GdkPixbuf)
                 except (GLib.Error, RuntimeError, OSError) as exc:
-                    import logging
                     logging.getLogger(__name__).warning("Optional Aero tray unavailable: %s", exc)
             def update_clock():
-                clock.set_text(GLib.DateTime.new_now_local().format("%a %H:%M"))
+                clock.set_text(GLib.DateTime.new_now_local().format("%H:%M\n%d %b"))
                 return True
             update_clock()
             GLib.timeout_add_seconds(30, update_clock)
             win.add(row)
             win.show_all()
-            win.move(rect.x, rect.y + rect.height - 53)
+            win.move(rect.x, rect.y + rect.height - PANEL_HEIGHT)
             self.bar = win
 
         def _windows_changed(self, windows, active):
             """Keep task buttons stable across title, state and focus changes."""
-            visible = list(windows[:self._task_capacity])
-            if active in windows and active not in visible:
-                visible[-1] = active
+            visible, self._overflow_windows = select_windows(tuple(windows), active, self._task_capacity)
             visible_ids = tuple(window.get_xid() for window in visible)
-            self._overflow_windows = tuple(window for window in windows if window not in visible)
             if visible_ids != self._visible_window_ids:
                 for child in self.tasks.get_children():
                     self.tasks.remove(child)
