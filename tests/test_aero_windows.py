@@ -15,6 +15,7 @@ class FakeWindow:
         self.disconnected = []
         self.minimized = False
         self.calls = []
+        self.disposed = False
 
     def get_window_type(self):
         return self.kind
@@ -44,6 +45,8 @@ class FakeWindow:
         return handle
 
     def disconnect(self, handle):
+        if self.disposed:
+            raise RuntimeError("Signal disconnected after native window was disposed")
         self.disconnected.append(handle)
 
     def emit(self, name):
@@ -68,8 +71,8 @@ class FakeScreen:
     def force_update(self):
         pass
 
-    def emit(self, name):
-        self.signals[name](self)
+    def emit(self, name, *args):
+        self.signals[name](self, *args)
 
 
 class AeroWindowTests(unittest.TestCase):
@@ -118,9 +121,26 @@ class AeroWindowTests(unittest.TestCase):
         tracker.start()
         screen.windows = []
         screen.active = None
-        screen.emit("window-closed")
+        screen.emit("window-closed", first)
+        # libwnck may dispose the native object before the queued idle redraw.
+        first.disposed = True
         jobs.pop()()
         self.assertEqual(len(first.disconnected), 3)
+        self.assertEqual(tracker._window_handlers, {})
+
+    def test_unannounced_disposal_never_disconnects_a_stale_native_window(self):
+        first = FakeWindow("Files")
+        screen = FakeScreen([first])
+        wnck = SimpleNamespace(Screen=SimpleNamespace(get_default=lambda: screen),
+                               WindowType=SimpleNamespace(NORMAL="normal"))
+        jobs = []
+        tracker = WindowTracker(wnck, jobs.append, lambda *_: None)
+        tracker.start()
+        screen.windows = []
+        screen.active = None
+        first.disposed = True
+        screen.emit("active-window-changed")
+        jobs.pop()()
         self.assertEqual(tracker._window_handlers, {})
 
     def test_unavailable_window_screen_is_a_safe_fallback(self):
