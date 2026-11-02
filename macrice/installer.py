@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .environment import bin_home, config_home, data_home
+from .environment import bin_home, data_home
 
 
 COMPONENTS = ("macmenu", "control-center", "macbar")
@@ -39,6 +39,8 @@ def _check_layout(source: Path) -> None:
     required = (
         "macrice/cli.py",
         "macrice/gui.py",
+        "macrice/plank.py",
+        "components/plank/README.md",
         "components/macmenu/scripts/install_user.py",
         "components/control-center/install.sh",
         "components/macbar/install.sh",
@@ -195,6 +197,9 @@ def install(options: InstallOptions, source: Path | None = None, output=print) -
         output("Plank, XFCE themes, icons and the XFCE Panel stay untouched.")
         for name, argv in commands:
             output(f"  {name}: {' '.join(argv)}")
+        from .plank import installed as plank_installed
+        output("  Plank: " + ("existing system dock detected; preserved" if plank_installed()
+                             else "not installed; optionally use 'sudo apt install plank'"))
         return None
 
     # The bundle is kept installed for later GUI-driven repairs. Each component
@@ -218,6 +223,11 @@ def install(options: InstallOptions, source: Path | None = None, output=print) -
         output(f"  {name}: installed")
 
     _write_entrypoints(installed)
+    from .plank import installed as plank_installed
+    if plank_installed():
+        output("Plank: existing dock detected; no changes to its settings or launchers.")
+    else:
+        output("Plank: not installed. Optional on Mint: sudo apt install plank")
     output("MacRice installed. Run 'macrice gui' for the manager.")
     output("The XFCE Panel was not replaced. No theme or icon was changed.")
     return installed

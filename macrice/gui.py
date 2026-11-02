@@ -65,7 +65,7 @@ def run() -> int:
         def __init__(self, app):
             super().__init__(application=app, title="MacRice Settings")
             self.set_name("macrice-window")
-            self.set_default_size(545, 530)
+            self.set_default_size(545, 600)
             self.set_resizable(True)
             self.set_position(Gtk.WindowPosition.CENTER)
             self.set_border_width(22)
@@ -108,7 +108,8 @@ def run() -> int:
             title = Gtk.Label(label="Components", xalign=0)
             title.get_style_context().add_class("section-title")
             group.pack_start(title, False, False, 0)
-            for name, action in (("MacMenu", "menu"), ("Control Center", "center"), ("MacBar", "bar")):
+            for name, action in (("MacMenu", "menu"), ("Control Center", "center"),
+                                 ("MacBar", "bar"), ("Plank", "dock")):
                 row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
                 row.get_style_context().add_class("component-row")
                 group.pack_start(row, False, False, 0)
@@ -118,10 +119,20 @@ def run() -> int:
                 status = Gtk.Label(label="Checking…")
                 self._status_labels[name] = status
                 row.pack_start(status, False, False, 0)
-                button = Gtk.Button(label="Open" if action != "bar" else "Start")
-                button.set_tooltip_text("Toggle" if action != "bar" else "Start the standalone top bar")
+                button = Gtk.Button(label="Open" if action in ("menu", "center") else "Start")
+                button.set_tooltip_text(
+                    "Toggle" if action in ("menu", "center")
+                    else "Start the existing dock" if action == "dock"
+                    else "Start the standalone top bar"
+                )
                 button.connect("clicked", lambda _widget, component=action: self._launch(component, launch))
                 row.pack_start(button, False, False, 0)
+                if action == "dock":
+                    prefs = Gtk.Button(label="Settings")
+                    prefs.set_tooltip_text("Open Plank's own preferences. Existing dock items are preserved.")
+                    prefs.connect("clicked", self._plank_preferences)
+                    row.pack_start(prefs, False, False, 0)
+                    self._dock_buttons = (button, prefs)
             self._refresh = detector
             self._update_status()
 
@@ -130,6 +141,13 @@ def run() -> int:
                 launch(component)
             except Exception as exc:
                 self._message("Could not launch " + component + ": " + str(exc), error=True)
+
+        def _plank_preferences(self, _widget):
+            from .plank import open_dock
+            try:
+                open_dock(show_preferences=True)
+            except (OSError, RuntimeError) as exc:
+                self._message("Plank settings unavailable: " + str(exc), error=True)
 
         def _update_status(self):
             current = self._refresh()
@@ -140,6 +158,8 @@ def run() -> int:
                 context.remove_class("installed")
                 context.remove_class("unavailable")
                 context.add_class("installed" if ready else "unavailable")
+            for button in self._dock_buttons:
+                button.set_sensitive(current.get("Plank", False))
 
         def _appearance(self, outer, presets, apply):
             group = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=9)
@@ -153,14 +173,14 @@ def run() -> int:
             for name in presets:
                 self._theme.append_text(name)
             self._theme.set_active(0)
-            self._theme.set_tooltip_text("Styles MacMenu, Control Center and MacBar only")
+            self._theme.set_tooltip_text("Styles the three bundled apps only; Plank is managed by its own preferences")
             row.pack_start(self._theme, True, True, 0)
             button = Gtk.Button(label="Apply theme")
             button.get_style_context().add_class("suggested-action")
             button.connect("clicked", lambda _button: self._apply_theme(apply))
             row.pack_start(button, False, False, 0)
             caption = Gtk.Label(
-                label="Only the three apps change. Your XFCE theme, icon pack and Plank stay as they are.",
+                label="App colors only. Your GTK theme, icons and Plank dock stay untouched.",
                 xalign=0,
             )
             caption.set_line_wrap(True)
@@ -176,6 +196,10 @@ def run() -> int:
                 try:
                     profile = detector()
                     text = f"XFCE: {profile.gtk_theme or 'unknown'}  ·  Icons: {profile.icon_theme or 'unknown'}"
+                    if profile.plank_theme or profile.plank_position or profile.plank_icon_size:
+                        text += ("\nDock: " + (profile.plank_theme or "default")
+                                 + " · " + (profile.plank_position or "position unknown")
+                                 + " · " + (profile.plank_icon_size or "?") + " px")
                 except Exception:
                     text = "Appearance detection unavailable; manual presets still work."
                 GLib.idle_add(self._detected.set_text, text)
@@ -223,11 +247,11 @@ def run() -> int:
             dialog = Gtk.MessageDialog(
                 transient_for=self, modal=True,
                 message_type=Gtk.MessageType.QUESTION, buttons=Gtk.ButtonsType.NONE,
-                text="Install or repair the three apps?",
+                text="Install or repair the three bundled apps?",
             )
             dialog.format_secondary_text(
                 "Only user-local application files will be updated. Your XFCE Panel, "
-                "Plank, icon theme, preferences and notes will be kept."
+                "your Plank dock, icon theme, preferences and notes will be kept."
             )
             dialog.add_button("Cancel", Gtk.ResponseType.CANCEL)
             dialog.add_button("Install", Gtk.ResponseType.OK)

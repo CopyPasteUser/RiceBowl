@@ -31,6 +31,9 @@ class InstallIntegrationTests(unittest.TestCase):
             config = locations["XDG_CONFIG_HOME"] / "macmenu/settings.json"
             config.parent.mkdir()
             config.write_text(json.dumps({"theme": "violet", "favorites": ["org.xfce.Thunar"]}))
+            dock_pin = locations["XDG_CONFIG_HOME"] / "plank/dock1/launchers/user-app.dockitem"
+            dock_pin.parent.mkdir(parents=True)
+            dock_pin.write_text("[PlankDockItemPreferences]\nLauncher=file:///usr/share/applications/thunar.desktop\n")
 
             for _ in range(2):
                 process = subprocess.run(
@@ -47,6 +50,7 @@ class InstallIntegrationTests(unittest.TestCase):
             self.assertTrue((locations["XDG_CONFIG_HOME"] / "autostart/macos-control-center-resident.desktop").exists())
             self.assertFalse((locations["XDG_CONFIG_HOME"] / "autostart/macbar.desktop").exists())
             self.assertFalse((locations["XDG_CONFIG_HOME"] / "xfce4").exists())
+            self.assertIn("thunar.desktop", dock_pin.read_text())
             settings = json.loads(config.read_text())
             self.assertEqual(settings["favorites"], ["org.xfce.Thunar"])
             self.assertEqual(settings["theme"], "violet")
@@ -59,6 +63,7 @@ class InstallIntegrationTests(unittest.TestCase):
             self.assertIn("MacMenu: installed", check.stdout)
             self.assertIn("Control Center: installed", check.stdout)
             self.assertIn("MacBar: installed", check.stdout)
+            self.assertIn("Plank:", check.stdout)
 
 
 if __name__ == "__main__":

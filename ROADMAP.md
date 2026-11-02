@@ -1,6 +1,6 @@
 # Roadmap to 1.0
 
-MacRice is deliberately a thin integration layer. MacMenu, Control Center and MacBar keep their own tested lifecycles.
+MacRice is deliberately a thin integration layer. MacMenu, Control Center and MacBar keep their own tested lifecycles; Plank remains an external system dock.
 
 ## 0.1 — Unified source and safe setup
 
@@ -10,12 +10,14 @@ MacRice is deliberately a thin integration layer. MacMenu, Control Center and Ma
 - [x] Detect the user's existing XFCE themes and icons without accessing private network data.
 - [x] Add matching app-only theme presets with recoverable settings backups.
 - [x] Preserve the three standalone installers and their existing component tests.
+- [x] Integrate existing Plank: read effective dock1 preferences, start its process and open native settings without taking ownership of its files (0.1.1).
 
 ## 0.2 — First real ThinkPad acceptance pass
 
 - [ ] Confirm all three install or update cleanly on the owner's Linux Mint XFCE system.
 - [ ] Verify Super-key open/close/open cycles and Control Center's fast D-Bus path.
 - [ ] Confirm the actual selected WhiteSur or other GTK/icon themes are detected correctly.
+- [ ] Check effective Plank theme, hide mode, pinned apps and autostart on the owner's Mint 22.1 / 1920×1080 session.
 - [ ] Check keyboard focus, small displays, touch input and HiDPI.
 - [ ] Compare settled PSS and CPU usage with and without XFCE Panel.
 - [ ] Test the panel coexistence, login startup and an explicit rollback on the real machine.

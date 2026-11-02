@@ -51,6 +51,9 @@ class DesktopProfile:
     window_theme: str | None
     font: str | None
     plank_theme: str | None
+    plank_position: str | None = None
+    plank_icon_size: str | None = None
+    plank_hide_mode: str | None = None
 
     def as_dict(self) -> dict[str, str | None]:
         return {
@@ -61,10 +64,16 @@ class DesktopProfile:
             "window_theme": self.window_theme,
             "font": self.font,
             "plank_theme": self.plank_theme,
+            "plank_position": self.plank_position,
+            "plank_icon_size": self.plank_icon_size,
+            "plank_hide_mode": self.plank_hide_mode,
         }
 
 
 def detect() -> DesktopProfile:
+    from .plank import preferences
+
+    dock = preferences()
     return DesktopProfile(
         desktop=os.environ.get("XDG_CURRENT_DESKTOP", "unknown")[:80],
         gtk_theme=_xfconf("xsettings", "/Net/ThemeName"),
@@ -72,14 +81,21 @@ def detect() -> DesktopProfile:
         cursor_theme=_xfconf("xsettings", "/Gtk/CursorThemeName"),
         window_theme=_xfconf("xfwm4", "/general/theme"),
         font=_xfconf("xsettings", "/Gtk/FontName"),
-        plank_theme=_query("gsettings", "get", "net.launchpad.plank.dock.settings", "theme"),
+        plank_theme=dock.theme,
+        plank_position=dock.position,
+        plank_icon_size=dock.icon_size,
+        plank_hide_mode=dock.hide_mode,
     )
 
 
 def installed_components() -> dict[str, bool]:
+    from .plank import installed
+
     executable = {
         "MacMenu": bin_home() / "macmenu",
         "Control Center": bin_home() / "macos-control-center-toggle",
         "MacBar": bin_home() / "macbar",
     }
-    return {name: path.is_file() and os.access(path, os.X_OK) for name, path in executable.items()}
+    result = {name: path.is_file() and os.access(path, os.X_OK) for name, path in executable.items()}
+    result["Plank"] = installed()
+    return result

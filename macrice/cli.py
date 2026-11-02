@@ -19,10 +19,15 @@ COMMANDS = {
     "menu": ("macmenu", "--toggle"),
     "center": ("macos-control-center-toggle",),
     "bar": ("macbar",),
+    "dock": ("plank",),
 }
 
 
 def open_component(name: str) -> None:
+    if name == "dock":
+        from .plank import open_dock
+        open_dock()
+        return
     args = COMMANDS[name]
     executable = bin_home() / args[0]
     if not executable.is_file() or not os.access(executable, os.X_OK):
@@ -43,7 +48,7 @@ def parser() -> argparse.ArgumentParser:
     commands.add_parser("gui", help="Open the native GTK settings manager")
     commands.add_parser("status", help="Show installed components and the detected appearance")
     commands.add_parser("inspect", help="Print a safe, read-only JSON appearance report")
-    installer = commands.add_parser("install", help="Install or repair all three components")
+    installer = commands.add_parser("install", help="Install or repair the three bundled apps; preserve Plank")
     installer.add_argument("--dry-run", action="store_true", help="Do not write or start anything")
     installer.add_argument("--no-start", action="store_true", help="Install without launching GTK")
     installer.add_argument("--bar-autostart", action="store_true", help="Add MacBar to login without stopping XFCE Panel")
@@ -51,6 +56,8 @@ def parser() -> argparse.ArgumentParser:
     theme.add_argument("preset", choices=PRESETS)
     opener = commands.add_parser("open", help="Launch/toggle one component")
     opener.add_argument("component", choices=tuple(COMMANDS))
+    dock = commands.add_parser("dock", help="Inspect the existing dock or open its native preferences")
+    dock.add_argument("action", choices=("status", "preferences"))
     return p
 
 
@@ -70,6 +77,16 @@ def main(argv: list[str] | None = None) -> int:
             appearance = detect()
             print("  XFCE GTK theme:", appearance.gtk_theme or "not detected")
             print("  Icon theme:", appearance.icon_theme or "not detected")
+            if appearance.plank_theme:
+                print("  Plank theme:", appearance.plank_theme)
+            return 0
+        if args.command == "dock":
+            from .plank import installed, open_dock, preferences
+            if args.action == "preferences":
+                print(open_dock(show_preferences=True))
+            else:
+                print("Plank:", "installed" if installed() else "not installed")
+                print(json.dumps(preferences().__dict__, indent=2, ensure_ascii=False))
             return 0
         if args.command == "install":
             install(InstallOptions(args.dry_run, args.no_start, args.bar_autostart))
@@ -83,7 +100,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "open":
             open_component(args.component)
             return 0
-    except (InstallationError, ValueError, OSError) as exc:
+    except (InstallationError, ValueError, OSError, RuntimeError) as exc:
         print("MacRice:", exc, file=sys.stderr)
         return 1
     return 2

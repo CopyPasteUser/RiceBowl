@@ -1,6 +1,6 @@
 # MacRice for XFCE
 
-**Three small native apps. One calmer Linux desktop.**
+**Three native apps, your Plank dock, one calmer Linux desktop.**
 
 I like macOS's sense of order, but I like XFCE's speed and freedom. MacRice brings those ideas together without replacing the window manager or burying a lightweight desktop under a web stack.
 
@@ -8,8 +8,8 @@ I like macOS's sense of order, but I like XFCE's speed and freedom. MacRice brin
 
 *Actual GTK3 rendering on a clean virtual X11 display; system status indicators are limited there.*
 
-The native GTK manager shows installed components, matching color presets and
-your detected XFCE appearance in one small window.
+The native GTK manager shows the installed components, your Plank dock, matching
+app-only color presets and your detected XFCE appearance in one small window.
 
 ## What's inside
 
@@ -18,7 +18,8 @@ your detected XFCE appearance in one small window.
 | [MacMenu](components/macmenu/) · RC11 | Search, browse and launch installed apps. |
 | [Control Center](components/control-center/) · 2.1.1 | Wi-Fi, audio, media, quick actions, settings and a fast D-Bus toggle. [Screenshot](components/control-center/screenshots/control-center-2.1.1.png) |
 | [MacBar](components/macbar/) · 1.0.0 | A clean top bar with launchers, network, sound, battery and clock. [Screenshot](components/macbar/screenshots/macbar-1.0.0.png) |
-| **MacRice Manager** · 0.1.0 | Installs the components, shows status, launches apps and applies matching themes. |
+| [Plank](components/plank/) · system package | The existing bottom dock. Detect its settings, start it and open its native preferences without overwriting pins or layout. |
+| **MacRice Manager** · 0.1.1 | Installs the three bundled apps, shows status, launches apps and Plank, and applies matching app-only themes. |
 
 Every component remains a complete project with its own tests and installer. The existing repositories aren't deleted.
 
@@ -34,7 +35,7 @@ bash install.sh --dry-run
 bash install.sh
 ```
 
-Run the installer **as your normal user, not with sudo**. It delegates to the three tested user-local installers, preserves existing settings and uses their backups during upgrades. Control Center starts hidden for quick reopening; MacBar is installed but doesn't replace XFCE Panel.
+Run the installer **as your normal user, not with sudo**. It delegates to the three tested user-local installers, preserves existing settings and uses their backups during upgrades. Control Center starts hidden for quick reopening; MacBar is installed but doesn't replace XFCE Panel. Plank stays independently managed by your distribution; to add it on a system where it's missing, run `sudo apt install plank` separately.
 
 If you have the old system-wide `xfce-macmenu` DEB, the installer stops and explains the conflict rather than silently removing a package.
 
@@ -44,15 +45,20 @@ To install from a terminal without starting GTK, run `bash install.sh --no-start
 
 ```bash
 macrice gui             # Native GTK settings manager
-macrice status          # Check the three installed components
+macrice status          # Check all four components, including Plank
 macrice inspect         # Safe, read-only XFCE appearance detection
 macrice open menu       # Toggle MacMenu
 macrice open center     # Toggle Control Center
 macrice open bar        # Start MacBar
+macrice open dock       # Start Plank if it is not running
+macrice dock status     # Read Plank dock settings
+macrice dock preferences # Open Plank's native settings
 macrice theme Midnight  # Apply matching colors to the three apps
 ```
 
-Other presets: **System**, **Light**, and **Graphite**. Only the apps' own theme settings change. XFCE's GTK theme, window decorations, icon pack, fonts, Plank setup, personal notes and favorites are left alone. Each theme action saves a private backup before writing any file.
+Other presets: **System**, **Light**, and **Graphite**. Only the three bundled apps' theme settings change. XFCE's GTK theme, window decorations, icon pack, fonts, Plank setup, personal notes and favorites are left alone. Each theme action saves a private backup before writing any file.
+
+On a WhiteSur-Dark / WhiteSur-light / Bibata / Inter setup, the **System** preset follows the dark GTK appearance. MacRice reads the current dock's effective theme, position, icon size and hide mode through Plank's dock1 GSettings path; it does not guess them from unset dconf overrides.
 
 For keyboard shortcuts in XFCE, use `macmenu --toggle` for MacMenu and `macos-control-center-toggle` for Control Center.
 
@@ -63,7 +69,7 @@ For keyboard shortcuts in XFCE, use `macmenu --toggle` for MacMenu and `macos-co
 - Each app's settings remain in its original `~/.config/` directory.
 - The suite does not ask for root access or start a background network service.
 
-The GTK manager runs only while open. The menu and Control Center may keep their existing hidden, resident windows for fast toggles. MacBar is a separate long-running GTK process.
+The GTK manager runs only while open. The menu and Control Center may keep their existing hidden, resident windows for fast toggles. MacBar and the existing Plank dock are separate long-running GTK processes.
 
 ## What still needs testing
 
