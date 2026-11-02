@@ -61,7 +61,10 @@ def parser() -> argparse.ArgumentParser:
     dock.add_argument("action", choices=("status", "preferences"))
     rice = commands.add_parser("rice", help="Plan, apply or restore the complete XFCE desktop Rice")
     rice.add_argument("action", choices=("plan", "apply", "restore"))
-    rice.add_argument("style", nargs="?", choices=("night", "day"))
+    from .rice import STYLES
+    rice.add_argument("style", nargs="?", choices=tuple(STYLES))
+    profile = commands.add_parser("performance", help="Apply a Control Center resource profile")
+    profile.add_argument("profile", choices=("light", "balanced", "visual", "report"))
     return p
 
 
@@ -95,6 +98,19 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 print("Rice applied; backup:", apply_rice(args.style))
             return 0
+        if args.command == "performance":
+            from .performance import apply_profile, measure_processes
+            if args.profile == "report":
+                processes = measure_processes()
+                if not processes:
+                    print("No MacRice components or Plank processes found for this user.")
+                for item in processes:
+                    pss = f"{item['pss_kib'] / 1024:.1f} MiB" if item["pss_kib"] is not None else "unavailable"
+                    cpu = f"{item['cpu_percent']:.1f}%" if item["cpu_percent"] is not None else "unavailable"
+                    print(f"{item['name']} (PID {item['pid']}): PSS {pss} · CPU {cpu}")
+            else:
+                print(f"Performance profile {args.profile} applied; backup:", apply_profile(args.profile))
+            return 0
         if args.command == "inspect":
             print(json.dumps(detect().as_dict(), indent=2, ensure_ascii=False))
             return 0
@@ -123,7 +139,7 @@ def main(argv: list[str] | None = None) -> int:
             backup = apply_preset(args.preset)
             print(f"Applied {args.preset} to MacMenu, Control Center and MacBar.")
             print("Backups:", backup)
-            print("Restart the three apps to apply the new theme.")
+            print("Running MacRice apps reload their theme automatically.")
             return 0
         if args.command == "open":
             open_component(args.component)

@@ -43,6 +43,7 @@ def _check_layout(source: Path) -> None:
         "macrice/rice.py",
         "macrice/preview.py",
         "macrice/thunar.py",
+        "macrice/performance.py",
         "components/plank/README.md",
         "assets/plank-themes/MacRice-Frost-Glass/dock.theme",
         "assets/plank-themes/MacRice-Obsidian-Glass/dock.theme",

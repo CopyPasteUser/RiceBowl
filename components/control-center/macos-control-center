@@ -66,7 +66,7 @@ DEFAULT_CONFIG = {
     "devices": [],
 }
 _CFG_LANGS = ("auto", "de", "en", "it", "fr", "es")
-_CFG_THEMES = ("midnight", "graphite", "frosted", "light")
+_CFG_THEMES = ("midnight", "graphite", "frosted", "light", "glass-dark", "glass-light", "aqua")
 _CFG_ACCENTS = ("blue", "purple", "teal", "pink", "red", "orange", "yellow", "green", "graphite")
 
 
@@ -809,6 +809,9 @@ STR = {
     "theme_graphite": ("Graphit", "Graphite", "Grafite", "Graphite", "Grafito"),
     "theme_frosted": ("Frosted Dark", "Frosted Dark", "Frosted Dark", "Sombre givré", "Oscuro esmerilado"),
     "theme_light": ("Hell", "Light", "Chiaro", "Clair", "Claro"),
+    "theme_glass-dark": ("Glas Dunkel", "Glass Dark", "Vetro scuro", "Verre sombre", "Cristal oscuro"),
+    "theme_glass-light": ("Glas Hell", "Glass Light", "Vetro chiaro", "Verre clair", "Cristal claro"),
+    "theme_aqua": ("Aqua", "Aqua", "Aqua", "Aqua", "Aqua"),
     "accent_setting": ("Akzentfarbe: {v}", "Accent color: {v}", "Colore accento: {v}", "Couleur d’accent : {v}", "Color de acento: {v}"),
     "accent_blue": ("Blau", "Blue", "Blu", "Bleu", "Azul"),
     "accent_purple": ("Violett", "Purple", "Viola", "Violet", "Morado"),
@@ -2127,6 +2130,27 @@ THEME_TOKENS = {
               "active_surface": "#d7e9fc", "slider_background": "#dce1e8", "slider_thumb": "#ffffff",
               "accent_treatment": "#0a84ff", "focus_treatment": "#0a84ff",
               "destructive": "#b42318", "warning": "#8a5200"},
+    "glass-dark": {"window_background": "#172335", "card_surface": "rgba(34,49,69,.88)",
+                   "elevated_surface": "#354b65", "secondary_surface": "#26394e",
+                   "border_separator": "rgba(172,205,236,.24)", "primary_text": "#f8fbff", "secondary_text": "#b8cbe0",
+                   "disabled_text": "#8294a5", "hover": "#3a516c", "pressed": "#46617d",
+                   "active_surface": "#31567d", "slider_background": "#354b65", "slider_thumb": "#f5fbff",
+                   "accent_treatment": "#70b7f4", "focus_treatment": "#70b7f4",
+                   "destructive": "#ff8d8b", "warning": "#ffd076"},
+    "glass-light": {"window_background": "#e6f1f9", "card_surface": "rgba(255,255,255,.88)",
+                    "elevated_surface": "#dcecf7", "secondary_surface": "#e0edf8",
+                    "border_separator": "rgba(57,102,140,.22)", "primary_text": "#193249", "secondary_text": "#526d83",
+                    "disabled_text": "#859caf", "hover": "#d0e5f2", "pressed": "#bed8e8",
+                    "active_surface": "#b8daf1", "slider_background": "#cadeed", "slider_thumb": "#ffffff",
+                    "accent_treatment": "#176daa", "focus_treatment": "#176daa",
+                    "destructive": "#ad2636", "warning": "#8a5800"},
+    "aqua": {"window_background": "#d9edf9", "card_surface": "#f5fbff",
+             "elevated_surface": "#c8e5f5", "secondary_surface": "#d6eefb",
+             "border_separator": "#91c3e2", "primary_text": "#143650", "secondary_text": "#4a6880",
+             "disabled_text": "#7795a8", "hover": "#c4e4f7", "pressed": "#add9f2",
+             "active_surface": "#a4d4f4", "slider_background": "#c0ddef", "slider_thumb": "#ffffff",
+             "accent_treatment": "#0579b9", "focus_treatment": "#0579b9",
+             "destructive": "#b42332", "warning": "#855300"},
 }
 
 
@@ -2299,7 +2323,7 @@ _THEME_BASE = UI_TOKENS["background"]
 
 def _accent_for_theme(theme, accent_color):
     color, rgb = ACCENT_PALETTE.get(accent_color, ACCENT_PALETTE["blue"])
-    if theme != "light":
+    if theme not in ("light", "glass-light", "aqua"):
         return color, rgb
     def luminance(values):
         channels = [v / 255 for v in values]
@@ -2318,8 +2342,15 @@ def _theme_css(theme="midnight", accent_color="blue"):
     theme = theme if theme in THEME_TOKENS else "midnight"
     tokens = dict(THEME_TOKENS[theme])
     hex_color, rgb = _accent_for_theme(theme, accent_color)
-    surface_rgb = tuple(int(tokens["card_surface"][i:i + 2], 16) for i in (1, 3, 5))
-    mix = 0.13 if theme == "light" else 0.22
+    import re
+    surface_color = tokens["card_surface"]
+    # Glass surfaces are rgba; blend highlights against their underlying
+    # opaque backdrop rather than trying to parse their alpha as a hex code.
+    if surface_color.startswith("rgba("):
+        surface_rgb = tuple(int(n) for n in re.findall(r"\d+", surface_color)[:3])
+    else:
+        surface_rgb = tuple(int(surface_color[i:i + 2], 16) for i in (1, 3, 5))
+    mix = 0.13 if theme in ("light", "glass-light", "aqua") else 0.22
     tokens["active_surface"] = "#" + "".join(
         f"{round(bg * (1 - mix) + fg * mix):02x}" for bg, fg in zip(surface_rgb, rgb))
     tokens["accent_treatment"] = hex_color
@@ -2451,6 +2482,8 @@ class ControlCenter(Gtk.Window):
         self._resize_anim_data = None
         self._toast_src = 0
         self._poll_source = 0
+        self._config_monitor = None
+        self._config_reload_source = 0
         self._focus_hide_src = 0
         self._focus_guard_until = 0.0
         self._visibility_generation = 0
@@ -2635,6 +2668,7 @@ class ControlCenter(Gtk.Window):
         self._poll_source = GLib.timeout_add_seconds(self.POLL_SECONDS, self._tick)
         self._refresh_audio_outputs()
         self._rescan_devices()
+        self._watch_config()
 
     # ══════════════════ Bausteine ══════════════════
     def _animation_duration(self, base_ms):
@@ -2699,6 +2733,12 @@ class ControlCenter(Gtk.Window):
 
     def _on_destroy(self, *a):
         self._destroyed = True
+        if self._config_reload_source:
+            GLib.source_remove(self._config_reload_source)
+            self._config_reload_source = 0
+        if self._config_monitor:
+            self._config_monitor.cancel()
+            self._config_monitor = None
         if self._focus_source:
             GLib.source_remove(self._focus_source)
         # ausstehende (entprellte) Regleränderungen noch ausführen
@@ -5593,6 +5633,45 @@ class ControlCenter(Gtk.Window):
             return False
         CFG.update(updated)
         return True
+
+    def _watch_config(self):
+        """Hot reload suite-controlled appearance without an idle poller."""
+        try:
+            self._config_monitor = Gio.File.new_for_path(CONFIG_DIR).monitor_directory(
+                Gio.FileMonitorFlags.NONE, None)
+            self._config_monitor.connect("changed", self._on_config_changed)
+        except GLib.Error as exc:
+            logging.warning("Control Center config monitor unavailable: %s", exc)
+
+    def _on_config_changed(self, _monitor, file, other_file, _event):
+        if not any(item and item.get_basename() == "config.json" for item in (file, other_file)):
+            return
+        if self._config_reload_source:
+            GLib.source_remove(self._config_reload_source)
+        self._config_reload_source = GLib.timeout_add(90, self._reload_suite_settings)
+
+    def _reload_suite_settings(self):
+        self._config_reload_source = 0
+        if self._destroyed:
+            return False
+        latest = load_config()
+        keys = ("theme", "accent_color", "resource_profile", "reduce_motion", "animation_speed", "media_thumbnail")
+        changed = {key for key in keys if latest[key] != CFG[key]}
+        if not changed:
+            return False
+        CFG.update({key: latest[key] for key in changed})
+        if changed & {"theme", "accent_color"}:
+            self._apply_visual_preferences()
+            if self._current_page == "settings":
+                self._act_fill()
+        if "resource_profile" in changed:
+            self._configure_polling()
+        if changed & {"animation_speed", "reduce_motion"}:
+            self._content_stack.set_transition_duration(self._animation_duration(150))
+            self._act_rev.set_transition_duration(self._animation_duration(150))
+        if "media_thumbnail" in changed:
+            self._set_media(self._last.get("media"))
+        return False
 
     def _toggle_preference(self, key):
         if key not in ("media_progress", "media_hide_idle", "feedback"):

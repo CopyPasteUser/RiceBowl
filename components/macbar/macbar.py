@@ -40,6 +40,9 @@ DEFAULT_CONFIG = {
 THEMES = {
     "dark": {"bg": "rgba(20,22,29,.91)", "fg": "#f6f6fa", "hover": "rgba(255,255,255,.13)", "line": "rgba(255,255,255,.16)"},
     "light": {"bg": "rgba(245,246,249,.93)", "fg": "#1f2430", "hover": "rgba(0,0,0,.07)", "line": "rgba(0,0,0,.12)"},
+    "glass-dark": {"bg": "rgba(19,28,43,.78)", "fg": "#f5faff", "hover": "rgba(255,255,255,.18)", "line": "rgba(171,205,235,.30)"},
+    "glass-light": {"bg": "rgba(234,246,255,.77)", "fg": "#1c3148", "hover": "rgba(20,70,110,.12)", "line": "rgba(40,95,135,.24)"},
+    "aqua": {"bg": "rgba(192,229,248,.90)", "fg": "#173752", "hover": "rgba(0,100,165,.13)", "line": "rgba(37,109,155,.34)"},
 }
 
 
@@ -56,8 +59,8 @@ def load_config() -> dict:
         if not isinstance(data, dict):
             raise ValueError("config must be an object")
         settings = {**DEFAULT_CONFIG, **data}
-        if settings["theme"] not in {"dark", "light"}:
-            raise ValueError("theme must be dark or light")
+        if settings["theme"] not in THEMES:
+            raise ValueError("unknown MacBar theme")
         if type(settings["height"]) is not int or not 26 <= settings["height"] <= 48:
             raise ValueError("height must be 26..48")
         if not isinstance(settings["menu_icon"], str):

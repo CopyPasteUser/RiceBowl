@@ -18,6 +18,21 @@ apps. The feature is opt-in. The installer **never changes desktop settings**.
 | MacMenu & Control Center | Midnight app themes | Light app themes |
 | Wallpaper | [Aurora Night](assets/wallpapers/aurora-night.jpg) | [Aurora Day](assets/wallpapers/aurora-day.jpg) |
 
+### Three additional complete-desktop looks
+
+- `macrice rice apply glass-night`: dark WhiteSur/Thunar, translucent white
+  MacBar and Plank, matching glass-dark Control Center and MacMenu.
+- `macrice rice apply glass-day`: light WhiteSur/Thunar, translucent dark
+  MacBar and Plank, matching glass-light Control Center and MacMenu.
+- `macrice rice apply aqua`: light WhiteSur, bright blue Aqua-like app colors,
+  blue-tinted top bar and a light Plank dock.
+
+All five use the two bundled original wallpapers; no additional large image
+downloads or theme daemons. GTK3 does not provide automatic real background
+blur on every XFCE/X11 compositor. Glass remains legible without that effect.
+Running MacMenu, Control Center and MacBar update their styles when the suite
+writes their config files, normally without restarting them.
+
 WhiteSur, Bibata, Inter and Plank are third-party components. **Install them
 separately** from their respective upstreams or trusted distribution packages.
 MacRice only references themes and fonts already present on your desktop. It
@@ -52,6 +67,11 @@ the preview and choose **Apply complete Rice**, or simply run:
 macrice rice plan night    # Read-only check
 macrice rice apply night   # Switch directly; no intermediate restore needed
 ```
+
+For lightweight laptops, `macrice performance light` selects Control Center's
+existing low-background-work policy and reduces motion/artwork. `balanced` and
+`visual` can be selected without reinstalling. `macrice performance report`
+provides a short, read-only PSS/CPU snapshot on your own XFCE session.
 
 ## Safe command-line workflow
 

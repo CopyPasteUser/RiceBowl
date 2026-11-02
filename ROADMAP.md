@@ -15,6 +15,9 @@ MacRice is deliberately a thin integration layer. MacMenu, Control Center and Ma
 - [x] Add explicit XFCE/Plank/full-rice preflight, backup, apply and restore, without auto-changing settings during install.
 - [x] Coordinate MacBar live color reload, reversible Thunar styling and opposite-color Plank presets (0.2.0 RC2).
 - [x] Recover from Day/Night restore conflicts without overwriting later user changes; introduce safely versioned translucent Plank themes (0.2.0 RC3).
+- [x] Coordinate live MacMenu and Control Center theme updates with MacBar's existing file monitor (0.3.0 RC1).
+- [x] Add glass-day, glass-night and Aqua full-desktop themes plus matching app-only palettes (0.3.0 RC1).
+- [x] Add explicit Light/Balanced/Visual Control Center resource profiles and an on-demand PSS/CPU report (0.3.0 RC1).
 
 ## 0.2 — First real ThinkPad acceptance pass
 
@@ -25,6 +28,7 @@ MacRice is deliberately a thin integration layer. MacMenu, Control Center and Ma
 - [ ] Check effective Plank theme, hide mode, pinned apps and autostart on the owner's Mint 22.1 / 1920×1080 session.
 - [ ] Check keyboard focus, small displays, touch input and HiDPI.
 - [ ] Compare settled PSS and CPU usage with and without XFCE Panel.
+- [ ] Measure actual PSS, idle CPU and open/close latency on the owner's ThinkPad under each profile; do not claim unmeasured savings.
 - [ ] Test the panel coexistence, login startup and an explicit rollback on the real machine.
 
 ## 0.5 — Coordinated update and recovery

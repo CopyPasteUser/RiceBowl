@@ -59,24 +59,31 @@ def run() -> int:
     from .cli import open_component
     from .environment import detect, installed_components
     from .installer import InstallOptions, install
-    from .themes import PRESETS, apply_preset
+    from .performance import PROFILES, apply_profile
+    from .themes import PRESETS, _read_preferences, apply_preset
+    from .environment import config_home
 
     class Manager(Gtk.ApplicationWindow):
         def __init__(self, app):
             super().__init__(application=app, title="MacRice Settings")
             self.set_name("macrice-window")
-            self.set_default_size(545, 600)
+            self.set_default_size(545, 640)
             self.set_resizable(True)
             self.set_position(Gtk.WindowPosition.CENTER)
             self.set_border_width(22)
             self._busy = False
             self._status_labels = {}
 
+            scroll = Gtk.ScrolledWindow()
+            scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+            self.add(scroll)
             outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=19)
-            self.add(outer)
+            outer.set_border_width(1)
+            scroll.add(outer)
             self._header(outer)
             self._components(outer, installed_components, open_component)
             self._appearance(outer, PRESETS, apply_preset)
+            self._performance(outer, PROFILES, apply_profile)
             self._setup(outer, InstallOptions, install)
             self._detect_profile(detect)
 
@@ -214,7 +221,44 @@ def run() -> int:
             except Exception as exc:
                 self._message("Theme unchanged: " + str(exc), error=True)
             else:
-                self._message(f"{theme} saved. Restart the apps to apply the new colors.")
+                self._message(f"{theme} saved. Running MacRice apps update their colors automatically.")
+
+        def _performance(self, outer, profiles, apply):
+            group = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+            outer.pack_start(group, False, False, 0)
+            self._section(group, "Performance")
+            row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=9)
+            group.pack_start(row, False, False, 0)
+            self._profile = Gtk.ComboBoxText()
+            for name in profiles:
+                self._profile.append(name, name.title())
+            try:
+                current_profile = _read_preferences(config_home() / "macos-control-center/config.json").get("resource_profile", "balanced")
+            except (OSError, ValueError):
+                current_profile = "balanced"
+            self._profile.set_active_id("visual" if current_profile == "responsive" else current_profile if current_profile in profiles else "balanced")
+            self._profile.set_tooltip_text("Control Center resource usage, animation and artwork")
+            row.pack_start(self._profile, True, True, 0)
+            button = Gtk.Button(label="Apply profile")
+            button.connect("clicked", lambda _button: self._apply_profile(apply))
+            row.pack_start(button, False, False, 0)
+            caption = Gtk.Label(
+                label="Light minimizes background work; Balanced suits laptops; Visual allows smooth effects. Other app features stay available.",
+                xalign=0,
+            )
+            caption.set_line_wrap(True)
+            caption.get_style_context().add_class("muted")
+            group.pack_start(caption, False, False, 0)
+
+        def _apply_profile(self, apply):
+            profile = self._profile.get_active_id()
+            if profile:
+                try:
+                    apply(profile)
+                except Exception as exc:
+                    self._message("Profile unchanged: " + str(exc), error=True)
+                else:
+                    self._message(f"{profile.title()} profile saved; Control Center updates while running.")
 
         def _setup(self, outer, options_type, installer):
             group = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=9)

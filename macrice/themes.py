@@ -12,7 +12,7 @@ from pathlib import Path
 from .environment import DesktopProfile, config_home, data_home, detect, private_state_root
 
 
-PRESETS = ("System", "Midnight", "Light", "Graphite")
+PRESETS = ("System", "Midnight", "Light", "Graphite", "Liquid Glass", "Liquid Glass Dark", "Classic Aqua")
 CONFIG_FILES = {
     "MacMenu": Path("macmenu/settings.json"),
     "Control Center": Path("macos-control-center/config.json"),
@@ -35,6 +35,9 @@ def preset_values(preset: str, profile: DesktopProfile | None = None) -> dict[st
         "Midnight": {"MacMenu": "dark", "Control Center": "midnight", "MacBar": "dark"},
         "Light": {"MacMenu": "light", "Control Center": "light", "MacBar": "light"},
         "Graphite": {"MacMenu": "graphite", "Control Center": "graphite", "MacBar": "dark"},
+        "Liquid Glass": {"MacMenu": "glass-light", "Control Center": "glass-light", "MacBar": "glass-dark"},
+        "Liquid Glass Dark": {"MacMenu": "glass-dark", "Control Center": "glass-dark", "MacBar": "glass-light"},
+        "Classic Aqua": {"MacMenu": "aqua", "Control Center": "aqua", "MacBar": "aqua"},
     }[preset]
 
 

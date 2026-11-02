@@ -42,7 +42,14 @@ class RiceStyle:
 STYLES = {
     "night": RiceStyle("Aurora Night", "WhiteSur-Dark", "WhiteSur-Dark", "aurora-night.jpg", "Midnight", "light", "MacRice-Frost-Glass"),
     "day": RiceStyle("Aurora Day", "WhiteSur-Light", "WhiteSur-Light", "aurora-day.jpg", "Light", "dark", "MacRice-Obsidian-Glass"),
+    "glass-night": RiceStyle("Liquid Glass Night", "WhiteSur-Dark", "WhiteSur-Dark", "aurora-night.jpg", "Liquid Glass Dark", "glass-light", "MacRice-Frost-Glass"),
+    "glass-day": RiceStyle("Liquid Glass Day", "WhiteSur-Light", "WhiteSur-Light", "aurora-day.jpg", "Liquid Glass", "glass-dark", "MacRice-Obsidian-Glass"),
+    "aqua": RiceStyle("Classic Aqua", "WhiteSur-Light", "WhiteSur-Light", "aurora-day.jpg", "Classic Aqua", "aqua", "MacRice-Frost-Glass"),
 }
+
+
+def _thunar_palette(style_name: str) -> str:
+    return "night" if style_name in ("night", "glass-night") else "day"
 
 # GTK, XFWM, Thunar, Plank and XFCE wallpaper are the external settings touched.
 XFCONF = (
@@ -254,7 +261,7 @@ def plan(style_name: str, *, backend: XfceBackend | None = None,
          data_root: Path | None = None, source_root: Path | None = None,
          config_root: Path | None = None) -> tuple[list[dict], dict[str, str | None], Path, Path]:
     if style_name not in STYLES:
-        raise RiceError("Choose night or day")
+        raise RiceError("Choose night, day, glass-night, glass-day or aqua")
     backend = backend or XfceBackend()
     data_root = data_root or data_home()
     source_root = source_root or project_root()
@@ -262,7 +269,7 @@ def plan(style_name: str, *, backend: XfceBackend | None = None,
     source, target = _wallpaper_target(STYLES[style_name], data_root, source_root)
     _plank_theme_target(STYLES[style_name], data_root, source_root)
     try:
-        plan_css(style_name, config_root)
+        plan_css(_thunar_palette(style_name), config_root)
     except (OSError, UnicodeError, ValueError) as exc:
         raise RiceError(f"Thunar styling preflight failed: {exc}") from exc
     changes = _changes(STYLES[style_name], backend, target)
@@ -318,7 +325,7 @@ def apply(style_name: str, *, backend: XfceBackend | None = None,
         source_root=source_root, config_root=config_root,
     )
     style = STYLES[style_name]
-    css = plan_css(style_name, config_root)
+    css = plan_css(_thunar_palette(style_name), config_root)
     dock_source, dock_target = _plank_theme_target(style, data_root, source_root or project_root())
     dock_preexisting = dock_target.exists()
     private_state_root(data_root)

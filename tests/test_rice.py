@@ -75,6 +75,20 @@ def setup_apps(config):
 
 
 class RiceTests(unittest.TestCase):
+    def test_additional_full_rice_themes_switch_and_restore(self):
+        from macrice.rice import STYLES
+        for style in ("glass-night", "glass-day", "aqua"):
+            with self.subTest(style=style), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                fake = FakeBackend()
+                setup_apps(root / "config")
+                old = fake.values.copy()
+                backup = apply(style, backend=fake, data_root=root / "data", config_root=root / "config")
+                self.assertEqual(fake.values[("gsettings", "plank", "theme")], f"'{STYLES[style].plank_theme}'")
+                self.assertEqual(json.loads((root / "config/macbar/config.json").read_text())["theme"], STYLES[style].bar_theme)
+                self.assertEqual(restore(backend=fake, data_root=root / "data", config_root=root / "config"), backup)
+                self.assertEqual(fake.values, old)
+
     def test_plan_is_read_only_and_matches_reported_whitesur(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

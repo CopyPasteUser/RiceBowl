@@ -42,7 +42,7 @@ def sanitize(value: object) -> dict:
         value = {}
     result = {**DEFAULTS, "favorites": [], "recent": []}
     for key, choices in (
-        ("theme", ("dark", "light", "graphite", "ocean", "violet", "system")),
+        ("theme", ("dark", "light", "graphite", "ocean", "violet", "system", "glass-dark", "glass-light", "aqua")),
         ("position", ("top-left", "bottom-left", "panel")),
         ("icon_size", ("small", "normal", "large")),
     ):

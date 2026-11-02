@@ -101,6 +101,19 @@ class LayoutTests(unittest.TestCase):
         bar._style.assert_called_once()
         bar._position.assert_not_called()
 
+    def test_new_glass_and_aqua_themes_are_supported(self) -> None:
+        import json
+        import os
+        import tempfile
+
+        for name in ("glass-dark", "glass-light", "aqua"):
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as temp:
+                config = Path(temp) / "macbar" / "config.json"
+                config.parent.mkdir()
+                config.write_text(json.dumps({"theme": name}))
+                with patch.dict(os.environ, {"XDG_CONFIG_HOME": temp}):
+                    self.assertEqual(macbar.load_config()["theme"], name)
+
     def test_unrelated_file_events_do_not_trigger_reload(self) -> None:
         with patch.object(macbar, "load_config", return_value=macbar.DEFAULT_CONFIG.copy()):
             bar = macbar.MacBar()

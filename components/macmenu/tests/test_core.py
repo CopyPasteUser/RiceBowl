@@ -103,7 +103,7 @@ class SettingsTests(unittest.TestCase):
             self.assertNotIn("show_descriptions", data)
 
     def test_extended_apple_style_themes_roundtrip(self):
-        for theme in ("dark", "light", "graphite", "ocean", "violet", "system"):
+        for theme in ("dark", "light", "graphite", "ocean", "violet", "system", "glass-dark", "glass-light", "aqua"):
             with self.subTest(theme=theme):
                 self.assertEqual(sanitize({"theme": theme})["theme"], theme)
                 self.assertEqual(parse_backup(serialize_backup({"theme": theme}))["theme"], theme)

@@ -28,7 +28,7 @@ illustrative full-desktop preview in the manager.*
 | [Control Center](components/control-center/) · 2.1.1 | Wi-Fi, audio, media, quick actions, settings and a fast D-Bus toggle. [Screenshot](components/control-center/screenshots/control-center-2.1.1.png) |
 | [MacBar](components/macbar/) · 1.1.0 | A clean, instantly restylable top bar with launchers, network, sound, battery and clock. [Screenshot](components/macbar/screenshots/macbar-1.0.0.png) |
 | [Plank](components/plank/) · system package | The existing bottom dock. Detect its settings, start it and open its native preferences without overwriting pins or layout. |
-| **MacRice Manager** · 0.2.0 RC3 | Installs the bundled apps, previews the full Rice, switches Aurora Day/Night and safely restores desktop settings even after individual preferences change. |
+| **MacRice Manager** · 0.3.0 RC1 | Coordinates five full-desktop styles, live app themes, safe restore, Plank and Thunar, plus optional resource profiles. |
 
 Every component remains a complete project with its own tests and installer. The existing repositories aren't deleted.
 
@@ -67,8 +67,35 @@ macrice preview         # See the complete desktop before changing anything
 macrice rice plan night # Check all themes, fonts, monitor keys (read-only)
 macrice rice apply night # Style GTK, XFWM, Thunar, MacBar, Plank and wallpaper with backup
 macrice rice apply day  # Switch back to Aurora Day at any time
+macrice rice apply glass-night # Liquid Glass on a dark desktop
+macrice rice apply glass-day   # Liquid Glass on a light desktop
+macrice rice apply aqua        # Classic Aqua-inspired look
 macrice rice restore    # Restore the most recent saved desktop appearance
+macrice performance light    # Reduce Control Center background activity and motion
+macrice performance balanced # Laptop-friendly default
+macrice performance visual   # Responsive polling and smooth animations
+macrice performance report   # On-demand PSS and CPU usage of running components
 ```
+
+### One theme across your desktop
+
+MacRice coordinates MacMenu, Control Center, MacBar, Plank, Thunar and the XFCE
+GTK/window-manager colors. In 0.3, running MacMenu and Control Center listen for
+their own config changes (MacBar already did), so switching a theme no longer
+requires restarting the apps. The file monitors sleep when nothing changes;
+there is no new background daemon or config polling loop.
+
+The additional **Liquid Glass Day**, **Liquid Glass Night** and **Classic Aqua**
+presets are native GTK3 styles, not a web layer. Glass uses soft translucent
+surfaces and readable typography. **Blur behind a GTK window is not provided**:
+that effect depends on the X11 compositor and is intentionally not required.
+The existing reversible full-Rice backup workflow applies to all five styles.
+
+The performance controls use Control Center's existing light/balanced/responsive
+resource scheduler and adjust motion and media thumbnails. Light uses less
+background work; Visual enables the most expressive effects. The report is a
+single ~200 ms sample of proportional set size (PSS) and process CPU; it's
+intended for measurements on your real hardware, not as a benchmark claim.
 
 **Stuck on Aurora Day?** Run `macrice rice plan night` to check requirements,
 then `macrice rice apply night` to switch directly. You do not need to restore
@@ -83,7 +110,7 @@ To update from **any working directory**, run:
 bash -c 'set -e; d="$(mktemp -d)"; git clone -q --depth 1 https://github.com/CopyPasteUser/macos-xfce-rice.git "$d/macrice"; bash "$d/macrice/install.sh"'
 ```
 
-Other presets: **System**, **Light**, and **Graphite**. Only the three bundled apps' theme settings change. XFCE's GTK theme, window decorations, icon pack, fonts, Plank setup, personal notes and favorites are left alone. Each theme action saves a private backup before writing any file.
+App-only presets include **System**, **Midnight**, **Light**, **Graphite**, **Liquid Glass**, **Liquid Glass Dark** and **Classic Aqua**. Only the bundled apps' theme settings change. XFCE GTK, window decorations, icons, fonts, Plank, personal notes and favorites are left alone. Each theme action saves a private backup before writing.
 
 On a WhiteSur-Dark / WhiteSur-light / Bibata / Inter setup, the **System** preset follows the dark GTK appearance. MacRice reads the current dock's effective theme, position, icon size and hide mode through Plank's dock1 GSettings path; it does not guess them from unset dconf overrides.
 

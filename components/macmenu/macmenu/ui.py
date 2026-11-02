@@ -16,7 +16,7 @@ from gi.repository import Gdk, GdkPixbuf, Gio, GLib, Gtk, Pango
 from . import __version__
 from .catalog import installed_apps
 from .commands import resolve_command
-from .config import load, parse_backup, sanitize, save, save_backup
+from .config import config_path, load, parse_backup, sanitize, save, save_backup
 from .logging_setup import setup_logging
 from .model import ORDER, AppEntry, move_favorite, select_apps, visible_page
 
@@ -49,11 +49,27 @@ PALETTES = {
         active="#513766", text="#faf6ff", muted="#c7b7d8", line="#50415d",
         accent="#d6aaff", badge="#513766", card="#30263c", danger="#ff8e9f",
     ),
+    "glass-dark": dict(
+        surface="rgba(20,29,43,.94)", sidebar="rgba(32,44,62,.88)", input="rgba(45,62,82,.85)", hover="#35475f",
+        active="#294e76", text="#f8fbff", muted="#b7c9db", line="rgba(179,209,237,.28)",
+        accent="#8bc6ff", badge="#294e76", card="rgba(28,42,60,.86)", danger="#ff8f8f",
+    ),
+    "glass-light": dict(
+        surface="rgba(240,248,255,.94)", sidebar="rgba(219,235,249,.89)", input="rgba(255,255,255,.94)", hover="#d8eaf8",
+        active="#c8e5f8", text="#1a3048", muted="#4e657c", line="rgba(55,98,142,.24)",
+        accent="#136da9", badge="#e0effa", card="rgba(255,255,255,.88)", danger="#b72c36",
+    ),
+    "aqua": dict(
+        surface="#e8f4fb", sidebar="#cae6f4", input="#ffffff", hover="#d0eefa",
+        active="#b4dff8", text="#153550", muted="#4b6980", line="#a2cce3",
+        accent="#006fae", badge="#d2edfb", card="#f7fcff", danger="#b22c3b",
+    ),
 }
 
 THEMES = (
     ("system", "Auto"), ("dark", "Midnight"), ("light", "Light"),
     ("graphite", "Graphite"), ("ocean", "Ocean"), ("violet", "Violet"),
+    ("glass-dark", "Glass Dark"), ("glass-light", "Glass Light"), ("aqua", "Aqua"),
 )
 
 # Freedesktop/XFCE icon names, not bundled imitation macOS application assets.
@@ -200,6 +216,8 @@ class LauncherWindow(Gtk.ApplicationWindow):
         self._menu_open = False
         self._focus_out_source = None
         self._css_provider = None
+        self._config_monitor = None
+        self._config_reload_source = 0
         self._render_limit = self.PAGE_SIZE
         self._last_selection = None
         self._brand_pixbufs = {}
@@ -224,6 +242,7 @@ class LauncherWindow(Gtk.ApplicationWindow):
         self.connect("focus-out-event", self.on_focus_out)
         self.connect("delete-event", self.on_close)
         self.connect("destroy", lambda *_: self.cancel_focus_out())
+        self.connect("destroy", self._stop_config_watch)
 
         surface = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         surface.set_name("surface")
@@ -305,6 +324,7 @@ class LauncherWindow(Gtk.ApplicationWindow):
         right.pack_start(self.more_button, False, False, 0)
 
         self.apply_theme()
+        self._watch_config()
         gtk_settings = Gtk.Settings.get_default()
         if gtk_settings is not None:
             gtk_settings.connect("notify::gtk-theme-name", self.on_system_theme_changed)
@@ -333,22 +353,22 @@ class LauncherWindow(Gtk.ApplicationWindow):
 
     def apply_theme(self) -> None:
         screen = Gdk.Screen.get_default()
-        if self._css_provider is not None:
-            Gtk.StyleContext.remove_provider_for_screen(screen, self._css_provider)
-        provider = Gtk.CssProvider()
+        if self._css_provider is None:
+            self._css_provider = Gtk.CssProvider()
+            Gtk.StyleContext.add_provider_for_screen(
+                screen, self._css_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
+            )
         preview_styles = "\n".join(
             f".theme-preview.preview-{name} {{ background-color: {colors['surface']}; "
             f"color: {colors['accent']}; border-color: {colors['line']}; }}"
             for name, colors in PALETTES.items()
         )
-        provider.load_from_data(
+        self._css_provider.load_from_data(
             (STYLESHEET.format(**PALETTES[self.effective_theme()]) + preview_styles).encode()
         )
-        Gtk.StyleContext.add_provider_for_screen(screen, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
-        self._css_provider = provider
         # A single cached 26px bitmap per palette keeps every warm toggle free
         # of SVG decoding, while Light gets the necessary ink-on-light contrast.
-        artwork = "macmenu-penguin-ink.svg" if self.effective_theme() == "light" else "macmenu-penguin.svg"
+        artwork = "macmenu-penguin-ink.svg" if self.effective_theme() in ("light", "glass-light", "aqua") else "macmenu-penguin.svg"
         if artwork not in self._brand_pixbufs:
             try:
                 self._brand_pixbufs[artwork] = GdkPixbuf.Pixbuf.new_from_file_at_scale(
@@ -370,6 +390,40 @@ class LauncherWindow(Gtk.ApplicationWindow):
     def on_system_theme_changed(self, _settings, _param) -> None:
         if self.settings["theme"] == "system":
             self.apply_theme()
+
+    def _watch_config(self) -> None:
+        """Update a resident launcher immediately when MacRice changes its theme."""
+        try:
+            self._config_monitor = Gio.File.new_for_path(str(config_path().parent)).monitor_directory(
+                Gio.FileMonitorFlags.NONE, None,
+            )
+            self._config_monitor.connect("changed", self._on_config_changed)
+        except GLib.Error as exc:
+            self.log.warning("Cannot monitor MacMenu settings: %s", exc)
+
+    def _on_config_changed(self, _monitor, file, other_file, _event) -> None:
+        if not any(item and item.get_basename() == "settings.json" for item in (file, other_file)):
+            return
+        if self._config_reload_source:
+            GLib.source_remove(self._config_reload_source)
+        self._config_reload_source = GLib.timeout_add(90, self._reload_config_theme)
+
+    def _reload_config_theme(self) -> bool:
+        self._config_reload_source = 0
+        new_theme = load()["theme"]
+        if new_theme != self.settings["theme"]:
+            self.settings["theme"] = new_theme
+            self.apply_theme()
+            self.update_theme_buttons()
+        return GLib.SOURCE_REMOVE
+
+    def _stop_config_watch(self, *_args) -> None:
+        if self._config_reload_source:
+            GLib.source_remove(self._config_reload_source)
+            self._config_reload_source = 0
+        if self._config_monitor:
+            self._config_monitor.cancel()
+            self._config_monitor = None
 
     def persist(self) -> None:
         try:
@@ -744,9 +798,9 @@ class LauncherWindow(Gtk.ApplicationWindow):
         theme_row = css(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6), "setting-row")
         theme_row.pack_start(css(Gtk.Label(label="Color theme", xalign=0), "setting-title"), False, False, 0)
         theme_row.pack_start(css(Gtk.Label(label="Auto follows the XFCE appearance.", xalign=0), "setting-help"), False, False, 0)
-        theme_choices = css(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=3), "theme-choices")
+        theme_choices = css(Gtk.Grid(column_spacing=5, row_spacing=5, column_homogeneous=True), "theme-choices")
         self._theme_buttons = {}
-        for theme_id, name in THEMES:
+        for index, (theme_id, name) in enumerate(THEMES):
             button = css(Gtk.Button(), "theme-choice")
             preview_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
             preview = css(Gtk.Label(label="●" if theme_id != "system" else "◐"), "theme-preview")
@@ -757,7 +811,7 @@ class LauncherWindow(Gtk.ApplicationWindow):
             button.set_tooltip_text(f"Use {name} theme")
             button.get_accessible().set_name(f"{name} theme")
             button.connect("clicked", self.select_theme, theme_id)
-            theme_choices.pack_start(button, True, True, 0)
+            theme_choices.attach(button, index % 3, index // 3, 1, 1)
             self._theme_buttons[theme_id] = button
         theme_row.pack_start(theme_choices, False, False, 0)
         appearance.pack_start(theme_row, False, False, 0)

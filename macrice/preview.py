@@ -50,6 +50,36 @@ TOPBAR_PALETTE = {
         .rice-files-sidebar label { color: #283444; }
         .rice-files-content label { color: #283444; }
     """,
+    "glass-night": b"""
+        .rice-topbar { background: rgba(231,244,255,.80); }
+        .rice-topbar label { color: #1b334a; }
+        .rice-dock { background: rgba(235,248,255,.75); }
+        .rice-dock-icon { background: #bed7ed; color: #183955; }
+        .rice-files { background: #202c40; }
+        .rice-files-sidebar { background: #213248; }
+        .rice-files-sidebar label { color: #ecf7ff; }
+        .rice-files-content label { color: #ecf7ff; }
+    """,
+    "glass-day": b"""
+        .rice-topbar { background: rgba(17,28,46,.78); }
+        .rice-topbar label { color: #f5faff; }
+        .rice-dock { background: rgba(19,28,43,.76); }
+        .rice-dock-icon { background: #49607d; color: #f5faff; }
+        .rice-files { background: #ebf5fc; }
+        .rice-files-sidebar { background: #dcecf6; }
+        .rice-files-sidebar label { color: #173449; }
+        .rice-files-content label { color: #173449; }
+    """,
+    "aqua": b"""
+        .rice-topbar { background: rgba(197,234,249,.92); }
+        .rice-topbar label { color: #183d56; }
+        .rice-dock { background: rgba(209,239,251,.80); }
+        .rice-dock-icon { background: #b4daee; color: #14436a; }
+        .rice-files { background: #e8f5fd; }
+        .rice-files-sidebar { background: #cbe7f7; }
+        .rice-files-sidebar label { color: #16394e; }
+        .rice-files-content label { color: #16394e; }
+    """,
 }
 
 
@@ -123,7 +153,7 @@ def open_preview(parent=None):
                 styles.append(key, style.name)
             styles.set_active_id(self._style)
             styles.connect("changed", self._change_style)
-            styles.set_tooltip_text("Preview one of the two original wallpapers and matching Rice presets")
+            styles.set_tooltip_text("Preview Aurora, Liquid Glass or Aqua using the included wallpapers")
             header.pack_start(styles, False, False, 0)
 
             modes = Gtk.ComboBoxText()

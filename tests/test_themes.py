@@ -6,10 +6,17 @@ import unittest
 from pathlib import Path
 
 from macrice.environment import DesktopProfile
-from macrice.themes import apply_preset, preset_values
+from macrice.themes import PRESETS, apply_preset, preset_values
 
 
 class ThemesTests(unittest.TestCase):
+    def test_new_presets_have_consistent_three_app_values(self):
+        for preset in ("Liquid Glass", "Liquid Glass Dark", "Classic Aqua"):
+            self.assertIn(preset, PRESETS)
+            values = preset_values(preset)
+            self.assertEqual(set(values), {"MacMenu", "Control Center", "MacBar"})
+        self.assertEqual(preset_values("Liquid Glass Dark")["MacBar"], "glass-light")
+
     def test_system_preset_tracks_gtk_darkness(self):
         profile = DesktopProfile("XFCE", "WhiteSur-Dark", "WhiteSur", "Bibata", "WhiteSur", None, None)
         self.assertEqual(
