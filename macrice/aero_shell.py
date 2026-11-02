@@ -141,6 +141,14 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 if self.bar is not None:
                     self.quit()
                 return 0
+            if "--toggle-menu" in args or (ten and "--actions" in args):
+                if self.bar is None:
+                    self.activate()
+                if ten and "--actions" in args:
+                    self._toggle_actions()
+                else:
+                    self._toggle_menu()
+                return 0
             self._smoke = "--smoke-test" in args
             self._capture_gallery = ten and "--capture-gallery" in args
             self.activate()

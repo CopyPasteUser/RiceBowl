@@ -51,8 +51,14 @@ def parser() -> argparse.ArgumentParser:
     aero = commands.add_parser("aero-shell", help="Run or toggle the Windows 7-inspired taskbar and Start menu")
     ten_shell = commands.add_parser("windows10-shell", help="Run or quit the Windows 10-inspired taskbar and Start menu")
     ten_shell.add_argument("--quit", action="store_true")
+    ten_shell.add_argument("--toggle-menu", action="store_true")
+    ten_shell.add_argument("--actions", action="store_true")
     aero.add_argument("--quit", action="store_true", help="Stop the resident Aero taskbar")
+    aero.add_argument("--toggle-menu", action="store_true")
     commands.add_parser("session-sync", help="Reconcile active rice after XFCE autostart")
+    commands.add_parser("session-menu", help="Toggle the active rice's application menu")
+    commands.add_parser("session-control", help="Toggle the active rice's control panel")
+    commands.add_parser("session-keys-restore", help="Restore the previous Super/Right Control shortcuts")
     commands.add_parser("status", help="Show installed components and the detected appearance")
     commands.add_parser("inspect", help="Print a safe, read-only JSON appearance report")
     installer = commands.add_parser("install", help="Install or repair the three bundled apps; preserve Plank")
@@ -88,10 +94,21 @@ def main(argv: list[str] | None = None) -> int:
             return run()
         if args.command == "aero-shell":
             from .aero_shell import run
-            return run(["ricehub-aero-shell"] + (["--quit"] if args.quit else []))
+            suffix = ["--quit"] if args.quit else ["--toggle-menu"] if args.toggle_menu else []
+            return run(["ricehub-aero-shell", *suffix])
         if args.command == "windows10-shell":
             from .ten_shell import run
-            return run(["ricehub-ten-shell"] + (["--quit"] if args.quit else []))
+            suffix = ["--quit"] if args.quit else ["--actions"] if args.actions else ["--toggle-menu"] if args.toggle_menu else []
+            return run(["ricehub-ten-shell", *suffix])
+        if args.command in ("session-menu", "session-control"):
+            from .session_shortcuts import dispatch
+            dispatch("menu" if args.command == "session-menu" else "control")
+            return 0
+        if args.command == "session-keys-restore":
+            from .session_shortcuts import restore_bindings
+            for warning in restore_bindings():
+                print("Shortcut warning:", warning, file=sys.stderr)
+            return 0
         if args.command == "session-sync":
             from .shell_session import login_reconcile
             warnings = login_reconcile()

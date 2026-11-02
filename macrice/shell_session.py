@@ -179,6 +179,39 @@ def _stop_macbar() -> list[str]:
     return ["MacBar is still running after SIGTERM"]
 
 
+def _stop_xfce_panel() -> list[str]:
+    """Gracefully quit XFCE's stock panel after the replacement is running."""
+    if not _processes("xfce4-panel"):
+        return []
+    executable = shutil.which("xfce4-panel")
+    if not executable:
+        return ["XFCE panel is running but its executable is unavailable"]
+    try:
+        result = subprocess.run([executable, "--quit"], capture_output=True, text=True,
+                                timeout=4, check=False)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return [f"XFCE panel quit failed: {exc}"]
+    if result.returncode:
+        return [f"XFCE panel quit rejected: {result.stderr.strip()[:160]}"]
+    for _ in range(20):
+        if not _processes("xfce4-panel"):
+            return []
+        time.sleep(0.1)
+    return ["XFCE panel did not exit after --quit"]
+
+
+def _activate_session_controls() -> list[str]:
+    """Install recoverable shortcuts, then retire the stock XFCE panel."""
+    from .session_shortcuts import install_bindings
+    try:
+        warnings = list(install_bindings())
+    except (OSError, ValueError, RuntimeError) as exc:
+        return [f"RiceHub shortcuts: {exc}"]
+    if warnings:
+        return warnings
+    return _stop_xfce_panel()
+
+
 def _shell(profile: str, quit: bool) -> list[str]:
     argv = [sys.executable, str(project_root() / "launcher.py"), SHELLS[profile]]
     if quit:
@@ -190,8 +223,21 @@ def _shell(profile: str, quit: bool) -> list[str]:
         except (OSError, subprocess.TimeoutExpired) as exc:
             return [f"{profile} taskbar: {exc}"]
     try:
-        subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                         stderr=subprocess.DEVNULL, start_new_session=True)
+        # Keep real GTK/X11 errors available when a taskbar exits later.
+        # No watchdog or extra resident process is needed.
+        root = Path(os.environ.get("XDG_STATE_HOME") or Path.home() / ".local/state") / "ricehub"
+        if root.is_symlink() or (root.exists() and (not root.is_dir() or root.stat().st_uid != os.getuid())):
+            return ["Unmanaged RiceHub diagnostic log location"]
+        root.mkdir(mode=0o700, parents=True, exist_ok=True)
+        log = root / f"{profile}-shell.log"
+        if log.is_symlink() or (log.exists() and (not log.is_file() or log.stat().st_uid != os.getuid())):
+            return ["Unmanaged RiceHub taskbar log"]
+        if log.exists() and log.stat().st_size > 256 * 1024:
+            log.write_text("", encoding="utf-8")
+        with log.open("ab") as output:
+            os.chmod(log, 0o600)
+            subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=output,
+                             stderr=subprocess.STDOUT, close_fds=True, start_new_session=True)
         return []
     except OSError as exc:
         return [f"{profile} taskbar: {exc}"]
@@ -225,6 +271,8 @@ def sync_theme(theme: str) -> tuple[str, ...]:
                 warnings.extend(_start(name, [executable]))
             else:
                 warnings.append(f"{name} executable not found")
+    if not warnings and (desired or mac):
+        warnings.extend(_activate_session_controls())
     return tuple(warnings)
 
 
