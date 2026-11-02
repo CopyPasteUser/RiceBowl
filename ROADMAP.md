@@ -1,6 +1,6 @@
 # MacRice engine roadmap to 1.0
 
-**RiceHub is now the umbrella application.** Version 0.5 RC2 adds the original flat Linux-penguin Start mark to the two installable Windows 10 palettes alongside macOS and Windows 7 Aero. New interactive, read-only studies for XP Luna, Windows 98/2000, ChromeOS and Frutiger Aero are tracked separately in [CONCEPTS.md](CONCEPTS.md); they cannot be applied until the existing session and recovery engine passes hardware validation. Unfinished Liquid Glass presets and Windows 11 are not planned. See the [Windows 10 acceptance checklist](WINDOWS10.md#release-roadmap-and-acceptance) and [RiceHub roadmap](RICEHUB.md#product-roadmap).
+**RiceHub is now the umbrella application.** Version 0.6 RC1 introduces installable XP Luna, Windows 98/2000, ChromeOS and Frutiger Aero styles alongside macOS, Windows 7 and Windows 10. The new desktops share the tested session/recovery engine, but real Mint XFCE hardware validation is still required before a stable release. The original read-only design previews remain available. Unfinished Liquid Glass presets and Windows 11 are not planned. See the [new-rice acceptance checklist](CONCEPTS.md) and [RiceHub roadmap](RICEHUB.md#product-roadmap).
 
 MacRice is deliberately a thin integration layer. MacMenu, Control Center and MacBar keep their own tested lifecycles; Plank remains an external system dock.
 

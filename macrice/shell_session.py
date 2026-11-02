@@ -15,8 +15,10 @@ from pathlib import Path
 
 from .environment import bin_home, data_home
 from .installer import project_root
+from .heritage import BY_THEME, PROFILES
 
-SHELLS = {"aero": "aero-shell", "ten": "windows10-shell"}
+SHELLS = {"aero": "aero-shell", "ten": "windows10-shell",
+          **{key: f"{key}-shell" for key in PROFILES}}
 MAC_THEMES = ("WhiteSur-Dark", "WhiteSur-Light")
 MACBAR_APP_ID = "io.github.macbar.panel"
 
@@ -256,8 +258,8 @@ def sync_theme(theme: str) -> tuple[str, ...]:
     """Reconcile the live session; no process or desktop changes without DISPLAY."""
     if not os.environ.get("DISPLAY"):
         return ()
-    desired = "aero" if theme == "RiceHub-Aero" else "ten" if theme in (
-        "RiceHub-Ten-Dark", "RiceHub-Ten-Light") else None
+    desired = ("aero" if theme == "RiceHub-Aero" else "ten" if theme in (
+        "RiceHub-Ten-Dark", "RiceHub-Ten-Light") else BY_THEME[theme].key if theme in BY_THEME else None)
     mac = theme in MAC_THEMES
     warnings = []
     # Exit inactive GTK shells before launching the replacement.

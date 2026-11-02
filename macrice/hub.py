@@ -16,7 +16,7 @@ from .hub_art import aspect_fill
 from .hub_catalog import FAMILIES, FAMILY_BY_KEY, recent_backups, search_families
 
 
-HUB_VERSION = "0.5.0rc2"
+HUB_VERSION = "0.6.0rc1"
 
 # A restrained native palette. All GTK CSS colors and font choices live here.
 TOKENS = {
@@ -317,7 +317,7 @@ def run() -> int:
             controls.pack_start(self.plan_button, False, False, 0)
             self.apply_button = action("Apply rice", lambda _: self._plan_selected(apply_after=True), True)
             controls.pack_start(self.apply_button, False, False, 0)
-            self.prototype_button = action("Explore prototype", lambda _: self._show_prototype())
+            self.prototype_button = action("Explore read-only preview", lambda _: self._show_prototype())
             self.prototype_button.set_no_show_all(True)
             controls.pack_start(self.prototype_button, False, False, 0)
             self.future_note = label("Concept preview only — no settings are changed.", "hub-soon")
@@ -465,13 +465,13 @@ def run() -> int:
 
         def _build_roadmap(self):
             body = self._page("roadmap", "Quality roadmap",
-                              "First stabilize existing rices, then graduate selected concepts into installable styles.")
+                              "Seven installable rice families; Linux Mint hardware acceptance remains open.")
             milestones = (
                 ("Cross-rice switching", "In validation", "Preserve the coordinated Plank, MacBar and Windows shell transitions and verify login reconciliation on Mint XFCE."),
                 ("Windows 10", "Release candidate", "Verify the flat penguin shell, window list, tray, panel coexistence and recovery on actual Mint XFCE hardware."),
                 ("Windows 7", "Release candidate", "Check Aero glass, compositor differences, SNI icons and keyboard navigation on real X11 systems."),
-                ("XP & Classic", "Interactive prototypes", "Evaluate start navigation, taskbar density and original GTK/XFWM/icon assets before adding apply support."),
-                ("ChromeOS & Y2K", "Interactive prototypes", "Validate shelf/glass interactions and resource usage; keep all concepts in no-write preview mode."),
+                ("XP & Classic", "Installable candidate", "Original GTK/XFWM/icon themes, live shell, safe switching and restore; physical Mint check pending."),
+                ("ChromeOS & Y2K", "Installable candidate", "Shelf or glass taskbar, app search, desktop tools and reversible setup; screen-size checks pending."),
                 ("All rices", "Acceptance pending", "Validate multi-monitor layouts, HiDPI, restore after login, idle resource use and guided updates."),
             )
             for title, status, detail in milestones:

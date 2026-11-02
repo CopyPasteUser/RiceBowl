@@ -46,23 +46,23 @@ FAMILIES: tuple[RiceFamily, ...] = (
     ),
     RiceFamily(
         "winxp", "Windows XP Luna", "Luna desktop study",
-        "Blue taskbar, rounded Start menu and familiar meadow desktop, reimagined for XFCE.",
-        False, (), ("Interactive Luna concept", "Two-column Start", "Sample file manager"), True,
+        "Blue taskbar, green Start and two-column launcher with real XFCE applications.",
+        True, ("winxp",), ("Luna taskbar", "Live Start and window list", "XFWM4 window theme", "Recoverable switching"), True,
     ),
     RiceFamily(
         "winclassic", "Windows 98 / 2000", "Classic desktop study",
         "Compact gray system controls, teal wallpaper and old-school application navigation.",
-        False, (), ("Classic Start", "Compact taskbar", "Sample file manager"), True,
+        True, ("winclassic",), ("Classic Start", "Live taskbar", "Original classic window chrome", "Recoverable switching"), True,
     ),
     RiceFamily(
         "chromeos", "ChromeOS", "Lightweight shelf study",
         "A modern, airy XFCE shell with a bottom shelf and searchable application drawer.",
-        False, (), ("Bottom shelf", "App drawer", "Sample file manager"), True,
+        True, ("chromeos",), ("Bottom shelf", "Searchable live apps", "Quick settings", "Recoverable switching"), True,
     ),
     RiceFamily(
         "frutiger", "Y2K / Frutiger Aero", "Aqua future study",
         "An original eco-futurist Linux desktop with turquoise glass, greenery and a playful launcher.",
-        False, (), ("Aqua taskbar", "Bright desktop", "Sample file manager"), True,
+        True, ("frutiger",), ("Aqua taskbar", "Bright original desktop", "Live launchers", "Recoverable switching"), True,
     ),
 )
 

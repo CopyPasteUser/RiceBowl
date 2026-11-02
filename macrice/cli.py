@@ -56,6 +56,11 @@ def parser() -> argparse.ArgumentParser:
     aero.add_argument("--quit", action="store_true", help="Stop the resident Aero taskbar")
     aero.add_argument("--toggle-menu", action="store_true")
     aero.add_argument("--control", action="store_true", help="Toggle the Aero Control Panel")
+    for key in ("winxp", "winclassic", "chromeos", "frutiger"):
+        shell = commands.add_parser(f"{key}-shell", help=f"Run or toggle the {key} taskbar and launcher")
+        shell.add_argument("--quit", action="store_true")
+        shell.add_argument("--toggle-menu", action="store_true")
+        shell.add_argument("--control", action="store_true")
     commands.add_parser("session-sync", help="Reconcile active rice after XFCE autostart")
     commands.add_parser("session-menu", help="Toggle the active rice's application menu")
     commands.add_parser("session-control", help="Toggle the active rice's control panel")
@@ -101,6 +106,11 @@ def main(argv: list[str] | None = None) -> int:
             from .ten_shell import run
             suffix = ["--quit"] if args.quit else ["--actions"] if args.actions else ["--toggle-menu"] if args.toggle_menu else []
             return run(["ricehub-ten-shell", *suffix])
+        if args.command in ("winxp-shell", "winclassic-shell", "chromeos-shell", "frutiger-shell"):
+            from .aero_shell import run
+            profile = args.command.removesuffix("-shell")
+            suffix = ["--quit"] if args.quit else ["--control"] if args.control else ["--toggle-menu"] if args.toggle_menu else []
+            return run([f"ricehub-{profile}-shell", *suffix], profile=profile)
         if args.command in ("session-menu", "session-control"):
             from .session_shortcuts import dispatch
             dispatch("menu" if args.command == "session-menu" else "control")

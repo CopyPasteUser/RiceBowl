@@ -1,4 +1,4 @@
-"""The four new concept rices must stay independent of the apply engine."""
+"""Read-only concept dialogs remain optional previews beside live rices."""
 
 import unittest
 
@@ -8,17 +8,17 @@ from macrice.rice import STYLES
 
 
 class ConceptTests(unittest.TestCase):
-    def test_all_four_concepts_have_read_only_catalog_entries(self):
+    def test_all_four_concepts_stay_read_only_even_when_styles_are_installable(self):
         self.assertEqual(set(CONCEPTS), {"winxp", "winclassic", "chromeos", "frutiger"})
         for key, concept in CONCEPTS.items():
             with self.subTest(key=key):
                 family = FAMILY_BY_KEY[key]
-                self.assertFalse(family.available)
+                self.assertTrue(family.available)
                 self.assertTrue(family.prototype)
-                self.assertEqual(family.styles, ())
+                self.assertEqual(family.styles, (key,))
                 self.assertTrue(concept.applications)
-                self.assertNotIn(key, STYLES)
-                self.assertNotIn(key, AVAILABLE_STYLE_KEYS)
+                self.assertIn(key, STYLES)
+                self.assertIn(key, AVAILABLE_STYLE_KEYS)
 
     def test_search_is_sample_only_casefolded_and_has_empty_state(self):
         self.assertEqual([name for name, _ in search_apps("winxp", "TERMINAL")], ["Terminal"])

@@ -106,11 +106,16 @@ CSS = b"""
 
 
 def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
-    if profile not in ("aero", "windows10"):
+    from .heritage import PROFILES
+    if profile not in ("aero", "windows10", *PROFILES):
         raise ValueError("Unknown RiceHub shell profile")
     ten = profile == "windows10"
+    heritage = PROFILES.get(profile)
+    tiles = ten or profile == "chromeos"
     if ten:
         from .ten_shell import APP_ID as TEN_APP_ID, CSS as TEN_CSS
+    if heritage:
+        from .heritage_shell import CSS as HERITAGE_CSS
     import gi
     gi.require_version("Gtk", "3.0")
     gi.require_version("Gdk", "3.0")
@@ -121,7 +126,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
     class AeroShell(Gtk.Application):
         def __init__(self):
-            super().__init__(application_id=TEN_APP_ID if ten else APP_ID,
+            app_id = (TEN_APP_ID if ten else
+                      f"io.github.copypasteuser.RiceHub.{profile.title()}Shell" if heritage else APP_ID)
+            super().__init__(application_id=app_id,
                              flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE)
             self.bar = None
             self.menu = None
@@ -133,7 +140,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._tray = None
             self._pin_count = 0
             self._pinned_ids = ()
-            self._pin_config_path = pin_file("windows10" if ten else "aero")
+            self._pin_config_path = pin_file("windows10" if ten else profile)
             self._task_capacity = 0
             self.show_desktop_button = None
             self._app_page_size = 24
@@ -171,7 +178,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                                     else "toggle-menu")
                 return 0
             self._smoke = "--smoke-test" in args
-            self._capture_gallery = ten and "--capture-gallery" in args
+            self._capture_gallery = (ten or bool(heritage)) and "--capture-gallery" in args
             self.activate()
             if self._smoke:
                 GLib.timeout_add(850, self._smoke_check)
@@ -184,7 +191,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self._toggle_menu()
                 return
             provider = Gtk.CssProvider()
-            provider.load_from_data(CSS + (TEN_CSS if ten else b""))
+            provider.load_from_data(CSS + (TEN_CSS if ten else HERITAGE_CSS[profile] if heritage else b""))
             Gtk.StyleContext.add_provider_for_screen(
                 Gdk.Screen.get_default(), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
             self._provider = provider
@@ -248,7 +255,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             fixture.set_skip_pager_hint(True)
             fixture.set_type_hint(Gdk.WindowTypeHint.DESKTOP)
             fixture.set_keep_below(True)
-            image = project_root() / "assets/wallpapers/ten-blue.jpg"
+            image = project_root() / "assets/wallpapers" / (heritage.wallpaper if heritage else "ten-blue.jpg")
             pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(str(image), rect.width, rect.height, False)
             fixture.add(Gtk.Image.new_from_pixbuf(pixbuf))
             fixture.set_default_size(rect.width, rect.height)
@@ -280,7 +287,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _capture_menu(self):
             try:
-                self._capture_screen("windows10-live-start-0.5.0rc2.png")
+                self._capture_screen(f"ricehub-{profile}-start-0.6.0.png" if heritage else
+                                     "windows10-live-start-0.5.0rc2.png")
                 self._hide_menu()
                 self._toggle_actions()
                 assert self.actions.get_visible()
@@ -294,7 +302,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _capture_actions(self):
             try:
-                self._capture_screen("windows10-live-actions-0.5.0rc2.png")
+                self._capture_screen(f"ricehub-{profile}-controls-0.6.0.png" if heritage else
+                                     "windows10-live-actions-0.5.0rc2.png")
             except Exception:
                 import traceback
                 traceback.print_exc()
@@ -317,7 +326,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.bar.move(rect.x, rect.y + rect.height - PANEL_HEIGHT)
             if self.bar.get_realized():
                 self._reserve_workarea(self.bar)
-            self._task_capacity = task_capacity(rect.width, self._pin_count, 340 if ten else 185)
+            self._task_capacity = task_capacity(rect.width, self._pin_count, 340 if tiles else 185)
             if self._window_tracker is not None:
                 self._window_tracker.refresh()
             if self.menu.get_visible():
@@ -381,17 +390,17 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 return
             self._pinned_ids = tuple(candidate)
             self._render_pins()
-            if ten:
+            if tiles:
                 self._render_ten_tiles()
             self._pin_count = len(candidate)
             self._task_capacity = task_capacity(self._desktop_rect().width, self._pin_count,
-                                                340 if ten else 185)
+                                                340 if tiles else 185)
             if self._window_tracker is not None:
                 self._window_tracker.refresh()
 
         def _reserve_workarea(self, widget, *_args):
             """Reserve the bottom strip on X11, but never change XFCE panel settings."""
-            option = "RICEHUB_TEN_RESERVE" if ten else "RICEHUB_AERO_RESERVE"
+            option = "RICEHUB_TEN_RESERVE" if ten else f"RICEHUB_{profile.upper()}_RESERVE"
             if os.environ.get(option, "1") == "0":
                 return
             try:
@@ -456,7 +465,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.apps = app_catalog(Gio)
             self._render_pins()
             self._populate(self.search.get_text())
-            if ten:
+            if tiles:
                 self._render_ten_tiles()
 
         def _class(self, widget, name):
@@ -474,7 +483,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
         def _create_taskbar(self):
             rect = self._desktop_rect()
             win = Gtk.ApplicationWindow(application=self)
-            win.set_title("RiceHub Windows 10 Taskbar" if ten else "RiceHub Aero Taskbar")
+            win.set_title("RiceHub Windows 10 Taskbar" if ten else
+                          f"RiceHub {heritage.name} Taskbar" if heritage else "RiceHub Aero Taskbar")
             win.set_decorated(False)
             win.set_resizable(False)
             win.set_skip_taskbar_hint(True)
@@ -490,7 +500,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 row.get_style_context().add_class("aero-glass")
             start = self._class(Gtk.Button(), "aero-start")
             contents = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-            logo = project_root() / ("assets/ten-start.svg" if ten else "assets/aero-penguin.svg")
+            logo = project_root() / ("assets/ten-start.svg" if ten else
+                                     "assets/" + heritage.logo if heritage else "assets/aero-penguin.svg")
             try:
                 img = Gtk.Image.new_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_scale(
                     str(logo), 26 if ten else 34, 26 if ten else 34, True))
@@ -498,9 +509,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 img = self._icon("start-here", Gtk.IconSize.LARGE_TOOLBAR)
             contents.pack_start(img, False, False, 0)
             if not ten:
-                contents.pack_start(Gtk.Label(label="Start"), False, False, 0)
+                contents.pack_start(Gtk.Label(label=heritage.start_label if heritage else "Start"), False, False, 0)
             start.add(contents)
-            start.get_accessible().set_name("Toggle Windows 10 Start menu" if ten else "Toggle Aero Start menu")
+            start.get_accessible().set_name("Toggle " + (heritage.name if heritage else
+                "Windows 10" if ten else "Aero") + " application menu")
             start.connect("clicked", lambda _button: self._toggle_menu())
             row.pack_start(start, False, False, 4)
             self.start_button = start
@@ -516,7 +528,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._render_pins()
             self._pin_count = len(self._pinned_ids)
             self.tasks = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
-            self._task_capacity = task_capacity(rect.width, self._pin_count, 340 if ten else 185)
+            self._task_capacity = task_capacity(rect.width, self._pin_count, 340 if tiles else 185)
             self.overflow_button = self._class(Gtk.Button(), "aero-task-overflow")
             self.overflow_button.get_accessible().set_name("Show other running windows")
             self.overflow_button.connect("clicked", self._show_overflow)
@@ -531,9 +543,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             clock = self._class(Gtk.Label(), "aero-time")
             clock.set_justify(Gtk.Justification.CENTER)
             row.pack_end(clock, False, False, 6)
-            if ten:
+            if tiles:
                 action = self._class(Gtk.Button(label="▤"), "aero-quick")
-                action.get_accessible().set_name("Toggle Windows 10 Action Center")
+                action.get_accessible().set_name("Toggle " + (heritage.control_heading if heritage else "Windows 10 Action Center"))
                 action.set_tooltip_text("Quick settings and notification information")
                 action.connect("clicked", lambda _button: self._toggle_actions())
                 row.pack_end(action, False, False, 0)
@@ -541,7 +553,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 control = self._class(Gtk.Button(), "aero-quick")
                 control.set_image(self._icon("preferences-system", Gtk.IconSize.MENU))
                 control.set_tooltip_text("Control Panel")
-                control.get_accessible().set_name("Toggle Windows 7 Control Panel")
+                control.get_accessible().set_name("Toggle " + (heritage.control_heading if heritage else "Windows 7 Control Panel"))
                 control.connect("clicked", lambda _button: self._toggle_actions())
                 row.pack_end(control, False, False, 0)
             for label, icon, command in (
@@ -555,7 +567,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     quick.get_accessible().set_name(label)
                     quick.connect("clicked", lambda _btn, cmd=command: self._open_tool(cmd))
                     row.pack_end(quick, False, False, 0)
-            tray_option = "RICEHUB_TEN_TRAY" if ten else "RICEHUB_AERO_TRAY"
+            tray_option = "RICEHUB_TEN_TRAY" if ten else f"RICEHUB_{profile.upper()}_TRAY"
             if os.environ.get(tray_option, "1") != "0":
                 tray_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
                 row.pack_end(tray_box, False, False, 4)
@@ -645,11 +657,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             menu.popup_at_widget(button, Gdk.Gravity.NORTH_WEST, Gdk.Gravity.SOUTH_WEST, None)
 
         def _create_menu(self):
-            if ten:
+            if tiles:
                 self._create_ten_menu()
                 return
             menu = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
-            menu.set_title("RiceHub Aero Start")
+            menu.set_title("RiceHub " + (heritage.name if heritage else "Aero") + " Start")
             menu.set_decorated(False)
             menu.set_resizable(False)
             menu.set_skip_taskbar_hint(True)
@@ -667,7 +679,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             main.set_margin_bottom(10)
             main.set_margin_end(10)
             main.set_size_request(min(320, max(180, menu_w - 36)), -1)
-            main.pack_start(self._class(Gtk.Label(label="Programs", xalign=0), "aero-menu-heading"), False, False, 0)
+            main.pack_start(self._class(Gtk.Label(label=heritage.menu_heading if heritage else "Programs", xalign=0), "aero-menu-heading"), False, False, 0)
             search = self._class(Gtk.SearchEntry(), "aero-menu-search")
             search.set_placeholder_text("Search programs")
             search.get_accessible().set_name("Search installed programs")
@@ -726,7 +738,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
         def _create_ten_menu(self):
             """Real application list and pinned app tiles, with shared search/launch logic."""
             menu = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
-            menu.set_title("RiceHub Windows 10 Start")
+            menu.set_title("RiceHub " + (heritage.name if heritage else "Windows 10") + " Launcher")
             menu.set_decorated(False)
             menu.set_resizable(False)
             menu.set_skip_taskbar_hint(True)
@@ -758,7 +770,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 getattr(main, "set_margin_" + side)(14)
             main.set_margin_top(15)
             main.set_margin_bottom(14)
-            main.pack_start(self._class(Gtk.Label(label="Start", xalign=0), "aero-menu-heading"), False, False, 0)
+            main.pack_start(self._class(Gtk.Label(label=heritage.menu_heading if heritage else "Start", xalign=0), "aero-menu-heading"), False, False, 0)
             search = self._class(Gtk.SearchEntry(), "aero-menu-search")
             search.set_placeholder_text("Search apps")
             search.get_accessible().set_name("Search installed applications")
@@ -830,7 +842,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _create_actions(self):
             actions = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
-            actions.set_title("RiceHub Windows 10 Action Center" if ten else "RiceHub Aero Control Panel")
+            actions.set_title("RiceHub " + (heritage.control_heading if heritage else "Windows 10 Action Center" if ten else "Aero Control Panel"))
             actions.set_decorated(False)
             actions.set_resizable(False)
             actions.set_skip_taskbar_hint(True)
@@ -839,11 +851,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             actions.set_transient_for(self.bar)
             actions.set_keep_above(True)
             root = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=13),
-                               "ten-action-root" if ten else "aero-control-root")
-            root.set_size_request(300, 350 if ten else 245)
-            root.pack_start(self._class(Gtk.Label(label="Action Center" if ten else "Control Panel", xalign=0), "aero-menu-heading"),
+                               "ten-action-root" if tiles else "aero-control-root")
+            root.set_size_request(300, 350 if tiles else 245)
+            root.pack_start(self._class(Gtk.Label(label=heritage.control_heading if heritage else "Action Center" if ten else "Control Panel", xalign=0), "aero-menu-heading"),
                             False, False, 0)
-            if ten:
+            if tiles:
                 root.pack_start(self._class(Gtk.Label(label="Notifications", xalign=0), "aero-menu-sub"),
                                 False, False, 0)
                 note = self._class(Gtk.Label(label="Notification history is managed by XFCE.", xalign=0),
@@ -854,14 +866,14 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 root.pack_start(self._class(Gtk.Label(label="Desktop settings and devices", xalign=0), "aero-menu-sub"),
                                 False, False, 0)
             root.pack_start(Gtk.Box(), True, True, 0)
-            root.pack_start(self._class(Gtk.Label(label="Quick settings" if ten else "System tools", xalign=0), "aero-menu-sub"),
+            root.pack_start(self._class(Gtk.Label(label="Quick settings" if tiles else "System tools", xalign=0), "aero-menu-sub"),
                             False, False, 0)
             grid = Gtk.Grid(row_spacing=5, column_spacing=5)
             for index, (title, command) in enumerate((
                 ("Network", "nm-connection-editor"), ("Sound", "pavucontrol"),
                 ("Display", "xfce4-display-settings"), ("Settings", "xfce4-settings-manager"),
             )):
-                button = self._class(Gtk.Button(label=title), "ten-quick" if ten else "aero-control-quick")
+                button = self._class(Gtk.Button(label=title), "ten-quick" if tiles else "aero-control-quick")
                 button.set_size_request(138, 49)
                 button.get_accessible().set_name("Open " + title + " settings")
                 button.set_sensitive(shutil.which(command) is not None)
@@ -999,8 +1011,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._menu_opened_at = GLib.get_monotonic_time()
             self.search.set_text("")
             x, y, w, h = menu_geometry(rect.x, rect.y, rect.width, rect.height,
-                                     preferred_width=735 if ten else 490,
-                                     preferred_height=565 if ten else 505)
+                                     preferred_width=735 if tiles else 490,
+                                     preferred_height=565 if tiles else 505)
             if w < 180 or h < 180:
                 self._error("The display is too small for the Start menu.")
                 return

@@ -11,6 +11,7 @@ import tempfile
 from pathlib import Path
 
 from .environment import bin_home, private_state_root
+from .heritage import BY_THEME
 
 
 CHANNEL = "xfce4-keyboard-shortcuts"
@@ -26,6 +27,9 @@ def command_for(action: str, theme: str) -> tuple[str, ...]:
     if theme == "RiceHub-Aero":
         return ("macrice", "aero-shell", "--toggle-menu") if action == "menu" else (
             "macrice", "aero-shell", "--control")
+    if theme in BY_THEME:
+        return ("macrice", f"{BY_THEME[theme].key}-shell",
+                "--toggle-menu" if action == "menu" else "--control")
     return ("macmenu", "--toggle") if action == "menu" else ("macos-control-center-toggle",)
 
 
@@ -117,6 +121,10 @@ def _direct_commands(theme: str, bin_dir: Path) -> dict[str, str]:
     elif theme in ("RiceHub-Ten-Light", "RiceHub-Ten-Dark"):
         target = bin_dir / "ricehub-toggle"
         actions = {"Super_L": "ten-menu", "Control_R": "ten-control"}
+    elif theme in BY_THEME:
+        target = bin_dir / "ricehub-toggle"
+        actions = {"Super_L": f"{BY_THEME[theme].key}-menu",
+                   "Control_R": f"{BY_THEME[theme].key}-control"}
     elif theme in ("WhiteSur-Light", "WhiteSur-Dark"):
         return {"Super_L": shlex.join([str(bin_dir / "macmenu"), "--toggle"]),
                 "Control_R": shlex.quote(str(bin_dir / "macos-control-center-toggle"))}

@@ -1,0 +1,15 @@
+[Icon Theme]
+Name=RiceHub Classic Icons
+Comment=Original RiceHub themed icons; inherited Linux fallbacks
+Inherits=Adwaita,hicolor
+Directories=scalable/apps,scalable/places
+[scalable/apps]
+Size=48
+Type=Scalable
+MinSize=16
+MaxSize=128
+[scalable/places]
+Size=48
+Type=Scalable
+MinSize=16
+MaxSize=128
