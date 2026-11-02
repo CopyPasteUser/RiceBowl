@@ -7,12 +7,14 @@ Uses the installed Gio .desktop catalog; does not poll the process table.
 from __future__ import annotations
 
 from pathlib import Path
+import ctypes
+import ctypes.util
 import logging
 import os
 import shutil
 import subprocess
 
-from .aero_layout import PANEL_HEIGHT, menu_geometry, select_windows, task_capacity
+from .aero_layout import PANEL_HEIGHT, bottom_strut, menu_geometry, select_windows, task_capacity
 from .aero_pins import PIN_LIMIT, PinConfigError, load_pins, pin_file, save_pins
 
 
@@ -193,6 +195,8 @@ def run(argv: list[str] | None = None) -> int:
             rect = self._desktop_rect()
             self.bar.resize(rect.width, PANEL_HEIGHT)
             self.bar.move(rect.x, rect.y + rect.height - PANEL_HEIGHT)
+            if self.bar.get_realized():
+                self._reserve_workarea(self.bar)
             self._task_capacity = task_capacity(rect.width, self._pin_count)
             if self._window_tracker is not None:
                 from .aero_windows import is_task_window
@@ -269,6 +273,45 @@ def run(argv: list[str] | None = None) -> int:
                     win for win in screen.get_windows()
                     if is_task_window(win, self._window_tracker.wnck)
                 ), screen.get_active_window())
+
+        def _reserve_workarea(self, widget, *_args):
+            """Reserve the bottom strip on X11, but never change XFCE panel settings."""
+            if os.environ.get("RICEHUB_AERO_RESERVE", "1") == "0":
+                return
+            try:
+                gi.require_version("GdkX11", "3.0")
+                from gi.repository import GdkX11
+                rect = self._desktop_rect()
+                props = bottom_strut(rect.x, rect.y, rect.width, rect.height,
+                                     Gdk.Screen.get_default().get_height())
+                library = ctypes.util.find_library("X11")
+                if not library:
+                    return
+                lib = ctypes.CDLL(library)
+                lib.XOpenDisplay.restype = ctypes.c_void_p
+                lib.XOpenDisplay.argtypes = [ctypes.c_char_p]
+                lib.XInternAtom.restype = ctypes.c_ulong
+                lib.XInternAtom.argtypes = [ctypes.c_void_p, ctypes.c_char_p, ctypes.c_int]
+                lib.XChangeProperty.argtypes = [ctypes.c_void_p, ctypes.c_ulong, ctypes.c_ulong,
+                                                ctypes.c_ulong, ctypes.c_int, ctypes.c_int,
+                                                ctypes.c_void_p, ctypes.c_int]
+                lib.XCloseDisplay.argtypes = [ctypes.c_void_p]
+                lib.XFlush.argtypes = [ctypes.c_void_p]
+                display = lib.XOpenDisplay(None)
+                if not display:
+                    return
+                try:
+                    xid = GdkX11.X11Window.get_xid(widget.get_window())
+                    cardinal = lib.XInternAtom(display, b"CARDINAL", 0)
+                    for name, values in zip(("_NET_WM_STRUT", "_NET_WM_STRUT_PARTIAL"), props):
+                        atom = lib.XInternAtom(display, name.encode("ascii"), 0)
+                        data = (ctypes.c_ulong * len(values))(*values)
+                        lib.XChangeProperty(display, xid, atom, cardinal, 32, 0, data, len(values))
+                    lib.XFlush(display)
+                finally:
+                    lib.XCloseDisplay(display)
+            except (OSError, AttributeError, RuntimeError, TypeError, ValueError) as exc:
+                logging.getLogger(__name__).warning("Aero workarea reservation unavailable: %s", exc)
 
         def _open_tool(self, command):
             """Open a known XFCE utility without a shell or implicit system changes."""
@@ -387,6 +430,7 @@ def run(argv: list[str] | None = None) -> int:
             update_clock()
             GLib.timeout_add_seconds(30, update_clock)
             win.add(row)
+            win.connect("realize", self._reserve_workarea)
             win.show_all()
             win.move(rect.x, rect.y + rect.height - PANEL_HEIGHT)
             self.bar = win
