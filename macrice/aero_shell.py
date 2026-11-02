@@ -107,6 +107,7 @@ def run(argv: list[str] | None = None) -> int:
             self._task_capacity = 0
             self.show_desktop_button = None
             self._app_page_size = 24
+            self._smoke = False
 
         def do_command_line(self, command_line):
             args = command_line.get_arguments()
@@ -114,7 +115,10 @@ def run(argv: list[str] | None = None) -> int:
                 if self.bar is not None:
                     self.quit()
                 return 0
+            self._smoke = "--smoke-test" in args
             self.activate()
+            if self._smoke:
+                GLib.timeout_add(850, self._smoke_check)
             return 0
 
         def do_activate(self):
@@ -138,6 +142,24 @@ def run(argv: list[str] | None = None) -> int:
             screen.connect("size-changed", self._screen_changed)
             self._catalog_monitor = Gio.AppInfoMonitor.get()
             self._catalog_monitor.connect("changed", self._catalog_changed)
+
+        def _smoke_check(self):
+            """Exercise actual GTK construction, menu open/search and close under Xvfb."""
+            try:
+                assert self.bar is not None and self.bar.get_visible()
+                assert self.menu is not None and not self.menu.get_visible()
+                self._toggle_menu()
+                assert self.menu.get_visible()
+                self.search.set_text("unlikely-app-id-ricehub-smoke-39083")
+                assert self.results.get_children()
+                self._hide_menu()
+                assert not self.menu.get_visible()
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self.set_exit_status(1)
+            self.quit()
+            return False
 
         def _shutdown(self, *_args):
             if self._tray is not None:
