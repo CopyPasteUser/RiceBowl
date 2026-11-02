@@ -38,7 +38,7 @@ def _macbar_running() -> bool:
             if proc.stat().st_uid != os.getuid():
                 continue
             args = [part.decode("utf-8", "replace") for part in
-                    (proc / "cmdline").read_bytes().split(b"\\0") if part]
+                    (proc / "cmdline").read_bytes().split(b"\0") if part]
             if any(Path(arg).name == "macbar.py" for arg in args[1:]):
                 return True
         except (OSError, ValueError):
