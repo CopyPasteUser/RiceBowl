@@ -458,7 +458,7 @@ def run(argv: list[str] | None = None) -> int:
             if event.keyval == Gdk.KEY_Escape:
                 self._hide_menu()
                 return True
-            if event.keyval in (Gdk.KEY_Return, Gdk.KEY_KP_Enter):
+            if self.search.is_focus() and event.keyval in (Gdk.KEY_Return, Gdk.KEY_KP_Enter):
                 apps = matching_apps(self.apps, self.search.get_text())
                 if apps:
                     self._launch(apps[0])
