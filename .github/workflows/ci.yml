@@ -13,13 +13,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install GTK introspection for Linux tests
-        run: sudo apt-get update && sudo apt-get install -y python3-gi gir1.2-gtk-3.0 xvfb dbus-x11 gir1.2-wnck-3.0 librsvg2-common
+        run: sudo apt-get update && sudo apt-get install -y python3-gi gir1.2-gtk-3.0 xvfb dbus-x11 gir1.2-wnck-3.0 librsvg2-common xfwm4
       - name: Validate and test the suite
         run: |
           /usr/bin/python3 -m compileall -q macrice launcher.py
           /usr/bin/python3 -m unittest discover -s tests -v
           timeout 18s dbus-run-session -- xvfb-run -a /usr/bin/python3 -c 'from macrice.aero_shell import run; raise SystemExit(run(["ricehub-aero-shell", "--smoke-test"]))'
           timeout 18s dbus-run-session -- xvfb-run -a /usr/bin/python3 -c 'from macrice.ten_shell import run; raise SystemExit(run(["ricehub-ten-shell", "--smoke-test"]))'
+          timeout 30s dbus-run-session -- xvfb-run -a sh -c 'xfwm4 >/tmp/ricehub-ci-xfwm4.log 2>&1 & sleep 1; RICEHUB_WNCK_INTEGRATION=1 /usr/bin/python3 -m unittest tests.test_aero_windows.AeroWindowTests.test_native_window_open_close_does_not_crash_shell -v'
           timeout 18s dbus-run-session -- xvfb-run -a -s '-screen 0 1600x900x24' /usr/bin/python3 screenshots/capture_ten_shell.py
           timeout 18s dbus-run-session -- xvfb-run -a /usr/bin/python3 screenshots/capture_windows10.py
           timeout 18s dbus-run-session -- xvfb-run -a /usr/bin/python3 screenshots/capture_windows10_hub.py

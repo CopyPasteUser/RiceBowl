@@ -6,6 +6,18 @@ missing, Aero still offers pinned launchers, search and a clock.
 
 from __future__ import annotations
 
+from dataclasses import dataclass, field
+
+
+@dataclass(frozen=True)
+class WindowSnapshot:
+    """Safe task-list data; never keep a libwnck GObject in GTK callbacks."""
+
+    xid: int
+    title: str = field(compare=False)
+    minimized: bool = field(compare=False)
+    mini_icon: object | None = field(compare=False, repr=False)
+
 
 def is_task_window(window, wnck) -> bool:
     """Include only user-facing top-level application windows."""
@@ -22,6 +34,15 @@ def toggle_window(window, active_window, timestamp: int) -> None:
     if window.is_minimized():
         window.unminimize(timestamp)
     window.activate(timestamp)
+
+
+def toggle_window_id(wnck, screen, xid: int, timestamp: int) -> bool:
+    """Resolve a native window only while handling the click; tolerate closure."""
+    window = wnck.Window.get(xid)
+    if window is None:
+        return False
+    toggle_window(window, screen.get_active_window(), timestamp)
+    return True
 
 
 class WindowTracker:
@@ -52,28 +73,37 @@ class WindowTracker:
             self.schedule_idle(self._refresh)
 
     def _window_closed(self, _screen, window):
-        # The closed WnckWindow can be disposed before the next idle callback.
-        # Disconnect its handlers while libwnck still supplies a live object.
-        for handler in self._window_handlers.pop(window, ()):
+        # A WnckWindow must never be retained after the close notification.
+        for handler in self._window_handlers.pop(int(window.get_xid()), ()):
             window.disconnect(handler)
         self._changed()
 
+    def refresh(self):
+        """Rebuild immutable task data after a layout or pin-count change."""
+        self._refresh()
+
     def _refresh(self):
         self._pending = False
-        windows = tuple(self.screen.get_windows())
-        current = set(windows)
-        for old_window in tuple(self._window_handlers):
-            if old_window not in current:
-                # Never call disconnect() on a window that has already gone
-                # missing from libwnck. The native GObject may be disposed.
-                del self._window_handlers[old_window]
-        for window in windows:
-            if window not in self._window_handlers:
-                self._window_handlers[window] = tuple(
+        current = set()
+        snapshots = []
+        for window in self.screen.get_windows():
+            xid = int(window.get_xid())
+            current.add(xid)
+            if xid not in self._window_handlers:
+                self._window_handlers[xid] = tuple(
                     window.connect(signal, self._changed)
                     for signal in ("name-changed", "icon-changed", "state-changed"))
-        self.on_change(tuple(window for window in windows if is_task_window(window, self.wnck)),
-                       self.screen.get_active_window())
+            if is_task_window(window, self.wnck):
+                snapshots.append(WindowSnapshot(xid, window.get_name() or "Application",
+                                                bool(window.is_minimized()), window.get_mini_icon()))
+        for old_xid in tuple(self._window_handlers):
+            if old_xid not in current:
+                # Do not touch a native window that vanished without a signal.
+                del self._window_handlers[old_xid]
+        active = self.screen.get_active_window()
+        active_xid = int(active.get_xid()) if active is not None else None
+        active_snapshot = next((window for window in snapshots if window.xid == active_xid), None)
+        self.on_change(tuple(snapshots), active_snapshot)
         return False
 
 
