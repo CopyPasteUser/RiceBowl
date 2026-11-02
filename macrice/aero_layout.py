@@ -39,3 +39,17 @@ def select_windows(windows: tuple, active, capacity: int) -> tuple[tuple, tuple]
     if visible and active in windows and active not in visible:
         visible[-1] = active
     return tuple(visible), tuple(window for window in windows if window not in visible)
+
+
+def bottom_strut(x: int, y: int, width: int, height: int,
+                 root_height: int) -> tuple[tuple[int, ...], tuple[int, ...]]:
+    """EWMH bottom strut and partial strut; zero when not on root bottom edge.
+
+    A monitor floating above another monitor must not reserve a global strip.
+    """
+    bottom = PANEL_HEIGHT if width > 0 and height >= PANEL_HEIGHT and y + height == root_height else 0
+    short = (0, 0, 0, bottom)
+    partial = (0, 0, 0, bottom, 0, 0, 0, 0, 0, 0,
+               max(0, x) if bottom else 0,
+               max(0, x + width - 1) if bottom else 0)
+    return short, partial
