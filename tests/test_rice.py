@@ -75,6 +75,17 @@ def setup_apps(config):
 
 
 class RiceTests(unittest.TestCase):
+    def test_liquid_glass_has_distinct_dock_assets(self):
+        from macrice.rice import STYLES
+        from macrice.installer import project_root
+        for glass, standard in (("glass-night", "night"), ("glass-day", "day")):
+            with self.subTest(glass=glass):
+                self.assertNotEqual(STYLES[glass].plank_theme, STYLES[standard].plank_theme)
+                glass_file = project_root() / "assets/plank-themes" / STYLES[glass].plank_theme / "dock.theme"
+                standard_file = project_root() / "assets/plank-themes" / STYLES[standard].plank_theme / "dock.theme"
+                self.assertTrue(glass_file.is_file())
+                self.assertNotEqual(glass_file.read_bytes(), standard_file.read_bytes())
+
     def test_additional_full_rice_themes_switch_and_restore(self):
         from macrice.rice import STYLES
         for style in ("glass-night", "glass-day", "aqua"):
