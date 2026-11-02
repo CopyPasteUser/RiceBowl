@@ -76,7 +76,7 @@ The hub itself is written with Python and GTK3. It opens when you need it and do
 
 | Family | Styles | Status |
 | --- | --- | --- |
-| macOS-inspired | Aurora Night, Aurora Day, Liquid Glass Night, Liquid Glass Day, Classic Aqua | **Available (preview)** |
+| macOS-inspired | Aurora Night, Aurora Day, Classic Aqua | **Available (preview)** |
 | Windows 10-inspired | Windows 10 Midnight, Windows 10 Blue | **Installable release candidate** |
 | Windows 7-inspired | Aero Meadow, Aero Cascade | **Aero release candidate** |
 
@@ -116,7 +116,6 @@ macrice status                # Check installed components and appearance
 macrice rice plan night       # Inspect changes before applying anything
 macrice rice apply night      # Apply Aurora Night with a recovery snapshot
 macrice rice apply day        # Change to Aurora Day
-macrice rice apply glass-day  # Try Liquid Glass Day
 macrice rice plan aero-meadow  # Check the Windows 7-style Aero preset
 macrice rice apply aero-meadow # Apply original Aero styling (with rollback snapshot)
 macrice rice apply aero-cascade # Switch to the glassier Aero palette

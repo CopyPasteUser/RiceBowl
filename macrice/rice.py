@@ -56,8 +56,6 @@ class RiceStyle:
 STYLES = {
     "night": RiceStyle("Aurora Night", "WhiteSur-Dark", "WhiteSur-Dark", "aurora-night.jpg", "Midnight", "light", "MacRice-Frost-Glass"),
     "day": RiceStyle("Aurora Day", "WhiteSur-Light", "WhiteSur-Light", "aurora-day.jpg", "Light", "dark", "MacRice-Obsidian-Glass"),
-    "glass-night": RiceStyle("Liquid Glass Night", "WhiteSur-Dark", "WhiteSur-Dark", "aurora-night.jpg", "Liquid Glass Dark", "glass-light", "MacRice-Frost-Glass"),
-    "glass-day": RiceStyle("Liquid Glass Day", "WhiteSur-Light", "WhiteSur-Light", "aurora-day.jpg", "Liquid Glass", "glass-dark", "MacRice-Obsidian-Glass"),
     "aqua": RiceStyle("Classic Aqua", "WhiteSur-Light", "WhiteSur-Light", "aurora-day.jpg", "Classic Aqua", "aqua", "MacRice-Frost-Glass"),
     "aero-meadow": RiceStyle("Aero Meadow", AERO_THEME, AERO_THEME, "aero-meadow.jpg", "Light", "dark", "RiceHub-Aero-Glass",
                               icon_theme=AERO_THEME, cursor_theme="Adwaita", font="DejaVu Sans 10",
@@ -85,7 +83,7 @@ def _thunar_palette(style_name: str) -> str:
         return "aero"
     if style_name.startswith("ten-"):
         return style_name
-    return "night" if style_name in ("night", "glass-night") else "day"
+    return "night" if style_name in ("night",) else "day"
 
 # GTK, XFWM, Thunar, Plank and XFCE wallpaper are the external settings touched.
 XFCONF = (

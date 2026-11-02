@@ -77,7 +77,7 @@ def setup_apps(config):
 class RiceTests(unittest.TestCase):
     def test_additional_full_rice_themes_switch_and_restore(self):
         from macrice.rice import STYLES
-        for style in ("glass-night", "glass-day", "aqua"):
+        for style in ("aqua",):
             with self.subTest(style=style), tempfile.TemporaryDirectory() as tmp:
                 root = Path(tmp)
                 fake = FakeBackend()
@@ -408,7 +408,7 @@ class RiceTests(unittest.TestCase):
             for name, shell, position in (("night", None, "'bottom'"),
                                           ("aero-meadow", "aero", "'left'"),
                                           ("ten-light", "ten", "'left'"),
-                                          ("glass-day", None, "'bottom'")):
+                                          ("day", None, "'bottom'")):
                 before = fake.values.copy()
                 backup = apply(name, backend=fake, data_root=data, config_root=config)
                 snapshots.append((backup, before))
