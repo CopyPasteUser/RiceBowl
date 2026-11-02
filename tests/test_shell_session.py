@@ -1,9 +1,17 @@
 """Session switching regression tests (no actual desktop processes are touched)."""
 import unittest
+import os
+import tempfile
+from pathlib import Path
 from unittest import mock
 from macrice import shell_session as s
 
 class SessionTests(unittest.TestCase):
+    def setUp(self):
+        controls = mock.patch.object(s, "_activate_session_controls", return_value=[])
+        self.controls = controls.start()
+        self.addCleanup(controls.stop)
+
     @mock.patch.dict("os.environ", {"DISPLAY": ":99"})
     @mock.patch.object(s, "_start", return_value=[])
     @mock.patch.object(s, "_stop", return_value=[])
@@ -86,6 +94,42 @@ class SessionTests(unittest.TestCase):
     def test_stop_failure_blocks_new_shell(self, stop_macbar, shell, stop):
         self.assertEqual(s.sync_theme("RiceHub-Aero"), ("plank did not exit",))
         self.assertNotIn(mock.call("aero", False), shell.call_args_list)
+
+
+class PanelAndShortcutTests(unittest.TestCase):
+    def test_taskbar_start_preserves_private_diagnostic_log(self):
+        with tempfile.TemporaryDirectory() as temporary, \
+             mock.patch.dict(os.environ, {"XDG_STATE_HOME": temporary}), \
+             mock.patch.object(s.subprocess, "Popen") as process:
+            self.assertEqual(s._shell("aero", False), [])
+            log = Path(temporary) / "ricehub/aero-shell.log"
+            self.assertTrue(log.exists())
+            self.assertEqual(log.stat().st_mode & 0o777, 0o600)
+        process.assert_called_once()
+        self.assertEqual(process.call_args.kwargs["stderr"], s.subprocess.STDOUT)
+        self.assertNotEqual(process.call_args.kwargs["stdout"], s.subprocess.DEVNULL)
+
+    @mock.patch.object(s, "_processes", side_effect=[[1492], []])
+    @mock.patch.object(s.shutil, "which", return_value="/usr/bin/xfce4-panel")
+    @mock.patch.object(s.subprocess, "run", return_value=mock.Mock(returncode=0))
+    def test_stock_xfce_panel_is_quit_gracefully(self, run, which, processes):
+        self.assertEqual(s._stop_xfce_panel(), [])
+        run.assert_called_once_with(["/usr/bin/xfce4-panel", "--quit"],
+                                    capture_output=True, text=True, timeout=4, check=False)
+
+    @mock.patch.object(s, "_stop_xfce_panel", return_value=[])
+    def test_shortcuts_are_installed_before_panel_shutdown(self, panel):
+        with mock.patch("macrice.session_shortcuts.install_bindings", return_value=()) as shortcuts:
+            self.assertEqual(s._activate_session_controls(), [])
+        shortcuts.assert_called_once_with()
+        panel.assert_called_once_with()
+
+    @mock.patch.object(s, "_stop_xfce_panel")
+    def test_shortcut_failure_keeps_original_panel_running(self, panel):
+        with mock.patch("macrice.session_shortcuts.install_bindings", side_effect=RuntimeError("write rejected")):
+            errors = s._activate_session_controls()
+        self.assertIn("write rejected", errors[0])
+        panel.assert_not_called()
 
 if __name__ == "__main__":
     unittest.main()
