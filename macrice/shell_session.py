@@ -17,6 +17,7 @@ from .installer import project_root
 
 SHELLS = {"aero": "aero-shell", "ten": "windows10-shell"}
 MAC_THEMES = ("WhiteSur-Dark", "WhiteSur-Light")
+MACBAR_APP_ID = "io.github.macbar.panel"
 
 
 def _processes(name: str) -> list[int]:
@@ -79,6 +80,53 @@ def _start(name: str, argv: list[str]) -> list[str]:
     return []
 
 
+def _macbar_bus_owned() -> bool | None:
+    """Check the actual Gtk.Application bus owner, not only the process name.
+
+    None means the session bus could not be queried; it does not mean absent.
+    """
+    try:
+        import gi
+
+        gi.require_version("Gio", "2.0")
+        from gi.repository import Gio, GLib
+
+        connection = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+        response = connection.call_sync(
+            "org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus",
+            "NameHasOwner", GLib.Variant("(s)", (MACBAR_APP_ID,)), GLib.VariantType("(b)"),
+            Gio.DBusCallFlags.NONE, 1500, None,
+        )
+        return bool(response.unpack()[0])
+    except Exception:
+        # PyGObject raises GLib.Error for an unavailable or closing session bus.
+        # Treat this as unknown rather than incorrectly declaring MacBar absent.
+        return None
+
+
+def _stop_macbar() -> list[str]:
+    """Quit MacBar and verify the bus owner and Python entrypoint disappeared."""
+    active = _macbar_bus_owned()
+    process_active = _macbar_running()
+    if active is not True and not process_active:
+        return []
+    if not shutil.which("gapplication"):
+        return ["MacBar is running but gapplication is unavailable"]
+    try:
+        result = subprocess.run(["gapplication", "quit", MACBAR_APP_ID],
+                                capture_output=True, text=True, timeout=4, check=False)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return [f"MacBar quit request failed: {exc}"]
+    if result.returncode:
+        return ["MacBar quit failed: " + result.stderr.strip()[:120]]
+    for _ in range(10):
+        bus = _macbar_bus_owned()
+        if bus is not True and not _macbar_running():
+            return []
+        time.sleep(0.08)
+    return ["MacBar is still running after its quit request"]
+
+
 def _shell(profile: str, quit: bool) -> list[str]:
     argv = [sys.executable, str(project_root() / "launcher.py"), SHELLS[profile]]
     if quit:
@@ -114,19 +162,8 @@ def sync_theme(theme: str) -> tuple[str, ...]:
     if desired:
         # Plank may have been started by XFCE autostart, not by RiceHub.
         warnings.extend(_stop("plank"))
-        # MacBar often runs as python3; use its GTK application ID.
-        if shutil.which("gapplication"):
-            try:
-                result = subprocess.run(
-                    ["gapplication", "quit", "io.github.macbar.panel"],
-                    capture_output=True, text=True, timeout=4, check=False,
-                )
-                if result.returncode and _macbar_running():
-                    warnings.append("MacBar could not quit: " + result.stderr.strip()[:120])
-            except (OSError, subprocess.TimeoutExpired) as exc:
-                warnings.append(f"MacBar quit request failed: {exc}")
-        else:
-            warnings.extend(_stop("macbar"))
+        # MacBar runs under python3, so process-name matching is not enough.
+        warnings.extend(_stop_macbar())
         if not warnings:
             warnings.extend(_shell(desired, False))
     elif mac:

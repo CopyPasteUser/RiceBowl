@@ -91,6 +91,7 @@ def run() -> int:
     from .rice import STYLES, apply, plan, restore
     from .windows7_proto import install_css as install_windows7_css, teaser as windows7_teaser, show_dialog as show_windows7
     from .windows10_proto import install_css as install_windows10_css, teaser as windows10_teaser, show_dialog as show_windows10
+    from .concept_rices import install_css as install_concepts_css, teaser as concept_teaser, show_dialog as show_concept
 
     def cls(widget, name):
         widget.get_style_context().add_class(name)
@@ -251,6 +252,9 @@ def run() -> int:
             self.preview_stack.add_named(windows7_teaser(Gtk), "windows7")
             install_windows10_css(Gtk, Gdk)
             self.preview_stack.add_named(windows10_teaser(Gtk), "windows10")
+            install_concepts_css(Gtk, Gdk)
+            for concept_key in ("winxp", "winclassic", "chromeos", "frutiger"):
+                self.preview_stack.add_named(concept_teaser(Gtk, concept_key), concept_key)
             placeholder = vertical(9)
             placeholder.set_valign(Gtk.Align.CENTER)
             placeholder.set_halign(Gtk.Align.CENTER)
@@ -429,10 +433,13 @@ def run() -> int:
 
         def _build_roadmap(self):
             body = self._page("roadmap", "Quality roadmap",
-                              "Polishing the existing rices before planning another desktop family.")
+                              "First stabilize existing rices, then graduate selected concepts into installable styles.")
             milestones = (
+                ("Cross-rice switching", "In validation", "Preserve the coordinated Plank, MacBar and Windows shell transitions and verify login reconciliation on Mint XFCE."),
                 ("Windows 10", "Release candidate", "Verify the flat penguin shell, window list, tray, panel coexistence and recovery on actual Mint XFCE hardware."),
                 ("Windows 7", "Release candidate", "Check Aero glass, compositor differences, SNI icons and keyboard navigation on real X11 systems."),
+                ("XP & Classic", "Interactive prototypes", "Evaluate start navigation, taskbar density and original GTK/XFWM/icon assets before adding apply support."),
+                ("ChromeOS & Y2K", "Interactive prototypes", "Validate shelf/glass interactions and resource usage; keep all concepts in no-write preview mode."),
                 ("All rices", "Acceptance pending", "Validate multi-monitor layouts, HiDPI, restore after login, idle resource use and guided updates."),
             )
             for title, status, detail in milestones:
@@ -468,14 +475,16 @@ def run() -> int:
             self.preview_stack.set_visible_child_name(
                 "windows7" if key == "windows7" else
                 "windows10" if key == "windows10" else
-                "macos" if family.available else "future")
+                "macos" if key == "macos" else
+                key if family.prototype else "future")
             self.aero_preview_bar.set_visible(key == "windows7")
             self.style_picker.set_visible(family.available)
             self.plan_button.set_visible(family.available)
             self.apply_button.set_visible(family.available)
             self.prototype_button.set_visible(family.prototype)
             self.prototype_button.set_label(
-                "Explore Windows 10 preview" if key == "windows10" else "Explore Aero Start preview")
+                "Explore Windows 10 preview" if key == "windows10" else
+                "Explore Aero Start preview" if key == "windows7" else "Explore desktop prototype")
             self.prototype_button.get_accessible().set_name(self.prototype_button.get_label())
             self.future_note.set_text(
                 "Aero is installable; its separate Start preview changes nothing."
@@ -497,6 +506,8 @@ def run() -> int:
                 show_windows7(self, Gtk, Gdk, GLib)
             elif self._selected == "windows10":
                 show_windows10(self, Gtk, Gdk, GLib)
+            elif self._selected in ("winxp", "winclassic", "chromeos", "frutiger"):
+                show_concept(self, Gtk, Gdk, GLib, self._selected)
 
         def _on_style_changed(self, *_args):
             if self._rebuilding_picker:

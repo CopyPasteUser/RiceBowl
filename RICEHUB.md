@@ -1,6 +1,6 @@
 # RiceHub · Desktop styles for XFCE
 
-RiceHub is the beginning of a bigger idea: one lightweight home for complete XFCE rices inspired by operating systems we know and love. The project is built around **a working system first, an honest roadmap second**. The macOS implementation comes from the existing MacRice projects. Version 0.5 RC2 adds a flat Linux-penguin Start mark to the installable Windows 10 shell and focuses the roadmap on existing rices; physical Mint/XFCE acceptance is still open.
+RiceHub is the beginning of a bigger idea: one lightweight home for complete XFCE rices inspired by operating systems we know and love. The project is built around **a working system first, an honest roadmap second**. The macOS implementation comes from the existing MacRice projects. Version 0.5 RC2 has a flat Linux-penguin Start mark in the installable Windows 10 shell; physical Mint/XFCE acceptance is still open. Four new desktop families now have strictly read-only prototypes; see [the concept plan](CONCEPTS.md).
 
 ## First launch
 
@@ -16,7 +16,7 @@ If you prefer the existing command, `macrice hub` opens the same app; `macrice g
 
 ### Where to start
 
-1. **Discover rices:** Pick macOS and one of Aurora Night, Aurora Day, Liquid Glass Night, Liquid Glass Day or Classic Aqua. Look at the preview and click **Check requirements** before applying. Missing WhiteSur, Bibata or Inter assets are reported as requirements; they are never silently downloaded.
+1. **Discover rices:** Pick macOS and one of Aurora Night, Aurora Day or Classic Aqua. Look at the preview and click **Check requirements** before applying. Missing WhiteSur, Bibata or Inter assets are reported as requirements; they are never silently downloaded. Windows XP, Windows 98/2000, ChromeOS and Frutiger Aero have interactive no-write previews but no Apply button.
 2. **Apply rice:** Review and confirm the changes. The engine saves a private recovery snapshot first, then styles XFCE GTK and window decorations, Thunar, MacMenu, Control Center, MacBar, the wallpaper and Plank.
 3. **My desktop:** Check the effective desktop configuration if a theme doesn't look right.
 4. **Backups & restore:** Restore the last active snapshot. The restore engine attempts to protect later manual edits. It cannot promise to reverse changes made by unrelated software.
@@ -31,11 +31,15 @@ The desktop remains usable if your XFCE configuration is different, but **the fu
 
 | Rice family | Status | Planned identity |
 | --- | --- | --- |
-| macOS / Aurora collection | **Available (preview)** | MacBar, MacMenu, Control Center, Plank, five full desktop palettes and Thunar styling |
+| macOS / Aurora collection | **Available (preview)** | MacBar, MacMenu, Control Center, Plank, three full desktop palettes and Thunar styling |
 | Windows 10 | **Installable RC2** | Two dark/light themes, original penguin icons and wallpapers, live taskbar, Gio Start and pinned tiles, Action Center and safe restore |
 | Windows 7 | **Experimental, installable** | Aero Meadow / Cascade wallpaper, Aero Penguin, original GTK/XFWM icons and chrome, Thunar, Plank glass theme, event-driven taskbar and searchable Start menu |
+| Windows XP Luna | **Interactive prototype only** | Blue taskbar, green Start, sample app menu and file manager |
+| Windows 98 / 2000 | **Interactive prototype only** | Teal desktop, gray taskbar and classic sample launcher |
+| ChromeOS | **Interactive prototype only** | Pastel desktop, bottom shelf and sample app drawer |
+| Y2K / Frutiger Aero | **Interactive prototype only** | Eco-futurist aqua shell, sample launcher and window |
 
-Windows 10 and Windows 7 can be applied only after a read-only preflight and explicit confirmation; the *separate concept dialogs* are harmless demos. Both install only original assets in the user's home, save a restore snapshot, and change the selected XFCE, Plank and session appearance. Neither installs packages nor overwrites third-party themes. Additional OS families are not currently scheduled.
+Windows 10 and Windows 7 can be applied only after a read-only preflight and explicit confirmation; the *separate concept dialogs* are harmless demos. Both install only original assets in the user's home, save a restore snapshot, and change the selected XFCE, Plank and session appearance. Neither installs packages nor overwrites third-party themes. The four new family studies remain preview-only until their integration and rollback gates pass.
 
 The Aero taskbar includes persistent right-click pins, a two-line clock, bounded/paged searchable Start menu, Show Desktop, native settings shortcuts and **optional live window switching**. Install `gir1.2-wnck-3.0` on Linux Mint XFCE to enable event-driven Wnck window buttons (activate, minimize, restore and overflow); without it, pinned launchers still work. An **experimental StatusNotifier (SNI) tray** is available by default, using an existing watcher when present or a session-local fallback when none exists. Legacy XEmbed tray icons remain unsupported. Set `RICEHUB_AERO_TRAY=0` to disable the host. Optional `RICEHUB_AERO_GLASS=1` enables a more translucent gradient; it does **not** provide background blur and depends on the compositor for its visual result. The Aero shell can reserve the bottom X11 workarea using EWMH, opt-out with `RICEHUB_AERO_RESERVE=0`; existing XFCE panels and MacBar are never force-killed. For all individual components and assets, see [WINDOWS7.md](WINDOWS7.md).
 
@@ -53,10 +57,16 @@ The [Windows 10 release gallery and completion roadmap](WINDOWS10.md#release-roa
 
 ## Product roadmap
 
+**0.55 — four new design studies (prototype only)**
+
+- [x] Native GTK preview, launcher search, sample file manager, task buttons and explicit no-write labeling for XP, Classic, ChromeOS and Frutiger Aero.
+- [x] Exclude these concepts from available styles, CLI apply and recovery manifests.
+- [ ] Physical visual/keyboard acceptance; real installable shells and themes follow the milestones in [CONCEPTS.md](CONCEPTS.md).
+
 **0.1 preview — foundation**
 
 - [x] Native GTK3 gallery with search, filters, working availability badges and a responsive wallpaper preview.
-- [x] All five existing macOS rices via the shared MacRice engine.
+- [x] All three currently supported macOS rices via the shared MacRice engine.
 - [x] Desktop status, components, performance and backup/recovery pages.
 - [x] Owned user-local RiceHub launcher, desktop entry, icon and compatibility with existing MacRice.
 - [x] Explicit confirmation, read-only preflight and honest Coming soon states.

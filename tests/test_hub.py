@@ -30,11 +30,15 @@ class HubCatalogTests(unittest.TestCase):
         self.assertTrue(FAMILY_BY_KEY["windows7"].prototype)
         self.assertTrue(FAMILY_BY_KEY["windows10"].prototype)
         self.assertTrue(FAMILY_BY_KEY["windows10"].available)
+        self.assertEqual({family.key for family in FAMILIES if family.prototype and not family.available},
+                         {"winxp", "winclassic", "chromeos", "frutiger"})
 
     def test_search_availability_and_case_insensitive_queries(self):
-        self.assertEqual(search_families("windows", "soon"), ())
+        self.assertEqual([item.key for item in search_families("windows", "soon")],
+                         ["winxp", "winclassic"])
         self.assertNotIn("windows11", FAMILY_BY_KEY)
-        self.assertEqual({family.key for family in FAMILIES}, {"macos", "windows10", "windows7"})
+        self.assertEqual({family.key for family in FAMILIES},
+                         {"macos", "windows10", "windows7", "winxp", "winclassic", "chromeos", "frutiger"})
         self.assertEqual([item.key for item in search_families("AURORA", "available")], ["macos"])
         self.assertEqual([item.key for item in search_families("windows", "available")], ["windows10", "windows7"])
         self.assertEqual(search_families("not a real rice"), ())
