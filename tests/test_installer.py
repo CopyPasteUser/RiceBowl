@@ -58,6 +58,13 @@ class InstallerTests(unittest.TestCase):
                 entry = (base / "data/applications/macrice.desktop").read_text()
                 self.assertIn("Name=MacRice Settings", entry)
                 self.assertNotIn("sudo", entry)
+                hub = base / "bin" / "ricehub"
+                self.assertTrue(os.access(hub, os.X_OK))
+                self.assertIn('" hub "$@"', hub.read_text())
+                hub_entry = (base / "data/applications/ricehub.desktop").read_text()
+                self.assertIn("Name=RiceHub", hub_entry)
+                self.assertIn("assets/ricehub-symbolic.svg", hub_entry)
+                self.assertNotIn("sudo", hub_entry)
 
     def test_unmanaged_launcher_is_never_overwritten(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -84,6 +91,33 @@ class InstallerTests(unittest.TestCase):
                 with self.assertRaises(InstallationError):
                     _check_entrypoints()
                 self.assertEqual(desktop.read_text(), "[Desktop Entry]\nName=User App\n")
+
+    def test_unmanaged_ricehub_launcher_blocks_overwriting_any_entrypoint(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            binary = base / "bin/ricehub"
+            binary.parent.mkdir(parents=True)
+            binary.write_text("#!/bin/sh\necho my original app\n")
+            with mock.patch.dict(os.environ, {
+                "XDG_DATA_HOME": str(base / "data"), "XDG_BIN_HOME": str(base / "bin"),
+            }):
+                with self.assertRaises(InstallationError):
+                    _write_entrypoints(base / "data/macrice")
+                self.assertEqual(binary.read_text(), "#!/bin/sh\necho my original app\n")
+                self.assertFalse((base / "bin/macrice").exists())
+
+    def test_unmanaged_ricehub_desktop_file_blocks_install(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            desktop = base / "data/applications/ricehub.desktop"
+            desktop.parent.mkdir(parents=True)
+            desktop.write_text("[Desktop Entry]\nName=Unrelated user project\n")
+            with mock.patch.dict(os.environ, {
+                "XDG_DATA_HOME": str(base / "data"), "XDG_BIN_HOME": str(base / "bin"),
+            }):
+                with self.assertRaises(InstallationError):
+                    _check_entrypoints()
+                self.assertEqual(desktop.read_text(), "[Desktop Entry]\nName=Unrelated user project\n")
 
 
 if __name__ == "__main__":

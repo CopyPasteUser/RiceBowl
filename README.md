@@ -1,8 +1,31 @@
-# MacRice for XFCE
+# RiceHub for XFCE
 
-**A complete macOS-inspired XFCE desktop, built from small native parts.**
+**One place to explore, install and manage desktop rices — without giving up XFCE.**
 
-I like macOS's sense of order, but I like XFCE's speed and freedom. MacRice brings those ideas together without replacing the window manager or burying a lightweight desktop under a web stack.
+RiceHub began as MacRice: a native macOS-inspired desktop built for people who love XFCE's speed and flexibility. Now we're growing it into a home for other OS-inspired looks, including Windows 7, 10 and 11. The important distinction: **macOS is working today; the Windows families are clearly marked Coming soon.** This is an early preview, not a promise that those desktops are already installable.
+
+![Aurora Night, an original wallpaper included with the macOS rice](assets/wallpapers/aurora-night.jpg)
+
+## Meet RiceHub · 0.1 RC1
+
+RiceHub is a native GTK3 application. It launches on demand, without Electron, a browser process, a separate resident daemon or telemetry. The new **RiceHub** application launcher appears in your XFCE app menu. Its six spaces are:
+
+| Space | What works now |
+| --- | --- |
+| **Discover rices** | Search and filter the gallery. Explore macOS's five working styles, with an aspect-fill wallpaper preview and pre-install requirements check. Windows 7/10/11 have honest Coming soon cards. |
+| **My desktop** | Inspect your actual GTK, XFWM, icon, cursor, font and Plank selections without changing them. |
+| **Components** | Launch or toggle MacMenu, Control Center, MacBar and Plank. Check what is installed; explicitly repair the bundled applications. |
+| **Performance** | Apply Light, Balanced or Visual resource profiles; sample per-process memory (PSS) and CPU only when requested. |
+| **Backups & restore** | View the available full-rice restore points, confirm a recovery, and preserve settings changed since the snapshot where possible. |
+| **What's next** | See which Windows integrations and future features are still being built. |
+
+All changes are opt-in. RiceHub checks dependencies before offering to apply a full rice and asks for confirmation. **Installing RiceHub never switches your desktop theme.** The original `macrice` command and standalone applications remain available.
+
+Read the [RiceHub guide and next milestones](RICEHUB.md) or continue for the existing MacRice integration details.
+
+## Your existing macOS rice
+
+I like macOS's sense of order, but I like XFCE's speed and freedom. MacRice, the original working rice inside RiceHub, brings those ideas together without replacing the window manager or burying a lightweight desktop under a web stack.
 
 ![MacBar and Control Center running together on X11](components/control-center/screenshots/desktop-integration.png)
 
@@ -28,7 +51,8 @@ illustrative full-desktop preview in the manager.*
 | [Control Center](components/control-center/) · 2.1.1 | Wi-Fi, audio, media, quick actions, settings and a fast D-Bus toggle. [Screenshot](components/control-center/screenshots/control-center-2.1.1.png) |
 | [MacBar](components/macbar/) · 1.1.0 | A clean, instantly restylable top bar with launchers, network, sound, battery and clock. [Screenshot](components/macbar/screenshots/macbar-1.0.0.png) |
 | [Plank](components/plank/) · system package | The existing bottom dock. Detect its settings, start it and open its native preferences without overwriting pins or layout. |
-| **MacRice Manager** · 0.3.0 RC1 | Coordinates five full-desktop styles, live app themes, safe restore, Plank and Thunar, plus optional resource profiles. |
+| **RiceHub** · 0.1 RC1 | The new rice gallery, desktop status, native management interface, performance view, recovery and roadmap. |
+| **MacRice engine** · 0.3.0 RC1 | Coordinates five full-desktop styles, live app themes, safe restore, Plank and Thunar, plus optional resource profiles. |
 
 Every component remains a complete project with its own tests and installer. The existing repositories aren't deleted.
 
@@ -53,6 +77,8 @@ To install from a terminal without starting GTK, run `bash install.sh --no-start
 ## Use it
 
 ```bash
+ricehub                 # New native desktop rice hub
+macrice hub             # Same hub through the existing CLI
 macrice gui             # Native GTK settings manager
 macrice status          # Check all four components, including Plank
 macrice inspect         # Safe, read-only XFCE appearance detection
@@ -127,6 +153,7 @@ For keyboard shortcuts in XFCE, use `macmenu --toggle` for MacMenu and `macos-co
 - Replaceable app bundle: `~/.local/share/macrice/`
 - Persistent desktop backups and wallpapers: `~/.local/share/macrice-state/`
 - Stable command and GUI launcher: `~/.local/bin/macrice`
+- RiceHub command and app menu entry: `~/.local/bin/ricehub` and `~/.local/share/applications/ricehub.desktop`
 - Each app's settings remain in its original `~/.config/` directory.
 - The suite does not ask for root access or start a background network service.
 

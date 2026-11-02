@@ -46,6 +46,7 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--version", action="version", version=f"MacRice {__version__}")
     commands = p.add_subparsers(dest="command")
     commands.add_parser("gui", help="Open the native GTK settings manager")
+    commands.add_parser("hub", help="Open RiceHub: discover, apply and restore desktop rices")
     commands.add_parser("preview", help="Preview the complete desktop and apply or restore its Rice")
     commands.add_parser("status", help="Show installed components and the detected appearance")
     commands.add_parser("inspect", help="Print a safe, read-only JSON appearance report")
@@ -73,6 +74,9 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.command in (None, "gui"):
             from .gui import run
+            return run()
+        if args.command == "hub":
+            from .hub import run
             return run()
         if args.command == "preview":
             from .preview import run

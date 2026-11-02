@@ -1,7 +1,7 @@
 [project]
 name = "macos-xfce-rice"
 version = "0.3.0rc1"
-description = "Native macOS-inspired XFCE rice with a safe installer and unified settings manager"
+description = "Native XFCE RiceHub and macOS-inspired desktop with reversible integration"
 requires-python = ">=3.10"
 dependencies = []
 license = "MIT"

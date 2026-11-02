@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="RiceHub emblem">
+  <title>RiceHub — desktop profiles</title>
+  <!-- Original, monochrome emblem. Four connected surfaces, one shared core. -->
+  <g fill="none" stroke="#f2f6fa" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="15" y="15" width="98" height="98" rx="24" stroke-width="8"/>
+    <path d="M64 37v54M37 64h54" stroke-width="7" opacity=".45"/>
+    <rect x="32" y="32" width="27" height="27" rx="8" stroke-width="5"/>
+    <rect x="69" y="32" width="27" height="27" rx="8" stroke-width="5"/>
+    <rect x="32" y="69" width="27" height="27" rx="8" stroke-width="5"/>
+    <rect x="69" y="69" width="27" height="27" rx="8" stroke-width="5"/>
+  </g>
+</svg>

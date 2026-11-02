@@ -18,6 +18,8 @@ COMPONENTS = ("macmenu", "control-center", "macbar")
 MANAGED_MARKER = ".macrice-managed"
 LAUNCHER_MARKER = "# Managed by MacRice XFCE"
 DESKTOP_MARKER = "X-MacRice-Managed=true"
+HUB_LAUNCHER_MARKER = "# Managed by RiceHub XFCE"
+HUB_DESKTOP_MARKER = "X-RiceHub-Managed=true"
 
 
 class InstallationError(RuntimeError):
@@ -39,6 +41,8 @@ def _check_layout(source: Path) -> None:
     required = (
         "macrice/cli.py",
         "macrice/gui.py",
+        "macrice/hub.py",
+        "macrice/hub_catalog.py",
         "macrice/plank.py",
         "macrice/rice.py",
         "macrice/preview.py",
@@ -54,6 +58,7 @@ def _check_layout(source: Path) -> None:
         "components/macbar/install.sh",
         "launcher.py",
         "assets/macrice-symbolic.svg",
+        "assets/ricehub-symbolic.svg",
     )
     missing = [path for path in required if not (source / path).is_file()]
     if missing:
@@ -110,7 +115,7 @@ def _copy_bundle(source: Path, stage: Path) -> None:
 
     for folder in ("macrice", "components", "assets"):
         shutil.copytree(source / folder, stage / folder, ignore=ignore)
-    for file in ("launcher.py", "README.md", "LICENSE", "ROADMAP.md", "RICE.md", "CONTRIBUTORS.md"):
+    for file in ("launcher.py", "README.md", "LICENSE", "ROADMAP.md", "RICE.md", "RICEHUB.md", "CONTRIBUTORS.md"):
         shutil.copy2(source / file, stage / file)
     (stage / MANAGED_MARKER).write_text("Managed by MacRice XFCE\n", encoding="ascii")
 
@@ -163,12 +168,31 @@ def _write_entrypoints(installed: Path) -> None:
     )
     _atomic_write(desktop, desktop_content, 0o644)
 
+    hub_launcher = binaries / "ricehub"
+    hub_desktop = applications / "ricehub.desktop"
+    hub_content = (
+        '#!/bin/sh\n' + HUB_LAUNCHER_MARKER + '\n'
+        + 'exec /usr/bin/python3 "' + str(installed / "launcher.py") + '" hub "$@"\n'
+    )
+    _atomic_write(hub_launcher, hub_content, 0o755)
+    hub_desktop_content = (
+        "[Desktop Entry]\nType=Application\nVersion=1.0\n"
+        "Name=RiceHub\nComment=Explore and manage desktop styles for XFCE\n"
+        f'Exec="{hub_launcher}"\n'
+        f"Icon={installed / 'assets/ricehub-symbolic.svg'}\n"
+        "Terminal=false\nCategories=Settings;Utility;\nStartupNotify=true\n"
+        f"{HUB_DESKTOP_MARKER}\n"
+    )
+    _atomic_write(hub_desktop, hub_desktop_content, 0o644)
+
 
 def _check_entrypoints() -> None:
     """Never replace another application's command or desktop entry."""
     candidates = (
         (bin_home() / "macrice", LAUNCHER_MARKER),
         (data_home() / "applications/macrice.desktop", DESKTOP_MARKER),
+        (bin_home() / "ricehub", HUB_LAUNCHER_MARKER),
+        (data_home() / "applications/ricehub.desktop", HUB_DESKTOP_MARKER),
     )
     for path, marker in candidates:
         if path.is_symlink() or (path.exists() and (
@@ -236,6 +260,7 @@ def install(options: InstallOptions, source: Path | None = None, output=print) -
         output("Plank: existing dock detected; no changes to its settings or launchers.")
     else:
         output("Plank: not installed. Optional on Mint: sudo apt install plank")
-    output("MacRice installed. Run 'macrice gui' for the manager.")
+    output("RiceHub installed. Run 'ricehub' to explore desktop styles.")
+    output("The original MacRice manager remains available via 'macrice gui'.")
     output("The XFCE Panel was not replaced. No theme or icon was changed.")
     return installed
