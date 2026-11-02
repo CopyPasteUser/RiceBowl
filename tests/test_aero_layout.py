@@ -1,0 +1,31 @@
+"""Aero geometry and overflow regressions; independent of GTK hardware."""
+import unittest
+
+from macrice.aero_layout import PANEL_HEIGHT, menu_geometry, task_capacity, select_windows
+
+
+class AeroLayoutTests(unittest.TestCase):
+    def test_menu_is_bounded_to_monitor_with_nonzero_origin(self):
+        for x, y, w, h in [(0, 0, 1920, 1080), (1920, 0, 1366, 768), (-1280, 50, 1280, 720),
+                            (0, 0, 480, 360), (0, 0, 320, 240)]:
+            a, b, c, d = menu_geometry(x, y, w, h)
+            self.assertGreaterEqual(a, x)
+            self.assertGreaterEqual(b, y)
+            self.assertLessEqual(a + c, x + w)
+            self.assertLessEqual(b + d, y + h - PANEL_HEIGHT)
+
+    def test_capacities_do_not_overflow_at_narrow_widths(self):
+        self.assertEqual(task_capacity(320, 3), 0)
+        self.assertGreater(task_capacity(1920, 3), task_capacity(800, 3))
+        self.assertLessEqual(task_capacity(3840, 3), 9)
+
+    def test_active_window_is_kept_visible_and_overflow_is_complete(self):
+        windows = tuple(range(12))
+        visible, hidden = select_windows(windows, 10, 3)
+        self.assertEqual(visible, (0, 1, 10))
+        self.assertEqual(len(visible) + len(hidden), 12)
+        self.assertEqual(len(set(visible + hidden)), 12)
+
+    def test_zero_capacity_shows_all_in_overflow(self):
+        windows = (1, 2, 3)
+        self.assertEqual(select_windows(windows, 2, 0), ((), windows))
