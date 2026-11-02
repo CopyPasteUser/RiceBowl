@@ -4,10 +4,19 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from macrice.aero_pins import PIN_LIMIT, PinConfigError, load_pins, save_pins, validate_ids
+from macrice.aero_pins import PIN_LIMIT, PinConfigError, load_pins, pin_file, save_pins, validate_ids
 
 
 class AeroPinsTests(unittest.TestCase):
+    def test_all_installable_shells_have_isolated_pin_files(self):
+        profiles = ("aero", "windows10", "winxp", "winclassic", "chromeos", "frutiger")
+        paths = [pin_file(profile) for profile in profiles]
+        self.assertEqual(len(set(paths)), len(profiles))
+        for profile, path in zip(profiles, paths):
+            self.assertEqual(path.name, f"{profile}-pins.json")
+        with self.assertRaises(PinConfigError):
+            pin_file("unexpected-profile")
+
     def test_pins_roundtrip_and_explicit_empty_choice(self):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "ricehub/aero-pins.json"
