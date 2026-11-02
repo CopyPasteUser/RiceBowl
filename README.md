@@ -4,7 +4,7 @@
 
 RiceHub is a small, native Linux app for turning an ordinary XFCE desktop into something personal. It started with a love of macOS's clean interface and XFCE's speed. The goal is bigger now: one friendly place to discover, preview, apply and eventually share complete desktop styles — without swapping out your desktop environment.
 
-**macOS, Windows 7 and Windows 10-inspired rices are installable today.** Windows 10 ships as two reversible XFCE/X11 styles with original GTK/XFWM artwork, a flat Linux-penguin Start icon and a live GTK taskbar, Start menu and Action Center. RiceHub `0.5.0 RC2` is a feature-complete Windows 10 release candidate; Linux Mint hardware acceptance is still pending. No additional OS rice is currently scheduled.
+**macOS, Windows 7 and Windows 10-inspired rices are installable today.** Windows 10 ships as two reversible XFCE/X11 styles with original GTK/XFWM artwork, a flat Linux-penguin Start icon and a live GTK taskbar, Start menu and Action Center. RiceHub `0.5.0 RC2` is a feature-complete Windows 10 release candidate; Linux Mint hardware acceptance is still pending. Four additional families now have non-installing interactive prototypes.
 
 ## Meet RiceHub
 
@@ -58,6 +58,10 @@ Select **Windows 10** in RiceHub, choose **Midnight** or **Blue**, use **Check r
 
 *Illustrative complete-desktop composition, including a **Plank-style** dock. This is not a photograph of a live Plank installation; the virtual test session doesn't have Plank. For real GTK screenshots, see [MacMenu](components/macmenu/screenshots/), [Control Center](components/control-center/screenshots/) and [MacBar](components/macbar/screenshots/).*
 
+### Four new desktop prototypes
+
+**Windows XP Luna**, **Windows 98 / 2000 Classic**, **ChromeOS** and **Y2K / Frutiger Aero** now appear in Discover. Each offers an interactive GTK3 desktop preview with a themed launcher, sample app search, task buttons and a mock file manager. The previews do **not** start host programs or modify XFCE settings. Installation will follow only after the shared session switcher, themes, rollback and real-hardware acceptance are verified. See the [prototype roadmap](CONCEPTS.md).
+
 
 ## What's in RiceHub?
 
@@ -79,6 +83,10 @@ The hub itself is written with Python and GTK3. It opens when you need it and do
 | macOS-inspired | Aurora Night, Aurora Day, Classic Aqua | **Available (preview)** |
 | Windows 10-inspired | Windows 10 Midnight, Windows 10 Blue | **Installable release candidate** |
 | Windows 7-inspired | Aero Meadow, Aero Cascade | **Aero release candidate** |
+| Windows XP Luna | Blue Luna desktop | **Interactive prototype, not installable** |
+| Windows 98 / 2000 | Classic desktop | **Interactive prototype, not installable** |
+| ChromeOS-inspired | Light shelf desktop | **Interactive prototype, not installable** |
+| Y2K / Frutiger Aero | Turquoise eco-futurist desktop | **Interactive prototype, not installable** |
 
 The working macOS rice brings together [MacMenu](components/macmenu/), [Control Center](components/control-center/), [MacBar](components/macbar/), Plank, Thunar, WhiteSur-based GTK/window themes, icons and Aurora wallpapers. All three bundled apps keep their own tested installers. Plank remains a system package and your pinned dock items are preserved.
 
@@ -143,7 +151,7 @@ For your XFCE shortcuts, use `macmenu --toggle` and `macos-control-center-toggle
 
 ## Where this is going
 
-The first goal is a dependable macOS rice and a useful central manager. The Windows 7 Aero and Windows 10 Ten candidates share the safe apply/restore engine and event-driven taskbar backends. Physical Mint XFCE testing, panel coexistence checks and HiDPI work remain before a stable 1.0. No new OS family is planned at the moment. See the [RiceHub product roadmap](RICEHUB.md) and [MacRice engine roadmap](ROADMAP.md).
+The first goal remains dependable switching and recovery for the existing macOS, Windows 7 and Windows 10 rices. The four new concepts are preview-only until they meet the same session, rollback, asset and hardware acceptance gates. Physical Mint XFCE testing, panel coexistence checks and HiDPI work remain before stable 1.0. See the [new concept plan](CONCEPTS.md), [RiceHub product roadmap](RICEHUB.md) and [MacRice engine roadmap](ROADMAP.md).
 
 The existing MacMenu, Control Center and MacBar repositories have not been deleted. Their code stays independently testable while RiceHub becomes the main home for complete rices.
 

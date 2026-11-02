@@ -44,6 +44,26 @@ FAMILIES: tuple[RiceFamily, ...] = (
         True, ("aero-meadow", "aero-cascade"),
         ("Searchable Aero Start", "GTK/XFWM chrome", "Custom icons and wallpapers", "Glass taskbar"), True,
     ),
+    RiceFamily(
+        "winxp", "Windows XP Luna", "Luna desktop study",
+        "Blue taskbar, rounded Start menu and familiar meadow desktop, reimagined for XFCE.",
+        False, (), ("Interactive Luna concept", "Two-column Start", "Sample file manager"), True,
+    ),
+    RiceFamily(
+        "winclassic", "Windows 98 / 2000", "Classic desktop study",
+        "Compact gray system controls, teal wallpaper and old-school application navigation.",
+        False, (), ("Classic Start", "Compact taskbar", "Sample file manager"), True,
+    ),
+    RiceFamily(
+        "chromeos", "ChromeOS", "Lightweight shelf study",
+        "A modern, airy XFCE shell with a bottom shelf and searchable application drawer.",
+        False, (), ("Bottom shelf", "App drawer", "Sample file manager"), True,
+    ),
+    RiceFamily(
+        "frutiger", "Y2K / Frutiger Aero", "Aqua future study",
+        "An original eco-futurist Linux desktop with turquoise glass, greenery and a playful launcher.",
+        False, (), ("Aqua taskbar", "Bright desktop", "Sample file manager"), True,
+    ),
 )
 
 FAMILY_BY_KEY = {family.key: family for family in FAMILIES}

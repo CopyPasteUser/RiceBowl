@@ -1,6 +1,6 @@
 # MacRice engine roadmap to 1.0
 
-**RiceHub is now the umbrella application.** Version 0.5 RC2 adds the original flat Linux-penguin Start mark to the two installable Windows 10 palettes alongside the existing macOS and Windows 7 Aero rices. The roadmap is focused on hardware validation and polishing these existing profiles, not developing another OS family. See the [Windows 10 completion and hardware acceptance checklist](WINDOWS10.md#release-roadmap-and-acceptance) and the [RiceHub roadmap](RICEHUB.md#product-roadmap). The historical MacRice engine milestones below remain valid and its standalone apps stay intact.
+**RiceHub is now the umbrella application.** Version 0.5 RC2 adds the original flat Linux-penguin Start mark to the two installable Windows 10 palettes alongside macOS and Windows 7 Aero. New interactive, read-only studies for XP Luna, Windows 98/2000, ChromeOS and Frutiger Aero are tracked separately in [CONCEPTS.md](CONCEPTS.md); they cannot be applied until the existing session and recovery engine passes hardware validation. Unfinished Liquid Glass presets and Windows 11 are not planned. See the [Windows 10 acceptance checklist](WINDOWS10.md#release-roadmap-and-acceptance) and [RiceHub roadmap](RICEHUB.md#product-roadmap).
 
 MacRice is deliberately a thin integration layer. MacMenu, Control Center and MacBar keep their own tested lifecycles; Plank remains an external system dock.
 
@@ -18,7 +18,7 @@ MacRice is deliberately a thin integration layer. MacMenu, Control Center and Ma
 - [x] Coordinate MacBar live color reload, reversible Thunar styling and opposite-color Plank presets (0.2.0 RC2).
 - [x] Recover from Day/Night restore conflicts without overwriting later user changes; introduce safely versioned translucent Plank themes (0.2.0 RC3).
 - [x] Coordinate live MacMenu and Control Center theme updates with MacBar's existing file monitor (0.3.0 RC1).
-- [x] Add glass-day, glass-night and Aqua full-desktop themes plus matching app-only palettes (0.3.0 RC1).
+- [x] Historically added glass-day, glass-night and Aqua (0.3.0 RC1); the unfinished Liquid Glass presets were subsequently retired and are no longer available.
 - [x] Add explicit Light/Balanced/Visual Control Center resource profiles and an on-demand PSS/CPU report (0.3.0 RC1).
 
 ## 0.2 — First real ThinkPad acceptance pass

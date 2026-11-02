@@ -1,4 +1,5 @@
 import os
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -6,7 +7,7 @@ from unittest import mock
 
 from macrice.installer import (
     InstallOptions, InstallationError, _check_existing, _check_entrypoints,
-    _write_entrypoints, install, plan, project_root,
+    _install_manager, _write_entrypoints, install, plan, project_root,
 )
 
 
@@ -65,6 +66,32 @@ class InstallerTests(unittest.TestCase):
                 self.assertIn("Name=RiceHub", hub_entry)
                 self.assertIn("assets/ricehub-symbolic.svg", hub_entry)
                 self.assertNotIn("sudo", hub_entry)
+
+    def test_installed_ricehub_entrypoint_loads_bundled_application(self):
+        """The installed launcher must work, not just `python -m macrice`."""
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            environment = {
+                **os.environ,
+                "XDG_DATA_HOME": str(base / "data"),
+                "XDG_BIN_HOME": str(base / "bin"),
+                "XDG_CONFIG_HOME": str(base / "config"),
+            }
+            with mock.patch.dict(os.environ, environment):
+                installed = _install_manager(project_root())
+                _write_entrypoints(installed)
+
+            result = subprocess.run(
+                [str(base / "bin/ricehub"), "--help"],
+                env=environment,
+                capture_output=True,
+                text=True,
+                timeout=15,
+                check=False,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertIn("hub", result.stdout)
+            self.assertTrue((installed / "macrice/hub_catalog.py").is_file())
 
     def test_unmanaged_launcher_is_never_overwritten(self):
         with tempfile.TemporaryDirectory() as directory:
