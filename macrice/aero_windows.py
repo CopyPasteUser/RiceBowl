@@ -39,8 +39,9 @@ class WindowTracker:
         self.screen = self.wnck.Screen.get_default()
         if self.screen is None:
             return False
-        for signal in ("window-opened", "window-closed", "active-window-changed"):
+        for signal in ("window-opened", "active-window-changed"):
             self.screen.connect(signal, self._changed)
+        self.screen.connect("window-closed", self._window_closed)
         self.screen.force_update()
         self._refresh()
         return True
@@ -50,14 +51,21 @@ class WindowTracker:
             self._pending = True
             self.schedule_idle(self._refresh)
 
+    def _window_closed(self, _screen, window):
+        # The closed WnckWindow can be disposed before the next idle callback.
+        # Disconnect its handlers while libwnck still supplies a live object.
+        for handler in self._window_handlers.pop(window, ()):
+            window.disconnect(handler)
+        self._changed()
+
     def _refresh(self):
         self._pending = False
         windows = tuple(self.screen.get_windows())
         current = set(windows)
-        for old_window, handlers in tuple(self._window_handlers.items()):
+        for old_window in tuple(self._window_handlers):
             if old_window not in current:
-                for handler in handlers:
-                    old_window.disconnect(handler)
+                # Never call disconnect() on a window that has already gone
+                # missing from libwnck. The native GObject may be disposed.
                 del self._window_handlers[old_window]
         for window in windows:
             if window not in self._window_handlers:
