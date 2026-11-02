@@ -15,7 +15,7 @@ from .hub_art import aspect_fill
 from .hub_catalog import FAMILIES, FAMILY_BY_KEY, recent_backups, search_families
 
 
-HUB_VERSION = "0.2.0rc1"
+HUB_VERSION = "0.2.1rc1"
 
 # A restrained native palette. All GTK CSS colors and font choices live here.
 TOKENS = {

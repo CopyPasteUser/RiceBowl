@@ -37,7 +37,7 @@ The desktop remains usable if your XFCE configuration is different, but **the fu
 
 Windows 10 and 11 are **read-only descriptions**. Windows 7 can be applied only after a read-only preflight and explicit confirmation. The *separate Windows 7 preview dialog* is still a harmless demo. An Aero apply installs only original assets in the user's home, saves a restore snapshot, and changes the selected XFCE, Plank and session appearance. It does not install packages or overwrite third-party themes.
 
-The experimental Aero taskbar currently has pinned launchers, a clock and a searchable Start menu; it does **not** yet provide a live task list, tray, or perfect Aero blur. If MacBar is already running, RiceHub doesn't force-kill it.
+The experimental Aero taskbar includes pinned launchers, a clock, searchable Start menu and **optional live window switching**. Install `gir1.2-wnck-3.0` on Linux Mint XFCE to enable event-driven Wnck window buttons (activate, minimize, restore and overflow); without it, pinned launchers still work. A system tray and perfect Aero blur are **not implemented**. If MacBar is already running, RiceHub doesn't force-kill it.
 
 ### Genuine interface screenshots
 
@@ -65,6 +65,7 @@ These are real GTK3 application captures from XFCE/X11. The [macOS + Plank overv
 - [x] Two original Aero wallpapers and Linux penguin Start symbol.
 - [x] Bundled user-local GTK3, XFWM4 and icon artwork; matching Thunar and glass Plank palette.
 - [x] Actual searchable Start menu for installed applications and bottom taskbar with event-driven app catalog updates.
+- [x] Optional live window task buttons, active-window highlights, minimize/restore and a compact overflow menu using event-driven X11 Wnck signals.
 - [x] Reversible Aero apply/restore, managed session autostart and non-overlapping Plank configuration.
 - [x] Updated RiceHub and Start menu screenshots; illustrative macOS + Plank desktop overview.
 - [ ] Physical Mint XFCE / X11 hardware tests of window decorations and compositor variations.
@@ -85,7 +86,7 @@ These are real GTK3 application captures from XFCE/X11. The [macOS + Plank overv
 **0.6 — Windows 11 and mature Windows 7**
 
 - [ ] Centered Windows 11-inspired taskbar and quick settings.
-- [ ] Add real running-window buttons, systray and an optional compositor-dependent blur mode to Aero.
+- [ ] Add system tray support and an optional compositor-dependent blur mode to Aero; test live-window switching on physical XFCE/X11 hardware.
 - [ ] Theme import/export and optional community-authored presets with transparent provenance.
 
 **0.8 — hub polish**

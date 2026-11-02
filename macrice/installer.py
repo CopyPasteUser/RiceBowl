@@ -47,6 +47,7 @@ def _check_layout(source: Path) -> None:
         "macrice/windows7_proto.py",
         "macrice/aero.py",
         "macrice/aero_shell.py",
+        "macrice/aero_windows.py",
         "macrice/plank.py",
         "macrice/rice.py",
         "macrice/preview.py",

@@ -38,6 +38,14 @@ CSS = b"""
 .aero-start:focus { border: 2px solid #ffffff; }
 .aero-pin { background: transparent; border: 1px solid transparent; padding: 5px 13px; border-radius: 3px; }
 .aero-pin:hover { background: rgba(235,251,255,.25); border-color: rgba(255,255,255,.48); }
+.aero-task { background: rgba(255,255,255,.10); border: 1px solid rgba(216,244,255,.36);
+  border-bottom: 2px solid rgba(180,237,255,.65); border-radius: 4px;
+  padding: 4px 6px; color: white; box-shadow: inset 0 1px rgba(255,255,255,.15); }
+.aero-task:hover { background: rgba(224,250,255,.27); border-color: rgba(255,255,255,.75); }
+.aero-task-active { background: rgba(221,247,255,.39); border-color: #e5faff;
+  border-bottom: 2px solid #ffffff; }
+.aero-task-overflow { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.30);
+  border-radius: 4px; padding: 4px 8px; }
 .aero-time { color: #fff; font-size: 12px; font-weight: bold; }
 .aero-menu-root { background: #eaf4fb; border: 1px solid #5e9bcc; border-radius: 8px; }
 .aero-menu-heading { color: #244e6e; font-size: 20px; font-weight: bold; }
@@ -58,8 +66,9 @@ def run(argv: list[str] | None = None) -> int:
     import gi
     gi.require_version("Gtk", "3.0")
     gi.require_version("Gdk", "3.0")
-    from gi.repository import Gdk, GdkPixbuf, Gio, GLib, Gtk
+    from gi.repository import Gdk, GdkPixbuf, Gio, GLib, Gtk, Pango
 
+    from .aero_windows import create_window_tracker, toggle_window
     from .installer import project_root
 
     class AeroShell(Gtk.Application):
@@ -68,6 +77,10 @@ def run(argv: list[str] | None = None) -> int:
             self.bar = None
             self.menu = None
             self.apps = ()
+            self.window_buttons = {}
+            self._visible_window_ids = ()
+            self._overflow_windows = ()
+            self._menu_focused = False
 
         def do_command_line(self, command_line):
             args = command_line.get_arguments()
@@ -90,6 +103,7 @@ def run(argv: list[str] | None = None) -> int:
             self.apps = app_catalog(Gio)
             self._create_taskbar()
             self._create_menu()
+            self._window_tracker = create_window_tracker(GLib.idle_add, self._windows_changed)
             self._catalog_monitor = Gio.AppInfoMonitor.get()
             self._catalog_monitor.connect("changed", self._catalog_changed)
 
@@ -149,6 +163,12 @@ def run(argv: list[str] | None = None) -> int:
                 btn.get_accessible().set_name("Launch " + app.get_display_name())
                 btn.connect("clicked", lambda _btn, selected=app: self._launch(selected))
                 row.pack_start(btn, False, False, 0)
+            self.tasks = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
+            self._task_capacity = max(2, min(9, (rect.width - 410) // 160))
+            self.overflow_button = self._class(Gtk.Button(), "aero-task-overflow")
+            self.overflow_button.get_accessible().set_name("Show other running windows")
+            self.overflow_button.connect("clicked", self._show_overflow)
+            row.pack_start(self.tasks, False, False, 4)
             row.pack_start(Gtk.Box(), True, True, 0)
             clock = self._class(Gtk.Label(), "aero-time")
             row.pack_end(clock, False, False, 12)
@@ -161,6 +181,75 @@ def run(argv: list[str] | None = None) -> int:
             win.show_all()
             win.move(rect.x, rect.y + rect.height - 53)
             self.bar = win
+
+        def _windows_changed(self, windows, active):
+            """Keep task buttons stable across title, state and focus changes."""
+            visible = list(windows[:self._task_capacity])
+            if active in windows and active not in visible:
+                visible[-1] = active
+            visible_ids = tuple(window.get_xid() for window in visible)
+            self._overflow_windows = tuple(window for window in windows if window not in visible)
+            if visible_ids != self._visible_window_ids:
+                for child in self.tasks.get_children():
+                    self.tasks.remove(child)
+                previous = self.window_buttons
+                self.window_buttons = {}
+                for window in visible:
+                    xid = window.get_xid()
+                    if xid in previous:
+                        button, icon, label = previous[xid]
+                    else:
+                        button = self._class(Gtk.Button(), "aero-task")
+                        button.set_size_request(135, 35)
+                        content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+                        icon = Gtk.Image.new_from_icon_name("application-x-executable", Gtk.IconSize.MENU)
+                        label = Gtk.Label(xalign=0)
+                        label.set_max_width_chars(12)
+                        label.set_ellipsize(Pango.EllipsizeMode.END)
+                        content.pack_start(icon, False, False, 0)
+                        content.pack_start(label, True, True, 0)
+                        button.add(content)
+                        button.connect("clicked", lambda _btn, target=window: self._activate_task(target))
+                    self.window_buttons[xid] = (button, icon, label)
+                    self.tasks.pack_start(button, False, False, 0)
+                self._visible_window_ids = visible_ids
+            for window in visible:
+                button, icon, label = self.window_buttons[window.get_xid()]
+                title = window.get_name() or "Application"
+                if label.get_text() != title:
+                    label.set_text(title)
+                    button.set_tooltip_text(title)
+                    button.get_accessible().set_name("Switch to " + title)
+                pixbuf = window.get_mini_icon()
+                if pixbuf is not None:
+                    icon.set_from_pixbuf(pixbuf)
+                context = button.get_style_context()
+                if window == active and not window.is_minimized():
+                    context.add_class("aero-task-active")
+                else:
+                    context.remove_class("aero-task-active")
+            if self._overflow_windows:
+                self.overflow_button.set_label(f"+{len(self._overflow_windows)}")
+                if self.overflow_button.get_parent() is None:
+                    self.tasks.pack_start(self.overflow_button, False, False, 0)
+            elif self.overflow_button.get_parent() is self.tasks:
+                self.tasks.remove(self.overflow_button)
+            self.tasks.show_all()
+
+        def _activate_task(self, window):
+            if self._window_tracker:
+                toggle_window(window, self._window_tracker.screen.get_active_window(),
+                              Gtk.get_current_event_time())
+            self._hide_menu()
+
+        def _show_overflow(self, button):
+            menu = Gtk.Menu()
+            for window in self._overflow_windows:
+                item = Gtk.MenuItem(label=window.get_name() or "Application")
+                item.connect("activate", lambda _item, target=window: self._activate_task(target))
+                menu.append(item)
+            menu.show_all()
+            menu.popup_at_widget(button, Gdk.Gravity.NORTH_WEST, Gdk.Gravity.SOUTH_WEST, None)
 
         def _create_menu(self):
             menu = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
@@ -208,6 +297,8 @@ def run(argv: list[str] | None = None) -> int:
                 side.pack_start(btn, False, False, 0)
             body.pack_start(side, False, False, 0)
             menu.add(body)
+            menu.connect("focus-in-event", self._menu_focus_in)
+            menu.connect("focus-out-event", self._menu_focus_out)
             search.connect("search-changed", lambda *_: self._populate(search.get_text()))
             search.connect("key-press-event", lambda _widget, event: self._search_key(event))
             self.menu = menu
@@ -241,8 +332,19 @@ def run(argv: list[str] | None = None) -> int:
             return False
 
         def _hide_menu(self):
+            self._menu_focused = False
             if self.menu:
                 self.menu.hide()
+            return False
+
+        def _menu_focus_in(self, *_args):
+            self._menu_focused = True
+            return False
+
+        def _menu_focus_out(self, *_args):
+            # Ignore the immediate focus shuffle when opening from an X11 DOCK.
+            if self._menu_focused and GLib.get_monotonic_time() - self._menu_opened_at > 220_000:
+                self._hide_menu()
             return False
 
         def _toggle_menu(self):
@@ -250,6 +352,8 @@ def run(argv: list[str] | None = None) -> int:
                 self._hide_menu()
                 return
             rect = self._desktop_rect()
+            self._menu_focused = False
+            self._menu_opened_at = GLib.get_monotonic_time()
             self.search.set_text("")
             self.menu.show_all()
             self.menu.move(rect.x + 8, rect.y + rect.height - 53 - 505)
