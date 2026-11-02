@@ -1,7 +1,7 @@
 """Aero geometry and overflow regressions; independent of GTK hardware."""
 import unittest
 
-from macrice.aero_layout import PANEL_HEIGHT, menu_geometry, task_capacity, select_windows
+from macrice.aero_layout import PANEL_HEIGHT, bottom_strut, menu_geometry, task_capacity, select_windows
 
 
 class AeroLayoutTests(unittest.TestCase):
@@ -25,6 +25,15 @@ class AeroLayoutTests(unittest.TestCase):
         self.assertEqual(visible, (0, 1, 10))
         self.assertEqual(len(visible) + len(hidden), 12)
         self.assertEqual(len(set(visible + hidden)), 12)
+
+    def test_ewmh_bottom_workarea_only_when_monitor_touches_root_bottom(self):
+        short, partial = bottom_strut(0, 0, 1920, 1080, 1080)
+        self.assertEqual(short, (0, 0, 0, PANEL_HEIGHT))
+        self.assertEqual(len(partial), 12)
+        self.assertEqual(partial[-2:], (0, 1919))
+        none, none_partial = bottom_strut(1920, 0, 1280, 720, 1080)
+        self.assertEqual(none, (0, 0, 0, 0))
+        self.assertEqual(none_partial, (0,) * 12)
 
     def test_zero_capacity_shows_all_in_overflow(self):
         windows = (1, 2, 3)
