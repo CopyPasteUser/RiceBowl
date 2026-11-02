@@ -223,18 +223,26 @@ def _plank_theme_target(style: RiceStyle, data_root: Path, source_root: Path) ->
         raise RiceError("Bundled Plank theme is unexpectedly large")
     if any(parent.is_symlink() for parent in (target.parent.parent, target.parent.parent.parent)):
         raise RiceError("Unmanaged Plank theme directory; no settings changed")
-    # Older RiceHub releases used the unversioned name, and their artwork can
-    # differ. Keep it untouched; install the new content under an immutable name.
-    if (target.parent.is_symlink() or target.is_symlink() or
-            (target.exists() and (not target.is_file() or target.stat().st_size > 64 * 1024 or
-                                  target.read_bytes() != contents))):
-        digest = hashlib.sha256(contents).hexdigest()[:12]
-        target = target.parent.parent / f"{style.plank_theme}-{digest}" / "dock.theme"
-    if (target.parent.is_symlink() or target.is_symlink() or
-            (target.exists() and (not target.is_file() or target.stat().st_size > 64 * 1024 or
-                                  target.read_bytes() != contents))):
-        raise RiceError(f"Existing Plank theme conflicts with RiceHub: {target}")
-    return source, target
+    def usable(path: Path) -> bool:
+        if path.parent.is_symlink() or path.is_symlink():
+            return False
+        if not path.parent.exists():
+            return True  # New, isolated theme directory.
+        return (path.parent.is_dir() and path.is_file() and
+                path.stat().st_size <= 64 * 1024 and path.read_bytes() == contents)
+
+    if usable(target):
+        return source, target
+    digest = hashlib.sha256(contents).hexdigest()[:12]
+    # Never overwrite a previous version, even when its versioned name was
+    # customized. Reuse the first matching copy or reserve an empty sibling.
+    # ponytail: 32 slots bound preflight; expand only if real users exhaust them.
+    for number in range(33):
+        suffix = "" if number == 0 else f"-{number}"
+        candidate = target.parent.parent / f"{style.plank_theme}-{digest}{suffix}" / "dock.theme"
+        if usable(candidate):
+            return source, candidate
+    raise RiceError(f"No free Plank theme name for {style.plank_theme}; existing themes were preserved")
 
 
 def _save_plank_theme(source: Path, target: Path) -> None:
@@ -243,7 +251,9 @@ def _save_plank_theme(source: Path, target: Path) -> None:
                 target.read_bytes() != source.read_bytes()):
             raise RiceError("Plank theme changed during apply; no theme overwritten")
         return
-    target.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
+    # Preflight chooses only an absent folder or an already matching file.
+    # A newly appearing folder belongs to another process: do not enter it.
+    target.parent.mkdir(mode=0o755, parents=True, exist_ok=False)
     fd, temp = tempfile.mkstemp(prefix=".macrice-dock-", dir=target.parent)
     try:
         with os.fdopen(fd, "wb") as output, source.open("rb") as original:

@@ -301,26 +301,97 @@ class RiceTests(unittest.TestCase):
             restore(backend=fake, data_root=root / "data", config_root=root / "config")
             self.assertTrue((repeated / "restored").is_file())
 
-    def test_plank_versioned_collision_still_fails_closed(self):
+    def test_repeated_plank_collisions_preserve_all_old_files(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             fake = FakeBackend()
             setup_apps(root / "config")
-            base = root / "data/plank/themes/MacRice-Frost-Glass/dock.theme"
+            base = root / "data/plank/themes/RiceHub-Aero-Glass/dock.theme"
             base.parent.mkdir(parents=True)
             base.write_text("old")
             from macrice.installer import project_root
             import hashlib
-            source = project_root() / "assets/plank-themes/MacRice-Frost-Glass/dock.theme"
-            name = f"MacRice-Frost-Glass-{hashlib.sha256(source.read_bytes()).hexdigest()[:12]}"
+            source = project_root() / "assets/plank-themes/RiceHub-Aero-Glass/dock.theme"
+            name = f"RiceHub-Aero-Glass-{hashlib.sha256(source.read_bytes()).hexdigest()[:12]}"
             versioned = base.parent.parent / name / "dock.theme"
             versioned.parent.mkdir()
             versioned.write_text("user edited even the versioned name")
-            with self.assertRaisesRegex(RiceError, "conflicts"):
-                apply("night", backend=fake, data_root=root / "data", config_root=root / "config")
+            expected = base.parent.parent / (name + "-1") / "dock.theme"
+            changes, _, _, _ = plan("aero-meadow", backend=fake, data_root=root / "data", config_root=root / "config")
+            selected = next(c["after"] for c in changes if c["kind"] == "gsettings" and c["key"] == "theme")
+            self.assertEqual(selected, f"'{name}-1'")
+            self.assertFalse(expected.exists())
+            backup = apply("aero-meadow", backend=fake, data_root=root / "data", config_root=root / "config")
+            self.assertEqual(fake.get("gsettings", "plank", "theme"), f"'{name}-1'")
+            self.assertEqual(expected.read_bytes(), source.read_bytes())
+            self.assertEqual(base.read_text(), "old")
             self.assertEqual(versioned.read_text(), "user edited even the versioned name")
+            restore(backend=fake, data_root=root / "data", config_root=root / "config")
+            self.assertTrue((backup / "restored").exists())
+            self.assertEqual(base.read_text(), "old")
+            self.assertEqual(versioned.read_text(), "user edited even the versioned name")
+
+    def test_plank_existing_empty_theme_folder_is_not_claimed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            fake = FakeBackend()
+            setup_apps(root / "config")
+            existing = root / "data/plank/themes/MacRice-Frost-Glass"
+            existing.mkdir(parents=True)
+            (existing / "user-note").write_text("keep me")
+            backup = apply("night", backend=fake, data_root=root / "data", config_root=root / "config")
+            self.assertRegex(fake.get("gsettings", "plank", "theme"), r"^'MacRice-Frost-Glass-[a-f0-9]{12}'$")
+            self.assertFalse((existing / "dock.theme").exists())
+            self.assertEqual((existing / "user-note").read_text(), "keep me")
+            restore(backend=fake, data_root=root / "data", config_root=root / "config")
+            self.assertTrue((backup / "restored").exists())
+
+    def test_exhausted_plank_names_fail_without_overwriting(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            fake = FakeBackend()
+            setup_apps(root / "config")
+            from macrice.installer import project_root
+            import hashlib
+            source = project_root() / "assets/plank-themes/RiceHub-Aero-Glass/dock.theme"
+            digest = hashlib.sha256(source.read_bytes()).hexdigest()[:12]
+            theme_root = root / "data/plank/themes"
+            names = ["RiceHub-Aero-Glass", f"RiceHub-Aero-Glass-{digest}"]
+            names.extend(f"RiceHub-Aero-Glass-{digest}-{i}" for i in range(1, 33))
+            for name in names:
+                folder = theme_root / name
+                folder.mkdir(parents=True)
+                (folder / "dock.theme").write_text("preserve existing copy")
+            with self.assertRaisesRegex(RiceError, "No free Plank theme name"):
+                apply("aero-meadow", backend=fake, data_root=root / "data", config_root=root / "config")
             self.assertEqual(fake.calls, [])
             self.assertFalse((root / "data/macrice-state").exists())
+
+    def test_plank_symlinked_theme_is_preserved_and_not_followed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            fake = FakeBackend()
+            setup_apps(root / "config")
+            outside = root / "personal-theme"
+            outside.mkdir()
+            (outside / "dock.theme").write_text("personal")
+            parent = root / "data/plank/themes"
+            parent.mkdir(parents=True)
+            (parent / "RiceHub-Aero-Glass").symlink_to(outside, target_is_directory=True)
+            apply("aero-meadow", backend=fake, data_root=root / "data", config_root=root / "config")
+            self.assertRegex(fake.get("gsettings", "plank", "theme"), r"^'RiceHub-Aero-Glass-[a-f0-9]{12}'$")
+            self.assertEqual((outside / "dock.theme").read_text(), "personal")
+
+    def test_plank_shared_symlinked_parent_still_blocks_preflight(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            fake = FakeBackend()
+            setup_apps(root / "config")
+            (root / "data/plank").mkdir(parents=True)
+            (root / "data/plank/themes").symlink_to(root / "outside", target_is_directory=True)
+            with self.assertRaisesRegex(RiceError, "Unmanaged Plank theme directory"):
+                apply("aero-meadow", backend=fake, data_root=root / "data", config_root=root / "config")
+            self.assertEqual(fake.calls, [])
 
     def test_switch_all_families_preserves_plank_pins_and_restore_chain(self):
         with tempfile.TemporaryDirectory() as tmp:
