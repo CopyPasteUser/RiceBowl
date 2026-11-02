@@ -54,21 +54,21 @@ Tested primarily with Linux Mint XFCE / X11. Other XFCE/X11 setups may work, but
 
 ```bash
 sudo apt install python3-gi gir1.2-gtk-3.0
-git clone https://github.com/CopyPasteUser/macos-xfce-rice.git
-cd macos-xfce-rice
+git clone https://github.com/CopyPasteUser/RiceHub.git
+cd RiceHub
 bash install.sh --dry-run
 bash install.sh
 ricehub
 ```
 
-The old repository URL remains the working download address until the GitHub repository itself is renamed. No `sudo` for `install.sh`. The installer does **not** apply a full rice, remove the XFCE panel, change your icons, or silently install missing themes. It installs user-local tools and keeps existing component settings.
+The previous `macos-xfce-rice` GitHub address redirects to RiceHub, so old bookmarks and install commands should continue to work. No `sudo` for `install.sh`. The installer does **not** apply a full rice, remove the XFCE panel, change your icons, or silently install missing themes. It installs user-local tools and keeps existing component settings.
 
 If you want Plank and don't have it yet, install it separately using your distribution's package manager. The full macOS style also needs compatible WhiteSur, Bibata and Inter assets; the preflight check tells you what's missing.
 
 **Already installed?** Update from any directory:
 
 ```bash
-bash -c 'set -e; d="$(mktemp -d)"; git clone -q --depth 1 https://github.com/CopyPasteUser/macos-xfce-rice.git "$d/ricehub"; bash "$d/ricehub/install.sh"'
+bash -c 'set -e; d="$(mktemp -d)"; git clone -q --depth 1 https://github.com/CopyPasteUser/RiceHub.git "$d/ricehub"; bash "$d/ricehub/install.sh"'
 ```
 
 ### Everyday commands
