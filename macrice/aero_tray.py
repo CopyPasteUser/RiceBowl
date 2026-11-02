@@ -49,6 +49,11 @@ def registration_id(service: str, sender: str) -> str | None:
     return service if parse_item_id(service) else None
 
 
+def unpack_variant(value):
+    """PyGObject may return a plain Python value or a nested GLib.Variant."""
+    return value.unpack() if callable(getattr(value, "unpack", None)) else value
+
+
 def pixel_rgba(width: int, height: int, pixels: bytes) -> bytes | None:
     """Convert protocol ARGB32 byte arrays to GTK RGBA, with strict size limits."""
     if not (1 <= width <= 128 and 1 <= height <= 128) or len(pixels) != width * height * 4:
@@ -152,7 +157,7 @@ class StatusNotifierTray:
     def _load_items(self):
         def received(reply):
             try:
-                identifiers = reply.unpack()[0].unpack()
+                identifiers = unpack_variant(reply.unpack()[0])
             except (IndexError, AttributeError, ValueError, TypeError):
                 return
             for identifier in identifiers[:MAX_ITEMS]:
@@ -189,7 +194,8 @@ class StatusNotifierTray:
         button.set_relief(self.Gtk.ReliefStyle.NONE)
         img = self.Gtk.Image.new_from_icon_name("application-x-executable", self.Gtk.IconSize.MENU)
         button.add(img)
-        button.connect("clicked", lambda _button: self._activate(service, path, "Activate"))
+        button.connect("clicked", lambda _button: self._activate(service, path, "Activate",
+                                                                self._button_position(_button)))
         button.connect("button-press-event",
                        lambda _button, event: self._context(service, path, event) if event.button == 3 else False)
         self.box.pack_start(button, False, False, 0)
@@ -224,7 +230,7 @@ class StatusNotifierTray:
             if identifier not in self.items:
                 return
             try:
-                props = {key: value.unpack() for key, value in reply.unpack()[0].items()}
+                props = {key: unpack_variant(value) for key, value in reply.unpack()[0].items()}
             except (IndexError, TypeError, ValueError, AttributeError):
                 return
             button, img = self.items[identifier]
@@ -259,12 +265,22 @@ class StatusNotifierTray:
                 return
         image.set_from_icon_name("application-x-executable", self.Gtk.IconSize.MENU)
 
-    def _activate(self, service, path, method):
-        self._call(service, path, ITEM_IFACE, method, self.GLib.Variant("(ii)", (0, 0)))
+    @staticmethod
+    def _button_position(button):
+        window = button.get_window()
+        if window is None:
+            return (0, 0)
+        x, y = window.get_origin()
+        allocation = button.get_allocation()
+        return (int(x + allocation.width // 2), int(y + allocation.height // 2))
+
+    def _activate(self, service, path, method, position=(0, 0)):
+        self._call(service, path, ITEM_IFACE, method, self.GLib.Variant("(ii)", position))
 
     def _context(self, service, path, event):
         if event.button == 3:
-            self._activate(service, path, "ContextMenu")
+            self._activate(service, path, "ContextMenu",
+                           (int(event.x_root), int(event.y_root)))
             return True
         return False
 
