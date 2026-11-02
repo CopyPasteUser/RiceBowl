@@ -82,6 +82,8 @@ The hub itself is written with Python and GTK3. It opens when you need it and do
 
 The working macOS rice brings together [MacMenu](components/macmenu/), [Control Center](components/control-center/), [MacBar](components/macbar/), Plank, Thunar, WhiteSur-based GTK/window themes, icons and Aurora wallpapers. All three bundled apps keep their own tested installers. Plank remains a system package and your pinned dock items are preserved.
 
+RiceHub preserves an older or customized Plank theme when its name collides with a bundled theme. It selects a content-versioned copy instead. Switching macOS ↔ Windows 7 ↔ Windows 10 retains dock launchers and reversible dock settings; the inactive RiceHub taskbar is asked to quit before the next one starts. An independently launched MacBar or XFCE Panel is not force-stopped.
+
 ## Get started
 
 Tested primarily with Linux Mint XFCE / X11. Other XFCE/X11 setups may work, but don't assume every theme or system service is installed.

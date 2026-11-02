@@ -102,9 +102,10 @@ def main(argv: list[str] | None = None) -> int:
                 try:
                     theme = XfceBackend().get("xfconf", "xsettings", "/Net/ThemeName")
                     from .shell_session import sync_theme
-                    sync_theme(theme)
-                except (OSError, RuntimeError):
-                    pass
+                    for warning in sync_theme(theme):
+                        print("Taskbar warning:", warning, file=sys.stderr)
+                except (OSError, RuntimeError) as exc:
+                    print("Taskbar warning:", exc, file=sys.stderr)
                 skipped_file = backup / "skipped.json"
                 if skipped_file.is_file():
                     skipped = json.loads(skipped_file.read_text(encoding="utf-8"))
@@ -120,7 +121,8 @@ def main(argv: list[str] | None = None) -> int:
                 print("Rice applied; backup:", apply_rice(args.style))
                 from .shell_session import sync_theme
                 from .rice import STYLES
-                sync_theme(STYLES[args.style].gtk)
+                for warning in sync_theme(STYLES[args.style].gtk):
+                    print("Taskbar warning:", warning, file=sys.stderr)
             return 0
         if args.command == "performance":
             from .performance import apply_profile, measure_processes

@@ -277,18 +277,81 @@ class RiceTests(unittest.TestCase):
             self.assertEqual(fake.values[("xfconf", "xsettings", "/Net/ThemeName")], "WhiteSur-Dark")
             self.assertIn("Thunar CSS", " ".join(json.loads((backup / "skipped.json").read_text())))
 
-    def test_plank_theme_collision_preflight_is_non_destructive(self):
+    def test_plank_theme_from_older_release_does_not_block_switch(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             fake = FakeBackend()
             setup_apps(root / "config")
             target = root / "data/plank/themes/MacRice-Frost-Glass/dock.theme"
             target.parent.mkdir(parents=True)
-            target.write_text("someone else's theme")
+            target.write_text("older or customized Plank artwork")
+            old = fake.values.copy()
+            backup = apply("night", backend=fake, data_root=root / "data", config_root=root / "config")
+            chosen = fake.get("gsettings", "plank", "theme").strip("'")
+            self.assertRegex(chosen, r"^MacRice-Frost-Glass-[0-9a-f]{12}$")
+            from macrice.installer import project_root
+            source = project_root() / "assets/plank-themes/MacRice-Frost-Glass/dock.theme"
+            self.assertEqual((root / "data/plank/themes" / chosen / "dock.theme").read_bytes(), source.read_bytes())
+            self.assertEqual(target.read_text(), "older or customized Plank artwork")
+            self.assertEqual(restore(backend=fake, data_root=root / "data", config_root=root / "config"), backup)
+            self.assertEqual(fake.values, old)
+            self.assertEqual(target.read_text(), "older or customized Plank artwork")
+            repeated = apply("night", backend=fake, data_root=root / "data", config_root=root / "config")
+            self.assertEqual(fake.get("gsettings", "plank", "theme"), f"'{chosen}'")
+            restore(backend=fake, data_root=root / "data", config_root=root / "config")
+            self.assertTrue((repeated / "restored").is_file())
+
+    def test_plank_versioned_collision_still_fails_closed(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            fake = FakeBackend()
+            setup_apps(root / "config")
+            base = root / "data/plank/themes/MacRice-Frost-Glass/dock.theme"
+            base.parent.mkdir(parents=True)
+            base.write_text("old")
+            from macrice.installer import project_root
+            import hashlib
+            source = project_root() / "assets/plank-themes/MacRice-Frost-Glass/dock.theme"
+            name = f"MacRice-Frost-Glass-{hashlib.sha256(source.read_bytes()).hexdigest()[:12]}"
+            versioned = base.parent.parent / name / "dock.theme"
+            versioned.parent.mkdir()
+            versioned.write_text("user edited even the versioned name")
             with self.assertRaisesRegex(RiceError, "conflicts"):
                 apply("night", backend=fake, data_root=root / "data", config_root=root / "config")
-            self.assertEqual(target.read_text(), "someone else's theme")
+            self.assertEqual(versioned.read_text(), "user edited even the versioned name")
             self.assertEqual(fake.calls, [])
+            self.assertFalse((root / "data/macrice-state").exists())
+
+    def test_switch_all_families_preserves_plank_pins_and_restore_chain(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            fake = FakeBackend()
+            config = root / "config"
+            data = root / "data"
+            setup_apps(config)
+            pin = config / "plank/dock1/launchers/personal-app.dockitem"
+            pin.parent.mkdir(parents=True)
+            pin.write_text("[PlankDockItemPreferences]\nLauncher=file:///my/app.desktop\n")
+            original = fake.values.copy()
+            snapshots = []
+            for name, shell, position in (("night", None, "'bottom'"),
+                                          ("aero-meadow", "aero", "'left'"),
+                                          ("ten-light", "ten", "'left'"),
+                                          ("glass-day", None, "'bottom'")):
+                before = fake.values.copy()
+                backup = apply(name, backend=fake, data_root=data, config_root=config)
+                snapshots.append((backup, before))
+                self.assertEqual(fake.get("gsettings", "plank", "position"), position)
+                manifest = json.loads((backup / "manifest.json").read_text())
+                for family in ("aero", "ten"):
+                    content = manifest["shell_autostarts"][family]["after"]
+                    self.assertEqual(content is not None, family == shell)
+                self.assertIn("/my/app.desktop", pin.read_text())
+            for backup, previous in reversed(snapshots):
+                self.assertEqual(restore(backend=fake, data_root=data, config_root=config), backup)
+                self.assertEqual(fake.values, previous)
+            self.assertEqual(fake.values, original)
+            self.assertIn("/my/app.desktop", pin.read_text())
 
     def test_thunar_absent_preferences_are_removed_on_restore(self):
         with tempfile.TemporaryDirectory() as tmp:

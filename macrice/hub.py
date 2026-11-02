@@ -633,8 +633,11 @@ def run() -> int:
 
         def _after_apply(self, backup, style_id):
             from .shell_session import sync_theme
-            sync_theme(STYLES[style_id].gtk)
-            self._notify("Rice applied successfully. Recovery snapshot saved.")
+            warnings = sync_theme(STYLES[style_id].gtk)
+            if warnings:
+                self._notify("Rice saved, but taskbar switching needs attention: " + "; ".join(warnings), error=True)
+            else:
+                self._notify("Rice applied successfully. Recovery snapshot saved.")
             self._refresh_backups()
             self._refresh_system()
 
@@ -653,16 +656,19 @@ def run() -> int:
             try:
                 from .rice import XfceBackend
                 from .shell_session import sync_theme
-                sync_theme(XfceBackend().get("xfconf", "xsettings", "/Net/ThemeName"))
-            except Exception:
-                pass
+                warnings = sync_theme(XfceBackend().get("xfconf", "xsettings", "/Net/ThemeName"))
+            except (OSError, RuntimeError) as exc:
+                warnings = (str(exc),)
             skipped = backup / "skipped.json"
+            message = "Desktop restored"
             if skipped.is_file():
                 import json
-                self._notify("Desktop restored; newer edits preserved: " + ", ".join(
-                    json.loads(skipped.read_text(encoding="utf-8"))))
+                message += "; newer edits preserved: " + ", ".join(json.loads(skipped.read_text(encoding="utf-8")))
+            if warnings:
+                message += "; taskbar switching needs attention: " + "; ".join(warnings)
+                self._notify(message, error=True)
             else:
-                self._notify("Desktop restored successfully.")
+                self._notify(message + ".")
             self._refresh_backups()
             self._refresh_system()
 

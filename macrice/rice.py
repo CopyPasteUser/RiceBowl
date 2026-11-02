@@ -218,18 +218,30 @@ def _plank_theme_target(style: RiceStyle, data_root: Path, source_root: Path) ->
     target = data_root / "plank/themes" / style.plank_theme / "dock.theme"
     if not source.is_file() or source.is_symlink():
         raise RiceError(f"Missing bundled Plank theme: {style.plank_theme}")
-    if any(parent.is_symlink() for parent in (target.parent, target.parent.parent, target.parent.parent.parent)):
+    contents = source.read_bytes()
+    if len(contents) > 64 * 1024:
+        raise RiceError("Bundled Plank theme is unexpectedly large")
+    if any(parent.is_symlink() for parent in (target.parent.parent, target.parent.parent.parent)):
         raise RiceError("Unmanaged Plank theme directory; no settings changed")
-    if target.is_symlink() or (target.exists() and (
-        not target.is_file() or target.stat().st_size > 64 * 1024 or
-        target.read_bytes() != source.read_bytes()
-    )):
-        raise RiceError(f"Existing Plank theme conflicts with MacRice: {target}")
+    # Older RiceHub releases used the unversioned name, and their artwork can
+    # differ. Keep it untouched; install the new content under an immutable name.
+    if (target.parent.is_symlink() or target.is_symlink() or
+            (target.exists() and (not target.is_file() or target.stat().st_size > 64 * 1024 or
+                                  target.read_bytes() != contents))):
+        digest = hashlib.sha256(contents).hexdigest()[:12]
+        target = target.parent.parent / f"{style.plank_theme}-{digest}" / "dock.theme"
+    if (target.parent.is_symlink() or target.is_symlink() or
+            (target.exists() and (not target.is_file() or target.stat().st_size > 64 * 1024 or
+                                  target.read_bytes() != contents))):
+        raise RiceError(f"Existing Plank theme conflicts with RiceHub: {target}")
     return source, target
 
 
 def _save_plank_theme(source: Path, target: Path) -> None:
     if target.exists():
+        if (target.is_symlink() or not target.is_file() or target.stat().st_size > 64 * 1024 or
+                target.read_bytes() != source.read_bytes()):
+            raise RiceError("Plank theme changed during apply; no theme overwritten")
         return
     target.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
     fd, temp = tempfile.mkstemp(prefix=".macrice-dock-", dir=target.parent)
@@ -255,13 +267,13 @@ def _app_values(style: RiceStyle) -> dict[str, str]:
     return values
 
 
-def _changes(style: RiceStyle, backend: XfceBackend, target: Path) -> list[dict]:
+def _changes(style: RiceStyle, backend: XfceBackend, target: Path, plank_theme: str) -> list[dict]:
     changes = []
     for channel, key, value in XFCONF:
         value = getattr(style, value, value)
         changes.append({"kind": "xfconf", "channel": channel, "key": key,
                         "before": backend.get("xfconf", channel, key), "after": value})
-    for key, value in (("theme", f"'{style.plank_theme}'"),
+    for key, value in (("theme", f"'{plank_theme}'"),
                        ("position", style.plank_position), ("icon-size", style.plank_icon_size),
                        ("hide-mode", style.plank_hide), ("alignment", style.plank_alignment),
                        ("zoom-enabled", style.plank_zoom)):
@@ -308,7 +320,7 @@ def plan(style_name: str, *, backend: XfceBackend | None = None,
     source_root = source_root or project_root()
     config_root = config_root or config_home()
     source, target = _wallpaper_target(STYLES[style_name], data_root, source_root)
-    _plank_theme_target(STYLES[style_name], data_root, source_root)
+    _, dock_target = _plank_theme_target(STYLES[style_name], data_root, source_root)
     if STYLES[style_name].gtk == AERO_THEME:
         try:
             preflight_aero(source_root, data_root)
@@ -325,7 +337,7 @@ def plan(style_name: str, *, backend: XfceBackend | None = None,
         ten.read_autostart(config_root)
     except (OSError, UnicodeError, ValueError) as exc:
         raise RiceError(f"Theme and session preflight failed: {exc}") from exc
-    changes = _changes(STYLES[style_name], backend, target)
+    changes = _changes(STYLES[style_name], backend, target, dock_target.parent.name)
     _preflight(STYLES[style_name], changes, backend)
     return changes, _read_app_themes(config_root), source, target
 
@@ -386,6 +398,8 @@ def apply(style_name: str, *, backend: XfceBackend | None = None,
     }
     shell_writers = {"aero": write_autostart, "ten": ten.write_autostart}
     dock_source, dock_target = _plank_theme_target(style, data_root, source_root or project_root())
+    if next(c["after"] for c in changes if c["kind"] == "gsettings" and c["key"] == "theme") != f"'{dock_target.parent.name}'":
+        raise RiceError("Plank theme changed during preflight; retry without altering the desktop")
     dock_preexisting = dock_target.exists()
     private_state_root(data_root)
     _save_wallpaper(source, target)
