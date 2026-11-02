@@ -91,7 +91,7 @@ class StatusNotifierTray:
         self._load_items()
 
     def _call(self, name, path, interface, method, parameters, signature=None, finished=None):
-        def done(connection, result, _data):
+        def done(connection, result, _data=None):
             try:
                 reply = connection.call_finish(result)
             except self.GLib.Error:
@@ -165,13 +165,13 @@ class StatusNotifierTray:
         self._call(WATCHER, PATH, "org.freedesktop.DBus.Properties", "Get",
                    self.GLib.Variant("(ss)", (IFACE, "RegisteredStatusNotifierItems")), "(v)", received)
 
-    def _watcher_signal(self, _bus, _sender, _path, _iface, signal, params, _data):
+    def _watcher_signal(self, _bus, _sender, _path, _iface, signal, params, _data=None):
         if signal == "StatusNotifierItemRegistered":
             self._add(params.unpack()[0])
         elif signal == "StatusNotifierItemUnregistered":
             self._remove(params.unpack()[0])
 
-    def _name_changed(self, _bus, _sender, _path, _iface, _signal, params, _data):
+    def _name_changed(self, _bus, _sender, _path, _iface, _signal, params, _data=None):
         name, _old, new = params.unpack()
         if new:
             return

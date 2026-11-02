@@ -1,6 +1,6 @@
 # RiceHub · Desktop styles for XFCE
 
-RiceHub is the beginning of a bigger idea: one lightweight home for complete XFCE rices inspired by operating systems we know and love. The project is built around **a working system first, an honest roadmap second**. The macOS implementation comes from the existing MacRice projects. Version 0.4 RC1 preserves the Windows 7 Aero candidate and introduces a separate read-only Windows 10 GTK concept; physical Mint/XFCE acceptance is still open.
+RiceHub is the beginning of a bigger idea: one lightweight home for complete XFCE rices inspired by operating systems we know and love. The project is built around **a working system first, an honest roadmap second**. The macOS implementation comes from the existing MacRice projects. Version 0.5 RC1 adds two installable Windows 10 palettes and a live shell alongside the Windows 7 Aero candidate; physical Mint/XFCE acceptance is still open.
 
 ## First launch
 
@@ -23,7 +23,7 @@ If you prefer the existing command, `macrice hub` opens the same app; `macrice g
 5. **Components:** Toggle the already installed menu and Control Center, start the bar/dock, or explicitly repair bundled apps.
 6. **Windows 7:** Select Aero Meadow or Aero Cascade. Check requirements, apply, then use the new GTK taskbar and Start menu. The menu indexes real `.desktop` launchers; the Aero session login entry is managed with the same backup/restore protections. A separate read-only preview is also available.
 7. **Performance:** Choose a resource profile and run an on-demand memory/CPU snapshot. There is no extra monitoring service.
-8. **Windows 10 prototype:** Explore a Start menu with searchable sample apps, pinned-style blue tiles, a dark taskbar and Action Center. The dialog doesn't install or toggle real system services.
+8. **Windows 10:** Choose Midnight or Blue, check requirements, then apply. The actual shell searches and launches installed apps, shares real pinned launchers between Start tiles and the taskbar, tracks windows with Wnck, and provides XFCE quick-setting shortcuts. The older read-only concept dialog remains available.
 
 The desktop remains usable if your XFCE configuration is different, but **the full macOS rice currently targets XFCE/X11**. Try it on a non-critical account before replacing your panel.
 
@@ -32,11 +32,11 @@ The desktop remains usable if your XFCE configuration is different, but **the fu
 | Rice family | Status | Planned identity |
 | --- | --- | --- |
 | macOS / Aurora collection | **Available (preview)** | MacBar, MacMenu, Control Center, Plank, five full desktop palettes and Thunar styling |
-| Windows 10 | **Interactive GTK preview** | Left-aligned taskbar, searchable Start, example tiles and Action Center; non-installable |
+| Windows 10 | **Installable RC1** | Two dark/light themes, original icons and wallpapers, live taskbar, Gio Start and pinned tiles, Action Center and safe restore |
 | Windows 11 | Coming soon | Centered taskbar, rounded launcher, quick settings, light/dark modes |
 | Windows 7 | **Experimental, installable** | Aero Meadow / Cascade wallpaper, Aero Penguin, original GTK/XFWM icons and chrome, Thunar, Plank glass theme, event-driven taskbar and searchable Start menu |
 
-Windows 10 is a **read-only interactive concept** and Windows 11 remains a description. Windows 7 can be applied only after a read-only preflight and explicit confirmation. The *separate Windows 7 preview dialog* is still a harmless demo. An Aero apply installs only original assets in the user's home, saves a restore snapshot, and changes the selected XFCE, Plank and session appearance. It does not install packages or overwrite third-party themes.
+Windows 10 and Windows 7 can be applied only after a read-only preflight and explicit confirmation; the *separate concept dialogs* are harmless demos. Both install only original assets in the user's home, save a restore snapshot, and change the selected XFCE, Plank and session appearance. Neither installs packages nor overwrites third-party themes. Windows 11 remains a description.
 
 The Aero taskbar includes persistent right-click pins, a two-line clock, bounded/paged searchable Start menu, Show Desktop, native settings shortcuts and **optional live window switching**. Install `gir1.2-wnck-3.0` on Linux Mint XFCE to enable event-driven Wnck window buttons (activate, minimize, restore and overflow); without it, pinned launchers still work. An **experimental StatusNotifier (SNI) tray** is available by default, using an existing watcher when present or a session-local fallback when none exists. Legacy XEmbed tray icons remain unsupported. Set `RICEHUB_AERO_TRAY=0` to disable the host. Optional `RICEHUB_AERO_GLASS=1` enables a more translucent gradient; it does **not** provide background blur and depends on the compositor for its visual result. The Aero shell can reserve the bottom X11 workarea using EWMH, opt-out with `RICEHUB_AERO_RESERVE=0`; existing XFCE panels and MacBar are never force-killed. For all individual components and assets, see [WINDOWS7.md](WINDOWS7.md).
 
@@ -48,9 +48,9 @@ The Aero taskbar includes persistent right-click pins, a two-line clock, bounded
 
 The [complete Windows 7 screenshot gallery](WINDOWS7.md#screenshots--coverage) includes the live Start menu, search, Thunar and window borders. These are real XFCE/X11 captures; optional tray and Wnck window-list features were unavailable in the temporary test desktop. The [macOS + Plank overview](screenshots/macos-rice-with-plank-0.2.0rc1.png) is explicitly an **illustrative** full-desktop composition, not a live Plank capture.
 
-![Windows 10 GTK3 preview with original blue wallpaper, Start and example app tiles](screenshots/windows10-start-preview-0.4.0rc1.png)
+![Windows 10 live GTK3 Start with original wallpaper, real installed apps and pinned tiles](screenshots/windows10-live-start-0.5.0rc1.png)
 
-The [Windows 10 preview gallery](WINDOWS10.md#genuine-gtk-prototype-captures) also shows Action Center. These are genuine GTK screenshots from a temporary X11 display, **not** a fully installed XFCE Windows 10 rice.
+The [Windows 10 release gallery and completion roadmap](WINDOWS10.md#release-roadmap-and-acceptance) includes Action Center and the installable theme selection. These are genuine live GTK screenshots in a disposable X11 desktop fixture, **not** physical Linux Mint hardware acceptance.
 
 ## Product roadmap
 
@@ -92,14 +92,20 @@ The [Windows 10 preview gallery](WINDOWS10.md#genuine-gtk-prototype-captures) al
 - [ ] Full keyboard-only, touch, HiDPI and small-screen testing on physical XFCE laptops.
 - [ ] Additional desktop screenshots from physical supported XFCE hardware, with measured startup and memory budgets.
 
-**0.4 — Windows 10 preview**
+**0.4 — Windows 10 concept (completed)**
 
 - [x] Interactive native GTK3 Start preview with case-insensitive sample search and honest no-result state.
 - [x] Original blue wallpaper, flat dark taskbar, tile group and Action Center prototype.
 - [x] Real virtual-display screenshots and automated preview capture in CI, no desktop writes.
-- [ ] Separate, reversible XFCE panel and Start-style application menu configuration.
-- [ ] Taskbar styling, icon set, window theme and wallpapers, with regression tests.
-- [ ] Shared preset contract so each rice uses the same plan, apply and restore pipeline.
+
+**0.5 RC1 — complete installable Windows 10-inspired rice**
+
+- [x] Live, event-driven dark taskbar, independent Start menu, installed-application search, persistent pins and pinned app tiles.
+- [x] Shared real Wnck window switching, Show Desktop, optional StatusNotifier tray, keyboard dismissal and quick XFCE settings actions.
+- [x] Two original light/dark XFWM4/GTK themes, flat icons, original high-resolution wallpapers, Thunar and Plank styling.
+- [x] Full plan/apply/restore with independent managed autostarts, schema 4 snapshots, rollback and cross-rice switching (Windows 7 ↔ Windows 10).
+- [x] Native style picker, CLI integration, versioned real-GTK screenshots and X11 smoke tests in CI.
+- [ ] Physically test all integration points on Linux Mint XFCE, multiple resolutions and HiDPI; measure resource budgets and audit panel coexistence before declaring 1.0. See [the specific acceptance cases](WINDOWS10.md#release-roadmap-and-acceptance).
 
 **0.6 — Windows 11 and mature Windows 7**
 

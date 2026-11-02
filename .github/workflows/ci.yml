@@ -19,6 +19,8 @@ jobs:
           /usr/bin/python3 -m compileall -q macrice launcher.py
           /usr/bin/python3 -m unittest discover -s tests -v
           timeout 18s dbus-run-session -- xvfb-run -a /usr/bin/python3 -c 'from macrice.aero_shell import run; raise SystemExit(run(["ricehub-aero-shell", "--smoke-test"]))'
+          timeout 18s dbus-run-session -- xvfb-run -a /usr/bin/python3 -c 'from macrice.ten_shell import run; raise SystemExit(run(["ricehub-ten-shell", "--smoke-test"]))'
+          timeout 18s dbus-run-session -- xvfb-run -a -s '-screen 0 1600x900x24' /usr/bin/python3 screenshots/capture_ten_shell.py
           timeout 18s dbus-run-session -- xvfb-run -a /usr/bin/python3 screenshots/capture_windows10.py
           timeout 18s dbus-run-session -- xvfb-run -a /usr/bin/python3 screenshots/capture_windows10_hub.py
           (cd components/macmenu && /usr/bin/python3 -m unittest discover -s tests -v)

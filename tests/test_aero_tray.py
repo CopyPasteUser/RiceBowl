@@ -1,7 +1,8 @@
 """Protocol-level tests for Aero SNI logic without a D-Bus session."""
 import unittest
 
-from macrice.aero_tray import parse_item_id, registration_id, pixel_rgba, MAX_ITEMS, WATCHER_XML, unpack_variant
+from macrice.aero_tray import (StatusNotifierTray, parse_item_id, registration_id,
+                              pixel_rgba, MAX_ITEMS, WATCHER_XML, unpack_variant)
 
 
 class AeroTrayTests(unittest.TestCase):
@@ -31,6 +32,21 @@ class AeroTrayTests(unittest.TestCase):
         self.assertIsNone(pixel_rgba(0, 0, b""))
         self.assertLessEqual(MAX_ITEMS, 64)
         self.assertIn("RegisteredStatusNotifierItems", WATCHER_XML)
+
+    def test_watcher_callbacks_accept_six_arg_pygobject_dispatch(self):
+        class FakeVariant:
+            def unpack(self):
+                return ("org.example.Tray",)
+
+        received = []
+        tray = StatusNotifierTray.__new__(StatusNotifierTray)
+        tray._add = received.append
+        tray._watcher_signal(None, None, None, None, "StatusNotifierItemRegistered", FakeVariant())
+        self.assertEqual(received, ["org.example.Tray"])
+        tray.items = {}
+        tray.hosts = set()
+        tray._name_changed(None, None, None, None, "NameOwnerChanged",
+                           type("Value", (), {"unpack": lambda self: ("org.example.Tray", ":1.2", ":1.3")})())
 
 
 if __name__ == "__main__":

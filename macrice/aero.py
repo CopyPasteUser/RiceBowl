@@ -82,10 +82,11 @@ def write_autostart(config_root: Path, content: str | None) -> None:
         Path(temp).unlink(missing_ok=True)
 
 
-def preflight(source_root: Path, data_root: Path) -> list[tuple[Path, Path]]:
+def preflight(source_root: Path, data_root: Path,
+              bundles: tuple[tuple[str, str], ...] = BUNDLES) -> list[tuple[Path, Path]]:
     """Validate whole bundles and destinations before creating a single file."""
     packages = []
-    for relative, destination in BUNDLES:
+    for relative, destination in bundles:
         source = source_root / relative
         target = data_root / destination
         if not source.is_dir() or source.is_symlink():

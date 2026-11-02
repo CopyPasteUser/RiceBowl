@@ -108,11 +108,11 @@ def teaser(Gtk):
     """Compact read-only concept preview in RiceHub's Discover gallery."""
     card = _style(_box(Gtk, Gtk.Orientation.VERTICAL, 8), "w10-hero")
     card.set_size_request(-1, 190)
-    title = _label(Gtk, "Windows 10 · Fluent-inspired", "w10-hero-title")
+    title = _label(Gtk, "Windows 10 · XFCE edition", "w10-hero-title")
     title.set_margin_start(22)
     title.set_margin_top(32)
     card.pack_start(title, False, False, 0)
-    note = _label(Gtk, "Start, tiles and Action Center · interactive prototype", "w10-hero-sub")
+    note = _label(Gtk, "Live shell and themes available · separate concept preview", "w10-hero-sub")
     note.set_margin_start(22)
     card.pack_start(note, False, False, 0)
     card.pack_start(Gtk.Box(), True, True, 0)

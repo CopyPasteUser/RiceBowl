@@ -49,6 +49,8 @@ def parser() -> argparse.ArgumentParser:
     commands.add_parser("hub", help="Open RiceHub: discover, apply and restore desktop rices")
     commands.add_parser("preview", help="Preview the complete desktop and apply or restore its Rice")
     aero = commands.add_parser("aero-shell", help="Run or toggle the Windows 7-inspired taskbar and Start menu")
+    ten_shell = commands.add_parser("windows10-shell", help="Run or quit the Windows 10-inspired taskbar and Start menu")
+    ten_shell.add_argument("--quit", action="store_true")
     aero.add_argument("--quit", action="store_true", help="Stop the resident Aero taskbar")
     commands.add_parser("status", help="Show installed components and the detected appearance")
     commands.add_parser("inspect", help="Print a safe, read-only JSON appearance report")
@@ -86,6 +88,9 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "aero-shell":
             from .aero_shell import run
             return run(["ricehub-aero-shell"] + (["--quit"] if args.quit else []))
+        if args.command == "windows10-shell":
+            from .ten_shell import run
+            return run(["ricehub-ten-shell"] + (["--quit"] if args.quit else []))
         if args.command == "rice":
             from .rice import RiceError, apply as apply_rice, plan as plan_rice, restore as restore_rice
             if args.action == "restore":
@@ -96,11 +101,8 @@ def main(argv: list[str] | None = None) -> int:
                 from .rice import XfceBackend
                 try:
                     theme = XfceBackend().get("xfconf", "xsettings", "/Net/ThemeName")
-                    if os.environ.get("DISPLAY"):
-                        from .installer import project_root
-                        subprocess.Popen(["/usr/bin/python3", str(project_root() / "launcher.py"),
-                                          "aero-shell"] + (["--quit"] if theme != "RiceHub-Aero" else []),
-                                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+                    from .shell_session import sync_theme
+                    sync_theme(theme)
                 except (OSError, RuntimeError):
                     pass
                 skipped_file = backup / "skipped.json"
@@ -116,11 +118,9 @@ def main(argv: list[str] | None = None) -> int:
                 print("Themes, icons, fonts and wallpaper were validated; this was read-only.")
             else:
                 print("Rice applied; backup:", apply_rice(args.style))
-                if os.environ.get("DISPLAY"):
-                    from .installer import project_root
-                    subprocess.Popen(["/usr/bin/python3", str(project_root() / "launcher.py"), "aero-shell"] +
-                                     ([] if args.style.startswith("aero-") else ["--quit"]),
-                                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+                from .shell_session import sync_theme
+                from .rice import STYLES
+                sync_theme(STYLES[args.style].gtk)
             return 0
         if args.command == "performance":
             from .performance import apply_profile, measure_processes

@@ -1,7 +1,6 @@
 """RiceHub's read-only catalog and private restore history.
 
-The macOS family and two original Windows 7-inspired Aero palettes use the
-same reversible apply engine. Windows 10 is an interactive, safe concept.
+The macOS, Windows 7 and Windows 10 palettes use the same reversible engine.
 """
 
 from __future__ import annotations
@@ -35,8 +34,9 @@ FAMILIES: tuple[RiceFamily, ...] = (
     ),
     RiceFamily(
         "windows10", "Windows 10", "Classic productivity",
-        "Explore a left-aligned taskbar, searchable Start and tile groups, plus a sample Action Center.",
-        False, (), ("Interactive Start preview", "Sample app search", "Taskbar and tiles", "Action Center"), True,
+        "An installable XFCE/X11 rice with flat window chrome, live taskbar, searchable apps and pinned Start tiles.",
+        True, ("ten-dark", "ten-light"),
+        ("Live Start and taskbar", "Dark/light GTK & XFWM", "Persistent pins & Action Center", "Reversible installation"), True,
     ),
     RiceFamily(
         "windows11", "Windows 11", "Centered simplicity",

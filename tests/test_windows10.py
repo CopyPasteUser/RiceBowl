@@ -1,4 +1,4 @@
-"""Read-only Windows 10 preview contracts."""
+"""Windows 10 live rice and separate read-only concept contracts."""
 
 import unittest
 from pathlib import Path
@@ -14,11 +14,11 @@ class Windows10PrototypeTests(unittest.TestCase):
         self.assertEqual(matching_apps("  broWSER  "), (SAMPLE_APPS[1],))
         self.assertEqual(matching_apps("not-installed"), ())
 
-    def test_profile_is_preview_only_and_has_no_installable_styles(self):
+    def test_profile_has_installable_styles_and_separate_preview(self):
         profile = FAMILY_BY_KEY["windows10"]
         self.assertTrue(profile.prototype)
-        self.assertFalse(profile.available)
-        self.assertEqual(profile.styles, ())
+        self.assertTrue(profile.available)
+        self.assertEqual(profile.styles, ("ten-dark", "ten-light"))
 
     def test_gtk_css_and_original_wallpaper_are_present(self):
         self.assertIn(b"w10-taskbar", CSS)

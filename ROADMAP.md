@@ -1,6 +1,6 @@
 # MacRice engine roadmap to 1.0
 
-**RiceHub is now the umbrella application.** Version 0.4 RC1 includes a working macOS family, two experimental installable Windows 7 Aero rices (with an independent GTK taskbar), a read-only interactive Windows 10 prototype and a Windows 11 placeholder. See the [RiceHub roadmap](RICEHUB.md#product-roadmap) for cross-OS plans. The historical MacRice engine milestones below remain valid and its standalone apps stay intact.
+**RiceHub is now the umbrella application.** Version 0.5 RC1 adds two installable Windows 10 palettes and a live shell alongside the existing macOS and Windows 7 Aero rices. Windows 11 remains a placeholder. See the [Windows 10 completion and hardware acceptance checklist](WINDOWS10.md#release-roadmap-and-acceptance) and the [RiceHub roadmap](RICEHUB.md#product-roadmap). The historical MacRice engine milestones below remain valid and its standalone apps stay intact.
 
 MacRice is deliberately a thin integration layer. MacMenu, Control Center and MacBar keep their own tested lifecycles; Plank remains an external system dock.
 

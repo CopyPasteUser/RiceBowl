@@ -20,6 +20,7 @@ from pathlib import Path
 from .aero import (AUTOSTART_MARKER, AeroAssetError, THEME as AERO_THEME,
                    autostart_content, install as install_aero, preflight as preflight_aero,
                    read_autostart, write_autostart)
+from . import ten
 from .environment import config_home, data_home, private_state_root
 from .installer import project_root
 from .plank import DOCK_SCHEMA
@@ -66,12 +67,24 @@ STYLES = {
                                icon_theme=AERO_THEME, cursor_theme="Adwaita", font="DejaVu Sans 10",
                                title_font="DejaVu Sans Bold 10", plank_icon_size="48", plank_alignment="'center'",
                                plank_zoom="false", plank_hide="'autohide'", plank_position="'left'"),
+    "ten-dark": RiceStyle("Windows 10 · Midnight", "RiceHub-Ten-Dark", "RiceHub-Ten-Dark", "ten-midnight.jpg",
+                           "Midnight", "light", "RiceHub-Ten-Flat", icon_theme=ten.ICON_THEME,
+                           cursor_theme="Adwaita", font="DejaVu Sans 10", title_font="DejaVu Sans Bold 10",
+                           plank_icon_size="40", plank_zoom="false", plank_hide="'autohide'",
+                           plank_position="'left'"),
+    "ten-light": RiceStyle("Windows 10 · Blue", "RiceHub-Ten-Light", "RiceHub-Ten-Light", "ten-blue.jpg",
+                            "Light", "dark", "RiceHub-Ten-Flat", icon_theme=ten.ICON_THEME,
+                            cursor_theme="Adwaita", font="DejaVu Sans 10", title_font="DejaVu Sans Bold 10",
+                            plank_icon_size="40", plank_zoom="false", plank_hide="'autohide'",
+                            plank_position="'left'"),
 }
 
 
 def _thunar_palette(style_name: str) -> str:
     if style_name.startswith("aero-"):
         return "aero"
+    if style_name.startswith("ten-"):
+        return style_name
     return "night" if style_name in ("night", "glass-night") else "day"
 
 # GTK, XFWM, Thunar, Plank and XFCE wallpaper are the external settings touched.
@@ -276,7 +289,8 @@ def _preflight(styles: RiceStyle, changes: list[dict], backend: XfceBackend) -> 
     before_by_key = {(c["channel"], c["key"]): c["before"] for c in changes}
     for kind, theme, channel, key in required:
         current = before_by_key[(channel, key)].strip("'")
-        if current != theme and not (theme == AERO_THEME and kind in ("gtk", "xfwm", "icons")) and not backend.available(kind, theme):
+        bundled = (theme == AERO_THEME or theme in (*ten.THEMES, ten.ICON_THEME)) and kind in ("gtk", "xfwm", "icons")
+        if current != theme and not bundled and not backend.available(kind, theme):
             raise RiceError(f"Required {kind} theme '{theme}' is missing. Install it first; no settings changed.")
     family = styles.font.rsplit(" ", 1)[0]
     if not (before_by_key[("xsettings", "/Gtk/FontName")].startswith(family + " ") or
@@ -300,9 +314,15 @@ def plan(style_name: str, *, backend: XfceBackend | None = None,
             preflight_aero(source_root, data_root)
         except AeroAssetError as exc:
             raise RiceError(str(exc)) from exc
+    if STYLES[style_name].gtk in ten.THEMES:
+        try:
+            ten.preflight(source_root, data_root)
+        except AeroAssetError as exc:
+            raise RiceError(str(exc)) from exc
     try:
         plan_css(_thunar_palette(style_name), config_root)
         read_autostart(config_root)
+        ten.read_autostart(config_root)
     except (OSError, UnicodeError, ValueError) as exc:
         raise RiceError(f"Theme and session preflight failed: {exc}") from exc
     changes = _changes(STYLES[style_name], backend, target)
@@ -359,8 +379,12 @@ def apply(style_name: str, *, backend: XfceBackend | None = None,
     )
     style = STYLES[style_name]
     css = plan_css(_thunar_palette(style_name), config_root)
-    autostart_before = read_autostart(config_root)
-    autostart_after = autostart_content(source_root or project_root()) if style.gtk == AERO_THEME else None
+    shell_before = {"aero": read_autostart(config_root), "ten": ten.read_autostart(config_root)}
+    shell_after = {
+        "aero": autostart_content(source_root or project_root()) if style.gtk == AERO_THEME else None,
+        "ten": ten.autostart_content(source_root or project_root()) if style.gtk in ten.THEMES else None,
+    }
+    shell_writers = {"aero": write_autostart, "ten": ten.write_autostart}
     dock_source, dock_target = _plank_theme_target(style, data_root, source_root or project_root())
     dock_preexisting = dock_target.exists()
     private_state_root(data_root)
@@ -369,9 +393,10 @@ def apply(style_name: str, *, backend: XfceBackend | None = None,
     backup = data_root / "macrice-state/backups/rice" / stamp
     backup.mkdir(mode=0o700, parents=True, exist_ok=False)
     manifest = {
-        "schema": 3, "style": style_name, "changes": changes,
+        "schema": 4, "style": style_name, "changes": changes,
         "app_before": previous, "app_after": _app_values(style), "thunar_css": css,
-        "aero_autostart": {"before": autostart_before, "after": autostart_after},
+        "shell_autostarts": {key: {"before": shell_before[key], "after": shell_after[key]}
+                             for key in shell_writers},
     }
     out = backup / "manifest.json"
     fd = os.open(out, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
@@ -385,6 +410,8 @@ def apply(style_name: str, *, backend: XfceBackend | None = None,
     try:
         if style.gtk == AERO_THEME:
             install_aero(preflight_aero(source_root or project_root(), data_root))
+        elif style.gtk in ten.THEMES:
+            install_aero(ten.preflight(source_root or project_root(), data_root))
         _save_plank_theme(dock_source, dock_target)
         if css["before"] != css["after"]:
             write_css(config_root, css["after"])
@@ -394,16 +421,19 @@ def apply(style_name: str, *, backend: XfceBackend | None = None,
                 written.append(change)
                 backend.set(change["kind"], change["channel"], change["key"], change["after"],
                             create=change["before"] is None)
-        if autostart_before != autostart_after:
-            write_autostart(config_root, autostart_after)
+        for key, writer in shell_writers.items():
+            if shell_before[key] != shell_after[key]:
+                writer(config_root, shell_after[key])
         set_theme_values(_app_values(style), config_root=config_root, data_root=data_root)
     except Exception as exc:
         errors = _rollback(backend, written, "before")
-        try:
-            if read_autostart(config_root) == autostart_after:
-                write_autostart(config_root, autostart_before)
-        except (AeroAssetError, OSError) as rollback_exc:
-            errors.append(f"Aero autostart: {rollback_exc}")
+        for key, reader, writer in (("aero", read_autostart, write_autostart),
+                                     ("ten", ten.read_autostart, ten.write_autostart)):
+            try:
+                if reader(config_root) == shell_after[key]:
+                    writer(config_root, shell_before[key])
+            except (AeroAssetError, OSError) as rollback_exc:
+                errors.append(f"{key} autostart: {rollback_exc}")
         if css_written:
             try:
                 write_css(config_root, css["before"])
@@ -477,7 +507,7 @@ def restore(*, backend: XfceBackend | None = None, data_root: Path | None = None
         old_apps = manifest["app_before"]
         new_apps = manifest["app_after"]
         schema = manifest["schema"]
-        if schema not in (1, 2, 3) or set(old_apps) != set(CONFIG_FILES):
+        if schema not in (1, 2, 3, 4) or set(old_apps) != set(CONFIG_FILES):
             raise ValueError("unexpected manifest schema")
         if set(new_apps) != set(CONFIG_FILES) or not isinstance(changes, list):
             raise ValueError("unexpected manifest fields")
@@ -489,6 +519,7 @@ def restore(*, backend: XfceBackend | None = None, data_root: Path | None = None
                             (css["before"] is not None and not isinstance(css["before"], str))):
             raise ValueError("invalid GTK CSS backup")
         aero_start = manifest.get("aero_autostart") if schema == 3 else None
+        shell_starts = manifest.get("shell_autostarts") if schema == 4 else None
         if schema == 3:
             if not isinstance(aero_start, dict) or set(aero_start) != {"before", "after"}:
                 raise ValueError("invalid autostart backup")
@@ -496,6 +527,17 @@ def restore(*, backend: XfceBackend | None = None, data_root: Path | None = None
                 if content is not None and (not isinstance(content, str) or
                                             content != autostart_content(project_root())):
                     raise ValueError("invalid autostart backup contents")
+        if schema == 4:
+            if not isinstance(shell_starts, dict) or set(shell_starts) != {"aero", "ten"}:
+                raise ValueError("invalid shell autostart backup")
+            for key, canonical in (("aero", autostart_content(project_root())),
+                                   ("ten", ten.autostart_content(project_root()))):
+                item = shell_starts[key]
+                if not isinstance(item, dict) or set(item) != {"before", "after"}:
+                    raise ValueError("invalid shell autostart item")
+                for content in item.values():
+                    if content is not None and content != canonical:
+                        raise ValueError("invalid shell autostart contents")
     except (KeyError, ValueError, TypeError, OSError) as exc:
         raise RiceError("Invalid Rice backup; nothing changed") from exc
 
@@ -541,18 +583,30 @@ def restore(*, backend: XfceBackend | None = None, data_root: Path | None = None
             skipped.append(f"{name} theme")
     apps_changed = desired_apps != current_apps
 
-    auto_target = None
-    auto_changed = False
+    auto_changes = []
     if aero_start is not None:
         try:
             current_auto = read_autostart(config_root)
         except (AeroAssetError, OSError) as exc:
             raise RiceError(f"Aero autostart cannot be inspected: {exc}") from exc
         if current_auto == aero_start["after"]:
-            auto_target = aero_start["before"]
-            auto_changed = current_auto != auto_target
+            if current_auto != aero_start["before"]:
+                auto_changes.append(("aero", write_autostart, aero_start["before"], aero_start["after"]))
         elif current_auto != aero_start["before"]:
             skipped.append("Aero autostart (customized)")
+    if shell_starts is not None:
+        for key, reader, writer in (("aero", read_autostart, write_autostart),
+                                    ("ten", ten.read_autostart, ten.write_autostart)):
+            item = shell_starts[key]
+            try:
+                current_auto = reader(config_root)
+            except (AeroAssetError, OSError) as exc:
+                raise RiceError(f"{key} autostart cannot be inspected: {exc}") from exc
+            if current_auto == item["after"]:
+                if current_auto != item["before"]:
+                    auto_changes.append((key, writer, item["before"], item["after"]))
+            elif current_auto != item["before"]:
+                skipped.append(f"{key} autostart (customized)")
 
     css_target = None
     css_changed = False
@@ -578,8 +632,8 @@ def restore(*, backend: XfceBackend | None = None, data_root: Path | None = None
                 backend.reset(change["kind"], change["channel"], change["key"])
             else:
                 backend.set(change["kind"], change["channel"], change["key"], change["before"])
-        if auto_changed:
-            write_autostart(config_root, auto_target)
+        for _key, writer, target_content, _old_content in auto_changes:
+            writer(config_root, target_content)
         if css_changed:
             write_css(config_root, css_target)
     except Exception as exc:
@@ -589,11 +643,11 @@ def restore(*, backend: XfceBackend | None = None, data_root: Path | None = None
                 set_theme_values(current_apps, config_root=config_root, data_root=data_root)
             except (OSError, ValueError) as rollback_exc:
                 errors.append(f"App themes: {rollback_exc}")
-        if auto_changed:
+        for key, writer, _target_content, applied_content in reversed(auto_changes):
             try:
-                write_autostart(config_root, aero_start["after"])
+                writer(config_root, applied_content)
             except (AeroAssetError, OSError) as rollback_exc:
-                errors.append(f"Aero autostart: {rollback_exc}")
+                errors.append(f"{key} autostart: {rollback_exc}")
         detail = f"; rollback incomplete: {'; '.join(errors)}" if errors else "; previous Rice kept"
         raise RiceError(f"Restore failed: {exc}{detail}") from exc
 

@@ -15,9 +15,11 @@ class PinConfigError(ValueError):
     pass
 
 
-def pin_file() -> Path:
+def pin_file(profile: str = "aero") -> Path:
+    if profile not in ("aero", "windows10"):
+        raise PinConfigError("Unknown taskbar profile")
     base = Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config")
-    return base / "ricehub" / "aero-pins.json"
+    return base / "ricehub" / f"{profile}-pins.json"
 
 
 def validate_ids(ids) -> tuple[str, ...]:

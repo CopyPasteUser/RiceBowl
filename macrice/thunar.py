@@ -26,6 +26,10 @@ PALETTES = {
             "accent": "#91b8e2", "edge": "#d5dce5"},
     "aero": {"chrome": "#b8dcef", "sidebar": "#e0f0fa", "text": "#1a405f",
              "accent": "#62b2e3", "edge": "#80acd0"},
+    "ten-dark": {"chrome": "#252527", "sidebar": "#202020", "text": "#f5f5f5",
+                 "accent": "#0078d7", "edge": "#464646"},
+    "ten-light": {"chrome": "#f4f4f4", "sidebar": "#e8e8e8", "text": "#202020",
+                  "accent": "#0078d7", "edge": "#c8c8c8"},
 }
 
 

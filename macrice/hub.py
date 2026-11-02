@@ -15,7 +15,7 @@ from .hub_art import aspect_fill
 from .hub_catalog import FAMILIES, FAMILY_BY_KEY, recent_backups, search_families
 
 
-HUB_VERSION = "0.4.0rc1"
+HUB_VERSION = "0.5.0rc1"
 
 # A restrained native palette. All GTK CSS colors and font choices live here.
 TOKENS = {
@@ -484,7 +484,7 @@ def run() -> int:
             self.future_note.set_text(
                 "Aero is installable; its separate Start preview changes nothing."
                 if key == "windows7" else
-                "Windows 10 prototype · Read-only. Installation is not available yet."
+                "Windows 10 is installable; this separate concept preview changes nothing."
                 if key == "windows10" else "Coming soon · No installation action is available yet.")
             self.future_note.set_visible(family.prototype or not family.available)
             if family.available:
@@ -637,26 +637,11 @@ def run() -> int:
             self._work("Checking installed themes and desktop settings…", lambda: plan(selected), ready)
 
         def _after_apply(self, backup, style_id):
-            if style_id.startswith("aero-"):
-                self._aero_shell()
-            else:
-                self._aero_shell(quit=True)
+            from .shell_session import sync_theme
+            sync_theme(STYLES[style_id].gtk)
             self._notify("Rice applied successfully. Recovery snapshot saved.")
             self._refresh_backups()
             self._refresh_system()
-
-        @staticmethod
-        def _aero_shell(quit=False):
-            import subprocess
-            import sys
-            command = [sys.executable, str(project_root() / "launcher.py"), "aero-shell"]
-            if quit:
-                command.append("--quit")
-            try:
-                subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
-                                 stderr=subprocess.DEVNULL, start_new_session=True)
-            except OSError:
-                pass
 
         def _restore_confirmed(self):
             backups = recent_backups()
@@ -672,7 +657,8 @@ def run() -> int:
         def _after_restore(self, backup):
             try:
                 from .rice import XfceBackend
-                self._aero_shell(quit=XfceBackend().get("xfconf", "xsettings", "/Net/ThemeName") != "RiceHub-Aero")
+                from .shell_session import sync_theme
+                sync_theme(XfceBackend().get("xfconf", "xsettings", "/Net/ThemeName"))
             except Exception:
                 pass
             skipped = backup / "skipped.json"

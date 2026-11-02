@@ -61,7 +61,7 @@ class AeroTests(unittest.TestCase):
             self.assertTrue((root / "data/icons/RiceHub-Aero/scalable/apps/start-here.svg").is_file())
             self.assertTrue((root / "data/plank/themes/RiceHub-Aero-Glass/dock.theme").is_file())
             self.assertIn("aero-shell", read_autostart(root / "config"))
-            self.assertEqual(json.loads((backup / "manifest.json").read_text())["schema"], 3)
+            self.assertEqual(json.loads((backup / "manifest.json").read_text())["schema"], 4)
             self.assertEqual(restore(backend=fake, data_root=root / "data", config_root=root / "config"), backup)
             self.assertEqual(fake.values, original)
             self.assertFalse(autostart_file(root / "config").exists())
