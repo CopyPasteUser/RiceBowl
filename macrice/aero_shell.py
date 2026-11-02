@@ -46,6 +46,9 @@ CSS = b"""
   border-bottom: 2px solid #ffffff; }
 .aero-task-overflow { background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.30);
   border-radius: 4px; padding: 4px 8px; }
+.aero-tray-icon { background: transparent; border: 0; padding: 3px; }
+.aero-tray-icon:hover { background: rgba(255,255,255,.22); border-radius: 4px; }
+.aero-glass { background-image: linear-gradient(to bottom, rgba(205,242,255,.79), rgba(94,172,221,.83) 48%, rgba(26,81,139,.90)); }
 .aero-time { color: #fff; font-size: 12px; font-weight: bold; }
 .aero-menu-root { background: #eaf4fb; border: 1px solid #5e9bcc; border-radius: 8px; }
 .aero-menu-heading { color: #244e6e; font-size: 20px; font-weight: bold; }
@@ -81,6 +84,7 @@ def run(argv: list[str] | None = None) -> int:
             self._visible_window_ids = ()
             self._overflow_windows = ()
             self._menu_focused = False
+            self._tray = None
 
         def do_command_line(self, command_line):
             args = command_line.get_arguments()
@@ -103,9 +107,15 @@ def run(argv: list[str] | None = None) -> int:
             self.apps = app_catalog(Gio)
             self._create_taskbar()
             self._create_menu()
+            self.connect("shutdown", self._shutdown)
             self._window_tracker = create_window_tracker(GLib.idle_add, self._windows_changed)
             self._catalog_monitor = Gio.AppInfoMonitor.get()
             self._catalog_monitor.connect("changed", self._catalog_changed)
+
+        def _shutdown(self, *_args):
+            if self._tray is not None:
+                self._tray.close()
+                self._tray = None
 
         def _catalog_changed(self, *_args):
             self.apps = app_catalog(Gio)
@@ -138,6 +148,8 @@ def run(argv: list[str] | None = None) -> int:
             win.move(rect.x, rect.y + rect.height - 53)
 
             row = self._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8), "aero-taskbar")
+            if __import__("os").environ.get("RICEHUB_AERO_GLASS") == "1":
+                row.get_style_context().add_class("aero-glass")
             start = self._class(Gtk.Button(), "aero-start")
             contents = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
             logo = project_root() / "assets/aero-penguin.svg"
@@ -172,6 +184,15 @@ def run(argv: list[str] | None = None) -> int:
             row.pack_start(Gtk.Box(), True, True, 0)
             clock = self._class(Gtk.Label(), "aero-time")
             row.pack_end(clock, False, False, 12)
+            if __import__("os").environ.get("RICEHUB_AERO_TRAY", "1") != "0":
+                tray_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
+                row.pack_end(tray_box, False, False, 4)
+                try:
+                    from .aero_tray import StatusNotifierTray
+                    self._tray = StatusNotifierTray(tray_box, Gtk, Gio, GLib, GdkPixbuf)
+                except (GLib.Error, RuntimeError, OSError) as exc:
+                    import logging
+                    logging.getLogger(__name__).warning("Optional Aero tray unavailable: %s", exc)
             def update_clock():
                 clock.set_text(GLib.DateTime.new_now_local().format("%a %H:%M"))
                 return True
