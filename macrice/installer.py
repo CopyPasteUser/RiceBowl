@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import shlex
 import shutil
 import subprocess
 import sys
@@ -20,6 +21,7 @@ LAUNCHER_MARKER = "# Managed by MacRice XFCE"
 DESKTOP_MARKER = "X-MacRice-Managed=true"
 HUB_LAUNCHER_MARKER = "# Managed by RiceHub XFCE"
 HUB_DESKTOP_MARKER = "X-RiceHub-Managed=true"
+FAST_TOGGLE_MARKER = "# Managed by RiceHub fast keyboard toggles"
 
 
 class InstallationError(RuntimeError):
@@ -189,6 +191,23 @@ def _write_entrypoints(installed: Path) -> None:
         + 'exec /usr/bin/python3 "' + str(installed / "launcher.py") + '" hub "$@"\n'
     )
     _atomic_write(hub_launcher, hub_content, 0o755)
+    fast_launcher = binaries / "ricehub-toggle"
+    fast_content = (
+        "#!/bin/sh\n" + FAST_TOGGLE_MARKER + "\n"
+        "[ \"$#\" -eq 1 ] || exit 2\n"
+        "case \"$1\" in\n"
+        "  aero-menu) app=io.github.copypasteuser.RiceHub.AeroShell; action=toggle-menu; profile=aero-shell; fallback=--toggle-menu ;;\n"
+        "  aero-control) app=io.github.copypasteuser.RiceHub.AeroShell; action=toggle-control; profile=aero-shell; fallback=--control ;;\n"
+        "  ten-menu) app=io.github.copypasteuser.RiceHub.TenShell; action=toggle-menu; profile=windows10-shell; fallback=--toggle-menu ;;\n"
+        "  ten-control) app=io.github.copypasteuser.RiceHub.TenShell; action=toggle-control; profile=windows10-shell; fallback=--actions ;;\n"
+        "  *) exit 2 ;;\n"
+        "esac\n"
+        "if command -v gapplication >/dev/null 2>&1; then\n"
+        "  gapplication action \"$app\" \"$action\" >/dev/null 2>&1 && exit 0\n"
+        "fi\n"
+        f"exec {shlex.quote(str(launcher))} \"$profile\" \"$fallback\"\n"
+    )
+    _atomic_write(fast_launcher, fast_content, 0o755)
     hub_desktop_content = (
         "[Desktop Entry]\nType=Application\nVersion=1.0\n"
         "Name=RiceHub\nComment=Explore and manage desktop styles for XFCE\n"
@@ -206,6 +225,7 @@ def _check_entrypoints() -> None:
         (bin_home() / "macrice", LAUNCHER_MARKER),
         (data_home() / "applications/macrice.desktop", DESKTOP_MARKER),
         (bin_home() / "ricehub", HUB_LAUNCHER_MARKER),
+        (bin_home() / "ricehub-toggle", FAST_TOGGLE_MARKER),
         (data_home() / "applications/ricehub.desktop", HUB_DESKTOP_MARKER),
     )
     for path, marker in candidates:

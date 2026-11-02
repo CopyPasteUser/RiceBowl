@@ -46,12 +46,15 @@ class ShortcutTests(unittest.TestCase):
             current = {"Super_L": "xfce4-popup-whiskermenu", "Control_R": None}
             with mock.patch.object(shortcuts, "_read", side_effect=lambda key: current[key]), \
                  mock.patch.object(shortcuts, "_write", side_effect=lambda key, value: current.__setitem__(key, value)):
-                shortcuts.install_bindings(state_dir=state, launcher=Path("/usr/local/bin/macrice"))
-                self.assertIn("session-menu", current["Super_L"])
-                self.assertIn("session-control", current["Control_R"])
-                shortcuts.install_bindings(state_dir=state, launcher=Path("/usr/local/bin/macrice"))
-                shortcuts.install_bindings(state_dir=state, launcher=Path("/home/testuser/.local/bin/macrice"))
-                self.assertIn("/home/testuser/.local/bin/macrice", current["Super_L"])
+                shortcuts.install_bindings("RiceHub-Aero", state_dir=state, launcher=Path("/usr/local/bin/macrice"))
+                self.assertEqual(current["Super_L"], "/usr/local/bin/ricehub-toggle aero-menu")
+                self.assertEqual(current["Control_R"], "/usr/local/bin/ricehub-toggle aero-control")
+                shortcuts.install_bindings("WhiteSur-Dark", state_dir=state, launcher=Path("/usr/local/bin/macrice"))
+                self.assertEqual(current["Super_L"], "/usr/local/bin/macmenu --toggle")
+                self.assertEqual(current["Control_R"], "/usr/local/bin/macos-control-center-toggle")
+                shortcuts.install_bindings("RiceHub-Ten-Light", state_dir=state,
+                                           launcher=Path("/home/testuser/.local/bin/macrice"))
+                self.assertIn("/home/testuser/.local/bin/ricehub-toggle ten-menu", current["Super_L"])
                 shortcuts.restore_bindings(state_dir=state)
             self.assertEqual(current, {"Super_L": "xfce4-popup-whiskermenu", "Control_R": None})
 
@@ -61,13 +64,31 @@ class ShortcutTests(unittest.TestCase):
             current = {"Super_L": None, "Control_R": None}
             with mock.patch.object(shortcuts, "_read", side_effect=lambda key: current[key]), \
                  mock.patch.object(shortcuts, "_write", side_effect=lambda key, value: current.__setitem__(key, value)):
-                shortcuts.install_bindings(state_dir=state, launcher=Path("/usr/local/bin/macrice"))
+                shortcuts.install_bindings("WhiteSur-Light", state_dir=state, launcher=Path("/usr/local/bin/macrice"))
                 current["Super_L"] = "user-custom-shortcut"
-                warnings = shortcuts.install_bindings(state_dir=state, launcher=Path("/usr/local/bin/macrice"))
+                warnings = shortcuts.install_bindings("RiceHub-Aero", state_dir=state,
+                                                      launcher=Path("/usr/local/bin/macrice"))
                 self.assertTrue(warnings)
                 shortcuts.restore_bindings(state_dir=state)
             self.assertEqual(current["Super_L"], "user-custom-shortcut")
             self.assertIsNone(current["Control_R"])
+
+    def test_legacy_dynamic_bindings_upgrade_without_losing_originals(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            state = Path(temporary)
+            original = {"Super_L": "xfce4-popup-whiskermenu", "Control_R": None}
+            legacy = {key: f"/home/simon/.local/bin/macrice {name}"
+                      for key, name in shortcuts.KEY_COMMANDS.items()}
+            shortcuts._save(state / shortcuts.STATE_FILE,
+                            {"version": 1, "original": original, "managed": legacy})
+            current = dict(legacy)
+            with mock.patch.object(shortcuts, "_read", side_effect=lambda key: current[key]), \
+                 mock.patch.object(shortcuts, "_write", side_effect=lambda key, value: current.__setitem__(key, value)):
+                shortcuts.install_bindings("RiceHub-Aero", state_dir=state,
+                                           launcher=Path("/home/simon/.local/bin/macrice"))
+                self.assertEqual(current["Super_L"], "/home/simon/.local/bin/ricehub-toggle aero-menu")
+                shortcuts.restore_bindings(state_dir=state)
+            self.assertEqual(current, original)
 
 
 if __name__ == "__main__":

@@ -140,6 +140,25 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._smoke = False
             self._smoke_failed = False
             self._capture_gallery = False
+            self._popup_hide_sources = {"menu": 0, "control": 0}
+
+        def do_startup(self):
+            Gtk.Application.do_startup(self)
+            for name in ("toggle-menu", "toggle-control"):
+                action = Gio.SimpleAction.new(name, None)
+                action.connect("activate", self._on_fast_action, name)
+                self.add_action(action)
+
+        def _on_fast_action(self, _action, _parameter, name):
+            self._remote_toggle(name)
+
+        def _remote_toggle(self, name):
+            if self.bar is None:
+                self.activate()
+            if name == "toggle-control":
+                self._toggle_actions()
+            else:
+                self._toggle_menu()
 
         def do_command_line(self, command_line):
             args = command_line.get_arguments()
@@ -148,12 +167,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     self.quit()
                 return 0
             if "--toggle-menu" in args or "--control" in args or (ten and "--actions" in args):
-                if self.bar is None:
-                    self.activate()
-                if "--control" in args or (ten and "--actions" in args):
-                    self._toggle_actions()
-                else:
-                    self._toggle_menu()
+                self._remote_toggle("toggle-control" if "--control" in args or (ten and "--actions" in args)
+                                    else "toggle-menu")
                 return 0
             self._smoke = "--smoke-test" in args
             self._capture_gallery = ten and "--capture-gallery" in args
@@ -205,6 +220,12 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self.search.set_text("unlikely-app-id-ricehub-smoke-39083")
                 assert self.results.get_children()
                 self._hide_menu()
+                assert not self.menu.get_visible()
+                assert self.lookup_action("toggle-menu") is not None
+                assert self.lookup_action("toggle-control") is not None
+                self.lookup_action("toggle-menu").activate(None)
+                assert self.menu.get_visible()
+                self.lookup_action("toggle-menu").activate(None)
                 assert not self.menu.get_visible()
                 self._toggle_actions()
                 assert self.actions.get_visible()
@@ -282,6 +303,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             return False
 
         def _shutdown(self, *_args):
+            for name in self._popup_hide_sources:
+                self._cancel_popup_hide(name)
             if self._tray is not None:
                 self._tray.close()
                 self._tray = None
@@ -305,7 +328,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             if self.menu.get_visible():
                 self._hide_menu()
             if self.actions.get_visible():
-                self.actions.hide()
+                self._hide_actions()
 
         def _render_pins(self):
             for child in self.pinned_box.get_children():
@@ -854,19 +877,47 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 grid.attach(button, index % 2, index // 2, 1, 1)
             root.pack_start(grid, False, False, 0)
             actions.add(root)
-            actions.connect("focus-out-event", lambda *_args: actions.hide() or False)
+            actions.connect("focus-out-event", lambda *_args: self._schedule_popup_hide("control"))
             actions.connect("key-press-event", lambda _widget, event: self._action_key(event))
             self.actions = actions
 
         def _action_key(self, event):
             if event.keyval == Gdk.KEY_Escape:
-                self.actions.hide()
+                self._hide_actions()
                 return True
             return False
 
+        def _cancel_popup_hide(self, name):
+            source = self._popup_hide_sources[name]
+            self._popup_hide_sources[name] = 0
+            if source:
+                GLib.source_remove(source)
+
+        def _schedule_popup_hide(self, name):
+            # XFCE briefly transfers focus when executing a shortcut. A delayed
+            # dismissal lets the explicit remote toggle take precedence.
+            self._cancel_popup_hide(name)
+            self._popup_hide_sources[name] = GLib.timeout_add(650, self._hide_if_unfocused, name)
+            return False
+
+        def _hide_if_unfocused(self, name):
+            self._popup_hide_sources[name] = 0
+            window = self.menu if name == "menu" else self.actions
+            if window.get_visible() and not window.is_active():
+                if name == "menu":
+                    self._hide_menu()
+                else:
+                    self._hide_actions()
+            return False
+
+        def _hide_actions(self):
+            self._cancel_popup_hide("control")
+            self.actions.hide()
+
         def _toggle_actions(self):
+            self._cancel_popup_hide("control")
             if self.actions.get_visible():
-                self.actions.hide()
+                self._hide_actions()
                 return
             self._hide_menu()
             rect = self._desktop_rect()
@@ -932,6 +983,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             return False
 
         def _hide_menu(self):
+            self._cancel_popup_hide("menu")
             self._menu_focused = False
             if self.menu:
                 self.menu.hide()
@@ -942,16 +994,14 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             return False
 
         def _menu_focus_out(self, *_args):
-            # Ignore the immediate focus shuffle when opening from an X11 DOCK.
-            if self._menu_focused and GLib.get_monotonic_time() - self._menu_opened_at > 220_000:
-                self._hide_menu()
-            return False
+            return self._schedule_popup_hide("menu")
 
         def _toggle_menu(self):
+            self._cancel_popup_hide("menu")
             if self.menu.get_visible():
                 self._hide_menu()
                 return
-            self.actions.hide()
+            self._hide_actions()
             rect = self._desktop_rect()
             self._menu_focused = False
             self._menu_opened_at = GLib.get_monotonic_time()
