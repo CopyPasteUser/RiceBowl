@@ -29,6 +29,12 @@ def app_catalog(Gio):
     return tuple(sorted(result.values(), key=lambda app: (app.get_display_name() or app.get_name()).casefold()))
 
 
+def matching_apps(apps, query: str):
+    needle = query.casefold().strip()
+    return tuple(app for app in apps if needle in
+                 (app.get_display_name() or app.get_name() or "").casefold())
+
+
 CSS = b"""
 .aero-taskbar {
   background-image: linear-gradient(to bottom, rgba(193,232,255,.95), rgba(91,161,211,.96) 48%, rgba(24,74,133,.98));
@@ -100,6 +106,7 @@ def run(argv: list[str] | None = None) -> int:
             self._pin_count = 0
             self._task_capacity = 0
             self.show_desktop_button = None
+            self._app_page_size = 24
 
         def do_command_line(self, command_line):
             args = command_line.get_arguments()
@@ -410,7 +417,11 @@ def run(argv: list[str] | None = None) -> int:
             menu.add(body)
             menu.connect("focus-in-event", self._menu_focus_in)
             menu.connect("focus-out-event", self._menu_focus_out)
-            search.connect("search-changed", lambda *_: self._populate(search.get_text()))
+            def update_search(*_args):
+                self._app_page_size = 24
+                self._populate(search.get_text())
+            search.connect("search-changed", update_search)
+            menu.connect("key-press-event", lambda _widget, event: self._search_key(event))
             search.connect("key-press-event", lambda _widget, event: self._search_key(event))
             self.menu = menu
             self.search = search
@@ -419,12 +430,11 @@ def run(argv: list[str] | None = None) -> int:
         def _populate(self, query):
             for child in self.results.get_children():
                 self.results.remove(child)
-            matches = [app for app in self.apps if query.casefold().strip() in
-                       (app.get_display_name() or app.get_name()).casefold()][:24]
+            matches = matching_apps(self.apps, query)
             if not matches:
                 self.results.pack_start(self._class(Gtk.Label(label="No matching applications", xalign=0),
                                                      "aero-menu-sub"), False, False, 8)
-            for app in matches:
+            for app in matches[:self._app_page_size]:
                 btn = self._class(Gtk.Button(), "aero-menu-app")
                 row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
                 icon = app.get_icon()
@@ -434,11 +444,27 @@ def run(argv: list[str] | None = None) -> int:
                 btn.add(row)
                 btn.connect("clicked", lambda _btn, selected=app: self._launch(selected))
                 self.results.pack_start(btn, False, False, 0)
+            if len(matches) > self._app_page_size:
+                more = self._class(Gtk.Button(label="All Programs · Show more"), "aero-menu-app")
+                more.get_accessible().set_name("Show more installed applications")
+                def expand(_button):
+                    self._app_page_size += 24
+                    self._populate(self.search.get_text())
+                more.connect("clicked", expand)
+                self.results.pack_start(more, False, False, 0)
             self.results.show_all()
 
         def _search_key(self, event):
             if event.keyval == Gdk.KEY_Escape:
                 self._hide_menu()
+                return True
+            if event.keyval in (Gdk.KEY_Return, Gdk.KEY_KP_Enter):
+                apps = matching_apps(self.apps, self.search.get_text())
+                if apps:
+                    self._launch(apps[0])
+                    return True
+            if event.keyval == Gdk.KEY_Down and self.results.get_children():
+                self.results.get_children()[0].grab_focus()
                 return True
             return False
 
