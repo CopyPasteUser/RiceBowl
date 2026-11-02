@@ -116,7 +116,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
     gi.require_version("Gdk", "3.0")
     from gi.repository import Gdk, GdkPixbuf, Gio, GLib, Gtk, Pango
 
-    from .aero_windows import create_window_tracker, toggle_window
+    from .aero_windows import create_window_tracker, toggle_window_id
     from .installer import project_root
 
     class AeroShell(Gtk.Application):
@@ -319,12 +319,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self._reserve_workarea(self.bar)
             self._task_capacity = task_capacity(rect.width, self._pin_count, 340 if ten else 185)
             if self._window_tracker is not None:
-                from .aero_windows import is_task_window
-                screen = self._window_tracker.screen
-                self._windows_changed(tuple(
-                    win for win in screen.get_windows()
-                    if is_task_window(win, self._window_tracker.wnck)
-                ), screen.get_active_window())
+                self._window_tracker.refresh()
             if self.menu.get_visible():
                 self._hide_menu()
             if self.actions.get_visible():
@@ -392,12 +387,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._task_capacity = task_capacity(self._desktop_rect().width, self._pin_count,
                                                 340 if ten else 185)
             if self._window_tracker is not None:
-                from .aero_windows import is_task_window
-                screen = self._window_tracker.screen
-                self._windows_changed(tuple(
-                    win for win in screen.get_windows()
-                    if is_task_window(win, self._window_tracker.wnck)
-                ), screen.get_active_window())
+                self._window_tracker.refresh()
 
         def _reserve_workarea(self, widget, *_args):
             """Reserve the bottom strip on X11, but never change XFCE panel settings."""
@@ -587,16 +577,16 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.bar = win
 
         def _windows_changed(self, windows, active):
-            """Keep task buttons stable across title, state and focus changes."""
+            """Render copied task data without retaining native WnckWindow objects."""
             visible, self._overflow_windows = select_windows(tuple(windows), active, self._task_capacity)
-            visible_ids = tuple(window.get_xid() for window in visible)
+            visible_ids = tuple(window.xid for window in visible)
             if visible_ids != self._visible_window_ids:
                 for child in self.tasks.get_children():
                     self.tasks.remove(child)
                 previous = self.window_buttons
                 self.window_buttons = {}
                 for window in visible:
-                    xid = window.get_xid()
+                    xid = window.xid
                     if xid in previous:
                         button, icon, label = previous[xid]
                     else:
@@ -610,22 +600,22 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                         content.pack_start(icon, False, False, 0)
                         content.pack_start(label, True, True, 0)
                         button.add(content)
-                        button.connect("clicked", lambda _btn, target=window: self._activate_task(target))
+                        button.connect("clicked", lambda _btn, target=xid: self._activate_task(target))
                     self.window_buttons[xid] = (button, icon, label)
                     self.tasks.pack_start(button, False, False, 0)
                 self._visible_window_ids = visible_ids
             for window in visible:
-                button, icon, label = self.window_buttons[window.get_xid()]
-                title = window.get_name() or "Application"
+                button, icon, label = self.window_buttons[window.xid]
+                title = window.title
                 if label.get_text() != title:
                     label.set_text(title)
                     button.set_tooltip_text(title)
                     button.get_accessible().set_name("Switch to " + title)
-                pixbuf = window.get_mini_icon()
+                pixbuf = window.mini_icon
                 if pixbuf is not None:
                     icon.set_from_pixbuf(pixbuf)
                 context = button.get_style_context()
-                if window == active and not window.is_minimized():
+                if window == active and not window.minimized:
                     context.add_class("aero-task-active")
                 else:
                     context.remove_class("aero-task-active")
@@ -637,17 +627,19 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self.tasks.remove(self.overflow_button)
             self.tasks.show_all()
 
-        def _activate_task(self, window):
+        def _activate_task(self, xid):
             if self._window_tracker:
-                toggle_window(window, self._window_tracker.screen.get_active_window(),
-                              Gtk.get_current_event_time())
+                # Resolve a live object only for this click; never capture it in
+                # a button closure after the application window is closed.
+                toggle_window_id(self._window_tracker.wnck, self._window_tracker.screen,
+                                 xid, Gtk.get_current_event_time())
             self._hide_menu()
 
         def _show_overflow(self, button):
             menu = Gtk.Menu()
             for window in self._overflow_windows:
-                item = Gtk.MenuItem(label=window.get_name() or "Application")
-                item.connect("activate", lambda _item, target=window: self._activate_task(target))
+                item = Gtk.MenuItem(label=window.title)
+                item.connect("activate", lambda _item, target=window.xid: self._activate_task(target))
                 menu.append(item)
             menu.show_all()
             menu.popup_at_widget(button, Gdk.Gravity.NORTH_WEST, Gdk.Gravity.SOUTH_WEST, None)
