@@ -13,7 +13,7 @@ import sys
 import time
 from pathlib import Path
 
-from .environment import data_home
+from .environment import bin_home, data_home
 from .installer import project_root
 
 SHELLS = {"aero": "aero-shell", "ten": "windows10-shell"}
@@ -79,6 +79,15 @@ def _start(name: str, argv: list[str]) -> list[str]:
     except OSError as exc:
         return [f"Cannot start {name}: {exc}"]
     return []
+
+
+def _component_executable(name: str) -> str | None:
+    """Find RiceHub-managed binaries even when XFCE starts the hub with a minimal PATH."""
+    if name == "macbar":
+        local = bin_home() / "macbar"
+        if local.is_file() and os.access(local, os.X_OK):
+            return str(local)
+    return shutil.which(name)
 
 
 def _macbar_bus_owned() -> bool | None:
@@ -266,7 +275,7 @@ def sync_theme(theme: str) -> tuple[str, ...]:
             warnings.extend(_shell(desired, False))
     elif mac:
         for name in ("plank", "macbar"):
-            executable = shutil.which(name)
+            executable = _component_executable(name)
             if executable:
                 warnings.extend(_start(name, [executable]))
             else:

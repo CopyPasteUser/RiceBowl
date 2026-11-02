@@ -94,6 +94,12 @@ CSS = b"""
   background-image: linear-gradient(to bottom, #dff5ff, #a8d5f1 52%, #71acd6);
   border-left: 1px solid #83b6db; padding: 12px;
 }
+.aero-control-root { background-image: linear-gradient(to bottom, #f6fcff, #d6eaf8);
+  color: #244e6e; border: 1px solid #6eabd4; border-radius: 7px; padding: 14px; }
+.aero-control-quick { background-image: linear-gradient(to bottom, #ffffff, #c0dff3);
+  color: #244e6e; border: 1px solid #82b3d6; border-radius: 5px; padding: 10px 8px; }
+.aero-control-quick:hover, .aero-control-quick:focus { background: #eefaff;
+  border-color: #338cd0; }
 .aero-menu-side button { background: transparent; border: 1px solid transparent; color: #194467; box-shadow: none; }
 .aero-menu-side button:hover { background: rgba(255,255,255,.55); border-color: #74a7cb; }
 """
@@ -141,10 +147,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 if self.bar is not None:
                     self.quit()
                 return 0
-            if "--toggle-menu" in args or (ten and "--actions" in args):
+            if "--toggle-menu" in args or "--control" in args or (ten and "--actions" in args):
                 if self.bar is None:
                     self.activate()
-                if ten and "--actions" in args:
+                if "--control" in args or (ten and "--actions" in args):
                     self._toggle_actions()
                 else:
                     self._toggle_menu()
@@ -178,8 +184,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self._capture_background()
             self._create_taskbar()
             self._create_menu()
-            if ten:
-                self._create_actions()
+            self._create_actions()
             self.connect("shutdown", self._shutdown)
             self._window_tracker = create_window_tracker(GLib.idle_add, self._windows_changed)
             if self.show_desktop_button is not None:
@@ -201,11 +206,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 assert self.results.get_children()
                 self._hide_menu()
                 assert not self.menu.get_visible()
-                if ten:
-                    self._toggle_actions()
-                    assert self.actions.get_visible()
-                    self._toggle_actions()
-                    assert not self.actions.get_visible()
+                self._toggle_actions()
+                assert self.actions.get_visible()
+                self._toggle_actions()
+                assert not self.actions.get_visible()
             except Exception:
                 import traceback
                 traceback.print_exc()
@@ -281,7 +285,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             if self._tray is not None:
                 self._tray.close()
                 self._tray = None
-            if ten and hasattr(self, "actions"):
+            if hasattr(self, "actions"):
                 self.actions.destroy()
 
         def _screen_changed(self, *_args):
@@ -300,7 +304,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 ), screen.get_active_window())
             if self.menu.get_visible():
                 self._hide_menu()
-            if ten and self.actions.get_visible():
+            if self.actions.get_visible():
                 self.actions.hide()
 
         def _render_pins(self):
@@ -520,6 +524,13 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 action.set_tooltip_text("Quick settings and notification information")
                 action.connect("clicked", lambda _button: self._toggle_actions())
                 row.pack_end(action, False, False, 0)
+            else:
+                control = self._class(Gtk.Button(), "aero-quick")
+                control.set_image(self._icon("preferences-system", Gtk.IconSize.MENU))
+                control.set_tooltip_text("Control Panel")
+                control.get_accessible().set_name("Toggle Windows 7 Control Panel")
+                control.connect("clicked", lambda _button: self._toggle_actions())
+                row.pack_end(control, False, False, 0)
             for label, icon, command in (
                 ("Network connections", "network-wireless", "nm-connection-editor"),
                 ("Sound settings", "audio-volume-high", "pavucontrol"),
@@ -804,7 +815,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _create_actions(self):
             actions = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
-            actions.set_title("RiceHub Windows 10 Action Center")
+            actions.set_title("RiceHub Windows 10 Action Center" if ten else "RiceHub Aero Control Panel")
             actions.set_decorated(False)
             actions.set_resizable(False)
             actions.set_skip_taskbar_hint(True)
@@ -812,25 +823,30 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             actions.set_type_hint(Gdk.WindowTypeHint.UTILITY)
             actions.set_transient_for(self.bar)
             actions.set_keep_above(True)
-            root = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=13), "ten-action-root")
-            root.set_size_request(300, 350)
-            root.pack_start(self._class(Gtk.Label(label="Action Center", xalign=0), "aero-menu-heading"),
+            root = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=13),
+                               "ten-action-root" if ten else "aero-control-root")
+            root.set_size_request(300, 350 if ten else 245)
+            root.pack_start(self._class(Gtk.Label(label="Action Center" if ten else "Control Panel", xalign=0), "aero-menu-heading"),
                             False, False, 0)
-            root.pack_start(self._class(Gtk.Label(label="Notifications", xalign=0), "aero-menu-sub"),
-                            False, False, 0)
-            note = self._class(Gtk.Label(label="Notification history is managed by XFCE.", xalign=0),
-                               "ten-muted")
-            note.set_line_wrap(True)
-            root.pack_start(note, False, False, 0)
+            if ten:
+                root.pack_start(self._class(Gtk.Label(label="Notifications", xalign=0), "aero-menu-sub"),
+                                False, False, 0)
+                note = self._class(Gtk.Label(label="Notification history is managed by XFCE.", xalign=0),
+                                   "ten-muted")
+                note.set_line_wrap(True)
+                root.pack_start(note, False, False, 0)
+            else:
+                root.pack_start(self._class(Gtk.Label(label="Desktop settings and devices", xalign=0), "aero-menu-sub"),
+                                False, False, 0)
             root.pack_start(Gtk.Box(), True, True, 0)
-            root.pack_start(self._class(Gtk.Label(label="Quick settings", xalign=0), "aero-menu-sub"),
+            root.pack_start(self._class(Gtk.Label(label="Quick settings" if ten else "System tools", xalign=0), "aero-menu-sub"),
                             False, False, 0)
             grid = Gtk.Grid(row_spacing=5, column_spacing=5)
             for index, (title, command) in enumerate((
                 ("Network", "nm-connection-editor"), ("Sound", "pavucontrol"),
                 ("Display", "xfce4-display-settings"), ("Settings", "xfce4-settings-manager"),
             )):
-                button = self._class(Gtk.Button(label=title), "ten-quick")
+                button = self._class(Gtk.Button(label=title), "ten-quick" if ten else "aero-control-quick")
                 button.set_size_request(138, 49)
                 button.get_accessible().set_name("Open " + title + " settings")
                 button.set_sensitive(shutil.which(command) is not None)
@@ -857,7 +873,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             width = min(330, max(0, rect.width - 16))
             height = min(430, max(0, rect.height - PANEL_HEIGHT - 16))
             if width < 235 or height < 250:
-                self._error("The display is too small for Action Center.")
+                self._error("The display is too small for " + ("Action Center." if ten else "Control Panel."))
                 return
             self.actions.show_all()
             self.actions.resize(width, height)
@@ -935,8 +951,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             if self.menu.get_visible():
                 self._hide_menu()
                 return
-            if ten:
-                self.actions.hide()
+            self.actions.hide()
             rect = self._desktop_rect()
             self._menu_focused = False
             self._menu_opened_at = GLib.get_monotonic_time()

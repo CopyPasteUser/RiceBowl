@@ -25,7 +25,7 @@ def command_for(action: str, theme: str) -> tuple[str, ...]:
         return ("macrice", "windows10-shell", "--toggle-menu" if action == "menu" else "--actions")
     if theme == "RiceHub-Aero":
         return ("macrice", "aero-shell", "--toggle-menu") if action == "menu" else (
-            "xfce4-settings-manager",)
+            "macrice", "aero-shell", "--control")
     return ("macmenu", "--toggle") if action == "menu" else ("macos-control-center-toggle",)
 
 
