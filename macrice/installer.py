@@ -43,6 +43,8 @@ def _check_layout(source: Path) -> None:
         "macrice/gui.py",
         "macrice/hub.py",
         "macrice/hub_catalog.py",
+        "macrice/hub_art.py",
+        "macrice/windows7_proto.py",
         "macrice/plank.py",
         "macrice/rice.py",
         "macrice/preview.py",

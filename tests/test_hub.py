@@ -22,6 +22,7 @@ class HubCatalogTests(unittest.TestCase):
         for family in FAMILIES:
             self.assertIs(FAMILY_BY_KEY[family.key], family)
             self.assertEqual(bool(family.styles), family.available)
+        self.assertTrue(FAMILY_BY_KEY["windows7"].prototype)
 
     def test_search_availability_and_case_insensitive_queries(self):
         self.assertEqual([item.key for item in search_families("windows", "soon")],

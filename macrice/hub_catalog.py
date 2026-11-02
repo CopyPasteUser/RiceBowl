@@ -23,6 +23,7 @@ class RiceFamily:
     available: bool
     styles: tuple[str, ...] = ()
     features: tuple[str, ...] = ()
+    prototype: bool = False
 
 
 FAMILIES: tuple[RiceFamily, ...] = (
@@ -45,7 +46,7 @@ FAMILIES: tuple[RiceFamily, ...] = (
     RiceFamily(
         "windows7", "Windows 7", "Aero nostalgia",
         "Classic window chrome and a familiar taskbar, with optional compositor-dependent effects.",
-        False, (), ("Classic Start", "Aero-inspired chrome", "Taskbar", "Optional transparency"),
+        False, (), ("Classic Start", "Aero-inspired chrome", "Taskbar", "Optional transparency"), True,
     ),
 )
 

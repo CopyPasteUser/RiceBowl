@@ -1,6 +1,6 @@
 # RiceHub · Desktop styles for XFCE
 
-RiceHub is the beginning of a bigger idea: one lightweight home for complete XFCE rices inspired by operating systems we know and love. The project is built around **a working system first, an honest roadmap second**. The macOS implementation comes from the existing MacRice projects. Windows-inspired desktops are visible in the gallery but cannot be applied yet.
+RiceHub is the beginning of a bigger idea: one lightweight home for complete XFCE rices inspired by operating systems we know and love. The project is built around **a working system first, an honest roadmap second**. The macOS implementation comes from the existing MacRice projects. Windows 7 has an interactive design prototype; Windows-inspired desktops still cannot be applied.
 
 ## First launch
 
@@ -32,9 +32,17 @@ The desktop remains usable if your XFCE configuration is different, but **the fu
 | macOS / Aurora collection | **Available (preview)** | MacBar, MacMenu, Control Center, Plank, five full desktop palettes and Thunar styling |
 | Windows 10 | Coming soon | Left-aligned taskbar, Start menu, action area and clean productivity styling |
 | Windows 11 | Coming soon | Centered taskbar, rounded launcher, quick settings, light/dark modes |
-| Windows 7 | Coming soon | Familiar Start menu, taskbar and Aero-inspired window styling |
+| Windows 7 | **Interactive, preview-only prototype** | Original Aero-inspired desktop, toggleable Start menu, sample program search; actual system styling still coming soon |
 
-These future entries are **read-only descriptions**. No fake Apply button, accidental Windows profile writes or speculative system-wide package installs.
+Windows 10 and 11 are **read-only descriptions**. Windows 7's prototype is interactive but does not launch applications or make system changes. None of the Windows families shows an Apply button; none installs packages or changes your current desktop.
+
+### Genuine interface screenshots
+
+![RiceHub Discover window on XFCE/X11](screenshots/ricehub-discover-0.1.0rc1.png)
+
+![Windows 7-inspired Start menu prototype in GTK3](screenshots/ricehub-windows7-prototype-0.1.0rc1.png)
+
+These are captures of the running GTK3 application on an XFCE/X11 test session, not design renders. For a side-by-side view of the gallery card and prototype, see the [README](README.md#windows-7-first-interactive-prototype).
 
 ## Product roadmap
 
@@ -45,6 +53,8 @@ These future entries are **read-only descriptions**. No fake Apply button, accid
 - [x] Desktop status, components, performance and backup/recovery pages.
 - [x] Owned user-local RiceHub launcher, desktop entry, icon and compatibility with existing MacRice.
 - [x] Explicit confirmation, read-only preflight and honest Coming soon states.
+- [x] Interactive Windows 7 Start menu design prototype with sample search and no installer or XFCE writes.
+- [x] Publish genuine RiceHub and Windows 7 preview screenshots.
 - [x] No new long-running process when the hub is closed.
 
 **0.2 — dependable switching and onboarding**
@@ -52,7 +62,7 @@ These future entries are **read-only descriptions**. No fake Apply button, accid
 - [ ] System compatibility score with package/theme installation instructions.
 - [ ] More resilient migration and a recovery wizard with individual settings selection.
 - [ ] Full keyboard-only, touch, HiDPI and small-screen testing on physical XFCE laptops.
-- [ ] Desktop screenshots from actual supported XFCE sessions, with measured startup and memory budgets.
+- [ ] Additional desktop screenshots from physical supported XFCE hardware, with measured startup and memory budgets.
 
 **0.4 — Windows 10 preview**
 
@@ -63,7 +73,7 @@ These future entries are **read-only descriptions**. No fake Apply button, accid
 **0.6 — Windows 11 and Windows 7**
 
 - [ ] Centered Windows 11-inspired taskbar and quick settings.
-- [ ] Windows 7-inspired classic menu/taskbar and optional compositor-dependent transparency.
+- [ ] Turn the Windows 7 visual prototype into a reversible classic menu/taskbar rice, with optional compositor-dependent transparency.
 - [ ] Theme import/export and optional community-authored presets with transparent provenance.
 
 **0.8 — hub polish**

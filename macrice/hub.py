@@ -11,6 +11,7 @@ import os
 import threading
 from pathlib import Path
 
+from .hub_art import aspect_fill
 from .hub_catalog import FAMILIES, FAMILY_BY_KEY, recent_backups, search_families
 
 
@@ -88,6 +89,7 @@ def run() -> int:
     from .installer import InstallOptions, install, project_root
     from .performance import PROFILES as PERFORMANCE_PROFILES, apply_profile, measure_processes
     from .rice import STYLES, apply, plan, restore
+    from .windows7_proto import install_css as install_windows7_css, teaser as windows7_teaser, show_dialog as show_windows7
 
     def cls(widget, name):
         widget.get_style_context().add_class(name)
@@ -126,6 +128,7 @@ def run() -> int:
             self._component_buttons = {}
             self._wallpaper_cache = {}
             self._preview_style = "night"
+            self._preview_rendered = None
             try:
                 self.set_icon_from_file(str(project_root() / "assets/ricehub-symbolic.svg"))
             except (OSError, GLib.Error):
@@ -226,10 +229,18 @@ def run() -> int:
             body.pack_start(self.preview, False, False, 0)
             self.preview_stack = Gtk.Stack()
             self.preview_stack.set_transition_type(Gtk.StackTransitionType.NONE)
-            self.preview_image = Gtk.DrawingArea()
-            self.preview_image.set_size_request(-1, 190)
-            self.preview_image.connect("draw", self._draw_wallpaper)
-            self.preview_stack.add_named(self.preview_image, "macos")
+            canvas = Gtk.DrawingArea()
+            canvas.set_size_request(-1, 190)
+            canvas.connect("size-allocate", self._resize_wallpaper)
+            image_layer = Gtk.Overlay()
+            image_layer.add(canvas)
+            self.preview_image = Gtk.Image()
+            self.preview_image.set_halign(Gtk.Align.FILL)
+            self.preview_image.set_valign(Gtk.Align.FILL)
+            image_layer.add_overlay(self.preview_image)
+            self.preview_stack.add_named(image_layer, "macos")
+            install_windows7_css(Gtk, Gdk)
+            self.preview_stack.add_named(windows7_teaser(Gtk), "windows7")
             placeholder = vertical(9)
             placeholder.set_valign(Gtk.Align.CENTER)
             placeholder.set_halign(Gtk.Align.CENTER)
@@ -258,6 +269,10 @@ def run() -> int:
             controls.pack_start(self.plan_button, False, False, 0)
             self.apply_button = action("Apply rice", lambda _: self._plan_selected(apply_after=True), True)
             controls.pack_start(self.apply_button, False, False, 0)
+            self.prototype_button = action(
+                "Explore Windows 7 prototype", lambda _: show_windows7(self, Gtk, Gdk, GLib), True)
+            self.prototype_button.set_no_show_all(True)
+            controls.pack_start(self.prototype_button, False, False, 0)
             self.future_note = label("Coming soon · No installation action is available yet.", "hub-soon")
             self.future_note.set_no_show_all(True)
             body.pack_start(self.future_note, False, False, 0)
@@ -295,12 +310,15 @@ def run() -> int:
             content = vertical(6)
             header = horizontal(9)
             header.pack_start(label(family.title, "hub-title"), True, True, 0)
-            header.pack_start(label("Available" if family.available else "Coming soon",
+            header.pack_start(label("Available" if family.available else
+                                    "Interactive prototype" if family.prototype else "Coming soon",
                                     "hub-good" if family.available else "hub-soon"), False, False, 0)
             content.pack_start(header, False, False, 0)
             content.pack_start(label(family.subtitle, "hub-body"), False, False, 0)
             button.add(content)
-            button.get_accessible().set_name(f"{family.title} — {'available' if family.available else 'coming soon'}")
+            button.get_accessible().set_name(
+                f"{family.title} — " + ("available" if family.available else
+                                       "interactive preview only" if family.prototype else "coming soon"))
             button.connect("clicked", lambda _: self._select_family(family.key))
             self.gallery.add(button)
             self._family_buttons[family.key] = button
@@ -410,7 +428,8 @@ def run() -> int:
                 panel = cls(vertical(6), "hub-card")
                 row = horizontal(10)
                 row.pack_start(label(family.title, "hub-section"), True, True, 0)
-                row.pack_start(label("Coming soon", "hub-soon"), False, False, 0)
+                row.pack_start(label("Prototype preview" if family.prototype else "Coming soon", "hub-soon"),
+                               False, False, 0)
                 panel.pack_start(row, False, False, 0)
                 panel.pack_start(label(family.description, "hub-body", True), False, False, 0)
                 panel.pack_start(label("Planned: " + ", ".join(family.features), "hub-hint", True), False, False, 0)
@@ -439,10 +458,15 @@ def run() -> int:
                     context.add_class("hub-selected")
             self.preview_title.set_text(family.title + " — " + family.subtitle)
             self.preview_description.set_text(family.description)
-            self.preview_stack.set_visible_child_name("macos" if family.available else "future")
+            self.preview_stack.set_visible_child_name(
+                "macos" if family.available else "windows7" if family.prototype else "future")
             self.style_picker.set_visible(family.available)
             self.plan_button.set_visible(family.available)
             self.apply_button.set_visible(family.available)
+            self.prototype_button.set_visible(family.prototype)
+            self.future_note.set_text(
+                "Interactive preview only · Windows 7 is not installable yet."
+                if family.prototype else "Coming soon · No installation action is available yet.")
             self.future_note.set_visible(not family.available)
             if family.available:
                 self._on_style_changed()
@@ -460,31 +484,27 @@ def run() -> int:
                         str(path), 1200, 500, True)
                 except GLib.Error:
                     self._wallpaper_cache[wallpaper] = None
-            self.preview_image.queue_draw()
+            self._preview_rendered = None
+            allocation = self.preview_stack.get_allocation()
+            self._resize_wallpaper(None, allocation)
 
-        def _draw_wallpaper(self, widget, cr):
-            """Aspect-fill inside the actual allocation; never force a 900px minimum width."""
-            width = widget.get_allocated_width()
-            height = widget.get_allocated_height()
+        def _resize_wallpaper(self, _widget, allocation):
+            """Fit wallpaper without a Cairo draw callback or wide minimum size."""
+            width = allocation.width
+            height = allocation.height
             if width <= 0 or height <= 0:
-                return False
+                return
             wallpaper = STYLES[self._preview_style].wallpaper
+            key = wallpaper, width, height
+            if key == self._preview_rendered:
+                return
             pixbuf = self._wallpaper_cache.get(wallpaper)
             if pixbuf is not None:
-                scale = max(width / pixbuf.get_width(), height / pixbuf.get_height())
-                cr.save()
-                cr.rectangle(0, 0, width, height)
-                cr.clip()
-                cr.translate((width - pixbuf.get_width() * scale) / 2,
-                             (height - pixbuf.get_height() * scale) / 2)
-                cr.scale(scale, scale)
-                Gdk.cairo_set_source_pixbuf(cr, pixbuf, 0, 0)
-                cr.paint()
-                cr.restore()
+                self.preview_image.set_from_pixbuf(
+                    aspect_fill(pixbuf, width, height, GdkPixbuf.InterpType.BILINEAR))
             else:
-                cr.set_source_rgb(.14, .19, .26)
-                cr.paint()
-            return False
+                self.preview_image.clear()
+            self._preview_rendered = key
 
         def _filter_families(self, *_args):
             shown = {family.key for family in search_families(
@@ -511,7 +531,7 @@ def run() -> int:
 
         def _set_busy(self, busy):
             self._busy = busy
-            for name in ("apply_button", "plan_button", "install_button", "restore_button",
+            for name in ("apply_button", "plan_button", "prototype_button", "install_button", "restore_button",
                          "performance_button", "measure_button"):
                 button = getattr(self, name, None)
                 if button:
