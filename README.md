@@ -1,64 +1,56 @@
-# RiceHub for XFCE
+# RiceHub
 
-**One place to explore, install and manage desktop rices — without giving up XFCE.**
+### Your desktop, your rules. A home for XFCE rices.
 
-RiceHub began as MacRice: a native macOS-inspired desktop built for people who love XFCE's speed and flexibility. Now we're growing it into a home for other OS-inspired looks, including Windows 7, 10 and 11. The important distinction: **macOS is working today; the Windows families are clearly marked Coming soon.** This is an early preview, not a promise that those desktops are already installable.
+RiceHub is a small, native Linux app for turning an ordinary XFCE desktop into something personal. It started with a love of macOS's clean interface and XFCE's speed. The goal is bigger now: one friendly place to discover, preview, apply and eventually share complete desktop styles — without swapping out your desktop environment.
 
-![Aurora Night, an original wallpaper included with the macOS rice](assets/wallpapers/aurora-night.jpg)
+**The macOS-inspired rice works today.** Windows 7, 10 and 11 are in the gallery as clearly marked **Coming soon** entries. RiceHub is an early `0.1 RC1` preview, not a finished multi-OS theme engine.
 
-## Meet RiceHub · 0.1 RC1
+![Real MacBar and Control Center capture on virtual X11](components/control-center/screenshots/desktop-integration.png)
 
-RiceHub is a native GTK3 application. It launches on demand, without Electron, a browser process, a separate resident daemon or telemetry. The new **RiceHub** application launcher appears in your XFCE app menu. Its six spaces are:
+*Real GTK3/X11 capture of MacBar and Control Center in the current macOS rice. Hardware-dependent indicators are limited in the virtual test session.*
 
-| Space | What works now |
+## A quick look
+
+| MacMenu — Midnight | MacMenu — Light |
+| :---: | :---: |
+| ![MacMenu application launcher, Midnight](components/macmenu/screenshots/macmenu-rc11-midnight.png) | ![MacMenu application launcher, Light](components/macmenu/screenshots/macmenu-rc11-light.png) |
+
+| Control Center — Dark | MacBar |
+| :---: | :---: |
+| ![Control Center with media and quick actions](components/control-center/screenshots/control-center-2.1.1.png) | ![MacBar's native top bar](components/macbar/screenshots/macbar-1.0.0.png) |
+
+*These are actual GTK app captures. Below is an **illustrative** complete-desktop preview from the existing preview tool, not a photograph of an installed desktop. A real screenshot of the new RiceHub window is still planned.*
+
+![Illustrative complete MacRice desktop preview](screenshots/full-rice-overview-0.2.0rc2.png)
+
+## What's in RiceHub?
+
+The hub itself is written with Python and GTK3. It opens when you need it and doesn't install a web stack, new resident daemon or telemetry service.
+
+| Hub area | Available in 0.1 |
 | --- | --- |
-| **Discover rices** | Search and filter the gallery. Explore macOS's five working styles, with an aspect-fill wallpaper preview and pre-install requirements check. Windows 7/10/11 have honest Coming soon cards. |
-| **My desktop** | Inspect your actual GTK, XFWM, icon, cursor, font and Plank selections without changing them. |
-| **Components** | Launch or toggle MacMenu, Control Center, MacBar and Plank. Check what is installed; explicitly repair the bundled applications. |
-| **Performance** | Apply Light, Balanced or Visual resource profiles; sample per-process memory (PSS) and CPU only when requested. |
-| **Backups & restore** | View the available full-rice restore points, confirm a recovery, and preserve settings changed since the snapshot where possible. |
-| **What's next** | See which Windows integrations and future features are still being built. |
+| **Discover** | Browse and search OS-inspired rices, filter by availability, preview wallpaper palettes and check requirements before applying. |
+| **My Desktop** | See detected GTK, window, icon, cursor, font and Plank settings without changing them. |
+| **Components** | Toggle MacMenu and Control Center, start MacBar and Plank, inspect or explicitly repair bundled apps. |
+| **Performance** | Choose Light, Balanced or Visual settings; measure process memory and CPU on demand. |
+| **Backups & Restore** | Find private full-rice restore points and recover the last supported state, while respecting later personal changes when possible. |
+| **What's Next** | Explore planned Windows styles and see what's actually still being built. |
 
-All changes are opt-in. RiceHub checks dependencies before offering to apply a full rice and asks for confirmation. **Installing RiceHub never switches your desktop theme.** The original `macrice` command and standalone applications remain available.
+### Supported desktop styles
 
-Read the [RiceHub guide and next milestones](RICEHUB.md) or continue for the existing MacRice integration details.
+| Family | Styles | Status |
+| --- | --- | --- |
+| macOS-inspired | Aurora Night, Aurora Day, Liquid Glass Night, Liquid Glass Day, Classic Aqua | **Available (preview)** |
+| Windows 10-inspired | Classic productivity desktop | **Coming soon** |
+| Windows 11-inspired | Centered taskbar and launcher | **Coming soon** |
+| Windows 7-inspired | Classic Aero-style desktop | **Coming soon** |
 
-## Your existing macOS rice
+The working macOS rice brings together [MacMenu](components/macmenu/), [Control Center](components/control-center/), [MacBar](components/macbar/), Plank, Thunar, WhiteSur-based GTK/window themes, icons and Aurora wallpapers. All three bundled apps keep their own tested installers. Plank remains a system package and your pinned dock items are preserved.
 
-I like macOS's sense of order, but I like XFCE's speed and freedom. MacRice, the original working rice inside RiceHub, brings those ideas together without replacing the window manager or burying a lightweight desktop under a web stack.
+## Get started
 
-![MacBar and Control Center running together on X11](components/control-center/screenshots/desktop-integration.png)
-
-*Actual GTK3 rendering on a clean virtual X11 display; system status indicators are limited there.*
-
-The native GTK manager shows the installed components, your Plank dock, matching
-app-only color presets and your detected XFCE appearance in one small window.
-
-![Aurora Night — an original wallpaper included with MacRice](assets/wallpapers/aurora-night.jpg)
-
-*Aurora Night, one of two original wallpapers. Both are included, with an
-illustrative full-desktop preview in the manager.*
-
-![Illustrative complete desktop preview with MacBar, MacMenu, Control Center and Plank](screenshots/full-rice-overview-0.2.0rc2.png)
-
-*Illustrative layout rendering. The interactive preview in the application is native GTK; this image is not a live desktop capture.*
-
-## What's inside
-
-| Component | Job |
-| --- | --- |
-| [MacMenu](components/macmenu/) · RC11 | Search, browse and launch installed apps. |
-| [Control Center](components/control-center/) · 2.1.1 | Wi-Fi, audio, media, quick actions, settings and a fast D-Bus toggle. [Screenshot](components/control-center/screenshots/control-center-2.1.1.png) |
-| [MacBar](components/macbar/) · 1.1.0 | A clean, instantly restylable top bar with launchers, network, sound, battery and clock. [Screenshot](components/macbar/screenshots/macbar-1.0.0.png) |
-| [Plank](components/plank/) · system package | The existing bottom dock. Detect its settings, start it and open its native preferences without overwriting pins or layout. |
-| **RiceHub** · 0.1 RC1 | The new rice gallery, desktop status, native management interface, performance view, recovery and roadmap. |
-| **MacRice engine** · 0.3.0 RC1 | Coordinates five full-desktop styles, live app themes, safe restore, Plank and Thunar, plus optional resource profiles. |
-
-Every component remains a complete project with its own tests and installer. The existing repositories aren't deleted.
-
-## Install safely
-
-For **Linux Mint XFCE/X11** or a comparable GTK3 desktop:
+Tested primarily with Linux Mint XFCE / X11. Other XFCE/X11 setups may work, but don't assume every theme or system service is installed.
 
 ```bash
 sudo apt install python3-gi gir1.2-gtk-3.0
@@ -66,111 +58,54 @@ git clone https://github.com/CopyPasteUser/macos-xfce-rice.git
 cd macos-xfce-rice
 bash install.sh --dry-run
 bash install.sh
+ricehub
 ```
 
-Run the installer **as your normal user, not with sudo**. It delegates to the three tested user-local installers, preserves existing settings and uses their backups during upgrades. Control Center starts hidden for quick reopening; MacBar is installed but doesn't replace XFCE Panel. Plank stays independently managed by your distribution; to add it on a system where it's missing, run `sudo apt install plank` separately.
+The old repository URL remains the working download address until the GitHub repository itself is renamed. No `sudo` for `install.sh`. The installer does **not** apply a full rice, remove the XFCE panel, change your icons, or silently install missing themes. It installs user-local tools and keeps existing component settings.
 
-If you have the old system-wide `xfce-macmenu` DEB, the installer stops and explains the conflict rather than silently removing a package.
+If you want Plank and don't have it yet, install it separately using your distribution's package manager. The full macOS style also needs compatible WhiteSur, Bibata and Inter assets; the preflight check tells you what's missing.
 
-To install from a terminal without starting GTK, run `bash install.sh --no-start`. To add MacBar to login while **keeping** XFCE Panel, use `bash install.sh --bar-autostart`. Only replace XFCE Panel after verifying your top-bar launchers and rollback path; the suite never does this automatically.
-
-## Use it
+**Already installed?** Update from any directory:
 
 ```bash
-ricehub                 # New native desktop rice hub
-macrice hub             # Same hub through the existing CLI
-macrice gui             # Native GTK settings manager
-macrice status          # Check all four components, including Plank
-macrice inspect         # Safe, read-only XFCE appearance detection
-macrice open menu       # Toggle MacMenu
-macrice open center     # Toggle Control Center
-macrice open bar        # Start MacBar
-macrice open dock       # Start Plank if it is not running
-macrice dock status     # Read Plank dock settings
-macrice dock preferences # Open Plank's native settings
-macrice theme Midnight  # Apply matching colors to the three apps
-macrice preview         # See the complete desktop before changing anything
-macrice rice plan night # Check all themes, fonts, monitor keys (read-only)
-macrice rice apply night # Style GTK, XFWM, Thunar, MacBar, Plank and wallpaper with backup
-macrice rice apply day  # Switch back to Aurora Day at any time
-macrice rice apply glass-night # Liquid Glass on a dark desktop
-macrice rice apply glass-day   # Liquid Glass on a light desktop
-macrice rice apply aqua        # Classic Aqua-inspired look
-macrice rice restore    # Restore the most recent saved desktop appearance
-macrice performance light    # Reduce Control Center background activity and motion
-macrice performance balanced # Laptop-friendly default
-macrice performance visual   # Responsive polling and smooth animations
-macrice performance report   # On-demand PSS and CPU usage of running components
+bash -c 'set -e; d="$(mktemp -d)"; git clone -q --depth 1 https://github.com/CopyPasteUser/macos-xfce-rice.git "$d/ricehub"; bash "$d/ricehub/install.sh"'
 ```
 
-### One theme across your desktop
-
-MacRice coordinates MacMenu, Control Center, MacBar, Plank, Thunar and the XFCE
-GTK/window-manager colors. In 0.3, running MacMenu and Control Center listen for
-their own config changes (MacBar already did), so switching a theme no longer
-requires restarting the apps. The file monitors sleep when nothing changes;
-there is no new background daemon or config polling loop.
-
-The additional **Liquid Glass Day**, **Liquid Glass Night** and **Classic Aqua**
-presets are native GTK3 styles, not a web layer. Glass uses soft translucent
-surfaces and readable typography. **Blur behind a GTK window is not provided**:
-that effect depends on the X11 compositor and is intentionally not required.
-The existing reversible full-Rice backup workflow applies to all five styles.
-
-The performance controls use Control Center's existing light/balanced/responsive
-resource scheduler and adjust motion and media thumbnails. Light uses less
-background work; Visual enables the most expressive effects. The report is a
-single ~200 ms sample of proportional set size (PSS) and process CPU; it's
-intended for measurements on your real hardware, not as a benchmark claim.
-
-**Stuck on Aurora Day?** Run `macrice rice plan night` to check requirements,
-then `macrice rice apply night` to switch directly. You do not need to restore
-first. In RC3, `macrice rice restore` restores settings that MacRice still owns
-and reports any preferences you changed afterward instead of blocking the
-whole desktop. The new Plank Glass themes are slightly translucent and leave
-earlier MacRice dock themes untouched.
-
-To update from **any working directory**, run:
+### Everyday commands
 
 ```bash
-bash -c 'set -e; d="$(mktemp -d)"; git clone -q --depth 1 https://github.com/CopyPasteUser/macos-xfce-rice.git "$d/macrice"; bash "$d/macrice/install.sh"'
+ricehub                       # Open the new desktop rice hub
+macrice hub                   # Same application, legacy CLI
+macrice status                # Check installed components and appearance
+macrice rice plan night       # Inspect changes before applying anything
+macrice rice apply night      # Apply Aurora Night with a recovery snapshot
+macrice rice apply day        # Change to Aurora Day
+macrice rice apply glass-day  # Try Liquid Glass Day
+macrice rice restore          # Restore the latest active rice snapshot
+macrice performance report    # One-off memory / CPU sample
+macrice gui                   # Original MacRice manager (still supported)
 ```
 
-App-only presets include **System**, **Midnight**, **Light**, **Graphite**, **Liquid Glass**, **Liquid Glass Dark** and **Classic Aqua**. Only the bundled apps' theme settings change. XFCE GTK, window decorations, icons, fonts, Plank, personal notes and favorites are left alone. Each theme action saves a private backup before writing.
+For your XFCE shortcuts, use `macmenu --toggle` and `macos-control-center-toggle`. The existing fast resident toggle behavior is unchanged.
 
-On a WhiteSur-Dark / WhiteSur-light / Bibata / Inter setup, the **System** preset follows the dark GTK appearance. MacRice reads the current dock's effective theme, position, icon size and hide mode through Plank's dock1 GSettings path; it does not guess them from unset dconf overrides.
+## Safe by default
 
-For a **complete desktop Rice**, including GTK, right-side window decorations,
-Thunar, icons, cursor, Inter fonts, inverted MacBar/Plank colors and one of two wallpapers, see
-the [full Rice guide](RICE.md). Full Rice is never applied during installation.
-The installer leaves your existing XFCE desktop unchanged until you confirm
-the change in the preview window or call `macrice rice apply` explicitly.
+- **No surprise restyling.** Installing and opening RiceHub do not modify your desktop appearance. A full rice requires a successful preflight and your confirmation.
+- **Recoverable changes.** Desktop snapshots live outside the replaceable app bundle, under `~/.local/share/macrice-state/`.
+- **No takeover.** The XFCE panel is not replaced automatically. Plank launchers and layout are not overwritten during installation.
+- **No extra background monitor.** The hub runs on demand. CPU/memory sampling happens only when you request it.
+- **Honest previews.** Future Windows rices have no fake Apply button. Some graphical effects depend on your existing X11 compositor.
 
-For keyboard shortcuts in XFCE, use `macmenu --toggle` for MacMenu and `macos-control-center-toggle` for Control Center.
+## Where this is going
 
-## Where files go
+The first goal is a dependable macOS rice and a useful central manager. Next come better compatibility checks and recovery, then working Windows 10, 11 and 7 integrations using the **same** safe apply/restore engine. See the [RiceHub product roadmap](RICEHUB.md) and [MacRice engine roadmap](ROADMAP.md).
 
-- Replaceable app bundle: `~/.local/share/macrice/`
-- Persistent desktop backups and wallpapers: `~/.local/share/macrice-state/`
-- Stable command and GUI launcher: `~/.local/bin/macrice`
-- RiceHub command and app menu entry: `~/.local/bin/ricehub` and `~/.local/share/applications/ricehub.desktop`
-- Each app's settings remain in its original `~/.config/` directory.
-- The suite does not ask for root access or start a background network service.
+The existing MacMenu, Control Center and MacBar repositories have not been deleted. Their code stays independently testable while RiceHub becomes the main home for complete rices.
 
-The GTK manager runs only while open. The menu and Control Center may keep their existing hidden, resident windows for fast toggles. MacBar and the existing Plank dock are separate long-running GTK processes.
+## Built in the open
 
-## What still needs testing
+RiceHub is MIT-licensed, community-friendly, and a little bit experimental. Issues, bug reports and real XFCE screenshots are welcome — see [Contributing](CONTRIBUTING.md) and [Security](SECURITY.md).
 
-Automated tests verify suite configuration, installer planning, user-local paths and component contracts. The components retain their own test suites. Real XFCE hardware behavior—multi-monitor positioning, Wi-Fi/Bluetooth indicators, Plank coexistence, suspend/resume and actual PSS memory—should be checked before replacing the old panel.
+**Vibe-coded, human-directed and AI-assisted.** ChatGPT and OpenAI Codex helped with design and engineering; see [Contributors](CONTRIBUTORS.md) for credits and notes about original assets. This project is not affiliated with Apple or Microsoft and does not distribute their proprietary themes or logos.
 
-See [ROADMAP.md](ROADMAP.md) for the path to stable 1.0.
-
-## Contributing and license
-
-Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md). MacRice is released under the [MIT License](LICENSE); component notices and licenses are retained in their folders.
-
-**Vibe-coded, human-directed, AI-assisted.** Project design and development
-used ChatGPT and OpenAI Codex. See [CONTRIBUTORS.md](CONTRIBUTORS.md) for honest
-credits, the original wallpaper creation notes and third-party acknowledgments.
-
-*Inspired by macOS, built for Linux.*
+*Inspired by familiar desktops. Built for Linux.*
