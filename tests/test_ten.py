@@ -62,7 +62,7 @@ class TenTests(unittest.TestCase):
             self.assertIsNone(read_aero(root / "config"))
             self.assertIn("windows10-shell", ten.read_autostart(root / "config"))
             manifest = json.loads((ten_backup / "manifest.json").read_text())
-            self.assertEqual(manifest["schema"], 4)
+            self.assertEqual(manifest["schema"], 5)
             self.assertTrue((root / "data/themes/RiceHub-Ten-Dark/gtk-3.0/gtk.css").is_file())
             self.assertTrue((root / "data/icons/RiceHub-Ten-Penguin/index.theme").is_file())
             self.assertEqual(fake.get("xfconf", "xsettings", "/Net/IconThemeName"), ten.ICON_THEME)

@@ -16,7 +16,9 @@ class PinConfigError(ValueError):
 
 
 def pin_file(profile: str = "aero") -> Path:
-    if profile not in ("aero", "windows10"):
+    from .heritage import PROFILES
+
+    if profile not in ("aero", "windows10", *PROFILES):
         raise PinConfigError("Unknown taskbar profile")
     base = Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config")
     return base / "ricehub" / f"{profile}-pins.json"

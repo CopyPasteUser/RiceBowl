@@ -1,0 +1,29 @@
+/* RiceHub Ten: compact flat GTK3 theme, original artwork. */
+@define-color theme_bg_color #c0c0c0;
+@define-color theme_fg_color #101010;
+@define-color theme_base_color #ffffff;
+@define-color theme_text_color #101010;
+@define-color theme_selected_bg_color #000080;
+@define-color theme_selected_fg_color #ffffff;
+@define-color insensitive_fg_color #4c4c4c;
+@define-color borders #777777;
+window, dialog, .background, viewport { color: #101010; background-color: #c0c0c0; }
+entry, textview text, treeview.view, .view, spinbutton { color: #101010; background-color: #ffffff; }
+entry, spinbutton, combobox box.linked { border: 1px solid #777777; border-radius: 0; padding: 5px; }
+entry:focus { border: 1px solid #000080; }
+selection, :selected, row:selected { background: #000080; color: #ffffff; }
+button { border: 1px solid #777777; border-radius: 0; padding: 5px 12px; background-image: none; background-color: #c0c0c0; color: #101010; box-shadow: none; }
+button:hover { background-color: #e5f1fb; border-color: #000080; }
+button:active, button:checked { background-color: #000080; color: #ffffff; }
+button:disabled { color: #4c4c4c; opacity: .62; }
+headerbar, .titlebar, toolbar { background-image: none; background-color: #c0c0c0; color: #101010; border-bottom: 1px solid #777777; box-shadow: none; }
+headerbar button { border: 0; padding: 4px 8px; }
+menubar, menu, popover, .menu, .popup { background: #c0c0c0; color: #101010; border: 1px solid #777777; }
+menuitem:hover, modelbutton:hover { background: #000080; color: #ffffff; }
+notebook header { background: #c0c0c0; border-bottom: 1px solid #777777; }
+notebook tab { padding: 7px 12px; border-radius: 0; }
+notebook tab:checked { background: #c0c0c0; border-bottom: 2px solid #000080; }
+scrollbar slider { background: #777777; border-radius: 0; min-height: 7px; min-width: 7px; }
+scrollbar slider:hover { background: #4c4c4c; }
+progressbar progress, scale highlight, switch:checked { background: #000080; border-radius: 0; }
+tooltip { background: #c0c0c0; color: #101010; border: 1px solid #777777; }

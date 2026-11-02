@@ -40,6 +40,7 @@ def project_root() -> Path:
 
 
 def _check_layout(source: Path) -> None:
+    from .heritage import PROFILES
     required = (
         "macrice/cli.py",
         "macrice/gui.py",
@@ -50,6 +51,8 @@ def _check_layout(source: Path) -> None:
         "macrice/aero.py",
         "macrice/aero_shell.py",
         "macrice/aero_windows.py",
+        "macrice/heritage.py",
+        "macrice/heritage_shell.py",
         "macrice/plank.py",
         "macrice/rice.py",
         "macrice/preview.py",
@@ -75,7 +78,11 @@ def _check_layout(source: Path) -> None:
         "launcher.py",
         "assets/macrice-symbolic.svg",
         "assets/ricehub-symbolic.svg",
-    )
+    ) + tuple(asset for profile in PROFILES.values() for asset in (
+        f"assets/themes/{profile.theme}/gtk-3.0/gtk.css",
+        f"assets/themes/{profile.theme}/xfwm4/themerc",
+        f"assets/icons/{profile.icon_theme}/index.theme",
+        f"assets/wallpapers/{profile.wallpaper}"))
     missing = [path for path in required if not (source / path).is_file()]
     if missing:
         raise InstallationError("Incomplete suite bundle: " + ", ".join(missing))
@@ -192,6 +199,13 @@ def _write_entrypoints(installed: Path) -> None:
     )
     _atomic_write(hub_launcher, hub_content, 0o755)
     fast_launcher = binaries / "ricehub-toggle"
+    from .heritage import PROFILES
+    heritage_commands = "".join(
+        f"  {key}-{action}) app=io.github.copypasteuser.RiceHub.{key.title()}Shell; "
+        f"action={'toggle-menu' if action == 'menu' else 'toggle-control'}; "
+        f"profile={key}-shell; fallback={'--toggle-menu' if action == 'menu' else '--control'} ;;\n"
+        for key in PROFILES for action in ("menu", "control")
+    )
     fast_content = (
         "#!/bin/sh\n" + FAST_TOGGLE_MARKER + "\n"
         "[ \"$#\" -eq 1 ] || exit 2\n"
@@ -200,7 +214,8 @@ def _write_entrypoints(installed: Path) -> None:
         "  aero-control) app=io.github.copypasteuser.RiceHub.AeroShell; action=toggle-control; profile=aero-shell; fallback=--control ;;\n"
         "  ten-menu) app=io.github.copypasteuser.RiceHub.TenShell; action=toggle-menu; profile=windows10-shell; fallback=--toggle-menu ;;\n"
         "  ten-control) app=io.github.copypasteuser.RiceHub.TenShell; action=toggle-control; profile=windows10-shell; fallback=--actions ;;\n"
-        "  *) exit 2 ;;\n"
+        + heritage_commands
+        + "  *) exit 2 ;;\n"
         "esac\n"
         "if command -v gapplication >/dev/null 2>&1; then\n"
         "  gapplication action \"$app\" \"$action\" >/dev/null 2>&1 && exit 0\n"

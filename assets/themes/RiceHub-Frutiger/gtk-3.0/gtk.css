@@ -1,0 +1,29 @@
+/* RiceHub Ten: compact flat GTK3 theme, original artwork. */
+@define-color theme_bg_color #e5fff8;
+@define-color theme_fg_color #0b4a68;
+@define-color theme_base_color #f9fffe;
+@define-color theme_text_color #0b4a68;
+@define-color theme_selected_bg_color #16aabf;
+@define-color theme_selected_fg_color #ffffff;
+@define-color insensitive_fg_color #32859b;
+@define-color borders #7ec8cf;
+window, dialog, .background, viewport { color: #0b4a68; background-color: #e5fff8; }
+entry, textview text, treeview.view, .view, spinbutton { color: #0b4a68; background-color: #f9fffe; }
+entry, spinbutton, combobox box.linked { border: 1px solid #7ec8cf; border-radius: 0; padding: 5px; }
+entry:focus { border: 1px solid #16aabf; }
+selection, :selected, row:selected { background: #16aabf; color: #ffffff; }
+button { border: 1px solid #7ec8cf; border-radius: 0; padding: 5px 12px; background-image: none; background-color: #c0f3ee; color: #0b4a68; box-shadow: none; }
+button:hover { background-color: #e5f1fb; border-color: #16aabf; }
+button:active, button:checked { background-color: #16aabf; color: #ffffff; }
+button:disabled { color: #32859b; opacity: .62; }
+headerbar, .titlebar, toolbar { background-image: none; background-color: #c0f3ee; color: #0b4a68; border-bottom: 1px solid #7ec8cf; box-shadow: none; }
+headerbar button { border: 0; padding: 4px 8px; }
+menubar, menu, popover, .menu, .popup { background: #c0f3ee; color: #0b4a68; border: 1px solid #7ec8cf; }
+menuitem:hover, modelbutton:hover { background: #16aabf; color: #ffffff; }
+notebook header { background: #e5fff8; border-bottom: 1px solid #7ec8cf; }
+notebook tab { padding: 7px 12px; border-radius: 0; }
+notebook tab:checked { background: #c0f3ee; border-bottom: 2px solid #16aabf; }
+scrollbar slider { background: #7ec8cf; border-radius: 0; min-height: 7px; min-width: 7px; }
+scrollbar slider:hover { background: #32859b; }
+progressbar progress, scale highlight, switch:checked { background: #16aabf; border-radius: 0; }
+tooltip { background: #c0f3ee; color: #0b4a68; border: 1px solid #7ec8cf; }

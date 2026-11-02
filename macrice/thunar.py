@@ -30,6 +30,14 @@ PALETTES = {
                  "accent": "#0078d7", "edge": "#464646"},
     "ten-light": {"chrome": "#f4f4f4", "sidebar": "#e8e8e8", "text": "#202020",
                   "accent": "#0078d7", "edge": "#c8c8c8"},
+    "winxp": {"chrome": "#e0ecff", "sidebar": "#c8dcfa", "text": "#153c75",
+              "accent": "#3b83dd", "edge": "#80a8d7"},
+    "winclassic": {"chrome": "#c0c0c0", "sidebar": "#dedede", "text": "#111111",
+                   "accent": "#000080", "edge": "#808080"},
+    "chromeos": {"chrome": "#f4f7ff", "sidebar": "#e8eef8", "text": "#27364e",
+                 "accent": "#6393eb", "edge": "#c9d5e9"},
+    "frutiger": {"chrome": "#d7fff7", "sidebar": "#c7f3e5", "text": "#145269",
+                 "accent": "#36bdd9", "edge": "#8dd9d7"},
 }
 
 

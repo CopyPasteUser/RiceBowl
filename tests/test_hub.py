@@ -17,7 +17,8 @@ from macrice.rice import STYLES
 
 class HubCatalogTests(unittest.TestCase):
     def test_macos_and_verified_aero_families_are_enabled(self):
-        self.assertEqual([family.key for family in FAMILIES if family.available], ["macos", "windows10", "windows7"])
+        self.assertEqual([family.key for family in FAMILIES if family.available],
+                         ["macos", "windows10", "windows7", "winxp", "winclassic", "chromeos", "frutiger"])
         self.assertEqual(AVAILABLE_STYLE_KEYS, set(STYLES))
         self.assertEqual(FAMILY_BY_KEY["macos"].styles, ("night", "day", "aqua"))
         # Every style used while constructing HubWindow must exist in the engine.
@@ -30,17 +31,16 @@ class HubCatalogTests(unittest.TestCase):
         self.assertTrue(FAMILY_BY_KEY["windows7"].prototype)
         self.assertTrue(FAMILY_BY_KEY["windows10"].prototype)
         self.assertTrue(FAMILY_BY_KEY["windows10"].available)
-        self.assertEqual({family.key for family in FAMILIES if family.prototype and not family.available},
-                         {"winxp", "winclassic", "chromeos", "frutiger"})
+        self.assertEqual({family.key for family in FAMILIES if family.prototype and not family.available}, set())
 
     def test_search_availability_and_case_insensitive_queries(self):
-        self.assertEqual([item.key for item in search_families("windows", "soon")],
-                         ["winxp", "winclassic"])
+        self.assertEqual([item.key for item in search_families("windows", "soon")], [])
         self.assertNotIn("windows11", FAMILY_BY_KEY)
         self.assertEqual({family.key for family in FAMILIES},
                          {"macos", "windows10", "windows7", "winxp", "winclassic", "chromeos", "frutiger"})
         self.assertEqual([item.key for item in search_families("AURORA", "available")], ["macos"])
-        self.assertEqual([item.key for item in search_families("windows", "available")], ["windows10", "windows7"])
+        self.assertEqual([item.key for item in search_families("windows", "available")],
+                         ["windows10", "windows7", "winxp", "winclassic"])
         self.assertEqual(search_families("not a real rice"), ())
         with self.assertRaises(ValueError):
             search_families("", "no-such-filter")
@@ -83,7 +83,7 @@ class HubStylingTests(unittest.TestCase):
             fake.assert_called_once_with()
 
     def test_styling_is_native_and_does_not_require_web_stack(self):
-        self.assertEqual(HUB_VERSION, "0.5.0rc2")
+        self.assertEqual(HUB_VERSION, "0.6.0")
         self.assertIn(b"hub-card", CSS)
         self.assertNotIn(b"javascript", CSS.lower())
         try:
