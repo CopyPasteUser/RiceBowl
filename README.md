@@ -4,39 +4,36 @@
 
 RiceHub is a small, native Linux app for turning an ordinary XFCE desktop into something personal. It started with a love of macOS's clean interface and XFCE's speed. The goal is bigger now: one friendly place to discover, preview, apply and eventually share complete desktop styles — without swapping out your desktop environment.
 
-**The macOS-inspired rice works today.** Windows 7 has an interactive, preview-only Start menu prototype; Windows 10 and 11 are clearly marked **Coming soon**. RiceHub is an early `0.1 RC1` preview, not a finished multi-OS theme engine.
+**The macOS-inspired rice works today.** Windows 7 now has two experimental, reversible Aero-inspired styles, an original Linux penguin and a working GTK Start menu. Windows 10 and 11 are still **Coming soon**. RiceHub `0.2 RC1` remains an early release, not a pixel-perfect multi-OS theme engine.
 
 ## Meet RiceHub
 
-![Actual RiceHub GTK3 Discover rices window](screenshots/ricehub-discover-0.1.0rc1.png)
+![RiceHub gallery showing the Aero Cascade desktop style](screenshots/ricehub-aero-gallery-0.2.0rc1.png)
 
-*RiceHub's real Discover window, captured from a running GTK3 app on an XFCE/X11 test desktop. Choose a rice, inspect its preview and check requirements before applying.*
+*Actual GTK3 RiceHub window on XFCE/X11. Choose a rice, inspect its wallpaper and check requirements before applying.*
 
-### Windows 7: first interactive prototype
+### Windows 7: original Aero for Linux
 
-| Windows 7 in the RiceHub gallery | Start menu and desktop prototype |
-| :---: | :---: |
-| ![Windows 7 gallery card inside RiceHub](screenshots/ricehub-windows7-gallery-0.1.0rc1.png) | ![Interactive Windows 7-inspired desktop and Start menu](screenshots/ricehub-windows7-prototype-0.1.0rc1.png) |
+![Working Aero Start menu listing real installed XFCE applications](screenshots/ricehub-aero-start-0.2.0rc1.png)
 
-*Both are real GTK3/X11 screenshots. Open RiceHub, select **Windows 7** and choose **Explore Windows 7 prototype**. The Start button toggles a sample menu; its search field filters sample programs. This is an original Aero-inspired **design prototype**, not a working Windows 7 rice: it cannot launch those programs, install themes or change XFCE settings.*
+*Real screenshot of the new GTK3 Start menu. It searches and launches installed desktop applications, and the Start button toggles it without rebuilding the process.*
 
-![Real MacBar and Control Center capture on virtual X11](components/control-center/screenshots/desktop-integration.png)
+The two included [Aero Meadow](assets/wallpapers/aero-meadow.jpg) and [Aero Cascade](assets/wallpapers/aero-cascade.jpg) wallpapers were created for this project. Windows 7 also includes:
 
-*Real GTK3/X11 capture of MacBar and Control Center in the current macOS rice. Hardware-dependent indicators are limited in the virtual test session.*
+- A unique glossy **Aero Penguin** Start symbol — Linux identity, no Windows logo.
+- Original RiceHub-Aero **GTK3, XFWM4 window-border and icon themes**, plus matching Thunar styling.
+- A lightweight bottom taskbar with pinned apps, a live clock and an event-driven searchable Start menu. Changes to the installed app list are detected via Gio, without polling.
+- A matching glass Plank theme. While Aero is selected, Plank moves to an autohiding left edge so it doesn't overlap the taskbar; the previous dock preferences are restorable.
+- A user-local login autostart entry, created only when you apply an Aero rice and removed when returning to macOS.
 
-## A quick look
+The taskbar is still experimental: **running-window switching, a system tray and guaranteed compositor blur are not implemented yet**. Existing independently running MacBar or other panels are not forcibly terminated. RiceHub contains no copied Microsoft visual assets.
 
-| MacMenu — Midnight | MacMenu — Light |
-| :---: | :---: |
-| ![MacMenu application launcher, Midnight](components/macmenu/screenshots/macmenu-rc11-midnight.png) | ![MacMenu application launcher, Light](components/macmenu/screenshots/macmenu-rc11-light.png) |
+### macOS rice with Plank
 
-| Control Center — Dark | MacBar |
-| :---: | :---: |
-| ![Control Center with media and quick actions](components/control-center/screenshots/control-center-2.1.1.png) | ![MacBar's native top bar](components/macbar/screenshots/macbar-1.0.0.png) |
+![Illustrative macOS-inspired XFCE desktop with a Plank-style dock](screenshots/macos-rice-with-plank-0.2.0rc1.png)
 
-*These are actual GTK app captures. Below is an **illustrative** complete-desktop preview from the existing preview tool, not a photograph of an installed desktop.*
+*Illustrative complete-desktop composition, including a **Plank-style** dock. This is not a photograph of a live Plank installation; the virtual test session doesn't have Plank. For real GTK screenshots, see [MacMenu](components/macmenu/screenshots/), [Control Center](components/control-center/screenshots/) and [MacBar](components/macbar/screenshots/).*
 
-![Illustrative complete MacRice desktop preview](screenshots/full-rice-overview-0.2.0rc2.png)
 
 ## What's in RiceHub?
 
@@ -44,7 +41,7 @@ The hub itself is written with Python and GTK3. It opens when you need it and do
 
 | Hub area | Available in 0.1 |
 | --- | --- |
-| **Discover** | Browse and search OS-inspired rices, filter by availability, preview wallpaper palettes and check requirements before applying. Explore the interactive Windows 7 concept without changing your desktop. |
+| **Discover** | Browse and search OS-inspired rices, filter by availability, preview wallpaper palettes and check requirements before applying. |
 | **My Desktop** | See detected GTK, window, icon, cursor, font and Plank settings without changing them. |
 | **Components** | Toggle MacMenu and Control Center, start MacBar and Plank, inspect or explicitly repair bundled apps. |
 | **Performance** | Choose Light, Balanced or Visual settings; measure process memory and CPU on demand. |
@@ -58,7 +55,7 @@ The hub itself is written with Python and GTK3. It opens when you need it and do
 | macOS-inspired | Aurora Night, Aurora Day, Liquid Glass Night, Liquid Glass Day, Classic Aqua | **Available (preview)** |
 | Windows 10-inspired | Classic productivity desktop | **Coming soon** |
 | Windows 11-inspired | Centered taskbar and launcher | **Coming soon** |
-| Windows 7-inspired | Aero-inspired Start menu and taskbar concept | **Interactive prototype only; full rice coming soon** |
+| Windows 7-inspired | Aero Meadow, Aero Cascade | **Experimental and installable** |
 
 The working macOS rice brings together [MacMenu](components/macmenu/), [Control Center](components/control-center/), [MacBar](components/macbar/), Plank, Thunar, WhiteSur-based GTK/window themes, icons and Aurora wallpapers. All three bundled apps keep their own tested installers. Plank remains a system package and your pinned dock items are preserved.
 
@@ -95,6 +92,11 @@ macrice rice plan night       # Inspect changes before applying anything
 macrice rice apply night      # Apply Aurora Night with a recovery snapshot
 macrice rice apply day        # Change to Aurora Day
 macrice rice apply glass-day  # Try Liquid Glass Day
+macrice rice plan aero-meadow  # Check the Windows 7-style Aero preset
+macrice rice apply aero-meadow # Apply original Aero styling (with rollback snapshot)
+macrice rice apply aero-cascade # Switch to the glassier Aero palette
+macrice aero-shell             # Toggle the real Aero Start menu / taskbar
+macrice aero-shell --quit      # Stop the Aero shell
 macrice rice restore          # Restore the latest active rice snapshot
 macrice performance report    # One-off memory / CPU sample
 macrice gui                   # Original MacRice manager (still supported)
@@ -108,11 +110,11 @@ For your XFCE shortcuts, use `macmenu --toggle` and `macos-control-center-toggle
 - **Recoverable changes.** Desktop snapshots live outside the replaceable app bundle, under `~/.local/share/macrice-state/`.
 - **No takeover.** The XFCE panel is not replaced automatically. Plank launchers and layout are not overwritten during installation.
 - **No extra background monitor.** The hub runs on demand. CPU/memory sampling happens only when you request it.
-- **Honest previews.** Windows 7 offers an interactive concept but no Apply button. Windows 10 and 11 remain placeholders. Some future graphical effects depend on your existing X11 compositor.
+- **Honest previews.** Windows 7 has an experimental Apply button and an optional separate sample preview. Windows 10 and 11 remain placeholders. Some graphical effects depend on your existing X11 compositor.
 
 ## Where this is going
 
-The first goal is a dependable macOS rice and a useful central manager. Next come better compatibility checks and recovery, then working Windows 10, 11 and 7 integrations using the **same** safe apply/restore engine. See the [RiceHub product roadmap](RICEHUB.md) and [MacRice engine roadmap](ROADMAP.md).
+The first goal is a dependable macOS rice and a useful central manager. The experimental Windows 7 rice now shares its safe apply/restore engine; next come proper running-window buttons, tray handling, deeper XFCE panel integration and Windows 10/11 styles. See the [RiceHub product roadmap](RICEHUB.md) and [MacRice engine roadmap](ROADMAP.md).
 
 The existing MacMenu, Control Center and MacBar repositories have not been deleted. Their code stays independently testable while RiceHub becomes the main home for complete rices.
 

@@ -1,6 +1,6 @@
 [project]
 name = "ricehub-xfce"
-version = "0.1.0rc1"
+version = "0.2.0rc1"
 description = "RiceHub: a lightweight, reversible GTK3 hub for OS-inspired XFCE desktops"
 requires-python = ">=3.10"
 dependencies = []

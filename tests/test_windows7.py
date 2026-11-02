@@ -1,4 +1,4 @@
-"""Windows 7 prototype remains a searchable, read-only visual preview."""
+"""Aero installable rice and separate read-only Start concept."""
 
 import unittest
 
@@ -7,11 +7,11 @@ from macrice.windows7_proto import CSS, SAMPLE_APPS, matching_apps
 
 
 class Windows7PrototypeTests(unittest.TestCase):
-    def test_catalog_keeps_rice_unavailable(self):
+    def test_catalog_exposes_two_installable_aero_styles(self):
         family = FAMILY_BY_KEY["windows7"]
         self.assertTrue(family.prototype)
-        self.assertFalse(family.available)
-        self.assertEqual(family.styles, ())
+        self.assertTrue(family.available)
+        self.assertEqual(family.styles, ("aero-meadow", "aero-cascade"))
 
     def test_start_search_uses_only_sample_names(self):
         self.assertEqual(matching_apps(""), SAMPLE_APPS)

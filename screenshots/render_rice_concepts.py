@@ -11,6 +11,7 @@ from __future__ import annotations
 import base64
 import html
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -30,14 +31,14 @@ def text(x, y, label, color="#f0f4fa", size=13, weight=400):
             f'{html.escape(label)}</text>')
 
 
-def render(style):
+def render(style, *, detailed_plank=False):
     night = style == "night"
     wallpaper = ROOT / "assets/wallpapers" / ("aurora-night.jpg" if night else "aurora-day.jpg")
     photo = base64.b64encode(wallpaper.read_bytes()).decode("ascii")
     blocks = [
         '<svg xmlns="http://www.w3.org/2000/svg" width="995" height="708" viewBox="0 0 995 708">',
         rect(0, 0, 995, 708, "#141922"),
-        text(15, 36, "Complete desktop preview", size=14, weight=650),
+        text(15, 36, "macOS-inspired XFCE + Plank" if detailed_plank else "Complete desktop preview", size=14, weight=650),
         rect(714, 11, 123, 41, "#293240", 8, stroke="#707d90"),
         text(725, 37, "Aurora Night" if night else "Aurora Day"),
         rect(847, 11, 132, 41, "#293240", 8, stroke="#707d90"),
@@ -85,13 +86,50 @@ def render(style):
             blocks += [text(x + 20, y + 16, "▰", "#7eabda", 34),
                        text(x + 7, y + 38, label, "#334356", 12)]
 
-    blocks.append(rect(330, 506, 336, 63, dock_bg, 18, opacity=".95"))
-    for i, letter in enumerate(("F", "W", ">_", "M", "S", "+")):
-        x = 340 + i * 54
-        blocks += [rect(x, 516, 44, 43, icon_bg, 10),
-                   text(x + 13, 545, letter, icon_fg, 18, 650)]
+    if detailed_plank:
+        # Deliberately an illustration of the actual Plank layout, never a claimed live screenshot.
+        blocks.append(rect(250, 505, 494, 69, dock_bg, 16, opacity=".89", stroke="#d5e6f8", stroke_width="1.5"))
+        shades = ("#3f9eed", "#e0af54", "#427bcf", "#1b344e", "#eff5ff", "#7994b7", "#445c7e", "#dfe9f4")
+        for i, color in enumerate(shades):
+            x = 266 + i * 59
+            blocks.append(rect(x, 516, 49, 47, color, 10, stroke="#f5fbff", stroke_width="1", opacity=".97"))
+            if i == 0:
+                blocks += [rect(x + 2, 518, 21, 43, "#c0efff", 9),
+                           '<path d="M280 532q5-6 10 0m-15 11q11 12 21 0" fill="none" stroke="#20578a" stroke-width="2"/>']
+            elif i == 1:
+                blocks += [rect(x + 8, 531, 34, 22, "#fff3bc", 5, stroke="#ba8b40"),
+                           rect(x + 8, 526, 17, 8, "#fff3bc", 3)]
+            elif i == 2:
+                blocks += [f'<circle cx="{x+25}" cy="539" r="17" fill="#48bbef"/>',
+                           f'<path d="M{x+13} 530q-4 24 19 24q15-11 5-26q3 15-10 12q-10-4-3-16" fill="#ff8b3d" stroke="#f4d377" stroke-width="2"/>']
+            elif i == 3:
+                blocks += [rect(x + 6, 523, 37, 30, "#101c2d", 6),
+                           text(x + 13, 545, ">_", "#bcebd9", 16, 650)]
+            elif i == 4:
+                blocks += [f'<ellipse cx="{x+25}" cy="540" rx="15" ry="17" fill="#193c60"/>',
+                           f'<ellipse cx="{x+25}" cy="543" rx="10" ry="13" fill="#fff"/>',
+                           f'<circle cx="{x+21}" cy="537" r="2" fill="#101c2d"/>',
+                           f'<circle cx="{x+29}" cy="537" r="2" fill="#101c2d"/>']
+            elif i == 5:
+                blocks += [f'<circle cx="{x+25}" cy="539" r="15" fill="#bdcfe7" stroke="#283f65" stroke-width="4"/>',
+                           f'<circle cx="{x+25}" cy="539" r="7" fill="#3c5f93"/>']
+            elif i == 6:
+                for offset in (0, 10, 20):
+                    blocks += [rect(x + 9, 528 + offset, 31, 3, "#dbeaff", 1),
+                               f'<circle cx="{x+17+offset//2}" cy="{529+offset}" r="5" fill="#9dc4e7" stroke="#2d4568"/>']
+            else:
+                blocks += [rect(x + 14, 525, 23, 28, "#f7fcff", 4, stroke="#728c9e"),
+                           rect(x + 19, 520, 14, 6, "#fff", 3, stroke="#728c9e")]
+        blocks += [rect(268, 567, 42, 3, "#2a648e", 1), rect(445, 567, 42, 3, "#2a648e", 1)]
+    else:
+        blocks.append(rect(330, 506, 336, 63, dock_bg, 18, opacity=".95"))
+        for i, letter in enumerate(("F", "W", ">_", "M", "S", "+")):
+            x = 340 + i * 54
+            blocks += [rect(x, 516, 44, 43, icon_bg, 10),
+                       text(x + 13, 545, letter, icon_fg, 18, 650)]
 
-    blocks += [text(15, 602, "Illustrative preview — your actual app icons, screens and live desktop may differ.", "#a2acba", 11),
+    blocks += [text(15, 602, "Illustrative Plank dock composition — your actual apps and layout may differ." if detailed_plank else
+                    "Illustrative preview — your actual app icons, screens and live desktop may differ.", "#a2acba", 11),
                rect(15, 626, 148, 37, "#2876d0", 7, stroke="#5a93d8"),
                text(26, 649, "Apply complete Rice", size=12),
                rect(171, 626, 179, 37, "#364354", 7, stroke="#657487"),
@@ -102,6 +140,15 @@ def render(style):
 
 
 def main():
+    if "--plank" in sys.argv:
+        with tempfile.TemporaryDirectory(prefix="macrice-plank-preview-") as directory:
+            vector = Path(directory) / "preview.svg"
+            vector.write_text(render("night", detailed_plank=True), encoding="utf-8")
+            subprocess.run(["ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+                            "-i", str(vector), "-frames:v", "1",
+                            str(OUT / "macos-rice-with-plank-0.2.0rc1.png")], check=True)
+        print(OUT / "macos-rice-with-plank-0.2.0rc1.png")
+        return
     for style, name in (("night", "full-rice-overview-0.2.0rc2.png"),
                         ("day", "full-rice-thunar-day-0.2.0rc2.png")):
         with tempfile.TemporaryDirectory(prefix="macrice-preview-") as directory:

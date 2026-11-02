@@ -1,7 +1,7 @@
 """RiceHub's read-only catalog and private restore history.
 
-Only macOS-based Rices are installable in v0.1. Windows entries are deliberately
-non-executable descriptions, never half-working commands or hidden installers.
+The macOS family and two original Windows 7-inspired Aero palettes use the
+same reversible apply engine. Windows 10/11 remain non-installable concepts.
 """
 
 from __future__ import annotations
@@ -45,8 +45,9 @@ FAMILIES: tuple[RiceFamily, ...] = (
     ),
     RiceFamily(
         "windows7", "Windows 7", "Aero nostalgia",
-        "Classic window chrome and a familiar taskbar, with optional compositor-dependent effects.",
-        False, (), ("Classic Start", "Aero-inspired chrome", "Taskbar", "Optional transparency"), True,
+        "Aero Meadow and Aero Cascade: original glass window chrome, Linux penguin, icons, Start menu and taskbar.",
+        True, ("aero-meadow", "aero-cascade"),
+        ("Searchable Aero Start", "GTK/XFWM chrome", "Custom icons and wallpapers", "Glass taskbar"), True,
     ),
 )
 

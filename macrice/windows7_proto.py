@@ -28,6 +28,7 @@ CSS = b"""
   background-image: linear-gradient(to bottom, #8ad6f3 0%, #408fc9 44%, #164d9e 100%);
   border: 1px solid #5da6e0; border-radius: 12px;
 }
+.w7-desktop { background-image: none; background-color: transparent; }
 .w7-sky-title { color: #ffffff; font-size: 23px; font-weight: bold; }
 .w7-sky-small { color: #eaf9ff; font-size: 12px; }
 .w7-taskbar {
@@ -110,6 +111,9 @@ def teaser(Gtk):
 
 def show_dialog(parent, Gtk, Gdk, GLib):
     """Open an interactive desktop concept; it cannot modify the host desktop."""
+    from gi.repository import GdkPixbuf
+    from .installer import project_root
+
     install_css(Gtk, Gdk)
     dialog = Gtk.Dialog(title="Windows 7 — RiceHub prototype", transient_for=parent,
                         flags=Gtk.DialogFlags.MODAL)
@@ -133,9 +137,21 @@ def show_dialog(parent, Gtk, Gdk, GLib):
     overlay = Gtk.Overlay()
     overlay.set_size_request(-1, 490)
     root.pack_start(overlay, True, True, 0)
+    scenery = Gtk.Overlay()
+    wallpaper = project_root() / "assets/wallpapers/aero-meadow.jpg"
+    if wallpaper.is_file():
+        pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(str(wallpaper), 920, 490, False)
+        background_image = Gtk.Image.new_from_pixbuf(pixbuf)
+        background_image.set_halign(Gtk.Align.FILL)
+        background_image.set_valign(Gtk.Align.FILL)
+        scenery.add(background_image)
     background = _style(Gtk.Box(orientation=Gtk.Orientation.VERTICAL), "w7-desktop")
     background.set_border_width(0)
-    overlay.add(background)
+    if wallpaper.is_file():
+        scenery.add_overlay(background)
+        overlay.add(scenery)
+    else:
+        overlay.add(background)
 
     desktop = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=11)
     desktop.set_margin_top(25)
@@ -155,7 +171,14 @@ def show_dialog(parent, Gtk, Gdk, GLib):
     taskbar.set_margin_end(1)
     taskbar.set_margin_bottom(1)
     background.pack_start(taskbar, False, False, 0)
-    start_button = _style(Gtk.Button(label="◈  Start"), "w7-launcher")
+    start_button = _style(Gtk.Button(), "w7-launcher")
+    start_content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+    logo = project_root() / "assets/aero-penguin.svg"
+    if logo.is_file():
+        start_content.pack_start(Gtk.Image.new_from_pixbuf(
+            GdkPixbuf.Pixbuf.new_from_file_at_scale(str(logo), 24, 24, True)), False, False, 0)
+    start_content.pack_start(Gtk.Label(label="Start"), False, False, 0)
+    start_button.add(start_content)
     start_button.get_accessible().set_name("Toggle Start menu")
     taskbar.pack_start(start_button, False, False, 0)
     for icon in ("system-file-manager-symbolic", "web-browser-symbolic", "utilities-terminal-symbolic"):

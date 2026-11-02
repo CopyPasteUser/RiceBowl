@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs>
+  <linearGradient id="glass" x2="0" y2="1"><stop stop-color="#e8ffff"/><stop offset=".42" stop-color="#91e0ff"/><stop offset="1" stop-color="#2676bb"/></linearGradient>
+  <linearGradient id="leaf" x2="0" y2="1"><stop stop-color="#b6f9a2"/><stop offset="1" stop-color="#309f6d"/></linearGradient>
+</defs><path d="M19 18h26l-3 38H22Z" fill="url(#glass)" stroke="#387aa8" stroke-width="2"/><path d="M17 18h30M26 14h12" stroke="#3c789e" stroke-width="4" stroke-linecap="round"/><path d="M28 25v24m8-24v24" stroke="#a0d5ef" stroke-width="3"/></svg>

@@ -15,7 +15,9 @@ These are **tool and creative-process credits**, not claims that an AI has a
 GitHub account, legal authorship or repository write permission. GitHub's
 native contributor statistics show authenticated commit authors, not this list.
 
-The two original Aurora wallpapers were generated with OpenAI image tools for
-the MacRice project and optimized for desktop use. This repository does not
-bundle third-party WhiteSur, Bibata, Inter or Plank files; their authors retain
+The two original Aurora wallpapers and the two Frutiger Aero-inspired Windows 7
+wallpapers were generated with OpenAI image tools and optimized for desktop use.
+The Linux penguin orb, GTK/XFWM window chrome, icon set and Plank-style theme
+are original project assets. RiceHub does not bundle Microsoft or Apple artwork,
+nor third-party WhiteSur, Bibata, Inter or Plank files; their authors retain
 their respective rights and licenses.

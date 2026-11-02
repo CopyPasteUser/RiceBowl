@@ -15,7 +15,7 @@ from .hub_art import aspect_fill
 from .hub_catalog import FAMILIES, FAMILY_BY_KEY, recent_backups, search_families
 
 
-HUB_VERSION = "0.1.0rc1"
+HUB_VERSION = "0.2.0rc1"
 
 # A restrained native palette. All GTK CSS colors and font choices live here.
 TOKENS = {
@@ -238,6 +238,13 @@ def run() -> int:
             self.preview_image.set_halign(Gtk.Align.FILL)
             self.preview_image.set_valign(Gtk.Align.FILL)
             image_layer.add_overlay(self.preview_image)
+            self.aero_preview_bar = cls(horizontal(8), "w7-taskbar")
+            self.aero_preview_bar.set_valign(Gtk.Align.END)
+            aero_icon = Gtk.Image.new_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_scale(
+                str(project_root() / "assets/aero-penguin.svg"), 25, 25, True))
+            self.aero_preview_bar.pack_start(aero_icon, False, False, 0)
+            self.aero_preview_bar.pack_start(label("Start    Files    Browser    Terminal", "w7-clock"), False, False, 0)
+            image_layer.add_overlay(self.aero_preview_bar)
             self.preview_stack.add_named(image_layer, "macos")
             install_windows7_css(Gtk, Gdk)
             self.preview_stack.add_named(windows7_teaser(Gtk), "windows7")
@@ -259,10 +266,12 @@ def run() -> int:
             controls = horizontal(10)
             body.pack_start(controls, False, False, 0)
             self.style_picker = Gtk.ComboBoxText()
-            for key, style in STYLES.items():
+            self._rebuilding_picker = False
+            for key in FAMILY_BY_KEY["macos"].styles:
+                style = STYLES[key]
                 self.style_picker.append(key, style.name)
             self.style_picker.set_active_id("night")
-            self.style_picker.set_tooltip_text("Choose the complete macOS desktop appearance")
+            self.style_picker.set_tooltip_text("Choose a complete desktop appearance")
             self.style_picker.connect("changed", self._on_style_changed)
             controls.pack_start(self.style_picker, True, True, 0)
             self.plan_button = action("Check requirements", lambda _: self._plan_selected())
@@ -270,7 +279,7 @@ def run() -> int:
             self.apply_button = action("Apply rice", lambda _: self._plan_selected(apply_after=True), True)
             controls.pack_start(self.apply_button, False, False, 0)
             self.prototype_button = action(
-                "Explore Windows 7 prototype", lambda _: show_windows7(self, Gtk, Gdk, GLib), True)
+                "Explore Aero Start preview", lambda _: show_windows7(self, Gtk, Gdk, GLib))
             self.prototype_button.set_no_show_all(True)
             controls.pack_start(self.prototype_button, False, False, 0)
             self.future_note = label("Coming soon · No installation action is available yet.", "hub-soon")
@@ -458,20 +467,29 @@ def run() -> int:
                     context.add_class("hub-selected")
             self.preview_title.set_text(family.title + " — " + family.subtitle)
             self.preview_description.set_text(family.description)
-            self.preview_stack.set_visible_child_name(
-                "macos" if family.available else "windows7" if family.prototype else "future")
+            self.preview_stack.set_visible_child_name("macos" if family.available else
+                                                      "windows7" if family.prototype else "future")
+            self.aero_preview_bar.set_visible(key == "windows7")
             self.style_picker.set_visible(family.available)
             self.plan_button.set_visible(family.available)
             self.apply_button.set_visible(family.available)
             self.prototype_button.set_visible(family.prototype)
             self.future_note.set_text(
-                "Interactive preview only · Windows 7 is not installable yet."
+                "Aero is installable. The separate Start preview is a safe visual demo."
                 if family.prototype else "Coming soon · No installation action is available yet.")
-            self.future_note.set_visible(not family.available)
+            self.future_note.set_visible(family.prototype or not family.available)
             if family.available:
+                self._rebuilding_picker = True
+                self.style_picker.remove_all()
+                for style_id in family.styles:
+                    self.style_picker.append(style_id, STYLES[style_id].name)
+                self.style_picker.set_active_id(family.styles[0])
+                self._rebuilding_picker = False
                 self._on_style_changed()
 
         def _on_style_changed(self, *_args):
+            if self._rebuilding_picker:
+                return
             style_id = self.style_picker.get_active_id() or "night"
             if style_id not in STYLES:
                 return
@@ -580,7 +598,7 @@ def run() -> int:
                 proceed()
 
         def _plan_selected(self, apply_after=False):
-            if self._selected != "macos":
+            if not FAMILY_BY_KEY[self._selected].available:
                 return
             selected = self.style_picker.get_active_id()
             if selected not in STYLES:
@@ -597,15 +615,33 @@ def run() -> int:
                         "This changes GTK, windows, Thunar, Plank, MacBar, menu, Control Center and wallpaper. "
                         "A private backup will be saved. No system packages are removed.",
                         lambda: self._work("Applying the complete desktop rice…",
-                                           lambda: apply(selected), self._after_apply),
+                                           lambda: apply(selected),
+                                           lambda backup: self._after_apply(backup, selected)),
                     )
 
             self._work("Checking installed themes and desktop settings…", lambda: plan(selected), ready)
 
-        def _after_apply(self, backup):
+        def _after_apply(self, backup, style_id):
+            if style_id.startswith("aero-"):
+                self._aero_shell()
+            else:
+                self._aero_shell(quit=True)
             self._notify("Rice applied successfully. Recovery snapshot saved.")
             self._refresh_backups()
             self._refresh_system()
+
+        @staticmethod
+        def _aero_shell(quit=False):
+            import subprocess
+            import sys
+            command = [sys.executable, str(project_root() / "launcher.py"), "aero-shell"]
+            if quit:
+                command.append("--quit")
+            try:
+                subprocess.Popen(command, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                                 stderr=subprocess.DEVNULL, start_new_session=True)
+            except OSError:
+                pass
 
         def _restore_confirmed(self):
             backups = recent_backups()
@@ -619,6 +655,11 @@ def run() -> int:
             )
 
         def _after_restore(self, backup):
+            try:
+                from .rice import XfceBackend
+                self._aero_shell(quit=XfceBackend().get("xfconf", "xsettings", "/Net/ThemeName") != "RiceHub-Aero")
+            except Exception:
+                pass
             skipped = backup / "skipped.json"
             if skipped.is_file():
                 import json

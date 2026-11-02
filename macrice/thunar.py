@@ -24,6 +24,8 @@ PALETTES = {
               "accent": "#577ca6", "edge": "#343e4e"},
     "day": {"chrome": "#f4f6f9", "sidebar": "#e9edf3", "text": "#222936",
             "accent": "#91b8e2", "edge": "#d5dce5"},
+    "aero": {"chrome": "#b8dcef", "sidebar": "#e0f0fa", "text": "#1a405f",
+             "accent": "#62b2e3", "edge": "#80acd0"},
 }
 
 
@@ -62,7 +64,7 @@ def plan_css(style: str, config_root: Path) -> dict[str, str | None]:
         left, tail = content.split(START, 1)
         inner, right = tail.split(END, 1)
         current_block = START + inner + END + "\n"
-        if current_block not in {_block("night"), _block("day")}:
+        if current_block not in {_block(name) for name in PALETTES}:
             raise ValueError("MacRice Thunar styling was customized; refusing to replace it")
         # The existing block owns exactly one newline after END.
         if right.startswith("\n"):
