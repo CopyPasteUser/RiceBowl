@@ -25,23 +25,35 @@ class SessionTests(unittest.TestCase):
         run.assert_not_called()
 
     @mock.patch.object(s, "_macbar_bus_owned", side_effect=[True, False])
-    @mock.patch.object(s, "_macbar_running", return_value=False)
-    @mock.patch.object(s.subprocess, "run", return_value=mock.Mock(returncode=0))
-    @mock.patch.object(s.shutil, "which", return_value="/usr/bin/gapplication")
-    def test_running_python_macbar_is_quit_over_bus(self, which, run, process, bus):
+    @mock.patch.object(s, "_macbar_running", side_effect=[True, False])
+    @mock.patch.object(s, "_macbar_owner_pid", return_value=371)
+    @mock.patch.object(s, "_managed_macbar_pids", return_value=[])
+    @mock.patch.object(s.os, "kill")
+    @mock.patch.object(s.subprocess, "run")
+    def test_macbar_bus_owner_is_stopped_by_verified_pid(self, run, kill, managed, owner, process, bus):
         self.assertEqual(s._stop_macbar(), [])
-        run.assert_called_once_with(
-            ["gapplication", "quit", s.MACBAR_APP_ID],
-            capture_output=True, text=True, timeout=4, check=False)
+        kill.assert_called_once_with(371, s.signal.SIGTERM)
+        run.assert_not_called()
         self.assertEqual(bus.call_count, 2)
 
     @mock.patch.object(s, "_macbar_bus_owned", return_value=None)
     @mock.patch.object(s, "_macbar_running", side_effect=[True, False])
-    @mock.patch.object(s.subprocess, "run", return_value=mock.Mock(returncode=0))
-    @mock.patch.object(s.shutil, "which", return_value="/usr/bin/gapplication")
-    def test_python_process_fallback_if_bus_unavailable(self, which, run, process, bus):
+    @mock.patch.object(s, "_macbar_owner_pid", return_value=None)
+    @mock.patch.object(s, "_managed_macbar_pids", return_value=[372])
+    @mock.patch.object(s.os, "kill")
+    def test_managed_python_process_fallback_if_bus_unavailable(self, kill, managed, owner, process, bus):
         self.assertEqual(s._stop_macbar(), [])
+        kill.assert_called_once_with(372, s.signal.SIGTERM)
         self.assertEqual(process.call_count, 2)
+
+    @mock.patch.object(s, "_macbar_bus_owned", return_value=True)
+    @mock.patch.object(s, "_macbar_running", return_value=True)
+    @mock.patch.object(s, "_macbar_owner_pid", return_value=None)
+    @mock.patch.object(s, "_managed_macbar_pids", return_value=[])
+    @mock.patch.object(s.os, "kill")
+    def test_unverified_macbar_process_is_never_signalled(self, kill, managed, owner, process, bus):
+        self.assertIn("could not verify", s._stop_macbar()[0])
+        kill.assert_not_called()
 
     @mock.patch.object(s, "_stop", return_value=[])
     @mock.patch.object(s, "_shell", return_value=[])

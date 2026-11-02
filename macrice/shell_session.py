@@ -13,6 +13,7 @@ import sys
 import time
 from pathlib import Path
 
+from .environment import data_home
 from .installer import project_root
 
 SHELLS = {"aero": "aero-shell", "ten": "windows10-shell"}
@@ -104,27 +105,78 @@ def _macbar_bus_owned() -> bool | None:
         return None
 
 
+def _macbar_owner_pid() -> int | None:
+    """Resolve MacBar's D-Bus primary to a verified current-user process."""
+    try:
+        import gi
+
+        gi.require_version("Gio", "2.0")
+        from gi.repository import Gio, GLib
+
+        connection = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+        response = connection.call_sync(
+            "org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus",
+            "GetConnectionUnixProcessID", GLib.Variant("(s)", (MACBAR_APP_ID,)),
+            GLib.VariantType("(u)"), Gio.DBusCallFlags.NONE, 1500, None,
+        )
+        pid = int(response.unpack()[0])
+        proc = Path(f"/proc/{pid}")
+        if pid != os.getpid() and proc.stat().st_uid == os.getuid():
+            args = [part.decode("utf-8", "replace") for part in
+                    (proc / "cmdline").read_bytes().split(b"\0") if part]
+            if any(Path(arg).name == "macbar.py" for arg in args[1:]):
+                return pid
+    except Exception:
+        # Bus/owner may disappear during reconciliation; never guess a PID.
+        return None
+    return None
+
+
+def _managed_macbar_pids() -> list[int]:
+    """Identify only the installed MacBar script, never arbitrary Python apps."""
+    expected = str(data_home() / "macbar/macbar.py")
+    pids = []
+    for proc in Path("/proc").glob("[0-9]*"):
+        try:
+            if proc.stat().st_uid != os.getuid():
+                continue
+            args = [part.decode("utf-8", "replace") for part in
+                    (proc / "cmdline").read_bytes().split(b"\0") if part]
+            if expected in args[1:] and int(proc.name) != os.getpid():
+                pids.append(int(proc.name))
+        except (OSError, ValueError):
+            continue
+    return pids
+
+
 def _stop_macbar() -> list[str]:
-    """Quit MacBar and verify the bus owner and Python entrypoint disappeared."""
+    """Stop only verified MacBar PIDs; gapplication has no `quit` command."""
     active = _macbar_bus_owned()
     process_active = _macbar_running()
     if active is not True and not process_active:
         return []
-    if not shutil.which("gapplication"):
-        return ["MacBar is running but gapplication is unavailable"]
-    try:
-        result = subprocess.run(["gapplication", "quit", MACBAR_APP_ID],
-                                capture_output=True, text=True, timeout=4, check=False)
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        return [f"MacBar quit request failed: {exc}"]
-    if result.returncode:
-        return ["MacBar quit failed: " + result.stderr.strip()[:120]]
-    for _ in range(10):
-        bus = _macbar_bus_owned()
-        if bus is not True and not _macbar_running():
+    targets = set(_managed_macbar_pids())
+    if active is True:
+        owner_pid = _macbar_owner_pid()
+        if owner_pid is not None:
+            targets.add(owner_pid)
+    if not targets:
+        return ["MacBar is running but RiceHub could not verify its user-owned PID"]
+    errors = []
+    for pid in sorted(targets):
+        try:
+            os.kill(pid, signal.SIGTERM)
+        except ProcessLookupError:
+            continue
+        except PermissionError as exc:
+            errors.append(f"MacBar PID {pid}: {exc}")
+    if errors:
+        return errors
+    for _ in range(20):
+        if not _macbar_running() and _macbar_bus_owned() is not True:
             return []
-        time.sleep(0.08)
-    return ["MacBar is still running after its quit request"]
+        time.sleep(0.1)
+    return ["MacBar is still running after SIGTERM"]
 
 
 def _shell(profile: str, quit: bool) -> list[str]:
