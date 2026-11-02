@@ -81,6 +81,25 @@ class SessionTests(unittest.TestCase):
         self.assertEqual([c.args[0] for c in start.call_args_list], ["plank", "macbar"])
         stop.assert_not_called()
 
+    def test_macbar_launcher_is_resolved_outside_gui_path(self):
+        """XFCE-launched RiceHub may not have ~/.local/bin in PATH."""
+        with tempfile.TemporaryDirectory() as temporary:
+            local_bin = Path(temporary)
+            launcher = local_bin / "macbar"
+            launcher.write_text("#!/bin/sh\nexit 0\n")
+            launcher.chmod(0o755)
+            with mock.patch.dict(os.environ, {"DISPLAY": ":99"}), \
+                 mock.patch.object(s, "bin_home", return_value=local_bin), \
+                 mock.patch.object(s.shutil, "which", side_effect=lambda name:
+                                   "/usr/bin/plank" if name == "plank" else None), \
+                 mock.patch.object(s, "_shell", return_value=[]), \
+                 mock.patch.object(s, "_start", return_value=[]) as start:
+                self.assertEqual(s.sync_theme("WhiteSur-Dark"), ())
+            self.assertEqual(start.call_args_list, [
+                mock.call("plank", ["/usr/bin/plank"]),
+                mock.call("macbar", [str(launcher)]),
+            ])
+
     @mock.patch.dict("os.environ", {}, clear=True)
     @mock.patch.object(s, "_stop")
     def test_no_display_no_actions(self, stop):

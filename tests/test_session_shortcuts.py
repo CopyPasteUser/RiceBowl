@@ -20,6 +20,9 @@ class ShortcutTests(unittest.TestCase):
         with mock.patch("macrice.aero_shell.run", return_value=0) as aero:
             self.assertEqual(main(["aero-shell", "--toggle-menu"]), 0)
         aero.assert_called_once_with(["ricehub-aero-shell", "--toggle-menu"])
+        with mock.patch("macrice.aero_shell.run", return_value=0) as aero:
+            self.assertEqual(main(["aero-shell", "--control"]), 0)
+        aero.assert_called_once_with(["ricehub-aero-shell", "--control"])
         with mock.patch("macrice.ten_shell.run", return_value=0) as ten:
             self.assertEqual(main(["windows10-shell", "--actions"]), 0)
         ten.assert_called_once_with(["ricehub-ten-shell", "--actions"])
@@ -31,7 +34,7 @@ class ShortcutTests(unittest.TestCase):
         self.assertEqual(shortcuts.command_for("menu", "RiceHub-Aero"),
                          ("macrice", "aero-shell", "--toggle-menu"))
         self.assertEqual(shortcuts.command_for("control", "RiceHub-Aero"),
-                         ("xfce4-settings-manager",))
+                         ("macrice", "aero-shell", "--control"))
         self.assertEqual(shortcuts.command_for("menu", "RiceHub-Ten-Dark"),
                          ("macrice", "windows10-shell", "--toggle-menu"))
         self.assertEqual(shortcuts.command_for("control", "RiceHub-Ten-Light"),

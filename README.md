@@ -139,18 +139,22 @@ macrice performance report    # One-off memory / CPU sample
 macrice gui                   # Original MacRice manager (still supported)
 macrice session-sync          # Reconcile the selected rice, keyboard shortcuts and panel
 macrice session-menu          # Toggle the active rice's Start / application menu
-macrice session-control       # Open the active rice's control panel / action center
+macrice session-control       # Toggle the active rice's control panel / action center
 macrice session-keys-restore  # Restore the previous XFCE Super and Right Ctrl bindings
 ```
 
 **Rice-aware keyboard controls:** In an active RiceHub session, `Super_L` opens
 the macOS application menu or the Windows Start menu. `Control_R` opens the
-macOS Control Center, Windows 10 Action Center or Windows 7 Control Panel
-(XFCE settings). These are user-local XFCE shortcuts; their prior assignments
+macOS Control Center, Windows 10 Action Center or the Aero-styled Windows 7
+Control Panel. Press the same shortcut again to hide the component. Windows
+taskbars also provide clickable toggles for these overlays. These are
+user-local XFCE shortcuts; their prior assignments
 are saved under `~/.local/share/macrice-state/session-shortcuts.json` before
 being changed. Manually edited shortcuts are not overwritten on later syncs.
 The stock XFCE panel is asked to quit only *after* RiceHub has launched the
-replacement components without reporting an immediate error. It can always
+replacement components without reporting an immediate error. The macOS MacBar
+launcher is resolved from the installed user-local bin directory, even when
+XFCE starts RiceHub without that directory in `PATH`. The stock panel can always
 be reopened with `xfce4-panel`.
 
 When diagnosing a taskbar that exits after switching, see
@@ -164,7 +168,7 @@ For your XFCE shortcuts, use `macmenu --toggle` and `macos-control-center-toggle
 
 - **No surprise restyling.** Installing and opening RiceHub do not modify your desktop appearance. A full rice requires a successful preflight and your confirmation.
 - **Recoverable changes.** Desktop snapshots live outside the replaceable app bundle, under `~/.local/share/macrice-state/`.
-- **No takeover.** The XFCE panel is not replaced automatically. Plank launchers and layout are not overwritten during installation.
+- **Controlled handoff.** Installation alone does not alter XFCE Panel. Activating an installed RiceHub desktop replaces the running stock panel non-destructively; Plank launchers and layout are not overwritten.
 - **No extra background monitor.** The hub runs on demand. CPU/memory sampling happens only when you request it.
 - **Honest previews.** Windows 7 and Windows 10 offer installable release-candidate rices plus optional non-installing concept dialogs. Some graphical effects depend on your existing X11 compositor.
 

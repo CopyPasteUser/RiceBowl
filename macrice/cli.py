@@ -55,6 +55,7 @@ def parser() -> argparse.ArgumentParser:
     ten_shell.add_argument("--actions", action="store_true")
     aero.add_argument("--quit", action="store_true", help="Stop the resident Aero taskbar")
     aero.add_argument("--toggle-menu", action="store_true")
+    aero.add_argument("--control", action="store_true", help="Toggle the Aero Control Panel")
     commands.add_parser("session-sync", help="Reconcile active rice after XFCE autostart")
     commands.add_parser("session-menu", help="Toggle the active rice's application menu")
     commands.add_parser("session-control", help="Toggle the active rice's control panel")
@@ -94,7 +95,7 @@ def main(argv: list[str] | None = None) -> int:
             return run()
         if args.command == "aero-shell":
             from .aero_shell import run
-            suffix = ["--quit"] if args.quit else ["--toggle-menu"] if args.toggle_menu else []
+            suffix = ["--quit"] if args.quit else ["--control"] if args.control else ["--toggle-menu"] if args.toggle_menu else []
             return run(["ricehub-aero-shell", *suffix])
         if args.command == "windows10-shell":
             from .ten_shell import run
