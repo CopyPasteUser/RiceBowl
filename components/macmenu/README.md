@@ -163,10 +163,15 @@ to develop the launcher.
 
 ## License
 
-No redistribution license has been selected yet. The code is publicly
-viewable, but a public repository alone does not grant permission to
-redistribute modified versions. A license will be added once that choice
-has been made.
+The MacMenu source included in the MacRice suite is distributed under the
+suite's [MIT License](../../LICENSE). Its separate standalone repository may
+maintain its own licensing and release history.
+
+## Credits
+
+**Vibe-coded, human-directed and AI-assisted.** CopyPasteUser is the creator
+and maintainer. ChatGPT and OpenAI Codex supported implementation, UX work,
+testing and documentation. See [MacRice contributors](../../CONTRIBUTORS.md).
 
 ---
 

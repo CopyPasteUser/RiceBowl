@@ -35,7 +35,13 @@ class InstallIntegrationTests(unittest.TestCase):
             dock_pin.parent.mkdir(parents=True)
             dock_pin.write_text("[PlankDockItemPreferences]\nLauncher=file:///usr/share/applications/thunar.desktop\n")
 
-            for _ in range(2):
+            for iteration in range(2):
+                if iteration:
+                    # A suite upgrade must not move or discard the user's
+                    # independent desktop Rice backup and wallpaper state.
+                    retained = locations["XDG_DATA_HOME"] / "macrice-state/backups/rice/keep-me"
+                    retained.mkdir(parents=True)
+                    (retained / "manifest.json").write_text('{"sample": true}')
                 process = subprocess.run(
                     ["bash", str(ROOT / "install.sh"), "--no-start"],
                     cwd=ROOT, env=env, capture_output=True, text=True, timeout=45,
@@ -54,6 +60,8 @@ class InstallIntegrationTests(unittest.TestCase):
             settings = json.loads(config.read_text())
             self.assertEqual(settings["favorites"], ["org.xfce.Thunar"])
             self.assertEqual(settings["theme"], "violet")
+            self.assertTrue((locations["XDG_DATA_HOME"] /
+                             "macrice-state/backups/rice/keep-me/manifest.json").is_file())
 
             check = subprocess.run(
                 [str(locations["XDG_BIN_HOME"] / "macrice"), "status"],

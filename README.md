@@ -1,6 +1,6 @@
 # MacRice for XFCE
 
-**Three native apps, your Plank dock, one calmer Linux desktop.**
+**A complete macOS-inspired XFCE desktop, built from small native parts.**
 
 I like macOS's sense of order, but I like XFCE's speed and freedom. MacRice brings those ideas together without replacing the window manager or burying a lightweight desktop under a web stack.
 
@@ -11,6 +11,15 @@ I like macOS's sense of order, but I like XFCE's speed and freedom. MacRice brin
 The native GTK manager shows the installed components, your Plank dock, matching
 app-only color presets and your detected XFCE appearance in one small window.
 
+![Aurora Night — an original wallpaper included with MacRice](assets/wallpapers/aurora-night.jpg)
+
+*Aurora Night, one of two original wallpapers. Both are included, with an
+illustrative full-desktop preview in the manager.*
+
+![Illustrative complete desktop preview with MacBar, MacMenu, Control Center and Plank](screenshots/full-rice-overview-0.2.0rc1.png)
+
+*An illustrative GTK preview, not a screenshot of someone's personal desktop.*
+
 ## What's inside
 
 | Component | Job |
@@ -19,7 +28,7 @@ app-only color presets and your detected XFCE appearance in one small window.
 | [Control Center](components/control-center/) · 2.1.1 | Wi-Fi, audio, media, quick actions, settings and a fast D-Bus toggle. [Screenshot](components/control-center/screenshots/control-center-2.1.1.png) |
 | [MacBar](components/macbar/) · 1.0.0 | A clean top bar with launchers, network, sound, battery and clock. [Screenshot](components/macbar/screenshots/macbar-1.0.0.png) |
 | [Plank](components/plank/) · system package | The existing bottom dock. Detect its settings, start it and open its native preferences without overwriting pins or layout. |
-| **MacRice Manager** · 0.1.1 | Installs the three bundled apps, shows status, launches apps and Plank, and applies matching app-only themes. |
+| **MacRice Manager** · 0.2.0 RC1 | Installs the bundled apps, shows a complete desktop preview, supports full Rice and restore, and manages Plank. |
 
 Every component remains a complete project with its own tests and installer. The existing repositories aren't deleted.
 
@@ -54,17 +63,28 @@ macrice open dock       # Start Plank if it is not running
 macrice dock status     # Read Plank dock settings
 macrice dock preferences # Open Plank's native settings
 macrice theme Midnight  # Apply matching colors to the three apps
+macrice preview         # See the complete desktop before changing anything
+macrice rice plan night # Check all themes, fonts, monitor keys (read-only)
+macrice rice apply night # Style GTK, XFWM, icons, Plank and wallpaper with backup
+macrice rice restore    # Restore the most recent saved desktop appearance
 ```
 
 Other presets: **System**, **Light**, and **Graphite**. Only the three bundled apps' theme settings change. XFCE's GTK theme, window decorations, icon pack, fonts, Plank setup, personal notes and favorites are left alone. Each theme action saves a private backup before writing any file.
 
 On a WhiteSur-Dark / WhiteSur-light / Bibata / Inter setup, the **System** preset follows the dark GTK appearance. MacRice reads the current dock's effective theme, position, icon size and hide mode through Plank's dock1 GSettings path; it does not guess them from unset dconf overrides.
 
+For a **complete desktop Rice**, including GTK, window decorations, icons,
+cursor, Inter fonts, Plank appearance and one of two bundled wallpapers, see
+the [full Rice guide](RICE.md). Full Rice is never applied during installation.
+The installer leaves your existing XFCE desktop unchanged until you confirm
+the change in the preview window or call `macrice rice apply` explicitly.
+
 For keyboard shortcuts in XFCE, use `macmenu --toggle` for MacMenu and `macos-control-center-toggle` for Control Center.
 
 ## Where files go
 
-- App bundle and appearance backups: `~/.local/share/macrice/`
+- Replaceable app bundle: `~/.local/share/macrice/`
+- Persistent desktop backups and wallpapers: `~/.local/share/macrice-state/`
 - Stable command and GUI launcher: `~/.local/bin/macrice`
 - Each app's settings remain in its original `~/.config/` directory.
 - The suite does not ask for root access or start a background network service.
@@ -80,5 +100,9 @@ See [ROADMAP.md](ROADMAP.md) for the path to stable 1.0.
 ## Contributing and license
 
 Issues and pull requests are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md). MacRice is released under the [MIT License](LICENSE); component notices and licenses are retained in their folders.
+
+**Vibe-coded, human-directed, AI-assisted.** Project design and development
+used ChatGPT and OpenAI Codex. See [CONTRIBUTORS.md](CONTRIBUTORS.md) for honest
+credits, the original wallpaper creation notes and third-party acknowledgments.
 
 *Inspired by macOS, built for Linux.*

@@ -232,6 +232,10 @@ def run() -> int:
             refresh = Gtk.Button(label="Refresh status")
             refresh.connect("clicked", lambda _button: self._update_status())
             row.pack_start(refresh, False, False, 0)
+            preview = Gtk.Button(label="Desktop preview")
+            preview.set_tooltip_text("See the whole Rice, apply it safely, or restore your last desktop")
+            preview.connect("clicked", self._open_preview)
+            row.pack_start(preview, False, False, 0)
             self._feedback = Gtk.Label(label="Ready", xalign=0)
             self._feedback.set_line_wrap(True)
             self._feedback.get_style_context().add_class("muted")
@@ -240,6 +244,17 @@ def run() -> int:
             self._log.set_line_wrap(True)
             self._log.get_style_context().add_class("muted")
             group.pack_start(self._log, False, False, 0)
+
+        def _open_preview(self, _widget):
+            current = getattr(self, "_preview_window", None)
+            if current is not None and current.get_visible():
+                current.present()
+                return
+            from .preview import open_preview
+            try:
+                self._preview_window = open_preview(self)
+            except Exception as exc:
+                self._message("Could not show desktop preview: " + str(exc), error=True)
 
         def _confirm_install(self, installer, options_type):
             if self._busy:

@@ -11,12 +11,15 @@ MacRice is deliberately a thin integration layer. MacMenu, Control Center and Ma
 - [x] Add matching app-only theme presets with recoverable settings backups.
 - [x] Preserve the three standalone installers and their existing component tests.
 - [x] Integrate existing Plank: read effective dock1 preferences, start its process and open native settings without taking ownership of its files (0.1.1).
+- [x] Add original dark/light Aurora wallpapers and an on-demand illustrative full-desktop preview (0.2.0 RC1).
+- [x] Add explicit XFCE/Plank/full-rice preflight, backup, apply and restore, without auto-changing settings during install.
 
 ## 0.2 — First real ThinkPad acceptance pass
 
 - [ ] Confirm all three install or update cleanly on the owner's Linux Mint XFCE system.
 - [ ] Verify Super-key open/close/open cycles and Control Center's fast D-Bus path.
 - [ ] Confirm the actual selected WhiteSur or other GTK/icon themes are detected correctly.
+- [ ] Validate Aurora Night/Day apply and rollback on the owner's real XFCE desktop.
 - [ ] Check effective Plank theme, hide mode, pinned apps and autostart on the owner's Mint 22.1 / 1920×1080 session.
 - [ ] Check keyboard focus, small displays, touch input and HiDPI.
 - [ ] Compare settled PSS and CPU usage with and without XFCE Panel.
@@ -42,6 +45,6 @@ MacRice is deliberately a thin integration layer. MacMenu, Control Center and Ma
 - [ ] Fresh-clone installation succeeds on supported XFCE/X11 distributions.
 - [ ] A guided upgrade from the standalone apps preserves all user settings and notes.
 - [ ] Recovery is verified after a failed update and after a session restart.
-- [ ] No unintended changes to Plank, XFCE themes/icons or system packages.
+- [ ] No unattended appearance changes: installer preserves the system, and opt-in full-rice changes can always be restored.
 - [ ] No background services beyond the components the user enables.
 - [ ] CI, packaging, documentation and a real-hardware acceptance checklist are green.

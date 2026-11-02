@@ -9,7 +9,7 @@ import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
 
-from .environment import DesktopProfile, config_home, data_home, detect
+from .environment import DesktopProfile, config_home, data_home, detect, private_state_root
 
 
 PRESETS = ("System", "Midnight", "Light", "Graphite")
@@ -79,17 +79,35 @@ def apply_preset(
     Existing unrelated settings (favorites, devices, notes, etc.) are retained.
     The caller explicitly requested this action; install never invokes it.
     """
-    values = preset_values(preset, profile)
+    return set_theme_values(preset_values(preset, profile), config_root=config_root, data_root=data_root)
+
+
+def set_theme_values(
+    values: dict[str, str | None], *,
+    config_root: Path | None = None, data_root: Path | None = None,
+) -> Path:
+    """Set or remove only the three app theme keys with transactional backups.
+
+    None represents a theme key that was originally absent; all unrelated
+    preferences remain intact across a subsequent Rice restore.
+    """
+    if set(values) != set(CONFIG_FILES):
+        raise ValueError("Theme update must specify exactly the bundled applications")
     config_root = config_root or config_home()
     data_root = data_root or data_home()
     planned = {}
     for component, relative in CONFIG_FILES.items():
         target = config_root / relative
         current = _read_preferences(target)
-        planned[target] = {**current, "theme": values[component]}
+        updated = current.copy()
+        if values[component] is None:
+            updated.pop("theme", None)
+        else:
+            updated["theme"] = values[component]
+        planned[target] = updated
 
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
-    backup = data_root / "macrice" / "backups" / "themes" / stamp
+    backup = private_state_root(data_root) / "backups" / "themes" / stamp
     backup.mkdir(mode=0o700, parents=True, exist_ok=False)
     snapshot = {}
     staged = {}

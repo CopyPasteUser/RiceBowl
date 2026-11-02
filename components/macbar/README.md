@@ -75,4 +75,10 @@ Automated tests cover layout, status and installation. The screenshots were rend
 
 [Roadmap](ROADMAP.md) · [Changelog](CHANGELOG.md) · [MIT license](LICENSE)
 
+## Credits
+
+**Vibe-coded, human-directed and AI-assisted.** CopyPasteUser maintains the
+project; ChatGPT and OpenAI Codex supported implementation, UI/UX, testing
+and docs. Full suite credits: [CONTRIBUTORS.md](../../CONTRIBUTORS.md).
+
 *One clean bar, three apps doing their own jobs.*

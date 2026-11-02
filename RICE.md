@@ -1,0 +1,79 @@
+# Complete desktop Rice
+
+MacRice can now style your **entire XFCE desktop**, not only its three bundled
+apps. The feature is opt-in. The installer **never changes desktop settings**.
+
+## What's included
+
+| Part | Aurora Night | Aurora Day |
+| --- | --- | --- |
+| GTK3 & window borders | WhiteSur-Dark · controls left | WhiteSur-Light · controls left |
+| Icons | WhiteSur-light | WhiteSur-light |
+| Cursor | Bibata-Original-Classic, 24 px | Same |
+| Fonts | Inter 10 / Inter Bold 10 | Same |
+| Plank | WhiteSur · bottom · 60 px · intelligent hide · center · zoom on | Same |
+| MacMenu, Control Center, MacBar | Midnight-compatible app themes | Light-compatible app themes |
+| Wallpaper | [Aurora Night](assets/wallpapers/aurora-night.jpg) | [Aurora Day](assets/wallpapers/aurora-day.jpg) |
+
+WhiteSur, Bibata, Inter and Plank are third-party components. **Install them
+separately** from their respective upstreams or trusted distribution packages.
+MacRice only references themes and fonts already present on your desktop. It
+does not download theme archives or run package manager commands for you.
+
+![Aurora Night](assets/wallpapers/aurora-night.jpg)
+
+![Illustrative preview with all four components](screenshots/full-rice-overview-0.2.0rc1.png)
+
+## Preview before applying
+
+```bash
+macrice preview
+```
+
+Or click **Desktop preview** in the MacRice manager. Switch between the two
+wallpapers and the desktop/menu/control-center layouts. This is a *conceptual*
+preview of component placement, not a live screenshot of your current session.
+
+The preview window has **Apply complete Rice** and **Restore previous desktop**
+buttons. Both actions explain their scope and ask for confirmation.
+
+## Safe command-line workflow
+
+```bash
+macrice rice plan night    # Read-only preflight: tools, installed assets, XFCE keys
+macrice rice apply night   # Explicitly apply, with private backup and rollback
+macrice rice restore       # Restore the latest applied desktop snapshot
+```
+
+Use `day` instead of `night` to select Aurora Day. If WhiteSur-Light is not
+installed, its preflight stops without changing anything.
+
+The backup snapshot is stored with private permissions under
+`~/.local/share/macrice-state/backups/rice/`. Original wallpaper paths are recorded
+only in that private local backup; they are never submitted to GitHub.
+Wallpaper images are copied to a stable user-local location under
+`~/.local/share/macrice-state/wallpapers/` so moving your cloned repository won't
+break your background.
+
+## Safety and scope
+
+- Reads all relevant XFConf and Plank GSettings values **before** writing.
+- Validates WhiteSur/Icon/Bibata/Inter availability and both bundled wallpapers.
+- Sets only XFCE GTK/WM/icon/cursor/font fields, Plank appearance fields, the
+  existing XFCE wallpaper keys, and the three apps' own theme fields.
+- Leaves pinned dock apps, panel configuration, autostart, network, Bluetooth,
+  XFCE keyboard shortcuts, personal notes and favorites untouched.
+- Updates existing XFCE workspace wallpaper properties; it doesn't invent
+  screen or monitor IDs on hardware it has never seen.
+- Restores previous values on a failed apply. Later custom changes cause a
+  restore conflict rather than an unwanted overwrite.
+- Does not require root, download third-party themes or replace the XFCE Panel.
+
+If no wallpaper properties exist, first choose any wallpaper once in XFCE's
+**Desktop Settings** so the desktop creates the correct screen/workspace
+entries. Then retry the read-only preflight.
+
+For your known Linux Mint 22.1 WhiteSur-Dark configuration, Aurora Night
+matches the reported GTK/WM/icons/cursor/font and Plank values. Actual
+multi-monitor and session-restart behavior still requires testing on your
+ThinkPad before stable 1.0.

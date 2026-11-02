@@ -21,6 +21,18 @@ def data_home() -> Path:
     return Path(os.environ.get("XDG_DATA_HOME") or Path.home() / ".local/share")
 
 
+def private_state_root(data_root: Path | None = None) -> Path:
+    """Keep recoverable user state outside the replaceable app bundle."""
+    root = (data_root or data_home()) / "macrice-state"
+    if root.is_symlink() or (root.exists() and not root.is_dir()):
+        raise ValueError(f"Unmanaged MacRice state location: {root}")
+    root.mkdir(mode=0o700, parents=True, exist_ok=True)
+    if root.stat().st_uid != os.getuid():
+        raise ValueError(f"MacRice state belongs to another user: {root}")
+    os.chmod(root, 0o700)
+    return root
+
+
 def bin_home() -> Path:
     return Path(os.environ.get("XDG_BIN_HOME") or Path.home() / ".local/bin")
 

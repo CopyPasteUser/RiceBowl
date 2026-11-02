@@ -28,7 +28,12 @@ gsettings get net.launchpad.plank.dock.settings:/net/launchpad/plank/docks/dock1
 gsettings get net.launchpad.plank.dock.settings:/net/launchpad/plank/docks/dock1/ hide-mode
 ```
 
-**No changes are made to pinned apps, dock items, themes, position, icon size,
-autostart, XFCE Panel or system packages.** This is intentional: MacRice should
-not take ownership of an existing dock just because the suite was installed.
-If Plank is absent, the other three applications still install normally.
+**Installing the suite never changes pinned apps, dock items, themes, position,
+icon size, autostart, XFCE Panel or system packages.** This is intentional:
+MacRice should not take ownership of a dock just because the suite was
+installed. The separate, explicitly confirmed *Complete Rice* action can set
+Plank's appearance values, with a backup and restore; it never edits dock
+launchers. If Plank is absent, the three bundled apps still install normally.
+
+The MacRice adapter is vibe-coded with support from ChatGPT and OpenAI Codex;
+Plank itself is an independent third-party project, not AI-authored by MacRice.

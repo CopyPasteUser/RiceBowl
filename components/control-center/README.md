@@ -80,4 +80,11 @@ This is primarily an **X11** application. Wayland compositor behavior varies; ne
 
 For technical details, see [the validation guide](docs/VALIDATION.md) and [changelog](CHANGELOG.md). For a companion app launcher and top bar, see [MacMenu](https://github.com/CopyPasteUser/xfce-macmenu) and [MacBar](https://github.com/CopyPasteUser/xfce-macbar).
 
+## Credits
+
+This project is **vibe-coded, human-directed and AI-assisted**. CopyPasteUser
+leads development; ChatGPT and OpenAI Codex helped with code, design, testing
+and documentation. See [MacRice contributors](../../CONTRIBUTORS.md) for
+the merged suite's credits.
+
 *Built for a calmer XFCE desktop: fewer windows to open, fewer things to think about.*

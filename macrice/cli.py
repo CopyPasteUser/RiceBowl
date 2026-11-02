@@ -46,6 +46,7 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--version", action="version", version=f"MacRice {__version__}")
     commands = p.add_subparsers(dest="command")
     commands.add_parser("gui", help="Open the native GTK settings manager")
+    commands.add_parser("preview", help="Preview the complete desktop and apply or restore its Rice")
     commands.add_parser("status", help="Show installed components and the detected appearance")
     commands.add_parser("inspect", help="Print a safe, read-only JSON appearance report")
     installer = commands.add_parser("install", help="Install or repair the three bundled apps; preserve Plank")
@@ -58,6 +59,9 @@ def parser() -> argparse.ArgumentParser:
     opener.add_argument("component", choices=tuple(COMMANDS))
     dock = commands.add_parser("dock", help="Inspect the existing dock or open its native preferences")
     dock.add_argument("action", choices=("status", "preferences"))
+    rice = commands.add_parser("rice", help="Plan, apply or restore the complete XFCE desktop Rice")
+    rice.add_argument("action", choices=("plan", "apply", "restore"))
+    rice.add_argument("style", nargs="?", choices=("night", "day"))
     return p
 
 
@@ -67,6 +71,25 @@ def main(argv: list[str] | None = None) -> int:
         if args.command in (None, "gui"):
             from .gui import run
             return run()
+        if args.command == "preview":
+            from .preview import run
+            return run()
+        if args.command == "rice":
+            from .rice import RiceError, apply as apply_rice, plan as plan_rice, restore as restore_rice
+            if args.action == "restore":
+                if args.style is not None:
+                    raise RiceError("Restore takes no style argument")
+                print("Desktop restored from:", restore_rice())
+            elif args.style is None:
+                raise RiceError("Choose night or day (example: macrice rice plan night)")
+            elif args.action == "plan":
+                changes, _, _, _ = plan_rice(args.style)
+                number = sum(item["before"] != item["after"] for item in changes)
+                print(f"{args.style.title()} Rice is available. {number} desktop settings would change.")
+                print("Themes, icons, fonts and wallpaper were validated; this was read-only.")
+            else:
+                print("Rice applied; backup:", apply_rice(args.style))
+            return 0
         if args.command == "inspect":
             print(json.dumps(detect().as_dict(), indent=2, ensure_ascii=False))
             return 0

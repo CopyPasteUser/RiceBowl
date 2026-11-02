@@ -40,7 +40,11 @@ def _check_layout(source: Path) -> None:
         "macrice/cli.py",
         "macrice/gui.py",
         "macrice/plank.py",
+        "macrice/rice.py",
+        "macrice/preview.py",
         "components/plank/README.md",
+        "assets/wallpapers/aurora-night.jpg",
+        "assets/wallpapers/aurora-day.jpg",
         "components/macmenu/scripts/install_user.py",
         "components/control-center/install.sh",
         "components/macbar/install.sh",
@@ -102,7 +106,7 @@ def _copy_bundle(source: Path, stage: Path) -> None:
 
     for folder in ("macrice", "components", "assets"):
         shutil.copytree(source / folder, stage / folder, ignore=ignore)
-    for file in ("launcher.py", "README.md", "LICENSE", "ROADMAP.md"):
+    for file in ("launcher.py", "README.md", "LICENSE", "ROADMAP.md", "RICE.md", "CONTRIBUTORS.md"):
         shutil.copy2(source / file, stage / file)
     (stage / MANAGED_MARKER).write_text("Managed by MacRice XFCE\n", encoding="ascii")
 
