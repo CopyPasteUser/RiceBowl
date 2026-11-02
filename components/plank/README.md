@@ -42,11 +42,13 @@ Plank itself is an independent third-party project, not AI-authored by MacRice.
 The complete Aurora presets use two small original Plank themes installed
 **only after you explicitly apply a full Rice**:
 
-- **Aurora Night** → `MacRice-Frost`, an off-white semi-opaque dock.
-- **Aurora Day** → `MacRice-Obsidian`, a charcoal-black dock.
+- **Aurora Night** → `MacRice-Frost-Glass`, an off-white, gently translucent dock.
+- **Aurora Day** → `MacRice-Obsidian-Glass`, a charcoal-black, gently translucent dock.
 
 Both keep the existing bottom/centered 60px dock, intelligent hiding and
 zoom. Existing pinned apps, launchers and autostart are untouched. The original
 Plank theme setting is backed up and restored by `macrice rice restore`.
 Generated theme definitions remain in `~/.local/share/plank/themes/` after
 restoring, but are inactive and can be removed manually when not in use.
+Older `MacRice-Frost` and `MacRice-Obsidian` theme files are intentionally not
+changed or deleted during the RC3 upgrade, so any prior customization survives.

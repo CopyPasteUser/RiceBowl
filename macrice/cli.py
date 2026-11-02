@@ -79,7 +79,12 @@ def main(argv: list[str] | None = None) -> int:
             if args.action == "restore":
                 if args.style is not None:
                     raise RiceError("Restore takes no style argument")
-                print("Desktop restored from:", restore_rice())
+                backup = restore_rice()
+                print("Desktop restored from:", backup)
+                skipped_file = backup / "skipped.json"
+                if skipped_file.is_file():
+                    skipped = json.loads(skipped_file.read_text(encoding="utf-8"))
+                    print("Preserved newer edits (not overwritten):", ", ".join(skipped))
             elif args.style is None:
                 raise RiceError("Choose night or day (example: macrice rice plan night)")
             elif args.action == "plan":

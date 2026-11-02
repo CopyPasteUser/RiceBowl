@@ -21,7 +21,7 @@ from .environment import config_home, data_home, private_state_root
 from .installer import project_root
 from .plank import DOCK_SCHEMA
 from .themes import CONFIG_FILES, _read_preferences, preset_values, set_theme_values
-from .thunar import PREFERENCES as THUNAR_PREFS, _read_css, plan_css, write_css
+from .thunar import END as CSS_END, START as CSS_START, PREFERENCES as THUNAR_PREFS, _read_css, plan_css, write_css
 
 
 class RiceError(RuntimeError):
@@ -40,8 +40,8 @@ class RiceStyle:
 
 
 STYLES = {
-    "night": RiceStyle("Aurora Night", "WhiteSur-Dark", "WhiteSur-Dark", "aurora-night.jpg", "Midnight", "light", "MacRice-Frost"),
-    "day": RiceStyle("Aurora Day", "WhiteSur-Light", "WhiteSur-Light", "aurora-day.jpg", "Light", "dark", "MacRice-Obsidian"),
+    "night": RiceStyle("Aurora Night", "WhiteSur-Dark", "WhiteSur-Dark", "aurora-night.jpg", "Midnight", "light", "MacRice-Frost-Glass"),
+    "day": RiceStyle("Aurora Day", "WhiteSur-Light", "WhiteSur-Light", "aurora-day.jpg", "Light", "dark", "MacRice-Obsidian-Glass"),
 }
 
 # GTK, XFWM, Thunar, Plank and XFCE wallpaper are the external settings touched.
@@ -382,9 +382,34 @@ def _latest_backup(data_root: Path) -> Path:
     raise RiceError("No valid Rice backup found")
 
 
+def _css_block(content: str | None) -> str | None:
+    """Identify only the complete MacRice-owned block, never user CSS."""
+    if content is None or content.count(CSS_START) != 1 or content.count(CSS_END) != 1:
+        return None
+    start = content.index(CSS_START)
+    end = content.index(CSS_END) + len(CSS_END)
+    if content[end:end + 1] == "\n":
+        end += 1
+    return content[start:end]
+
+
+def _restored_css(before: str | None, after: str, current: str | None) -> tuple[str | None, bool]:
+    """Restore our block while retaining CSS rules added outside it."""
+    if current == after:
+        return before, True
+    if current == before:
+        return current, True
+    applied_block = _css_block(after)
+    original_block = _css_block(before)
+    if current is None or applied_block is None or _css_block(current) != applied_block:
+        return current, False
+    # Keep any user changes outside our exact, unmodified block.
+    return current.replace(applied_block, original_block or "", 1), True
+
+
 def restore(*, backend: XfceBackend | None = None, data_root: Path | None = None,
             config_root: Path | None = None) -> Path:
-    """Restore the last applied desktop rice; refuse to overwrite later edits."""
+    """Restore managed settings; keep and report later user customizations."""
     if os.geteuid() == 0:
         raise RiceError("Restore Rice as your normal desktop user, never with sudo")
     backend = backend or XfceBackend()
@@ -434,46 +459,68 @@ def restore(*, backend: XfceBackend | None = None, data_root: Path | None = None
                 raise ValueError("unexpected unset setting")
             if (change["before"] is not None and not isinstance(change["before"], str)) or not isinstance(change["after"], str):
                 raise ValueError("invalid setting value")
-            if backend.get_optional(*item) != change["after"]:
-                raise RiceError(f"{change['key']} changed since applying Rice; restore stopped to preserve your edits")
         except (KeyError, TypeError, ValueError) as exc:
             raise RiceError("Invalid Rice backup; nothing changed") from exc
 
     current_apps = _read_app_themes(config_root)
-    if current_apps != new_apps:
-        raise RiceError("App themes changed since applying Rice; restore stopped to preserve your edits")
+    skipped = []
+    to_restore = []
+    for change in changes:
+        current = backend.get_optional(change["kind"], change["channel"], change["key"])
+        if current == change["after"]:
+            if change["before"] != change["after"]:
+                to_restore.append(change)
+        elif current != change["before"]:
+            skipped.append(f"{change['channel']}:{change['key']}")
+
+    desired_apps = current_apps.copy()
+    for name, current in current_apps.items():
+        if current == new_apps[name]:
+            desired_apps[name] = old_apps[name]
+        elif current != old_apps[name]:
+            skipped.append(f"{name} theme")
+    apps_changed = desired_apps != current_apps
+
+    css_target = None
+    css_changed = False
     if css is not None:
         try:
             current_css = _read_css(config_root / "gtk-3.0/gtk.css")
         except (OSError, ValueError) as exc:
             raise RiceError(f"Thunar CSS cannot be checked: {exc}") from exc
-        if current_css != css["after"]:
-            raise RiceError("Thunar CSS changed since applying Rice; restore stopped to preserve your edits")
+        css_target, css_safe = _restored_css(css["before"], css["after"], current_css)
+        if not css_safe:
+            skipped.append("Thunar CSS (customized MacRice block)")
+        css_changed = css_safe and css_target != current_css
 
     written = []
     apps_restored = False
     try:
-        set_theme_values(old_apps, config_root=config_root, data_root=data_root)
-        apps_restored = True
-        for change in reversed(changes):
-            if change["before"] != change["after"]:
-                written.append(change)
-                if change["before"] is None:
-                    backend.reset(change["kind"], change["channel"], change["key"])
-                else:
-                    backend.set(change["kind"], change["channel"], change["key"], change["before"])
-        if css is not None:
-            write_css(config_root, css["before"])
+        if apps_changed:
+            set_theme_values(desired_apps, config_root=config_root, data_root=data_root)
+            apps_restored = True
+        for change in reversed(to_restore):
+            written.append(change)
+            if change["before"] is None:
+                backend.reset(change["kind"], change["channel"], change["key"])
+            else:
+                backend.set(change["kind"], change["channel"], change["key"], change["before"])
+        if css_changed:
+            write_css(config_root, css_target)
     except Exception as exc:
         errors = _rollback(backend, written, "after")
         if apps_restored:
             try:
-                set_theme_values(new_apps, config_root=config_root, data_root=data_root)
+                set_theme_values(current_apps, config_root=config_root, data_root=data_root)
             except (OSError, ValueError) as rollback_exc:
                 errors.append(f"App themes: {rollback_exc}")
         detail = f"; rollback incomplete: {'; '.join(errors)}" if errors else "; previous Rice kept"
         raise RiceError(f"Restore failed: {exc}{detail}") from exc
 
     # A backup remains as an audit record, but is never silently replayed.
+    if skipped:
+        (backup / "skipped.json").write_text(
+            json.dumps(skipped, indent=2, ensure_ascii=False) + "\n", encoding="utf-8",
+        )
     (backup / "restored").write_text("Restored by MacRice\n", encoding="utf-8")
     return backup

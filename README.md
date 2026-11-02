@@ -28,7 +28,7 @@ illustrative full-desktop preview in the manager.*
 | [Control Center](components/control-center/) · 2.1.1 | Wi-Fi, audio, media, quick actions, settings and a fast D-Bus toggle. [Screenshot](components/control-center/screenshots/control-center-2.1.1.png) |
 | [MacBar](components/macbar/) · 1.1.0 | A clean, instantly restylable top bar with launchers, network, sound, battery and clock. [Screenshot](components/macbar/screenshots/macbar-1.0.0.png) |
 | [Plank](components/plank/) · system package | The existing bottom dock. Detect its settings, start it and open its native preferences without overwriting pins or layout. |
-| **MacRice Manager** · 0.2.0 RC2 | Installs the bundled apps, shows a complete desktop preview, supports full Rice and restore, and manages Plank and Thunar styling. |
+| **MacRice Manager** · 0.2.0 RC3 | Installs the bundled apps, previews the full Rice, switches Aurora Day/Night and safely restores desktop settings even after individual preferences change. |
 
 Every component remains a complete project with its own tests and installer. The existing repositories aren't deleted.
 
@@ -66,7 +66,21 @@ macrice theme Midnight  # Apply matching colors to the three apps
 macrice preview         # See the complete desktop before changing anything
 macrice rice plan night # Check all themes, fonts, monitor keys (read-only)
 macrice rice apply night # Style GTK, XFWM, Thunar, MacBar, Plank and wallpaper with backup
+macrice rice apply day  # Switch back to Aurora Day at any time
 macrice rice restore    # Restore the most recent saved desktop appearance
+```
+
+**Stuck on Aurora Day?** Run `macrice rice plan night` to check requirements,
+then `macrice rice apply night` to switch directly. You do not need to restore
+first. In RC3, `macrice rice restore` restores settings that MacRice still owns
+and reports any preferences you changed afterward instead of blocking the
+whole desktop. The new Plank Glass themes are slightly translucent and leave
+earlier MacRice dock themes untouched.
+
+To update from **any working directory**, run:
+
+```bash
+bash -c 'set -e; d="$(mktemp -d)"; git clone -q --depth 1 https://github.com/CopyPasteUser/macos-xfce-rice.git "$d/macrice"; bash "$d/macrice/install.sh"'
 ```
 
 Other presets: **System**, **Light**, and **Graphite**. Only the three bundled apps' theme settings change. XFCE's GTK theme, window decorations, icon pack, fonts, Plank setup, personal notes and favorites are left alone. Each theme action saves a private backup before writing any file.

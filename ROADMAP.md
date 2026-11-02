@@ -14,6 +14,7 @@ MacRice is deliberately a thin integration layer. MacMenu, Control Center and Ma
 - [x] Add original dark/light Aurora wallpapers and an on-demand illustrative full-desktop preview (0.2.0 RC1).
 - [x] Add explicit XFCE/Plank/full-rice preflight, backup, apply and restore, without auto-changing settings during install.
 - [x] Coordinate MacBar live color reload, reversible Thunar styling and opposite-color Plank presets (0.2.0 RC2).
+- [x] Recover from Day/Night restore conflicts without overwriting later user changes; introduce safely versioned translucent Plank themes (0.2.0 RC3).
 
 ## 0.2 — First real ThinkPad acceptance pass
 

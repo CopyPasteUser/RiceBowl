@@ -33,7 +33,7 @@ TOPBAR_PALETTE = {
     "night": b"""
         .rice-topbar { background: rgba(249,250,252,.96); }
         .rice-topbar label { color: #242b36; }
-        .rice-dock { background: rgba(244,247,251,.89); }
+        .rice-dock { background: rgba(244,247,251,.79); }
         .rice-dock-icon { background: #c9d7e6; color: #182333; }
         .rice-files { background: #202733; }
         .rice-files-sidebar { background: #19212d; }
@@ -43,7 +43,7 @@ TOPBAR_PALETTE = {
     "day": b"""
         .rice-topbar { background: rgba(15,20,29,.96); }
         .rice-topbar label { color: #f6f8fb; }
-        .rice-dock { background: rgba(15,20,29,.92); }
+        .rice-dock { background: rgba(15,20,29,.79); }
         .rice-dock-icon { background: #34435a; color: #f6f8fb; }
         .rice-files { background: #f4f6f9; }
         .rice-files-sidebar { background: #e9edf3; }
@@ -239,8 +239,8 @@ def open_preview(parent=None):
                 "This updates GTK, Thunar styling, right-side window buttons, inverted MacBar/Plank colors, icons, cursor, fonts and XFCE wallpaper. "
                 "Missing themes stop the process before any change. Previous values are backed up."
                 if applying else
-                "Restore previous XFCE, Thunar, Plank and app theme values. If you changed them since applying, "
-                "MacRice will stop rather than overwrite your newer choices."
+                "Restore previous XFCE, Thunar, Plank and app theme values. If you changed settings since applying, "
+                "MacRice will keep those specific edits and restore the remaining settings."
             )
             dialog = Gtk.MessageDialog(
                 transient_for=self, modal=True, message_type=Gtk.MessageType.QUESTION,
@@ -264,6 +264,11 @@ def open_preview(parent=None):
                 try:
                     backup = apply(selected_style) if applying else restore()
                     result = ("Rice applied. Backup: " if applying else "Desktop restored. Backup: ") + str(backup)
+                    skipped = backup / "skipped.json"
+                    if not applying and skipped.is_file():
+                        import json
+                        items = json.loads(skipped.read_text(encoding="utf-8"))
+                        result += " · Preserved newer edits: " + ", ".join(items)
                 except Exception as exc:
                     result = "No changes completed: " + str(exc)
                 GLib.idle_add(self._finished, result)

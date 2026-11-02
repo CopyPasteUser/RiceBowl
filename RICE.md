@@ -13,7 +13,7 @@ apps. The feature is opt-in. The installer **never changes desktop settings**.
 | Fonts | Inter 10 / Inter Bold 10 | Same |
 | Thunar | Dark Finder-inspired sidebar, breadcrumb path, icon view | Light Finder-inspired sidebar, breadcrumb path, icon view |
 | MacBar (top bar) | **White**, dark text · live reload | **Black**, white text · live reload |
-| Plank dock | **White** `MacRice-Frost` | **Black** `MacRice-Obsidian` |
+| Plank dock | **White glass** `MacRice-Frost-Glass` | **Black glass** `MacRice-Obsidian-Glass` |
 | Plank geometry | Bottom · 60 px · intelligent hide · centered · zoom on | Same |
 | MacMenu & Control Center | Midnight app themes | Light app themes |
 | Wallpaper | [Aurora Night](assets/wallpapers/aurora-night.jpg) | [Aurora Day](assets/wallpapers/aurora-day.jpg) |
@@ -45,6 +45,14 @@ preview of component placement, not a live screenshot of your current session.
 The preview window has **Apply complete Rice** and **Restore previous desktop**
 buttons. Both actions explain their scope and ask for confirmation.
 
+If you're currently on Aurora Day and want Aurora Night, use the selector in
+the preview and choose **Apply complete Rice**, or simply run:
+
+```bash
+macrice rice plan night    # Read-only check
+macrice rice apply night   # Switch directly; no intermediate restore needed
+```
+
 ## Safe command-line workflow
 
 ```bash
@@ -63,9 +71,13 @@ Wallpaper images are copied to a stable user-local location under
 `~/.local/share/macrice-state/wallpapers/` so moving your cloned repository won't
 break your background.
 
-The two small, original Plank themes are installed under
-`~/.local/share/plank/themes/MacRice-Frost/` and `MacRice-Obsidian/` as required.
-These are user-local appearance assets, not modified copies of WhiteSur. The
+The two small, original translucent Plank themes are installed under
+`~/.local/share/plank/themes/MacRice-Frost-Glass/` and
+`MacRice-Obsidian-Glass/` as required. Their background colors use approximately
+74–80% opacity, so the wallpaper gently shows through while icons stay clear.
+Existing RC2 themes (`MacRice-Frost` and `MacRice-Obsidian`) are not overwritten
+on upgrade, even if you customized them. The new Glass themes are user-local
+appearance assets, not modified copies of WhiteSur. The
 restore command restores your **previous Plank theme choice**; the two MacRice
 theme files remain on disk, inactive, for subsequent switching.
 
@@ -87,8 +99,10 @@ styling. The system-wide WhiteSur GTK theme supplies the remaining window look.
   XFCE keyboard shortcuts, personal notes and favorites untouched.
 - Updates existing XFCE workspace wallpaper properties; it doesn't invent
   screen or monitor IDs on hardware it has never seen.
-- Restores previous values on a failed apply. Later custom changes cause a
-  restore conflict rather than an unwanted overwrite.
+- Restores previous values on a failed apply. On `rice restore`, settings still
+  matching MacRice's applied values are restored, and later custom edits are
+  preserved individually. Any skipped settings are printed by the CLI/preview
+  and recorded in `skipped.json` next to the private desktop backup.
 - MacBar observes its own JSON configuration and changes between white/black
   without a restart or a background polling loop.
 - Does not require root, download third-party themes or replace the XFCE Panel.

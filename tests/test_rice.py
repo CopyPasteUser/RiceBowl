@@ -86,7 +86,7 @@ class RiceTests(unittest.TestCase):
             self.assertEqual(apps["MacMenu"], "violet")
             self.assertEqual(next(c["after"] for c in changes if c["key"] == "icon-size"), "60")
             self.assertEqual(next(c["after"] for c in changes if c["key"] == "/general/button_layout"), "O|HMC")
-            self.assertEqual(next(c["after"] for c in changes if c["key"] == "theme"), "'MacRice-Frost'")
+            self.assertEqual(next(c["after"] for c in changes if c["key"] == "theme"), "'MacRice-Frost-Glass'")
             self.assertEqual(next(c["after"] for c in changes if c["key"] == WALL), str(target))
             self.assertTrue(source.exists())
             self.assertFalse((root / "data").exists())
@@ -103,9 +103,9 @@ class RiceTests(unittest.TestCase):
             self.assertTrue((backup / "manifest.json").is_file())
             self.assertEqual((backup / "manifest.json").stat().st_mode & 0o777, 0o600)
             self.assertEqual(fake.get("xfconf", "xfce4-desktop", IMAGE_STYLE), "5")
-            self.assertEqual(fake.get("gsettings", "plank", "theme"), "'MacRice-Frost'")
+            self.assertEqual(fake.get("gsettings", "plank", "theme"), "'MacRice-Frost-Glass'")
             self.assertEqual(fake.get("xfconf", "thunar", "/last-location-bar"), "ThunarLocationButtons")
-            self.assertTrue((root / "data/plank/themes/MacRice-Frost/dock.theme").is_file())
+            self.assertTrue((root / "data/plank/themes/MacRice-Frost-Glass/dock.theme").is_file())
             self.assertIn("MacRice Thunar: begin", (root / "config/gtk-3.0/gtk.css").read_text())
             wallpaper = Path(fake.get("xfconf", "xfce4-desktop", WALL))
             self.assertTrue(wallpaper.is_file())
@@ -147,16 +147,35 @@ class RiceTests(unittest.TestCase):
             self.assertEqual(fake.values, before)
             self.assertEqual(json.loads((root / "config/macmenu/settings.json").read_text())["theme"], "violet")
 
-    def test_restore_refuses_to_overwrite_later_customization(self):
+    def test_restore_keeps_later_customization_but_recovers_other_settings(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            fake = FakeBackend()
+            setup_apps(root / "config")
+            before = fake.values.copy()
+            backup = apply("day", backend=fake, data_root=root / "data", config_root=root / "config")
+            fake.values[("gsettings", "plank", "icon-size")] = "48"
+            self.assertEqual(restore(backend=fake, data_root=root / "data", config_root=root / "config"), backup)
+            self.assertEqual(fake.values[("gsettings", "plank", "icon-size")], "48")
+            self.assertEqual(fake.values[("xfconf", "xsettings", "/Net/ThemeName")], before[("xfconf", "xsettings", "/Net/ThemeName")])
+            self.assertEqual(fake.values[("gsettings", "plank", "theme")], before[("gsettings", "plank", "theme")])
+            self.assertIn("plank:icon-size", json.loads((backup / "skipped.json").read_text()))
+
+    def test_thunar_view_change_no_longer_blocks_day_to_night_restore(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             fake = FakeBackend()
             setup_apps(root / "config")
             apply("night", backend=fake, data_root=root / "data", config_root=root / "config")
-            fake.values[("gsettings", "plank", "icon-size")] = "48"
-            with self.assertRaisesRegex(RiceError, "changed since applying"):
-                restore(backend=fake, data_root=root / "data", config_root=root / "config")
-            self.assertEqual(fake.values[("gsettings", "plank", "icon-size")], "48")
+            original_night = fake.values.copy()
+            day = apply("day", backend=fake, data_root=root / "data", config_root=root / "config")
+            fake.values[("xfconf", "thunar", "/last-view")] = "ThunarDetailsView"
+            restore(backend=fake, data_root=root / "data", config_root=root / "config")
+            self.assertEqual(fake.get("xfconf", "xsettings", "/Net/ThemeName"), "WhiteSur-Dark")
+            self.assertEqual(fake.get("gsettings", "plank", "theme"), "'MacRice-Frost-Glass'")
+            self.assertEqual(fake.get("xfconf", "thunar", "/last-view"), "ThunarDetailsView")
+            self.assertEqual(fake.get("xfconf", "xfce4-desktop", WALL), original_night[("xfconf", "xfce4-desktop", WALL)])
+            self.assertIn("thunar:/last-view", json.loads((day / "skipped.json").read_text()))
 
     def test_app_theme_failure_restores_desktop(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -200,7 +219,7 @@ class RiceTests(unittest.TestCase):
             fake = FakeBackend()
             setup_apps(root / "config")
             apply("day", backend=fake, data_root=root / "data", config_root=root / "config")
-            self.assertEqual(fake.values[("gsettings", "plank", "theme")], "'MacRice-Obsidian'")
+            self.assertEqual(fake.values[("gsettings", "plank", "theme")], "'MacRice-Obsidian-Glass'")
             self.assertEqual(json.loads((root / "config/macbar/config.json").read_text())["theme"], "dark")
             self.assertIn("#e9edf3", (root / "config/gtk-3.0/gtk.css").read_text())
 
@@ -218,25 +237,38 @@ class RiceTests(unittest.TestCase):
             restore(backend=fake, data_root=root / "data", config_root=root / "config")
             self.assertEqual(css.read_text(), original)
 
-    def test_thunar_css_conflict_protects_user_changes(self):
+    def test_thunar_css_external_edits_are_preserved_during_restore(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             fake = FakeBackend()
             setup_apps(root / "config")
-            apply("night", backend=fake, data_root=root / "data", config_root=root / "config")
+            apply("day", backend=fake, data_root=root / "data", config_root=root / "config")
             css = root / "config/gtk-3.0/gtk.css"
             css.write_text(css.read_text() + "\n/* changed manually */\n")
-            before = fake.values.copy()
-            with self.assertRaisesRegex(RiceError, "Thunar CSS changed"):
-                restore(backend=fake, data_root=root / "data", config_root=root / "config")
-            self.assertEqual(fake.values, before)
+            restore(backend=fake, data_root=root / "data", config_root=root / "config")
+            self.assertIn("/* changed manually */", css.read_text())
+            self.assertNotIn("MacRice Thunar: begin", css.read_text())
+            self.assertEqual(fake.values[("xfconf", "xsettings", "/Net/ThemeName")], "WhiteSur-Dark")
+
+    def test_modified_macrice_css_block_skipped_without_locking_desktop(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            fake = FakeBackend()
+            setup_apps(root / "config")
+            backup = apply("day", backend=fake, data_root=root / "data", config_root=root / "config")
+            css = root / "config/gtk-3.0/gtk.css"
+            css.write_text(css.read_text().replace("#e9edf3", "#ccddee"))
+            restore(backend=fake, data_root=root / "data", config_root=root / "config")
+            self.assertIn("#ccddee", css.read_text())
+            self.assertEqual(fake.values[("xfconf", "xsettings", "/Net/ThemeName")], "WhiteSur-Dark")
+            self.assertIn("Thunar CSS", " ".join(json.loads((backup / "skipped.json").read_text())))
 
     def test_plank_theme_collision_preflight_is_non_destructive(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             fake = FakeBackend()
             setup_apps(root / "config")
-            target = root / "data/plank/themes/MacRice-Frost/dock.theme"
+            target = root / "data/plank/themes/MacRice-Frost-Glass/dock.theme"
             target.parent.mkdir(parents=True)
             target.write_text("someone else's theme")
             with self.assertRaisesRegex(RiceError, "conflicts"):
@@ -267,12 +299,35 @@ class RiceTests(unittest.TestCase):
             day_css = (root / "config/gtk-3.0/gtk.css").read_text()
             self.assertEqual(day_css.count("MacRice Thunar: begin"), 1)
             self.assertEqual(plan_css("day", root / "config")["after"], day_css)
-            self.assertEqual(fake.values[("gsettings", "plank", "theme")], "'MacRice-Obsidian'")
+            self.assertEqual(fake.values[("gsettings", "plank", "theme")], "'MacRice-Obsidian-Glass'")
             self.assertEqual(restore(backend=fake, data_root=root / "data", config_root=root / "config"), day)
             self.assertEqual((root / "config/gtk-3.0/gtk.css").read_text(), night_css)
             self.assertEqual(restore(backend=fake, data_root=root / "data", config_root=root / "config"), night)
             self.assertEqual(fake.values, original)
             self.assertFalse((root / "config/gtk-3.0/gtk.css").exists())
+
+    def test_upgrade_from_original_plank_themes_does_not_block_switch(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            fake = FakeBackend()
+            setup_apps(root / "config")
+            old = root / "data/plank/themes/MacRice-Obsidian/dock.theme"
+            old.parent.mkdir(parents=True)
+            old.write_text("Older MacRice dock theme left untouched")
+            fake.values[("gsettings", "plank", "theme")] = "'MacRice-Obsidian'"
+            apply("night", backend=fake, data_root=root / "data", config_root=root / "config")
+            self.assertEqual(fake.values[("gsettings", "plank", "theme")], "'MacRice-Frost-Glass'")
+            self.assertEqual(old.read_text(), "Older MacRice dock theme left untouched")
+
+    def test_glass_docks_use_subtle_alpha_below_old_opaque_levels(self):
+        from macrice.installer import project_root
+        for name in ("MacRice-Frost-Glass", "MacRice-Obsidian-Glass"):
+            contents = (project_root() / "assets/plank-themes" / name / "dock.theme").read_text()
+            for row in contents.splitlines():
+                if row.startswith(("FillStartColor=", "FillEndColor=")):
+                    alpha = int(row.split(";;")[-1])
+                    self.assertGreaterEqual(alpha, 180)
+                    self.assertLessEqual(alpha, 210)
 
     def test_malformed_css_marker_stops_without_writes(self):
         with tempfile.TemporaryDirectory() as tmp:
