@@ -36,7 +36,8 @@ CSS = {
 .aero-menu-app:hover { background: #000080; color: #fff; }
 .aero-menu-power { background: #c0c0c0; color: #111; border: 2px outset #fff; border-radius: 0; }
 .aero-control-root { background: #c0c0c0; border: 2px outset #fff; border-radius: 0; }
-.aero-control-quick { border-radius: 0; border: 2px outset #fff; }
+.aero-control-quick { background: #c0c0c0; color: #111; border-radius: 0; border: 2px outset #fff; box-shadow: none; }
+.aero-control-quick:hover, .aero-control-quick:focus { background: #d7d7d7; border: 2px inset #fff; }
 """,
     "chromeos": b"""
 .aero-taskbar { background: rgba(242,246,255,.97); color: #26364e; border-top: 1px solid #c4d1e7; padding: 4px 12px; }
@@ -55,7 +56,7 @@ CSS = {
 .ten-tile { background: #e3ebfd; color: #324b76; border: 1px solid #cddbf3; border-radius: 12px; }
 .ten-tile:hover { background: #d3e3ff; }
 .ten-tile-label, .ten-muted { color: #344f76; }
-.ten-action-root { background: #f8fbff; color: #263b57; border: 1px solid #bed1eb; border-radius: 18px; }
+.ten-action-root { background: #f8fbff; color: #263b57; border: 1px solid #bed1eb; border-radius: 18px; padding: 14px; }
 .ten-quick { background: #e7effd; color: #2b4771; border: 1px solid #cbddf4; border-radius: 12px; }
 """,
     "frutiger": b"""
