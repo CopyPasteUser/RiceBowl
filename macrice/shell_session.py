@@ -99,7 +99,7 @@ def sync_theme(theme: str) -> tuple[str, ...]:
     if desired:
         # Plank may have been started by XFCE autostart, not by RiceHub.
         warnings.extend(_stop("plank"))
-        warnings.extend(_stop("macbar"))
+        # MacBar is a Gtk.Application and often runs as python3, not as a\n        # process named macbar. Ask its application ID to quit over D-Bus.\n        if shutil.which("gapplication"):\n            try:\n                result = subprocess.run(["gapplication", "quit", "io.github.macbar.panel"],\n                                        capture_output=True, text=True, timeout=4, check=False)\n                if result.returncode and _processes("macbar"):\n                    warnings.append("MacBar could not quit: " + result.stderr.strip()[:120])\n            except (OSError, subprocess.TimeoutExpired) as exc:\n                warnings.append(f"MacBar quit request failed: {exc}")\n        else:\n            warnings.extend(_stop("macbar"))
         if not warnings:
             warnings.extend(_shell(desired, False))
     elif mac:
