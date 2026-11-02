@@ -139,14 +139,14 @@ class PanelAndShortcutTests(unittest.TestCase):
     @mock.patch.object(s, "_stop_xfce_panel", return_value=[])
     def test_shortcuts_are_installed_before_panel_shutdown(self, panel):
         with mock.patch("macrice.session_shortcuts.install_bindings", return_value=()) as shortcuts:
-            self.assertEqual(s._activate_session_controls(), [])
-        shortcuts.assert_called_once_with()
+            self.assertEqual(s._activate_session_controls("WhiteSur-Dark"), [])
+        shortcuts.assert_called_once_with("WhiteSur-Dark")
         panel.assert_called_once_with()
 
     @mock.patch.object(s, "_stop_xfce_panel")
     def test_shortcut_failure_keeps_original_panel_running(self, panel):
         with mock.patch("macrice.session_shortcuts.install_bindings", side_effect=RuntimeError("write rejected")):
-            errors = s._activate_session_controls()
+            errors = s._activate_session_controls("WhiteSur-Dark")
         self.assertIn("write rejected", errors[0])
         panel.assert_not_called()
 

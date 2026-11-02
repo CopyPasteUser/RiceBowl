@@ -143,14 +143,22 @@ macrice session-control       # Toggle the active rice's control panel / action 
 macrice session-keys-restore  # Restore the previous XFCE Super and Right Ctrl bindings
 ```
 
-**Rice-aware keyboard controls:** In an active RiceHub session, `Super_L` opens
+**Rice-aware keyboard controls:** On each desktop switch RiceHub updates the
+shortcuts to invoke that rice's own toggle directly. macOS uses its lightweight
+MacMenu/Control Center launchers; Windows 7/10 use the user-local `ricehub-toggle`
+wrapper to send a GTK application action over D-Bus, falling back to the normal
+shell startup command if that taskbar is not yet running. No Python theme lookup
+or additional long-lived shortcut daemon is needed for each keystroke.
+
+In an active RiceHub session, `Super_L` opens
 the macOS application menu or the Windows Start menu. `Control_R` opens the
 macOS Control Center, Windows 10 Action Center or the Aero-styled Windows 7
 Control Panel. Press the same shortcut again to hide the component. Windows
 taskbars also provide clickable toggles for these overlays. These are
 user-local XFCE shortcuts; their prior assignments
 are saved under `~/.local/share/macrice-state/session-shortcuts.json` before
-being changed. Manually edited shortcuts are not overwritten on later syncs.
+being changed. Older `macrice session-menu/session-control` shortcut bindings are
+upgraded safely, and manually edited shortcuts are not overwritten on later syncs.
 The stock XFCE panel is asked to quit only *after* RiceHub has launched the
 replacement components without reporting an immediate error. The macOS MacBar
 launcher is resolved from the installed user-local bin directory, even when

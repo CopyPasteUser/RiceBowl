@@ -209,11 +209,11 @@ def _stop_xfce_panel() -> list[str]:
     return ["XFCE panel did not exit after --quit"]
 
 
-def _activate_session_controls() -> list[str]:
+def _activate_session_controls(theme: str) -> list[str]:
     """Install recoverable shortcuts, then retire the stock XFCE panel."""
     from .session_shortcuts import install_bindings
     try:
-        warnings = list(install_bindings())
+        warnings = list(install_bindings(theme))
     except (OSError, ValueError, RuntimeError) as exc:
         return [f"RiceHub shortcuts: {exc}"]
     if warnings:
@@ -281,7 +281,7 @@ def sync_theme(theme: str) -> tuple[str, ...]:
             else:
                 warnings.append(f"{name} executable not found")
     if not warnings and (desired or mac):
-        warnings.extend(_activate_session_controls())
+        warnings.extend(_activate_session_controls(theme))
     return tuple(warnings)
 
 

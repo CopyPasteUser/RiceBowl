@@ -62,6 +62,10 @@ class InstallerTests(unittest.TestCase):
                 hub = base / "bin" / "ricehub"
                 self.assertTrue(os.access(hub, os.X_OK))
                 self.assertIn('" hub "$@"', hub.read_text())
+                toggle = base / "bin" / "ricehub-toggle"
+                self.assertTrue(os.access(toggle, os.X_OK))
+                self.assertIn("gapplication action", toggle.read_text())
+                self.assertIn("aero-menu", toggle.read_text())
                 hub_entry = (base / "data/applications/ricehub.desktop").read_text()
                 self.assertIn("Name=RiceHub", hub_entry)
                 self.assertIn("assets/ricehub-symbolic.svg", hub_entry)
@@ -92,6 +96,31 @@ class InstallerTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn("hub", result.stdout)
             self.assertTrue((installed / "macrice/hub_catalog.py").is_file())
+
+    def test_fast_toggle_prefers_dbus_and_falls_back_for_cold_shell(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            installed = root / "data/macrice"
+            installed.mkdir(parents=True)
+            (installed / "launcher.py").write_text("import sys\nprint(' '.join(sys.argv[1:]))\n")
+            env = {**os.environ, "XDG_DATA_HOME": str(root / "data"),
+                   "XDG_BIN_HOME": str(root / "bin")}
+            stub = root / "stub"
+            stub.mkdir()
+            dbus = stub / "gapplication"
+            with mock.patch.dict(os.environ, env):
+                _write_entrypoints(installed)
+            env["PATH"] = str(stub) + ":/usr/bin:/bin"
+            dbus.write_text("#!/bin/sh\nexit 0\n")
+            dbus.chmod(0o755)
+            command = [str(root / "bin/ricehub-toggle"), "aero-control"]
+            fast = subprocess.run(command, env=env, capture_output=True, text=True, check=False)
+            self.assertEqual(fast.returncode, 0)
+            self.assertEqual(fast.stdout, "")  # Resident action: no Python fallback.
+            dbus.write_text("#!/bin/sh\nexit 1\n")
+            cold = subprocess.run(command, env=env, capture_output=True, text=True, check=False)
+            self.assertEqual(cold.returncode, 0, cold.stderr)
+            self.assertEqual(cold.stdout.strip(), "aero-shell --control")
 
     def test_unmanaged_launcher_is_never_overwritten(self):
         with tempfile.TemporaryDirectory() as directory:

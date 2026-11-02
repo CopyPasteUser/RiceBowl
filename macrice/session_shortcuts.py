@@ -109,10 +109,27 @@ def _load(path: Path) -> dict | None:
     return state
 
 
-def install_bindings(*, state_dir: Path | None = None, launcher: Path | None = None) -> tuple[str, ...]:
+def _direct_commands(theme: str, bin_dir: Path) -> dict[str, str]:
+    """Bind the active rice directly, avoiding Python/xfconf work per keystroke."""
+    if theme == "RiceHub-Aero":
+        target = bin_dir / "ricehub-toggle"
+        actions = {"Super_L": "aero-menu", "Control_R": "aero-control"}
+    elif theme in ("RiceHub-Ten-Light", "RiceHub-Ten-Dark"):
+        target = bin_dir / "ricehub-toggle"
+        actions = {"Super_L": "ten-menu", "Control_R": "ten-control"}
+    elif theme in ("WhiteSur-Light", "WhiteSur-Dark"):
+        return {"Super_L": shlex.join([str(bin_dir / "macmenu"), "--toggle"]),
+                "Control_R": shlex.quote(str(bin_dir / "macos-control-center-toggle"))}
+    else:
+        raise ValueError(f"RiceHub does not manage shortcuts for {theme!r}")
+    return {key: shlex.join([str(target), action]) for key, action in actions.items()}
+
+
+def install_bindings(theme: str, *, state_dir: Path | None = None,
+                     launcher: Path | None = None) -> tuple[str, ...]:
     path = _state_path(state_dir)
     cli = launcher or bin_home() / "macrice"
-    commands = {key: f"{shlex.quote(str(cli))} {action}" for key, action in KEY_COMMANDS.items()}
+    commands = _direct_commands(theme, cli.parent)
     current = {key: _read(key) for key in KEY_COMMANDS}
     state = _load(path)
     if state is None:
