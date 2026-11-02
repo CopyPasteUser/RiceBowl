@@ -15,9 +15,11 @@ from .environment import bin_home
 
 
 THEMES = ("RiceHub-Ten-Dark", "RiceHub-Ten-Light")
-ICON_THEME = "RiceHub-Ten"
+# A new asset name permits safe upgrades from 0.5 RC1: preflight will never
+# overwrite the previous, potentially user-customized RiceHub-Ten icon tree.
+ICON_THEME = "RiceHub-Ten-Penguin"
 BUNDLES = tuple((f"assets/themes/{theme}", f"themes/{theme}") for theme in THEMES) + (
-    ("assets/icons/RiceHub-Ten", "icons/RiceHub-Ten"),
+    ("assets/icons/RiceHub-Ten-Penguin", "icons/RiceHub-Ten-Penguin"),
 )
 MARKER = "# RiceHub Windows 10 autostart (managed by RiceHub)"
 

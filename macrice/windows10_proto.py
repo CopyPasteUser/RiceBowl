@@ -100,6 +100,17 @@ def _symbol(Gtk, name, size):
     return Gtk.Image.new_from_icon_name(name, size)
 
 
+def _ten_penguin(Gtk, size=26):
+    """Render the same original mark as the live shell at small UI sizes."""
+    from gi.repository import GdkPixbuf
+
+    from .installer import project_root
+
+    pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(
+        str(project_root() / "assets/ten-start.svg"), size, size, True)
+    return Gtk.Image.new_from_pixbuf(pixbuf)
+
+
 def _box(Gtk, orientation, spacing=0):
     return Gtk.Box(orientation=orientation, spacing=spacing)
 
@@ -117,7 +128,7 @@ def teaser(Gtk):
     card.pack_start(note, False, False, 0)
     card.pack_start(Gtk.Box(), True, True, 0)
     bar = _style(_box(Gtk, Gtk.Orientation.HORIZONTAL, 12), "w10-taskbar")
-    bar.pack_start(_label(Gtk, "⊞", "w10-time"), False, False, 7)
+    bar.pack_start(_ten_penguin(Gtk, 17), False, False, 7)
     bar.pack_start(_label(Gtk, "Search    ◈    Files    Browser", "w10-time"), False, False, 0)
     bar.pack_start(Gtk.Box(), True, True, 0)
     bar.pack_start(_label(Gtk, "12:42  ▢", "w10-time"), False, False, 7)
@@ -167,7 +178,8 @@ def show_dialog(parent, Gtk, Gdk, GLib, screenshot_paths=None):
 
     bar = _style(_box(Gtk, Gtk.Orientation.HORIZONTAL, 2), "w10-taskbar")
     background.pack_start(bar, False, False, 0)
-    start = _style(Gtk.Button(label="⊞"), "w10-start")
+    start = _style(Gtk.Button(), "w10-start")
+    start.set_image(_ten_penguin(Gtk))
     start.get_accessible().set_name("Toggle Start preview")
     bar.pack_start(start, False, False, 0)
     search_button = _style(Gtk.Button(label="⌕  Type here to search"), "w10-search-button")

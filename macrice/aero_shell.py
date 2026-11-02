@@ -247,7 +247,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _capture_menu(self):
             try:
-                self._capture_screen("windows10-live-start-0.5.0rc1.png")
+                self._capture_screen("windows10-live-start-0.5.0rc2.png")
                 self._hide_menu()
                 self._toggle_actions()
                 assert self.actions.get_visible()
@@ -261,7 +261,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _capture_actions(self):
             try:
-                self._capture_screen("windows10-live-actions-0.5.0rc1.png")
+                self._capture_screen("windows10-live-actions-0.5.0rc2.png")
             except Exception:
                 import traceback
                 traceback.print_exc()

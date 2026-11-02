@@ -1,6 +1,6 @@
 # RiceHub · Desktop styles for XFCE
 
-RiceHub is the beginning of a bigger idea: one lightweight home for complete XFCE rices inspired by operating systems we know and love. The project is built around **a working system first, an honest roadmap second**. The macOS implementation comes from the existing MacRice projects. Version 0.5 RC1 adds two installable Windows 10 palettes and a live shell alongside the Windows 7 Aero candidate; physical Mint/XFCE acceptance is still open.
+RiceHub is the beginning of a bigger idea: one lightweight home for complete XFCE rices inspired by operating systems we know and love. The project is built around **a working system first, an honest roadmap second**. The macOS implementation comes from the existing MacRice projects. Version 0.5 RC2 adds a flat Linux-penguin Start mark to the installable Windows 10 shell and focuses the roadmap on existing rices; physical Mint/XFCE acceptance is still open.
 
 ## First launch
 
@@ -32,11 +32,10 @@ The desktop remains usable if your XFCE configuration is different, but **the fu
 | Rice family | Status | Planned identity |
 | --- | --- | --- |
 | macOS / Aurora collection | **Available (preview)** | MacBar, MacMenu, Control Center, Plank, five full desktop palettes and Thunar styling |
-| Windows 10 | **Installable RC1** | Two dark/light themes, original icons and wallpapers, live taskbar, Gio Start and pinned tiles, Action Center and safe restore |
-| Windows 11 | Coming soon | Centered taskbar, rounded launcher, quick settings, light/dark modes |
+| Windows 10 | **Installable RC2** | Two dark/light themes, original penguin icons and wallpapers, live taskbar, Gio Start and pinned tiles, Action Center and safe restore |
 | Windows 7 | **Experimental, installable** | Aero Meadow / Cascade wallpaper, Aero Penguin, original GTK/XFWM icons and chrome, Thunar, Plank glass theme, event-driven taskbar and searchable Start menu |
 
-Windows 10 and Windows 7 can be applied only after a read-only preflight and explicit confirmation; the *separate concept dialogs* are harmless demos. Both install only original assets in the user's home, save a restore snapshot, and change the selected XFCE, Plank and session appearance. Neither installs packages nor overwrites third-party themes. Windows 11 remains a description.
+Windows 10 and Windows 7 can be applied only after a read-only preflight and explicit confirmation; the *separate concept dialogs* are harmless demos. Both install only original assets in the user's home, save a restore snapshot, and change the selected XFCE, Plank and session appearance. Neither installs packages nor overwrites third-party themes. Additional OS families are not currently scheduled.
 
 The Aero taskbar includes persistent right-click pins, a two-line clock, bounded/paged searchable Start menu, Show Desktop, native settings shortcuts and **optional live window switching**. Install `gir1.2-wnck-3.0` on Linux Mint XFCE to enable event-driven Wnck window buttons (activate, minimize, restore and overflow); without it, pinned launchers still work. An **experimental StatusNotifier (SNI) tray** is available by default, using an existing watcher when present or a session-local fallback when none exists. Legacy XEmbed tray icons remain unsupported. Set `RICEHUB_AERO_TRAY=0` to disable the host. Optional `RICEHUB_AERO_GLASS=1` enables a more translucent gradient; it does **not** provide background blur and depends on the compositor for its visual result. The Aero shell can reserve the bottom X11 workarea using EWMH, opt-out with `RICEHUB_AERO_RESERVE=0`; existing XFCE panels and MacBar are never force-killed. For all individual components and assets, see [WINDOWS7.md](WINDOWS7.md).
 
@@ -48,7 +47,7 @@ The Aero taskbar includes persistent right-click pins, a two-line clock, bounded
 
 The [complete Windows 7 screenshot gallery](WINDOWS7.md#screenshots--coverage) includes the live Start menu, search, Thunar and window borders. These are real XFCE/X11 captures; optional tray and Wnck window-list features were unavailable in the temporary test desktop. The [macOS + Plank overview](screenshots/macos-rice-with-plank-0.2.0rc1.png) is explicitly an **illustrative** full-desktop composition, not a live Plank capture.
 
-![Windows 10 live GTK3 Start with original wallpaper, real installed apps and pinned tiles](screenshots/windows10-live-start-0.5.0rc1.png)
+![Windows 10 live GTK3 Start with flat penguin, original wallpaper, real installed apps and pinned tiles](screenshots/windows10-live-start-0.5.0rc2.png)
 
 The [Windows 10 release gallery and completion roadmap](WINDOWS10.md#release-roadmap-and-acceptance) includes Action Center and the installable theme selection. These are genuine live GTK screenshots in a disposable X11 desktop fixture, **not** physical Linux Mint hardware acceptance.
 
@@ -107,9 +106,8 @@ The [Windows 10 release gallery and completion roadmap](WINDOWS10.md#release-roa
 - [x] Native style picker, CLI integration, versioned real-GTK screenshots and X11 smoke tests in CI.
 - [ ] Physically test all integration points on Linux Mint XFCE, multiple resolutions and HiDPI; measure resource budgets and audit panel coexistence before declaring 1.0. See [the specific acceptance cases](WINDOWS10.md#release-roadmap-and-acceptance).
 
-**0.6 — Windows 11 and mature Windows 7**
+**0.6 — Cross-rice quality and mature Windows 7**
 
-- [ ] Centered Windows 11-inspired taskbar and quick settings.
 - [x] Add experimental StatusNotifier tray support, with bounded icon decoding and safe coexistence with other tray hosts.
 - [x] Add opt-in translucent Aero styling (`RICEHUB_AERO_GLASS=1`), without claiming compositor blur.
 - [ ] Add legacy XEmbed compatibility if needed, and validate SNI compatibility and visual behavior on physical XFCE/X11 hardware.

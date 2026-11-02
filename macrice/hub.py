@@ -1,8 +1,8 @@
 """RiceHub: a native, on-demand XFCE rice gallery and recovery workbench.
 
 No extra daemon, browser, compositor, root privileges or hidden profile writes.
-The working macOS implementation is shared with MacRice. The Windows 10
-concept is read-only until its real XFCE shell is implemented.
+The working macOS implementation is shared with MacRice. Windows 7 and
+Windows 10 also offer real, user-local XFCE/X11 appearance profiles.
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ from .hub_art import aspect_fill
 from .hub_catalog import FAMILIES, FAMILY_BY_KEY, recent_backups, search_families
 
 
-HUB_VERSION = "0.5.0rc1"
+HUB_VERSION = "0.5.0rc2"
 
 # A restrained native palette. All GTK CSS colors and font choices live here.
 TOKENS = {
@@ -284,7 +284,7 @@ def run() -> int:
             self.prototype_button = action("Explore prototype", lambda _: self._show_prototype())
             self.prototype_button.set_no_show_all(True)
             controls.pack_start(self.prototype_button, False, False, 0)
-            self.future_note = label("Coming soon · No installation action is available yet.", "hub-soon")
+            self.future_note = label("Concept preview only — no settings are changed.", "hub-soon")
             self.future_note.set_no_show_all(True)
             body.pack_start(self.future_note, False, False, 0)
 
@@ -295,12 +295,6 @@ def run() -> int:
             self.search.get_accessible().set_name("Search desktop styles")
             self.search.connect("search-changed", self._filter_families)
             finder.pack_start(self.search, True, True, 0)
-            self.availability = Gtk.ComboBoxText()
-            for key, name in (("all", "All rices"), ("available", "Available"), ("soon", "Coming soon")):
-                self.availability.append(key, name)
-            self.availability.set_active_id("all")
-            self.availability.connect("changed", self._filter_families)
-            finder.pack_start(self.availability, False, False, 0)
 
             self.gallery = Gtk.FlowBox()
             self.gallery.set_selection_mode(Gtk.SelectionMode.NONE)
@@ -434,19 +428,21 @@ def run() -> int:
             self._refresh_backups()
 
         def _build_roadmap(self):
-            body = self._page("roadmap", "What comes next", "A transparent roadmap for complete XFCE rices and previews.")
-            for family in FAMILIES[1:]:
+            body = self._page("roadmap", "Quality roadmap",
+                              "Polishing the existing rices before planning another desktop family.")
+            milestones = (
+                ("Windows 10", "Release candidate", "Verify the flat penguin shell, window list, tray, panel coexistence and recovery on actual Mint XFCE hardware."),
+                ("Windows 7", "Release candidate", "Check Aero glass, compositor differences, SNI icons and keyboard navigation on real X11 systems."),
+                ("All rices", "Acceptance pending", "Validate multi-monitor layouts, HiDPI, restore after login, idle resource use and guided updates."),
+            )
+            for title, status, detail in milestones:
                 panel = cls(vertical(6), "hub-card")
                 row = horizontal(10)
-                row.pack_start(label(family.title, "hub-section"), True, True, 0)
-                row.pack_start(label("Prototype preview" if family.prototype else "Coming soon", "hub-soon"),
-                               False, False, 0)
+                row.pack_start(label(title, "hub-section"), True, True, 0)
+                row.pack_start(label(status, "hub-soon"), False, False, 0)
                 panel.pack_start(row, False, False, 0)
-                panel.pack_start(label(family.description, "hub-body", True), False, False, 0)
-                panel.pack_start(label("Planned: " + ", ".join(family.features), "hub-hint", True), False, False, 0)
+                panel.pack_start(label(detail, "hub-body", True), False, False, 0)
                 body.pack_start(panel, False, False, 0)
-            body.pack_start(label("Future work includes a shared XFCE panel profile engine, verified switching and reversible installation.",
-                                  "hub-body", True), False, False, 0)
 
         def _switch_page(self, key):
             self._active_page = key
@@ -485,7 +481,7 @@ def run() -> int:
                 "Aero is installable; its separate Start preview changes nothing."
                 if key == "windows7" else
                 "Windows 10 is installable; this separate concept preview changes nothing."
-                if key == "windows10" else "Coming soon · No installation action is available yet.")
+                if key == "windows10" else "This concept preview changes nothing.")
             self.future_note.set_visible(family.prototype or not family.available)
             if family.available:
                 self._rebuilding_picker = True
@@ -540,8 +536,7 @@ def run() -> int:
             self._preview_rendered = key
 
         def _filter_families(self, *_args):
-            shown = {family.key for family in search_families(
-                self.search.get_text(), self.availability.get_active_id() or "all")}
+            shown = {family.key for family in search_families(self.search.get_text())}
             for key, button in self._family_buttons.items():
                 button.get_parent().set_visible(key in shown)
             self.empty.set_visible(not shown)

@@ -23,6 +23,6 @@ if __name__ == "__main__":
     if not Gtk.init_check()[0]:
         raise SystemExit("An X11 GTK display is required for screenshot capture")
     show_dialog(None, Gtk, Gdk, GLib, (
-        ROOT / "screenshots/windows10-start-preview-0.4.0rc1.png",
-        ROOT / "screenshots/windows10-action-center-preview-0.4.0rc1.png",
+        ROOT / "screenshots/windows10-start-preview-0.5.0rc2.png",
+        ROOT / "screenshots/windows10-action-center-preview-0.5.0rc2.png",
     ))

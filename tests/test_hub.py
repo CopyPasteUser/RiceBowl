@@ -27,8 +27,9 @@ class HubCatalogTests(unittest.TestCase):
         self.assertTrue(FAMILY_BY_KEY["windows10"].available)
 
     def test_search_availability_and_case_insensitive_queries(self):
-        self.assertEqual([item.key for item in search_families("windows", "soon")],
-                         ["windows11"])
+        self.assertEqual(search_families("windows", "soon"), ())
+        self.assertNotIn("windows11", FAMILY_BY_KEY)
+        self.assertEqual({family.key for family in FAMILIES}, {"macos", "windows10", "windows7"})
         self.assertEqual([item.key for item in search_families("AURORA", "available")], ["macos"])
         self.assertEqual([item.key for item in search_families("windows", "available")], ["windows10", "windows7"])
         self.assertEqual(search_families("not a real rice"), ())
@@ -49,7 +50,7 @@ class HubCatalogTests(unittest.TestCase):
             (restored / "restored").write_text("already restored")
             unknown = root / "20261102T105720123456Z"
             unknown.mkdir()
-            (unknown / "manifest.json").write_text(json.dumps({"style": "windows11"}))
+            (unknown / "manifest.json").write_text(json.dumps({"style": "retired-style"}))
             invalid = root / "20261102T105820123456Z"
             invalid.mkdir()
             (invalid / "manifest.json").write_text("invalid json")
@@ -73,7 +74,7 @@ class HubStylingTests(unittest.TestCase):
             fake.assert_called_once_with()
 
     def test_styling_is_native_and_does_not_require_web_stack(self):
-        self.assertEqual(HUB_VERSION, "0.5.0rc1")
+        self.assertEqual(HUB_VERSION, "0.5.0rc2")
         self.assertIn(b"hub-card", CSS)
         self.assertNotIn(b"javascript", CSS.lower())
         try:

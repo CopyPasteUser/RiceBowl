@@ -4,11 +4,11 @@
 
 RiceHub is a small, native Linux app for turning an ordinary XFCE desktop into something personal. It started with a love of macOS's clean interface and XFCE's speed. The goal is bigger now: one friendly place to discover, preview, apply and eventually share complete desktop styles — without swapping out your desktop environment.
 
-**macOS, Windows 7 and Windows 10-inspired rices are installable today.** Windows 10 now ships as two reversible XFCE/X11 styles with original GTK/XFWM artwork and a live GTK taskbar, Start menu and Action Center. Windows 11 remains **Coming soon**. RiceHub `0.5.0 RC1` is a feature-complete Windows 10 release candidate; Linux Mint hardware acceptance is still pending.
+**macOS, Windows 7 and Windows 10-inspired rices are installable today.** Windows 10 ships as two reversible XFCE/X11 styles with original GTK/XFWM artwork, a flat Linux-penguin Start icon and a live GTK taskbar, Start menu and Action Center. RiceHub `0.5.0 RC2` is a feature-complete Windows 10 release candidate; Linux Mint hardware acceptance is still pending. No additional OS rice is currently scheduled.
 
 ## Meet RiceHub
 
-![RiceHub gallery offering installable Windows 10 Midnight and Blue styles](screenshots/ricehub-windows10-gallery-0.5.0rc1.png)
+![RiceHub gallery offering installable Windows 10 Midnight and Blue styles with a Linux-penguin taskbar](screenshots/ricehub-windows10-gallery-0.5.0rc2.png)
 
 *Actual GTK3 RiceHub window in virtual X11. Windows 10 can now be checked and applied, while its older concept dialog remains available separately.*
 
@@ -46,11 +46,11 @@ Without Wnck, the Aero taskbar still opens with pinned apps, Start search and a 
 
 | Live Start menu, installed apps and blue pinned tiles | Action Center with XFCE settings shortcuts |
 | --- | --- |
-| ![Real GTK Windows 10 rice with running taskbar, original wallpaper and actual installed app list](screenshots/windows10-live-start-0.5.0rc1.png) | ![Real GTK Windows 10 Action Center quick settings over original desktop wallpaper](screenshots/windows10-live-actions-0.5.0rc1.png) |
+| ![Real GTK Windows 10 rice with blue Linux penguin Start icon, original wallpaper and actual installed app list](screenshots/windows10-live-start-0.5.0rc2.png) | ![Real GTK Windows 10 Action Center quick settings and Linux penguin taskbar](screenshots/windows10-live-actions-0.5.0rc2.png) |
 
 *Actual running RiceHub Ten GTK shell windows and original wallpaper in an isolated virtual X11 desktop fixture. Installed applications are listed from Gio, not invented examples. No physical Linux Mint system was changed. System tray and real window integration require the corresponding desktop services.*
 
-Select **Windows 10** in RiceHub, choose **Midnight** or **Blue**, use **Check requirements**, then **Apply rice**. This installs original dark/light themes, icons and wallpaper, starts the shared live taskbar, and records a reversible snapshot. Application search and pinned tiles launch your real installed apps; Wnck tracks real windows, the SNI tray accepts supported icons, and Action Center opens existing XFCE settings tools. The separate **Explore Windows 10 preview** dialog is retained as a harmless early concept. See [the implementation, screenshots and acceptance checklist](WINDOWS10.md).
+Select **Windows 10** in RiceHub, choose **Midnight** or **Blue**, use **Check requirements**, then **Apply rice**. This installs original dark/light themes, Linux-penguin icons and wallpaper, starts the shared live taskbar, and records a reversible snapshot. Application search and pinned tiles launch your real installed apps; Wnck tracks real windows, the SNI tray accepts supported icons, and Action Center opens existing XFCE settings tools. The separate **Explore Windows 10 preview** dialog is retained as a harmless early concept. See [the implementation, screenshots and acceptance checklist](WINDOWS10.md).
 
 ### macOS rice with Plank
 
@@ -78,7 +78,6 @@ The hub itself is written with Python and GTK3. It opens when you need it and do
 | --- | --- | --- |
 | macOS-inspired | Aurora Night, Aurora Day, Liquid Glass Night, Liquid Glass Day, Classic Aqua | **Available (preview)** |
 | Windows 10-inspired | Windows 10 Midnight, Windows 10 Blue | **Installable release candidate** |
-| Windows 11-inspired | Centered taskbar and launcher | **Coming soon** |
 | Windows 7-inspired | Aero Meadow, Aero Cascade | **Aero release candidate** |
 
 The working macOS rice brings together [MacMenu](components/macmenu/), [Control Center](components/control-center/), [MacBar](components/macbar/), Plank, Thunar, WhiteSur-based GTK/window themes, icons and Aurora wallpapers. All three bundled apps keep their own tested installers. Plank remains a system package and your pinned dock items are preserved.
@@ -139,11 +138,11 @@ For your XFCE shortcuts, use `macmenu --toggle` and `macos-control-center-toggle
 - **Recoverable changes.** Desktop snapshots live outside the replaceable app bundle, under `~/.local/share/macrice-state/`.
 - **No takeover.** The XFCE panel is not replaced automatically. Plank launchers and layout are not overwritten during installation.
 - **No extra background monitor.** The hub runs on demand. CPU/memory sampling happens only when you request it.
-- **Honest previews.** Windows 7 and Windows 10 offer installable release-candidate rices plus optional non-installing concept dialogs. Windows 11 is a placeholder. Some graphical effects depend on your existing X11 compositor.
+- **Honest previews.** Windows 7 and Windows 10 offer installable release-candidate rices plus optional non-installing concept dialogs. Some graphical effects depend on your existing X11 compositor.
 
 ## Where this is going
 
-The first goal is a dependable macOS rice and a useful central manager. The Windows 7 Aero and Windows 10 Ten candidates share the safe apply/restore engine and event-driven taskbar backends. Physical Mint XFCE testing, panel coexistence checks and HiDPI work remain before a stable 1.0; Windows 11 is planned. See the [RiceHub product roadmap](RICEHUB.md) and [MacRice engine roadmap](ROADMAP.md).
+The first goal is a dependable macOS rice and a useful central manager. The Windows 7 Aero and Windows 10 Ten candidates share the safe apply/restore engine and event-driven taskbar backends. Physical Mint XFCE testing, panel coexistence checks and HiDPI work remain before a stable 1.0. No new OS family is planned at the moment. See the [RiceHub product roadmap](RICEHUB.md) and [MacRice engine roadmap](ROADMAP.md).
 
 The existing MacMenu, Control Center and MacBar repositories have not been deleted. Their code stays independently testable while RiceHub becomes the main home for complete rices.
 

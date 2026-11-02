@@ -33,7 +33,7 @@ def capture():
         pixels = Gdk.pixbuf_get_from_window(window.get_window(), 0, 0, *window.get_size())
         if pixels is None:
             raise RuntimeError("Unable to capture the RiceHub gallery")
-        pixels.savev(str(ROOT / "screenshots/ricehub-windows10-gallery-0.5.0rc1.png"), "png", [], [])
+        pixels.savev(str(ROOT / "screenshots/ricehub-windows10-gallery-0.5.0rc2.png"), "png", [], [])
         app.quit()
         return False
 

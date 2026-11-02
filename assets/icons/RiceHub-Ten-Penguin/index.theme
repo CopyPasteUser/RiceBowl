@@ -1,6 +1,6 @@
 [Icon Theme]
-Name=RiceHub Ten
-Comment=Original flat icons, inherited system app coverage
+Name=RiceHub Ten Penguin
+Comment=Original flat icons with Linux penguin Start mark
 Inherits=Adwaita,hicolor
 Directories=scalable/apps,scalable/places
 [scalable/apps]

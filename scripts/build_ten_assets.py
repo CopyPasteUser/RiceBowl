@@ -128,10 +128,10 @@ ART = {
 
 
 def icons() -> None:
-    root = ROOT / "assets/icons/RiceHub-Ten"
+    root = ROOT / "assets/icons/RiceHub-Ten-Penguin"
     root.mkdir(parents=True, exist_ok=True)
     (root / "index.theme").write_text(
-        "[Icon Theme]\nName=RiceHub Ten\nComment=Original flat icons, inherited system app coverage\n"
+        "[Icon Theme]\nName=RiceHub Ten Penguin\nComment=Original flat icons with Linux penguin Start mark\n"
         "Inherits=Adwaita,hicolor\nDirectories=scalable/apps,scalable/places\n"
         "[scalable/apps]\nSize=48\nType=Scalable\nMinSize=16\nMaxSize=128\n"
         "[scalable/places]\nSize=48\nType=Scalable\nMinSize=16\nMaxSize=128\n",
@@ -158,12 +158,23 @@ def wallpapers() -> None:
                 factor = max(0, 1 - abs(x - 1280) / 1020) * max(0, 1 - abs(y - 520) / 880)
                 pix[x, y] = tuple(min(255, int(base[i] + (glow[i] - base[i]) * factor)) for i in range(3))
         draw = ImageDraw.Draw(image, "RGBA")
-        # Four original luminous panes, with a slight perspective taper and light rays.
-        draw.polygon([(1020, 260), (1290, 220), (1290, 508), (1020, 508)], fill=(59, 169, 246, 215))
-        draw.polygon([(1310, 218), (1660, 165), (1660, 505), (1310, 505)], fill=(86, 189, 253, 225))
-        draw.polygon([(1020, 528), (1290, 528), (1290, 820), (1020, 770)], fill=(39, 154, 235, 220))
-        draw.polygon([(1310, 528), (1660, 528), (1660, 875), (1310, 825)], fill=(75, 180, 251, 235))
-        draw.polygon([(1020, 260), (1020, 770), (100, 950), (240, 120)], fill=(12, 99, 187, 48))
+        # The same flat penguin geometry as the taskbar, scaled into a soft
+        # spotlight. No Microsoft/Windows mark is included in the artwork.
+        draw.polygon([(1300, 470), (100, 120), (180, 0), (1390, 415)], fill=(21, 128, 212, 45))
+        draw.polygon([(1300, 540), (110, 1040), (0, 870), (1390, 520)], fill=(16, 142, 229, 37))
+        def position(x, y):
+            return 800 + x * 11, 125 + y * 11
+        def polygon(points, rgba):
+            draw.polygon([position(x, y) for x, y in points], fill=rgba)
+        polygon([(17, 26), (6, 43), (9, 51), (22, 41)], (20, 153, 227, 195))
+        polygon([(47, 26), (58, 43), (55, 51), (42, 41)], (20, 153, 227, 195))
+        draw.ellipse((*position(16, 5), *position(48, 59)), fill=(164, 226, 255, 225))
+        draw.ellipse((*position(23, 21), *position(41, 57)), fill=(53, 162, 234, 210))
+        draw.rectangle((*position(24, 20), *position(29, 25)), fill=(24, 77, 130, 255))
+        draw.rectangle((*position(35, 20), *position(40, 25)), fill=(24, 77, 130, 255))
+        polygon([(26, 29), (32, 25), (38, 29), (32, 34)], (255, 192, 108, 245))
+        polygon([(24, 56), (17, 60), (32, 60), (30, 54)], (255, 192, 108, 220))
+        polygon([(40, 56), (47, 60), (32, 60), (34, 54)], (255, 192, 108, 220))
         image.save(root / name, "JPEG", quality=91, optimize=True)
 
 

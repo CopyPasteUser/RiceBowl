@@ -30,7 +30,11 @@ class TenTests(unittest.TestCase):
             for button in ("close", "maximize", "hide"):
                 for state in ("active", "inactive", "prelight", "pressed"):
                     self.assertTrue((chrome / f"{button}-{state}.png").is_file())
-        self.assertTrue((root / "assets/icons/RiceHub-Ten/scalable/apps/start-here.svg").is_file())
+        mark = (root / "assets/ten-start.svg").read_text(encoding="utf-8")
+        self.assertIn("RiceHub Ten Penguin", mark)
+        self.assertNotIn("M2 4 12", mark)
+        self.assertEqual(mark, (root / "assets/icons/RiceHub-Ten-Penguin/scalable/apps/start-here.svg")
+                         .read_text(encoding="utf-8"))
         self.assertIn(b"ten-tile", CSS)
 
     def test_preflight_is_read_only(self):
@@ -60,7 +64,8 @@ class TenTests(unittest.TestCase):
             manifest = json.loads((ten_backup / "manifest.json").read_text())
             self.assertEqual(manifest["schema"], 4)
             self.assertTrue((root / "data/themes/RiceHub-Ten-Dark/gtk-3.0/gtk.css").is_file())
-            self.assertTrue((root / "data/icons/RiceHub-Ten/index.theme").is_file())
+            self.assertTrue((root / "data/icons/RiceHub-Ten-Penguin/index.theme").is_file())
+            self.assertEqual(fake.get("xfconf", "xsettings", "/Net/IconThemeName"), ten.ICON_THEME)
             self.assertTrue((root / "data/plank/themes/RiceHub-Ten-Flat/dock.theme").is_file())
             restore(backend=fake, data_root=root / "data", config_root=root / "config")
             self.assertIsNotNone(read_aero(root / "config"))
@@ -93,6 +98,21 @@ class TenTests(unittest.TestCase):
                 apply("ten-dark", backend=fake, data_root=root / "data", config_root=root / "config")
             self.assertEqual(fake.calls, [])
 
+    def test_upgrade_keeps_user_customized_legacy_icon_theme(self):
+        """RC1 can remain installed without blocking the new penguin artwork."""
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            old_theme = root / "data/icons/RiceHub-Ten"
+            old_theme.mkdir(parents=True)
+            (old_theme / "index.theme").write_text("user-edited legacy icons", encoding="utf-8")
+            fake = FakeBackend()
+            setup_apps(root / "config")
+            backup = apply("ten-dark", backend=fake, data_root=root / "data", config_root=root / "config")
+            self.assertEqual((old_theme / "index.theme").read_text(encoding="utf-8"),
+                             "user-edited legacy icons")
+            self.assertTrue((root / "data/icons" / ten.ICON_THEME / "index.theme").is_file())
+            restore(backend=fake, data_root=root / "data", config_root=root / "config")
+            self.assertTrue((backup / "restored").is_file())
     def test_pins_do_not_cross_profiles(self):
         with tempfile.TemporaryDirectory() as tmp:
             with mock.patch.dict("os.environ", {"XDG_CONFIG_HOME": tmp}):

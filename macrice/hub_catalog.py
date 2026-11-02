@@ -39,11 +39,6 @@ FAMILIES: tuple[RiceFamily, ...] = (
         ("Live Start and taskbar", "Dark/light GTK & XFWM", "Persistent pins & Action Center", "Reversible installation"), True,
     ),
     RiceFamily(
-        "windows11", "Windows 11", "Centered simplicity",
-        "A centered taskbar, modern launcher and compact quick settings built around XFCE.",
-        False, (), ("Centered taskbar", "Start layout", "Quick settings", "Snap-friendly desktop"),
-    ),
-    RiceFamily(
         "windows7", "Windows 7", "Aero nostalgia",
         "Aero Meadow and Aero Cascade: original glass window chrome, Linux penguin, icons, Start menu and taskbar.",
         True, ("aero-meadow", "aero-cascade"),

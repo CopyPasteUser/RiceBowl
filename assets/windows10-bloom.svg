@@ -9,10 +9,6 @@
       <stop offset=".47" stop-color="#066fbd" stop-opacity=".45"/>
       <stop offset="1" stop-color="#001642" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="glass" x1="0" y1="0" x2="1" y2="0">
-      <stop stop-color="#17d2ff" stop-opacity=".7"/>
-      <stop offset="1" stop-color="#dcffff" stop-opacity=".92"/>
-    </linearGradient>
   </defs>
   <rect width="1200" height="675" fill="url(#deep)"/>
   <rect width="1200" height="675" fill="url(#glow)"/>
@@ -20,13 +16,13 @@
   <path d="M732 405 1200 675H930L700 414Z" fill="#16b8fc" opacity=".16"/>
   <path d="M727 278 0 56V0L736 268Z" fill="#0877bd" opacity=".2"/>
   <path d="M727 409 0 665V568L739 419Z" fill="#0791d2" opacity=".17"/>
-  <g stroke="#90eaff" stroke-width="2" fill="url(#glass)">
-    <path d="M720 246 894 217V334H720Z" opacity=".72"/>
-    <path d="M906 215 1098 183V334H906Z" opacity=".92"/>
-    <path d="M720 345H894V461L720 432Z" opacity=".67"/>
-    <path d="M906 345H1098V496L906 464Z" opacity=".92"/>
+  <!-- RiceHub Ten Penguin: angular, original geometry with a flat blue glow. -->
+  <g transform="translate(635 75) scale(7)" opacity=".86">
+    <path d="M17 26 6 43l3 8 13-10ZM47 26l11 17-3 8-13-10" fill="#168ee0"/>
+    <path d="M32 5C21 5 16 15 16 28v14c0 11 7 17 16 17s16-6 16-17V28C48 15 43 5 32 5Z" fill="#a7e4ff"/>
+    <path d="M23 37c0-10 3-16 9-16s9 6 9 16v12c-2 5-5 8-9 8s-7-3-9-8Z" fill="#38aaf1"/>
+    <path d="M24 20h5v5h-5ZM35 20h5v5h-5Z" fill="#164b80"/>
+    <path d="m26 29 6-4 6 4-6 5Z" fill="#ffc06c"/>
+    <path d="m24 56-7 4h15l-2-6ZM40 56l7 4H32l2-6Z" fill="#ffc06c"/>
   </g>
-  <path d="M712 337H1112" stroke="#a7f0ff" stroke-width="2" opacity=".55"/>
-  <path d="M899 208V474" stroke="#a7f0ff" stroke-width="2" opacity=".5"/>
-  <rect x="710" y="202" width="406" height="307" fill="none" stroke="#70d6ff" opacity=".12"/>
 </svg>
