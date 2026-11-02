@@ -27,10 +27,14 @@ CSS = {
 .aero-time { color: #111; background: #c0c0c0; padding: 2px 8px; border: 2px inset #efefef; }
 .aero-quick, .aero-desktop, .aero-task-overflow { color: #111; border: 1px outset #fff; border-radius: 0; }
 .aero-menu-root { background: #c0c0c0; border: 2px outset #fff; border-radius: 0; }
+.classic-brand { background-image: linear-gradient(to bottom, #071d60, #215d99); border-right: 2px solid #909090; }
+.classic-brand-label { color: white; font-size: 16px; font-weight: bold; }
 .aero-menu-heading { color: #000080; }
 .aero-menu-side { background: #d6d6d6; border-left: 1px solid #808080; }
+.aero-menu-search { border: 2px inset #eeeeee; border-radius: 0; padding: 4px; }
 .aero-menu-app { color: #111; border-radius: 0; }
 .aero-menu-app:hover { background: #000080; color: #fff; }
+.aero-menu-power { background: #c0c0c0; color: #111; border: 2px outset #fff; border-radius: 0; }
 .aero-control-root { background: #c0c0c0; border: 2px outset #fff; border-radius: 0; }
 .aero-control-quick { border-radius: 0; border: 2px outset #fff; }
 """,

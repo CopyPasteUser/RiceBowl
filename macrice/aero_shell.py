@@ -498,6 +498,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             row = self._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8), "aero-taskbar")
             if not ten and os.environ.get("RICEHUB_AERO_GLASS") == "1":
                 row.get_style_context().add_class("aero-glass")
+            if profile == "chromeos":
+                # Balance the trailing expanding spacer so the application
+                # cluster sits near the middle of a ChromeOS-style shelf.
+                row.pack_start(Gtk.Box(), True, True, 0)
             start = self._class(Gtk.Button(), "aero-start")
             contents = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
             logo = project_root() / ("assets/ten-start.svg" if ten else
@@ -660,6 +664,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             if tiles:
                 self._create_ten_menu()
                 return
+            classic = profile == "winclassic"
             menu = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
             menu.set_title("RiceHub " + (heritage.name if heritage else "Aero") + " Start")
             menu.set_decorated(False)
@@ -670,15 +675,26 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             menu.set_transient_for(self.bar)
             menu.set_keep_above(True)
             rect = self._desktop_rect()
-            _, _, menu_w, menu_h = menu_geometry(rect.x, rect.y, rect.width, rect.height)
+            _, _, menu_w, menu_h = menu_geometry(rect.x, rect.y, rect.width, rect.height,
+                                                 preferred_width=355 if classic else 490,
+                                                 preferred_height=465 if classic else 505)
             menu.set_default_size(menu_w, menu_h)
             body = self._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL), "aero-menu-root")
-            main = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-            main.set_margin_start(14)
-            main.set_margin_top(14)
-            main.set_margin_bottom(10)
-            main.set_margin_end(10)
-            main.set_size_request(min(320, max(180, menu_w - 36)), -1)
+            if classic:
+                # Unlike Luna's two-column Start menu, Windows 98/2000 used
+                # a narrow program list with a vertical branded side rail.
+                badge = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL), "classic-brand")
+                badge.set_size_request(38, -1)
+                brand = self._class(Gtk.Label(label="RiceHub   98 / 2000"), "classic-brand-label")
+                brand.set_angle(90)
+                badge.pack_end(brand, False, False, 18)
+                body.pack_start(badge, False, False, 0)
+            main = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=7 if classic else 10)
+            main.set_margin_start(8 if classic else 14)
+            main.set_margin_top(8 if classic else 14)
+            main.set_margin_bottom(8 if classic else 10)
+            main.set_margin_end(8 if classic else 10)
+            main.set_size_request(min(310, max(150, menu_w - (60 if classic else 36))), -1)
             main.pack_start(self._class(Gtk.Label(label=heritage.menu_heading if heritage else "Programs", xalign=0), "aero-menu-heading"), False, False, 0)
             search = self._class(Gtk.SearchEntry(), "aero-menu-search")
             search.set_placeholder_text("Search programs")
@@ -691,25 +707,26 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             scroller.add(self.results)
             main.pack_start(scroller, True, True, 0)
             body.pack_start(main, True, True, 0)
-            side = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12), "aero-menu-side")
-            try:
-                logo = Gtk.Image.new_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_scale(
-                    str(project_root() / "assets/aero-penguin.svg"), 70, 70, True))
-            except (GLib.Error, OSError):
-                logo = self._icon("start-here", Gtk.IconSize.DIALOG)
-            side.pack_start(logo, False, False, 0)
-            for title, icon, uri in (
-                ("Home", "user-home", Path.home().as_uri()),
-                ("Computer", "computer", "file:///"),
-                ("Documents", "folder-documents", (Path.home() / "Documents").as_uri()),
-            ):
-                btn = self._class(Gtk.Button(label=title), "aero-menu-app")
-                btn.set_image(self._icon(icon, Gtk.IconSize.MENU))
-                btn.set_always_show_image(True)
-                btn.connect("clicked", lambda _btn, address=uri: self._open_uri(address))
-                side.pack_start(btn, False, False, 0)
-            if menu_w >= 470:
-                body.pack_start(side, False, False, 0)
+            if not classic:
+                side = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12), "aero-menu-side")
+                try:
+                    logo = Gtk.Image.new_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_scale(
+                        str(project_root() / "assets/aero-penguin.svg"), 70, 70, True))
+                except (GLib.Error, OSError):
+                    logo = self._icon("start-here", Gtk.IconSize.DIALOG)
+                side.pack_start(logo, False, False, 0)
+                for title, icon, uri in (
+                    ("Home", "user-home", Path.home().as_uri()),
+                    ("Computer", "computer", "file:///"),
+                    ("Documents", "folder-documents", (Path.home() / "Documents").as_uri()),
+                ):
+                    btn = self._class(Gtk.Button(label=title), "aero-menu-app")
+                    btn.set_image(self._icon(icon, Gtk.IconSize.MENU))
+                    btn.set_always_show_image(True)
+                    btn.connect("clicked", lambda _btn, address=uri: self._open_uri(address))
+                    side.pack_start(btn, False, False, 0)
+                if menu_w >= 470:
+                    body.pack_start(side, False, False, 0)
             footer = self._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8), "aero-menu-footer")
             footer.set_margin_top(6)
             if shutil.which("xfce4-settings-manager"):
@@ -717,7 +734,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 settings.connect("clicked", lambda _btn: self._open_tool("xfce4-settings-manager"))
                 footer.pack_start(settings, True, True, 0)
             if shutil.which("xfce4-session-logout"):
-                power = self._class(Gtk.Button(label="Log off…"), "aero-menu-power")
+                power = self._class(Gtk.Button(label="Shut down…" if classic else "Log off…"), "aero-menu-power")
                 power.set_tooltip_text("Open XFCE's session dialog; no immediate logout")
                 power.connect("clicked", lambda _btn: self._open_tool("xfce4-session-logout"))
                 footer.pack_end(power, False, False, 0)
@@ -748,7 +765,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             menu.set_keep_above(True)
             rect = self._desktop_rect()
             _, _, menu_w, menu_h = menu_geometry(rect.x, rect.y, rect.width, rect.height,
-                                                 preferred_width=735, preferred_height=565)
+                                                 preferred_width=690 if profile == "chromeos" else 735,
+                                                 preferred_height=540 if profile == "chromeos" else 565)
             menu.set_default_size(menu_w, menu_h)
             root = self._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL), "aero-menu-root")
             rail = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=11), "ten-rail")
@@ -1011,11 +1029,15 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._menu_opened_at = GLib.get_monotonic_time()
             self.search.set_text("")
             x, y, w, h = menu_geometry(rect.x, rect.y, rect.width, rect.height,
-                                     preferred_width=735 if tiles else 490,
-                                     preferred_height=565 if tiles else 505)
+                                     preferred_width=(690 if profile == "chromeos" else 735) if tiles else
+                                     (355 if profile == "winclassic" else 490),
+                                     preferred_height=(540 if profile == "chromeos" else 565) if tiles else
+                                     (465 if profile == "winclassic" else 505))
             if w < 180 or h < 180:
                 self._error("The display is too small for the Start menu.")
                 return
+            if profile == "chromeos":
+                x = rect.x + (rect.width - w) // 2
             self.menu.show_all()
             self.menu.resize(w, h)
             self.menu.move(x, y)
