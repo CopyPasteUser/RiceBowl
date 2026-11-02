@@ -13,6 +13,7 @@ import shutil
 import subprocess
 
 from .aero_layout import PANEL_HEIGHT, menu_geometry, select_windows, task_capacity
+from .aero_pins import PIN_LIMIT, PinConfigError, load_pins, pin_file, save_pins
 
 
 APP_ID = "io.github.copypasteuser.RiceHub.AeroShell"
@@ -27,6 +28,19 @@ def app_catalog(Gio):
         if name and name.casefold() not in result:
             result[name.casefold()] = app
     return tuple(sorted(result.values(), key=lambda app: (app.get_display_name() or app.get_name()).casefold()))
+
+
+def default_pins(apps) -> tuple[str, ...]:
+    """Prefer the user's installed file manager, browser and terminal."""
+    selected = []
+    for keyword in ("file manager", "browser", "terminal"):
+        for app in apps:
+            identifier = app.get_id()
+            label = (app.get_display_name() or app.get_name() or "").casefold()
+            if keyword in label and identifier and identifier not in selected:
+                selected.append(identifier)
+                break
+    return tuple(selected)
 
 
 def matching_apps(apps, query: str):
@@ -104,6 +118,8 @@ def run(argv: list[str] | None = None) -> int:
             self._menu_focused = False
             self._tray = None
             self._pin_count = 0
+            self._pinned_ids = ()
+            self._pin_config_path = pin_file()
             self._task_capacity = 0
             self.show_desktop_button = None
             self._app_page_size = 24
@@ -132,6 +148,12 @@ def run(argv: list[str] | None = None) -> int:
                 Gdk.Screen.get_default(), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
             self._provider = provider
             self.apps = app_catalog(Gio)
+            try:
+                saved = load_pins(self._pin_config_path)
+            except (PinConfigError, OSError) as exc:
+                logging.getLogger(__name__).warning("Aero pins are unavailable: %s", exc)
+                saved = None
+            self._pinned_ids = default_pins(self.apps) if saved is None else saved
             self._create_taskbar()
             self._create_menu()
             self.connect("shutdown", self._shutdown)
@@ -182,6 +204,72 @@ def run(argv: list[str] | None = None) -> int:
             if self.menu.get_visible():
                 self._hide_menu()
 
+        def _render_pins(self):
+            for child in self.pinned_box.get_children():
+                self.pinned_box.remove(child)
+            by_id = {app.get_id(): app for app in self.apps if app.get_id()}
+            for identifier in self._pinned_ids:
+                app = by_id.get(identifier)
+                if app is None:
+                    continue
+                btn = self._class(Gtk.Button(), "aero-pin")
+                icon = app.get_icon()
+                btn.set_image(Gtk.Image.new_from_gicon(icon, Gtk.IconSize.LARGE_TOOLBAR) if icon else
+                              self._icon("application-x-executable"))
+                name = app.get_display_name() or app.get_name() or identifier
+                btn.set_tooltip_text(name)
+                btn.get_accessible().set_name("Launch " + name)
+                btn.connect("clicked", lambda _btn, selected=app: self._launch(selected))
+                btn.connect("button-press-event", lambda widget, event, selected=app:
+                            self._pin_context(widget, selected, event))
+                self.pinned_box.pack_start(btn, False, False, 0)
+            self.pinned_box.show_all()
+
+        def _pin_context(self, widget, app, event=None):
+            if event is not None and event.button != 3:
+                return False
+            identifier = app.get_id()
+            if not identifier:
+                return False
+            menu = Gtk.Menu()
+            pinned = identifier in self._pinned_ids
+            label = "Unpin from taskbar" if pinned else "Pin to taskbar"
+            item = Gtk.MenuItem(label=label)
+            item.set_sensitive(pinned or len(self._pinned_ids) < PIN_LIMIT)
+            item.connect("activate", lambda _item: self._change_pin(identifier, not pinned))
+            menu.append(item)
+            menu.show_all()
+            if event is not None:
+                menu.popup_at_pointer(event)
+            else:
+                menu.popup_at_widget(widget, Gdk.Gravity.SOUTH_WEST, Gdk.Gravity.NORTH_WEST, None)
+            return True
+
+        def _change_pin(self, identifier, add):
+            candidate = list(self._pinned_ids)
+            if add and identifier not in candidate:
+                candidate.append(identifier)
+            elif not add and identifier in candidate:
+                candidate.remove(identifier)
+            else:
+                return
+            try:
+                save_pins(self._pin_config_path, candidate)
+            except (PinConfigError, OSError) as exc:
+                self._error("Unable to save taskbar pins: " + str(exc))
+                return
+            self._pinned_ids = tuple(candidate)
+            self._render_pins()
+            self._pin_count = len(candidate)
+            self._task_capacity = task_capacity(self._desktop_rect().width, self._pin_count)
+            if self._window_tracker is not None:
+                from .aero_windows import is_task_window
+                screen = self._window_tracker.screen
+                self._windows_changed(tuple(
+                    win for win in screen.get_windows()
+                    if is_task_window(win, self._window_tracker.wnck)
+                ), screen.get_active_window())
+
         def _open_tool(self, command):
             """Open a known XFCE utility without a shell or implicit system changes."""
             allowed = ("xfce4-settings-manager", "xfce4-session-logout",
@@ -207,6 +295,7 @@ def run(argv: list[str] | None = None) -> int:
 
         def _catalog_changed(self, *_args):
             self.apps = app_catalog(Gio)
+            self._render_pins()
             self._populate(self.search.get_text())
 
         def _class(self, widget, name):
@@ -253,21 +342,10 @@ def run(argv: list[str] | None = None) -> int:
             start.connect("clicked", lambda _button: self._toggle_menu())
             row.pack_start(start, False, False, 4)
             self.start_button = start
-            pinned_ids = set()
-            for wanted in ("file manager", "browser", "terminal"):
-                app = next((a for a in self.apps if wanted in (a.get_display_name() or "").casefold()), None)
-                if not app or app.get_id() in pinned_ids:
-                    continue
-                pinned_ids.add(app.get_id())
-                btn = self._class(Gtk.Button(), "aero-pin")
-                icon = app.get_icon()
-                btn.set_image(Gtk.Image.new_from_gicon(icon, Gtk.IconSize.LARGE_TOOLBAR) if icon else
-                              self._icon("application-x-executable"))
-                btn.set_tooltip_text(app.get_display_name())
-                btn.get_accessible().set_name("Launch " + app.get_display_name())
-                btn.connect("clicked", lambda _btn, selected=app: self._launch(selected))
-                row.pack_start(btn, False, False, 0)
-            self._pin_count = len(pinned_ids)
+            self.pinned_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
+            row.pack_start(self.pinned_box, False, False, 0)
+            self._render_pins()
+            self._pin_count = len(self._pinned_ids)
             self.tasks = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
             self._task_capacity = task_capacity(rect.width, self._pin_count)
             self.overflow_button = self._class(Gtk.Button(), "aero-task-overflow")
@@ -471,6 +549,9 @@ def run(argv: list[str] | None = None) -> int:
                 row.pack_start(Gtk.Label(label=app.get_display_name(), xalign=0), True, True, 0)
                 btn.add(row)
                 btn.connect("clicked", lambda _btn, selected=app: self._launch(selected))
+                btn.connect("button-press-event", lambda widget, event, selected=app:
+                            self._pin_context(widget, selected, event))
+                btn.connect("popup-menu", lambda widget, selected=app: self._pin_context(widget, selected))
                 self.results.pack_start(btn, False, False, 0)
             if len(matches) > self._app_page_size:
                 more = self._class(Gtk.Button(label="All Programs · Show more"), "aero-menu-app")
