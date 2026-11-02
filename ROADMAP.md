@@ -13,6 +13,7 @@ MacRice is deliberately a thin integration layer. MacMenu, Control Center and Ma
 - [x] Integrate existing Plank: read effective dock1 preferences, start its process and open native settings without taking ownership of its files (0.1.1).
 - [x] Add original dark/light Aurora wallpapers and an on-demand illustrative full-desktop preview (0.2.0 RC1).
 - [x] Add explicit XFCE/Plank/full-rice preflight, backup, apply and restore, without auto-changing settings during install.
+- [x] Coordinate MacBar live color reload, reversible Thunar styling and opposite-color Plank presets (0.2.0 RC2).
 
 ## 0.2 — First real ThinkPad acceptance pass
 
@@ -34,7 +35,7 @@ MacRice is deliberately a thin integration layer. MacMenu, Control Center and Ma
 
 ## 0.8 — Integration polish
 
-- [ ] Tie the MacBar launchers and theme presets together with runtime reloads.
+- [x] Tie MacBar's theme/height/launcher configuration to event-based runtime reloads, with no polling.
 - [ ] Test multi-monitor, work-area placement and suspend/resume on different XFCE setups.
 - [ ] Improve accessible names and focus states based on real keyboard-only testing.
 - [ ] Add a guided optional XFCE Panel replacement with verified rollback.

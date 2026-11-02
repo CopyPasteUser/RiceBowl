@@ -20,7 +20,8 @@ from pathlib import Path
 from .environment import config_home, data_home, private_state_root
 from .installer import project_root
 from .plank import DOCK_SCHEMA
-from .themes import CONFIG_FILES, _read_preferences, apply_preset, preset_values, set_theme_values
+from .themes import CONFIG_FILES, _read_preferences, preset_values, set_theme_values
+from .thunar import PREFERENCES as THUNAR_PREFS, _read_css, plan_css, write_css
 
 
 class RiceError(RuntimeError):
@@ -34,14 +35,16 @@ class RiceStyle:
     xfwm: str
     wallpaper: str
     app_preset: str
+    bar_theme: str
+    plank_theme: str
 
 
 STYLES = {
-    "night": RiceStyle("Aurora Night", "WhiteSur-Dark", "WhiteSur-Dark", "aurora-night.jpg", "Midnight"),
-    "day": RiceStyle("Aurora Day", "WhiteSur-Light", "WhiteSur-Light", "aurora-day.jpg", "Light"),
+    "night": RiceStyle("Aurora Night", "WhiteSur-Dark", "WhiteSur-Dark", "aurora-night.jpg", "Midnight", "light", "MacRice-Frost"),
+    "day": RiceStyle("Aurora Day", "WhiteSur-Light", "WhiteSur-Light", "aurora-day.jpg", "Light", "dark", "MacRice-Obsidian"),
 }
 
-# GTK, XFWM, Plank and XFCE wallpaper are the only external settings touched.
+# GTK, XFWM, Thunar, Plank and XFCE wallpaper are the external settings touched.
 XFCONF = (
     ("xsettings", "/Net/ThemeName", "gtk"),
     ("xsettings", "/Net/IconThemeName", "WhiteSur-light"),
@@ -50,10 +53,9 @@ XFCONF = (
     ("xsettings", "/Gtk/FontName", "Inter 10"),
     ("xfwm4", "/general/theme", "xfwm"),
     ("xfwm4", "/general/title_font", "Inter Bold 10"),
-    ("xfwm4", "/general/button_layout", "CHM|"),
+    ("xfwm4", "/general/button_layout", "O|HMC"),
 )
 PLANK = (
-    ("theme", "'WhiteSur'"),
     ("position", "'bottom'"),
     ("icon-size", "60"),
     ("hide-mode", "'intelligent'"),
@@ -83,13 +85,29 @@ class XfceBackend:
             return self._run("xfconf-query", "-c", channel, "-p", key)
         return self._run("gsettings", "get", DOCK_SCHEMA, key)
 
-    def set(self, kind: str, channel: str, key: str, value: str) -> None:
+    def get_optional(self, kind: str, channel: str, key: str) -> str | None:
+        try:
+            return self.get(kind, channel, key)
+        except RiceError as exc:
+            if kind == "xfconf" and channel == "thunar" and "does not exist" in str(exc).lower():
+                return None
+            raise
+
+    def set(self, kind: str, channel: str, key: str, value: str, *, create: bool = False) -> None:
         if kind == "xfconf":
-            self._run("xfconf-query", "-c", channel, "-p", key, "-s", value)
+            args = ("-n", "-t", "string") if create else ()
+            self._run("xfconf-query", "-c", channel, "-p", key, *args, "-s", value)
         else:
             self._run("gsettings", "set", DOCK_SCHEMA, key, value)
         if self.get(kind, channel, key) != value:
             raise RiceError(f"Desktop setting {key} did not keep the requested value")
+
+    def reset(self, kind: str, channel: str, key: str) -> None:
+        if (kind, channel, key) not in {("xfconf", "thunar", k) for k, _ in THUNAR_PREFS}:
+            raise RiceError("Refusing to reset an unmanaged desktop preference")
+        self._run("xfconf-query", "-c", channel, "-p", key, "-r")
+        if self.get_optional(kind, channel, key) is not None:
+            raise RiceError(f"Could not reset {key}")
 
     def wallpaper_keys(self) -> list[str]:
         keys = self._run("xfconf-query", "-c", "xfce4-desktop", "-l").splitlines()
@@ -152,15 +170,60 @@ def _wallpaper_target(style: RiceStyle, data_root: Path, source_root: Path) -> t
     return source, target
 
 
-def _changes(style: RiceStyle, backend: XfceBackend, target: Path) -> list[dict[str, str]]:
+def _plank_theme_target(style: RiceStyle, data_root: Path, source_root: Path) -> tuple[Path, Path]:
+    source = source_root / "assets/plank-themes" / style.plank_theme / "dock.theme"
+    target = data_root / "plank/themes" / style.plank_theme / "dock.theme"
+    if not source.is_file() or source.is_symlink():
+        raise RiceError(f"Missing bundled Plank theme: {style.plank_theme}")
+    if any(parent.is_symlink() for parent in (target.parent, target.parent.parent, target.parent.parent.parent)):
+        raise RiceError("Unmanaged Plank theme directory; no settings changed")
+    if target.is_symlink() or (target.exists() and (
+        not target.is_file() or target.stat().st_size > 64 * 1024 or
+        target.read_bytes() != source.read_bytes()
+    )):
+        raise RiceError(f"Existing Plank theme conflicts with MacRice: {target}")
+    return source, target
+
+
+def _save_plank_theme(source: Path, target: Path) -> None:
+    if target.exists():
+        return
+    target.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
+    fd, temp = tempfile.mkstemp(prefix=".macrice-dock-", dir=target.parent)
+    try:
+        with os.fdopen(fd, "wb") as output, source.open("rb") as original:
+            shutil.copyfileobj(original, output)
+            output.flush()
+            os.fsync(output.fileno())
+        os.chmod(temp, 0o644)
+        # Link only if absent, never replace a theme another process created.
+        try:
+            os.link(temp, target)
+        except FileExistsError:
+            if target.is_symlink() or not target.is_file() or target.read_bytes() != source.read_bytes():
+                raise RiceError("Plank theme changed during apply; no theme overwritten")
+    finally:
+        Path(temp).unlink(missing_ok=True)
+
+
+def _app_values(style: RiceStyle) -> dict[str, str]:
+    values = preset_values(style.app_preset).copy()
+    values["MacBar"] = style.bar_theme
+    return values
+
+
+def _changes(style: RiceStyle, backend: XfceBackend, target: Path) -> list[dict]:
     changes = []
     for channel, key, value in XFCONF:
         value = getattr(style, value) if value in ("gtk", "xfwm") else value
         changes.append({"kind": "xfconf", "channel": channel, "key": key,
                         "before": backend.get("xfconf", channel, key), "after": value})
-    for key, value in PLANK:
+    for key, value in (("theme", f"'{style.plank_theme}'"), *PLANK):
         changes.append({"kind": "gsettings", "channel": "plank", "key": key,
                         "before": backend.get("gsettings", "plank", key), "after": value})
+    for key, value in THUNAR_PREFS:
+        changes.append({"kind": "xfconf", "channel": "thunar", "key": key,
+                        "before": backend.get_optional("xfconf", "thunar", key), "after": value})
     for image in backend.wallpaper_keys():
         changes.append({"kind": "xfconf", "channel": "xfce4-desktop", "key": image,
                         "before": backend.get("xfconf", "xfce4-desktop", image), "after": str(target)})
@@ -176,7 +239,6 @@ def _preflight(styles: RiceStyle, changes: list[dict], backend: XfceBackend) -> 
         ("xfwm", styles.xfwm, "xfwm4", "/general/theme"),
         ("icons", "WhiteSur-light", "xsettings", "/Net/IconThemeName"),
         ("cursor", "Bibata-Original-Classic", "xsettings", "/Gtk/CursorThemeName"),
-        ("plank", "WhiteSur", "plank", "theme"),
     )
     before_by_key = {(c["channel"], c["key"]): c["before"] for c in changes}
     for kind, theme, channel, key in required:
@@ -190,7 +252,7 @@ def _preflight(styles: RiceStyle, changes: list[dict], backend: XfceBackend) -> 
 
 def plan(style_name: str, *, backend: XfceBackend | None = None,
          data_root: Path | None = None, source_root: Path | None = None,
-         config_root: Path | None = None) -> tuple[list[dict[str, str]], dict[str, str | None], Path, Path]:
+         config_root: Path | None = None) -> tuple[list[dict], dict[str, str | None], Path, Path]:
     if style_name not in STYLES:
         raise RiceError("Choose night or day")
     backend = backend or XfceBackend()
@@ -198,6 +260,11 @@ def plan(style_name: str, *, backend: XfceBackend | None = None,
     source_root = source_root or project_root()
     config_root = config_root or config_home()
     source, target = _wallpaper_target(STYLES[style_name], data_root, source_root)
+    _plank_theme_target(STYLES[style_name], data_root, source_root)
+    try:
+        plan_css(style_name, config_root)
+    except (OSError, UnicodeError, ValueError) as exc:
+        raise RiceError(f"Thunar styling preflight failed: {exc}") from exc
     changes = _changes(STYLES[style_name], backend, target)
     _preflight(STYLES[style_name], changes, backend)
     return changes, _read_app_themes(config_root), source, target
@@ -223,9 +290,15 @@ def _rollback(backend: XfceBackend, applied: list[dict], field: str) -> list[str
     errors = []
     for change in reversed(applied):
         try:
-            if backend.get(change["kind"], change["channel"], change["key"]) == change[field]:
+            kind, channel, key = change["kind"], change["channel"], change["key"]
+            current = backend.get_optional(kind, channel, key)
+            expected = change[field]
+            if current == expected:
                 continue
-            backend.set(change["kind"], change["channel"], change["key"], change[field])
+            if expected is None:
+                backend.reset(kind, channel, key)
+            else:
+                backend.set(kind, channel, key, expected, create=current is None)
         except (RiceError, OSError) as exc:
             errors.append(f"{change['key']}: {exc}")
     return errors
@@ -244,14 +317,18 @@ def apply(style_name: str, *, backend: XfceBackend | None = None,
         style_name, backend=backend, data_root=data_root,
         source_root=source_root, config_root=config_root,
     )
+    style = STYLES[style_name]
+    css = plan_css(style_name, config_root)
+    dock_source, dock_target = _plank_theme_target(style, data_root, source_root or project_root())
+    dock_preexisting = dock_target.exists()
     private_state_root(data_root)
     _save_wallpaper(source, target)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
     backup = data_root / "macrice-state/backups/rice" / stamp
     backup.mkdir(mode=0o700, parents=True, exist_ok=False)
     manifest = {
-        "schema": 1, "style": style_name, "changes": changes,
-        "app_before": previous, "app_after": preset_values(STYLES[style_name].app_preset),
+        "schema": 2, "style": style_name, "changes": changes,
+        "app_before": previous, "app_after": _app_values(style), "thunar_css": css,
     }
     out = backup / "manifest.json"
     fd = os.open(out, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
@@ -261,14 +338,33 @@ def apply(style_name: str, *, backend: XfceBackend | None = None,
         os.fsync(stream.fileno())
 
     written = []
+    css_written = False
     try:
+        _save_plank_theme(dock_source, dock_target)
+        if css["before"] != css["after"]:
+            write_css(config_root, css["after"])
+            css_written = True
         for change in changes:
             if change["before"] != change["after"]:
                 written.append(change)
-                backend.set(change["kind"], change["channel"], change["key"], change["after"])
-        apply_preset(STYLES[style_name].app_preset, config_root=config_root, data_root=data_root)
+                backend.set(change["kind"], change["channel"], change["key"], change["after"],
+                            create=change["before"] is None)
+        set_theme_values(_app_values(style), config_root=config_root, data_root=data_root)
     except Exception as exc:
         errors = _rollback(backend, written, "before")
+        if css_written:
+            try:
+                write_css(config_root, css["before"])
+            except (OSError, ValueError) as rollback_exc:
+                errors.append(f"Thunar CSS: {rollback_exc}")
+        if not dock_preexisting:
+            try:
+                if dock_target.is_file() and not dock_target.is_symlink() and dock_target.read_bytes() == dock_source.read_bytes():
+                    dock_target.unlink()
+                    dock_target.parent.rmdir()
+            except OSError as rollback_exc:
+                errors.append(f"Plank theme cleanup: {rollback_exc}")
+        (backup / "failed").write_text("Application failed; see command output\n", encoding="utf-8")
         detail = f". Rollback incomplete: {'; '.join(errors)}" if errors else "; desktop changes rolled back"
         raise RiceError(f"Rice was not applied: {exc}{detail}") from exc
     return backup
@@ -279,7 +375,7 @@ def _latest_backup(data_root: Path) -> Path:
     if not root.is_dir() or root.is_symlink():
         raise RiceError("No Rice backup found")
     candidates = sorted((p for p in root.iterdir() if p.is_dir() and not p.is_symlink()
-                         and not (p / "restored").exists()), reverse=True)
+                         and not (p / "restored").exists() and not (p / "failed").exists()), reverse=True)
     for path in candidates:
         if (path / "manifest.json").is_file() and not (path / "manifest.json").is_symlink():
             return path
@@ -303,16 +399,27 @@ def restore(*, backend: XfceBackend | None = None, data_root: Path | None = None
         changes = manifest["changes"]
         old_apps = manifest["app_before"]
         new_apps = manifest["app_after"]
-        if manifest["schema"] != 1 or set(old_apps) != set(CONFIG_FILES):
+        schema = manifest["schema"]
+        if schema not in (1, 2) or set(old_apps) != set(CONFIG_FILES):
             raise ValueError("unexpected manifest schema")
         if set(new_apps) != set(CONFIG_FILES) or not isinstance(changes, list):
             raise ValueError("unexpected manifest fields")
+        if any(v is not None and not isinstance(v, str) for v in (*old_apps.values(), *new_apps.values())):
+            raise ValueError("invalid app theme")
+        css = manifest.get("thunar_css") if schema == 2 else None
+        if schema == 2 and (not isinstance(css, dict) or set(css) != {"before", "after"} or
+                            not isinstance(css["after"], str) or
+                            (css["before"] is not None and not isinstance(css["before"], str))):
+            raise ValueError("invalid GTK CSS backup")
     except (KeyError, ValueError, TypeError, OSError) as exc:
         raise RiceError("Invalid Rice backup; nothing changed") from exc
 
     # Do not honor arbitrary paths or channels from a modified manifest.
     allowed = {("xfconf", channel, key) for channel, key, _ in XFCONF}
     allowed.update({("gsettings", "plank", key) for key, _ in PLANK})
+    allowed.add(("gsettings", "plank", "theme"))
+    if schema == 2:
+        allowed.update({("xfconf", "thunar", key) for key, _ in THUNAR_PREFS})
     for change in changes:
         try:
             item = (change["kind"], change["channel"], change["key"])
@@ -322,9 +429,12 @@ def restore(*, backend: XfceBackend | None = None, data_root: Path | None = None
                  WALLPAPER_KEY.fullmatch(item[2].removesuffix("image-style") + "last-image"))
             ):
                 raise ValueError("unexpected preference path")
-            if not isinstance(change["before"], str) or not isinstance(change["after"], str):
+            if (change["before"] is None and item not in
+                {("xfconf", "thunar", key) for key, _ in THUNAR_PREFS}):
+                raise ValueError("unexpected unset setting")
+            if (change["before"] is not None and not isinstance(change["before"], str)) or not isinstance(change["after"], str):
                 raise ValueError("invalid setting value")
-            if backend.get(*item) != change["after"]:
+            if backend.get_optional(*item) != change["after"]:
                 raise RiceError(f"{change['key']} changed since applying Rice; restore stopped to preserve your edits")
         except (KeyError, TypeError, ValueError) as exc:
             raise RiceError("Invalid Rice backup; nothing changed") from exc
@@ -332,16 +442,35 @@ def restore(*, backend: XfceBackend | None = None, data_root: Path | None = None
     current_apps = _read_app_themes(config_root)
     if current_apps != new_apps:
         raise RiceError("App themes changed since applying Rice; restore stopped to preserve your edits")
+    if css is not None:
+        try:
+            current_css = _read_css(config_root / "gtk-3.0/gtk.css")
+        except (OSError, ValueError) as exc:
+            raise RiceError(f"Thunar CSS cannot be checked: {exc}") from exc
+        if current_css != css["after"]:
+            raise RiceError("Thunar CSS changed since applying Rice; restore stopped to preserve your edits")
 
     written = []
+    apps_restored = False
     try:
+        set_theme_values(old_apps, config_root=config_root, data_root=data_root)
+        apps_restored = True
         for change in reversed(changes):
             if change["before"] != change["after"]:
                 written.append(change)
-                backend.set(change["kind"], change["channel"], change["key"], change["before"])
-        set_theme_values(old_apps, config_root=config_root, data_root=data_root)
+                if change["before"] is None:
+                    backend.reset(change["kind"], change["channel"], change["key"])
+                else:
+                    backend.set(change["kind"], change["channel"], change["key"], change["before"])
+        if css is not None:
+            write_css(config_root, css["before"])
     except Exception as exc:
         errors = _rollback(backend, written, "after")
+        if apps_restored:
+            try:
+                set_theme_values(new_apps, config_root=config_root, data_root=data_root)
+            except (OSError, ValueError) as rollback_exc:
+                errors.append(f"App themes: {rollback_exc}")
         detail = f"; rollback incomplete: {'; '.join(errors)}" if errors else "; previous Rice kept"
         raise RiceError(f"Restore failed: {exc}{detail}") from exc
 

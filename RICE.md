@@ -7,12 +7,15 @@ apps. The feature is opt-in. The installer **never changes desktop settings**.
 
 | Part | Aurora Night | Aurora Day |
 | --- | --- | --- |
-| GTK3 & window borders | WhiteSur-Dark · controls left | WhiteSur-Light · controls left |
+| GTK3 & window borders | WhiteSur-Dark · window controls right | WhiteSur-Light · window controls right |
 | Icons | WhiteSur-light | WhiteSur-light |
 | Cursor | Bibata-Original-Classic, 24 px | Same |
 | Fonts | Inter 10 / Inter Bold 10 | Same |
-| Plank | WhiteSur · bottom · 60 px · intelligent hide · center · zoom on | Same |
-| MacMenu, Control Center, MacBar | Midnight-compatible app themes | Light-compatible app themes |
+| Thunar | Dark Finder-inspired sidebar, breadcrumb path, icon view | Light Finder-inspired sidebar, breadcrumb path, icon view |
+| MacBar (top bar) | **White**, dark text · live reload | **Black**, white text · live reload |
+| Plank dock | **White** `MacRice-Frost` | **Black** `MacRice-Obsidian` |
+| Plank geometry | Bottom · 60 px · intelligent hide · centered · zoom on | Same |
+| MacMenu & Control Center | Midnight app themes | Light app themes |
 | Wallpaper | [Aurora Night](assets/wallpapers/aurora-night.jpg) | [Aurora Day](assets/wallpapers/aurora-day.jpg) |
 
 WhiteSur, Bibata, Inter and Plank are third-party components. **Install them
@@ -22,7 +25,12 @@ does not download theme archives or run package manager commands for you.
 
 ![Aurora Night](assets/wallpapers/aurora-night.jpg)
 
-![Illustrative preview with all four components](screenshots/full-rice-overview-0.2.0rc1.png)
+![Illustrative desktop preview with inverted bars and styled Thunar](screenshots/full-rice-overview-0.2.0rc2.png)
+
+![Illustrative Aurora Day preview with dark top bar, dark Plank and styled Thunar](screenshots/full-rice-thunar-day-0.2.0rc2.png)
+
+*These two release images are generated layout illustrations, not screenshots of
+someone's real XFCE session. The interactive preview is a native GTK window.*
 
 ## Preview before applying
 
@@ -31,7 +39,7 @@ macrice preview
 ```
 
 Or click **Desktop preview** in the MacRice manager. Switch between the two
-wallpapers and the desktop/menu/control-center layouts. This is a *conceptual*
+wallpapers and the desktop/menu/control-center/Thunar layouts. This is a *conceptual*
 preview of component placement, not a live screenshot of your current session.
 
 The preview window has **Apply complete Rice** and **Restore previous desktop**
@@ -55,18 +63,34 @@ Wallpaper images are copied to a stable user-local location under
 `~/.local/share/macrice-state/wallpapers/` so moving your cloned repository won't
 break your background.
 
+The two small, original Plank themes are installed under
+`~/.local/share/plank/themes/MacRice-Frost/` and `MacRice-Obsidian/` as required.
+These are user-local appearance assets, not modified copies of WhiteSur. The
+restore command restores your **previous Plank theme choice**; the two MacRice
+theme files remain on disk, inactive, for subsequent switching.
+
+Thunar's Finder-inspired styling is confined to `window.thunar` selectors in a
+marked section of `~/.config/gtk-3.0/gtk.css`. Your own CSS outside that block
+is preserved, including when switching Day/Night and restoring. MacRice also
+enables Thunar's existing icon view, shortcuts sidebar and breadcrumb location
+bar through its official XFConf preferences. Reopen Thunar to see its new GTK
+styling. The system-wide WhiteSur GTK theme supplies the remaining window look.
+
 ## Safety and scope
 
-- Reads all relevant XFConf and Plank GSettings values **before** writing.
+- Reads all relevant XFConf, Thunar and Plank GSettings values **before** writing.
 - Validates WhiteSur/Icon/Bibata/Inter availability and both bundled wallpapers.
-- Sets only XFCE GTK/WM/icon/cursor/font fields, Plank appearance fields, the
-  existing XFCE wallpaper keys, and the three apps' own theme fields.
+- Sets only XFCE GTK/WM/icon/cursor/font fields, three Thunar view preferences,
+  one scoped GTK CSS block, Plank appearance fields, existing XFCE wallpaper
+  keys, and the three apps' own theme fields.
 - Leaves pinned dock apps, panel configuration, autostart, network, Bluetooth,
   XFCE keyboard shortcuts, personal notes and favorites untouched.
 - Updates existing XFCE workspace wallpaper properties; it doesn't invent
   screen or monitor IDs on hardware it has never seen.
 - Restores previous values on a failed apply. Later custom changes cause a
   restore conflict rather than an unwanted overwrite.
+- MacBar observes its own JSON configuration and changes between white/black
+  without a restart or a background polling loop.
 - Does not require root, download third-party themes or replace the XFCE Panel.
 
 If no wallpaper properties exist, first choose any wallpaper once in XFCE's

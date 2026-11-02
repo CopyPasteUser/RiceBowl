@@ -22,8 +22,9 @@ The top bar I wanted for my macOS-inspired Linux desktop: just the essentials, b
 - **Deliberately simple:** no dropdowns, duplicate sliders or screen-edge tooltip problems.
 - **Native and light:** GTK3/X11, a single Python process, event-driven network updates and infrequent status reads.
 - **Desktop-friendly:** top-edge reservation, dark/light styling, primary-monitor changes and a 30px default height.
+- **Instant appearance updates:** changes to `config.json` are picked up by a filesystem monitor, without polling or restarting the top bar.
 
-This is **v1.0.0**. Being smaller than XFCE Panel is a goal, not a verified RAM benchmark. `measure.py` helps compare proportional memory (PSS) on your own system.
+This is **v1.1.0**. Being smaller than XFCE Panel is a goal, not a verified RAM benchmark. `measure.py` helps compare proportional memory (PSS) on your own system.
 
 ## Install
 
@@ -41,7 +42,9 @@ The installer uses user-local paths and **does not disable XFCE Panel or Plank**
 
 The defaults call `macmenu --toggle` and `macos-control-center --toggle`. With Control Center 2.1.1 installed, its launcher uses the fast D-Bus toggle automatically.
 
-To customize the theme, panel height or launcher commands, edit `~/.config/macbar/config.json` and restart MacBar. See [the example configuration](config.example.json).
+To customize the theme, panel height or launcher commands, edit `~/.config/macbar/config.json`. MacBar now picks up changes automatically while running. See [the example configuration](config.example.json).
+
+MacRice's complete desktop preset intentionally inverts the panel: **Aurora Night gets a bright MacBar; Aurora Day gets a dark MacBar**. This affects the MacBar theme only, not other system panels.
 
 ### Enable on login
 
@@ -79,6 +82,6 @@ Automated tests cover layout, status and installation. The screenshots were rend
 
 **Vibe-coded, human-directed and AI-assisted.** CopyPasteUser maintains the
 project; ChatGPT and OpenAI Codex supported implementation, UI/UX, testing
-and docs. Full suite credits: [CONTRIBUTORS.md](../../CONTRIBUTORS.md).
+and docs. Full suite credits: [MacRice CONTRIBUTORS.md](https://github.com/CopyPasteUser/macos-xfce-rice/blob/main/CONTRIBUTORS.md).
 
 *One clean bar, three apps doing their own jobs.*

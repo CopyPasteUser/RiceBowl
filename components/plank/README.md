@@ -37,3 +37,16 @@ launchers. If Plank is absent, the three bundled apps still install normally.
 
 The MacRice adapter is vibe-coded with support from ChatGPT and OpenAI Codex;
 Plank itself is an independent third-party project, not AI-authored by MacRice.
+## Inverted Aurora colors
+
+The complete Aurora presets use two small original Plank themes installed
+**only after you explicitly apply a full Rice**:
+
+- **Aurora Night** → `MacRice-Frost`, an off-white semi-opaque dock.
+- **Aurora Day** → `MacRice-Obsidian`, a charcoal-black dock.
+
+Both keep the existing bottom/centered 60px dock, intelligent hiding and
+zoom. Existing pinned apps, launchers and autostart are untouched. The original
+Plank theme setting is backed up and restored by `macrice rice restore`.
+Generated theme definitions remain in `~/.local/share/plank/themes/` after
+restoring, but are inactive and can be removed manually when not in use.

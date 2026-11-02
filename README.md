@@ -16,9 +16,9 @@ app-only color presets and your detected XFCE appearance in one small window.
 *Aurora Night, one of two original wallpapers. Both are included, with an
 illustrative full-desktop preview in the manager.*
 
-![Illustrative complete desktop preview with MacBar, MacMenu, Control Center and Plank](screenshots/full-rice-overview-0.2.0rc1.png)
+![Illustrative complete desktop preview with MacBar, MacMenu, Control Center and Plank](screenshots/full-rice-overview-0.2.0rc2.png)
 
-*An illustrative GTK preview, not a screenshot of someone's personal desktop.*
+*Illustrative layout rendering. The interactive preview in the application is native GTK; this image is not a live desktop capture.*
 
 ## What's inside
 
@@ -26,9 +26,9 @@ illustrative full-desktop preview in the manager.*
 | --- | --- |
 | [MacMenu](components/macmenu/) · RC11 | Search, browse and launch installed apps. |
 | [Control Center](components/control-center/) · 2.1.1 | Wi-Fi, audio, media, quick actions, settings and a fast D-Bus toggle. [Screenshot](components/control-center/screenshots/control-center-2.1.1.png) |
-| [MacBar](components/macbar/) · 1.0.0 | A clean top bar with launchers, network, sound, battery and clock. [Screenshot](components/macbar/screenshots/macbar-1.0.0.png) |
+| [MacBar](components/macbar/) · 1.1.0 | A clean, instantly restylable top bar with launchers, network, sound, battery and clock. [Screenshot](components/macbar/screenshots/macbar-1.0.0.png) |
 | [Plank](components/plank/) · system package | The existing bottom dock. Detect its settings, start it and open its native preferences without overwriting pins or layout. |
-| **MacRice Manager** · 0.2.0 RC1 | Installs the bundled apps, shows a complete desktop preview, supports full Rice and restore, and manages Plank. |
+| **MacRice Manager** · 0.2.0 RC2 | Installs the bundled apps, shows a complete desktop preview, supports full Rice and restore, and manages Plank and Thunar styling. |
 
 Every component remains a complete project with its own tests and installer. The existing repositories aren't deleted.
 
@@ -65,7 +65,7 @@ macrice dock preferences # Open Plank's native settings
 macrice theme Midnight  # Apply matching colors to the three apps
 macrice preview         # See the complete desktop before changing anything
 macrice rice plan night # Check all themes, fonts, monitor keys (read-only)
-macrice rice apply night # Style GTK, XFWM, icons, Plank and wallpaper with backup
+macrice rice apply night # Style GTK, XFWM, Thunar, MacBar, Plank and wallpaper with backup
 macrice rice restore    # Restore the most recent saved desktop appearance
 ```
 
@@ -73,8 +73,8 @@ Other presets: **System**, **Light**, and **Graphite**. Only the three bundled a
 
 On a WhiteSur-Dark / WhiteSur-light / Bibata / Inter setup, the **System** preset follows the dark GTK appearance. MacRice reads the current dock's effective theme, position, icon size and hide mode through Plank's dock1 GSettings path; it does not guess them from unset dconf overrides.
 
-For a **complete desktop Rice**, including GTK, window decorations, icons,
-cursor, Inter fonts, Plank appearance and one of two bundled wallpapers, see
+For a **complete desktop Rice**, including GTK, right-side window decorations,
+Thunar, icons, cursor, Inter fonts, inverted MacBar/Plank colors and one of two wallpapers, see
 the [full Rice guide](RICE.md). Full Rice is never applied during installation.
 The installer leaves your existing XFCE desktop unchanged until you confirm
 the change in the preview window or call `macrice rice apply` explicitly.

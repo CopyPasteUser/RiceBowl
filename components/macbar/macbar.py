@@ -27,7 +27,7 @@ from status import Volume, clock_text, network_status, parse_pactl, parse_wpctl,
 
 LOG = logging.getLogger("macbar")
 APP_ID = "io.github.macbar.panel"
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 HEIGHT = 30
 DEFAULT_CONFIG = {
     "theme": "dark",
@@ -43,8 +43,12 @@ THEMES = {
 }
 
 
+def config_path() -> Path:
+    return Path(os.environ.get("XDG_CONFIG_HOME", str(Path.home() / ".config"))) / "macbar" / "config.json"
+
+
 def load_config() -> dict:
-    path = Path(os.environ.get("XDG_CONFIG_HOME", str(Path.home() / ".config"))) / "macbar" / "config.json"
+    path = config_path()
     if not path.exists():
         return DEFAULT_CONFIG.copy()
     try:
@@ -134,6 +138,9 @@ class MacBar(Gtk.Application):
         self.replace_attempts = 0
         self.monitor_width = 1024
         self.last_battery = None
+        self._style_provider: Gtk.CssProvider | None = None
+        self._config_monitor: Gio.FileMonitor | None = None
+        self._config_reload_source = 0
 
     def do_activate(self) -> None:
         if self.window is not None:
@@ -211,6 +218,7 @@ class MacBar(Gtk.Application):
         self._clock_tick()
         self._query_volume()
         self._init_network()
+        self._watch_config()
         if self.replace_xfce:
             GLib.timeout_add(1200, self._replace_panel)
         GLib.timeout_add_seconds(60, self._battery_tick)
@@ -250,9 +258,45 @@ class MacBar(Gtk.Application):
             .app-launcher {{ padding: 2px 8px; }}
             .control-center:hover {{ color: #0a84ff; }}
         """
-        provider = Gtk.CssProvider()
-        provider.load_from_data(css.encode())
-        Gtk.StyleContext.add_provider_for_screen(Gdk.Screen.get_default(), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
+        if self._style_provider is None:
+            self._style_provider = Gtk.CssProvider()
+            Gtk.StyleContext.add_provider_for_screen(
+                Gdk.Screen.get_default(), self._style_provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
+            )
+        self._style_provider.load_from_data(css.encode())
+
+    def _watch_config(self) -> None:
+        """File-monitor based hot reload; no periodic config polling."""
+        try:
+            self._config_monitor = Gio.File.new_for_path(str(config_path().parent)).monitor_directory(
+                Gio.FileMonitorFlags.NONE, None,
+            )
+            self._config_monitor.connect("changed", self._config_changed)
+        except GLib.Error as exc:
+            LOG.warning("MacBar config hot reload unavailable: %s", exc)
+
+    def _config_changed(self, _monitor, file, other_file, _event) -> None:
+        if (file.get_basename() != "config.json" and
+                (other_file is None or other_file.get_basename() != "config.json")):
+            return
+        if self._config_reload_source:
+            GLib.source_remove(self._config_reload_source)
+        self._config_reload_source = GLib.timeout_add(90, self._reload_config)
+
+    def _reload_config(self) -> bool:
+        self._config_reload_source = 0
+        updated = load_config()
+        if updated == self.settings:
+            return GLib.SOURCE_REMOVE
+        previous = self.settings
+        self.settings = updated
+        if updated["theme"] != previous["theme"]:
+            self._style()
+        if updated["height"] != previous["height"]:
+            self._position()
+        if updated["show_battery_percent"] != previous["show_battery_percent"]:
+            self._render_battery()
+        return GLib.SOURCE_REMOVE
 
     def _position(self) -> None:
         if not self.window:

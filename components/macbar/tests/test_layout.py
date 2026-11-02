@@ -88,6 +88,40 @@ class LayoutTests(unittest.TestCase):
             self.assertFalse(bar._replace_panel())
             spawned.assert_called_once_with(["xfce4-panel", "--quit"], macbar.Gio.SubprocessFlags.NONE)
 
+    def test_theme_reload_is_immediate_and_does_not_recreate_the_window(self) -> None:
+        with patch.object(macbar, "load_config", return_value=macbar.DEFAULT_CONFIG.copy()):
+            bar = macbar.MacBar()
+        bar._style = Mock()
+        bar._position = Mock()
+        bar._render_battery = Mock()
+        updated = {**bar.settings, "theme": "light"}
+        with patch.object(macbar, "load_config", return_value=updated):
+            self.assertFalse(bar._reload_config())
+        self.assertEqual(bar.settings["theme"], "light")
+        bar._style.assert_called_once()
+        bar._position.assert_not_called()
+
+    def test_unrelated_file_events_do_not_trigger_reload(self) -> None:
+        with patch.object(macbar, "load_config", return_value=macbar.DEFAULT_CONFIG.copy()):
+            bar = macbar.MacBar()
+        with patch.object(macbar.GLib, "timeout_add") as schedule:
+            bar._config_changed(None, Mock(get_basename=lambda: "other.json"), None, None)
+            schedule.assert_not_called()
+            bar._config_changed(None, Mock(get_basename=lambda: "config.json"), None, None)
+            schedule.assert_called_once_with(90, bar._reload_config)
+
+    def test_theme_provider_is_reused_across_many_switches(self) -> None:
+        with patch.object(macbar, "load_config", return_value=macbar.DEFAULT_CONFIG.copy()):
+            bar = macbar.MacBar()
+        with patch.object(macbar.Gtk, "CssProvider") as factory, \
+             patch.object(macbar.Gtk.StyleContext, "add_provider_for_screen") as add_provider:
+            for theme in ("dark", "light", "dark", "light"):
+                bar.settings["theme"] = theme
+                bar._style()
+            factory.assert_called_once()
+            add_provider.assert_called_once()
+            self.assertEqual(factory.return_value.load_from_data.call_count, 4)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -7,10 +7,10 @@ import threading
 
 
 PREVIEW_STYLE = b"""
-.rice-topbar { background: rgba(17, 22, 34, .92); padding: 7px 12px; }
-.rice-topbar label { color: #f5f7fb; font-size: 12px; }
-.rice-dock { background: rgba(24, 31, 48, .79); border-radius: 17px; padding: 10px; }
-.rice-dock-icon { background: #a6c6ec; color: #152133; border-radius: 10px;
+.rice-topbar { padding: 7px 12px; }
+.rice-topbar label { font-size: 12px; }
+.rice-dock { border-radius: 17px; padding: 10px; }
+.rice-dock-icon { border-radius: 10px;
   font-size: 18px; font-weight: bold; min-width: 45px; min-height: 43px; }
 .rice-panel { background: rgba(18, 24, 37, .94); color: #f5f7fb;
   border-radius: 14px; padding: 15px; }
@@ -23,7 +23,34 @@ PREVIEW_STYLE = b"""
 .rice-app-icon { background: #647b9e; color: white; border-radius: 6px;
   min-width: 29px; min-height: 29px; }
 .rice-small { color: #b5c0d2; font-size: 11px; }
+.rice-files { border-radius: 14px; padding: 0; }
+.rice-files-sidebar { padding: 18px; min-width: 120px; }
+.rice-files-content { padding: 19px; min-width: 350px; }
+.rice-files-content label { font-size: 13px; }
 """
+
+TOPBAR_PALETTE = {
+    "night": b"""
+        .rice-topbar { background: rgba(249,250,252,.96); }
+        .rice-topbar label { color: #242b36; }
+        .rice-dock { background: rgba(244,247,251,.89); }
+        .rice-dock-icon { background: #c9d7e6; color: #182333; }
+        .rice-files { background: #202733; }
+        .rice-files-sidebar { background: #19212d; }
+        .rice-files-sidebar label { color: #eaf0f6; }
+        .rice-files-content label { color: #eaf0f6; }
+    """,
+    "day": b"""
+        .rice-topbar { background: rgba(15,20,29,.96); }
+        .rice-topbar label { color: #f6f8fb; }
+        .rice-dock { background: rgba(15,20,29,.92); }
+        .rice-dock-icon { background: #34435a; color: #f6f8fb; }
+        .rice-files { background: #f4f6f9; }
+        .rice-files-sidebar { background: #e9edf3; }
+        .rice-files-sidebar label { color: #283444; }
+        .rice-files-content label { color: #283444; }
+    """,
+}
 
 
 def open_preview(parent=None):
@@ -39,7 +66,7 @@ def open_preview(parent=None):
     from .rice import STYLES, apply, restore
 
     provider = Gtk.CssProvider()
-    provider.load_from_data(PREVIEW_STYLE)
+    provider.load_from_data(PREVIEW_STYLE + TOPBAR_PALETTE["night"])
     Gtk.StyleContext.add_provider_for_screen(
         Gdk.Screen.get_default(), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION,
     )
@@ -100,7 +127,7 @@ def open_preview(parent=None):
             header.pack_start(styles, False, False, 0)
 
             modes = Gtk.ComboBoxText()
-            for mode in ("Overview", "Desktop", "Apps", "Control Center"):
+            for mode in ("Overview", "Desktop", "Apps", "Control Center", "Files (Thunar)"):
                 modes.append_text(mode)
             modes.set_active(0)
             modes.connect("changed", self._change_mode)
@@ -149,6 +176,24 @@ def open_preview(parent=None):
             self.control.set_margin_top(53)
             canvas.add_overlay(self.control)
 
+            files = styled(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0), "rice-files")
+            files.set_halign(Gtk.Align.CENTER)
+            files.set_valign(Gtk.Align.CENTER)
+            sidebar = styled(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=17), "rice-files-sidebar")
+            sidebar.pack_start(label("FAVORITES", "rice-small"), False, False, 0)
+            for name in ("Home", "Documents", "Downloads", "Pictures", "Devices"):
+                sidebar.pack_start(label("  " + name), False, False, 0)
+            files.pack_start(sidebar, False, False, 0)
+            contents = styled(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=18), "rice-files-content")
+            contents.pack_start(label("Home  ›  Documents"), False, False, 0)
+            contents.pack_start(label("Files and folders", "rice-panel-title"), False, False, 0)
+            contents.pack_start(label("▣   Projects       ▣   Music       ▣   Pictures"), False, False, 0)
+            contents.pack_start(label("▣   Desktop        ▣   Notes       ▣   Backups"), False, False, 0)
+            contents.pack_start(label("Finder-inspired Thunar · GTK3 styling"), False, False, 0)
+            files.pack_start(contents, True, True, 0)
+            self.files = files
+            canvas.add_overlay(files)
+
             explanation = label(
                 "Illustrative preview — your actual app icons, screens and live desktop may differ.",
                 "muted",
@@ -168,10 +213,15 @@ def open_preview(parent=None):
             self.feedback = label("Nothing changes until you confirm Apply.", "muted")
             self.feedback.set_line_wrap(True)
             outer.pack_start(self.feedback, False, False, 0)
+            self._refresh_palette()
+
+        def _refresh_palette(self):
+            provider.load_from_data(PREVIEW_STYLE + TOPBAR_PALETTE[self._style])
 
         def _change_style(self, combo):
             self._style = combo.get_active_id() or "night"
             self.wallpaper.set_from_pixbuf(images[self._style])
+            self._refresh_palette()
 
         def _change_mode(self, combo):
             self._mode = combo.get_active_text() or "Overview"
@@ -180,15 +230,16 @@ def open_preview(parent=None):
         def _update_panels(self):
             self.menu.set_visible(self._mode in ("Overview", "Apps"))
             self.control.set_visible(self._mode in ("Overview", "Control Center"))
+            self.files.set_visible(self._mode == "Files (Thunar)")
 
         def _confirm(self, applying):
             if self._busy:
                 return
             detail = (
-                "This updates GTK, window borders, icons, cursor, fonts, Plank and XFCE wallpaper. "
+                "This updates GTK, Thunar styling, right-side window buttons, inverted MacBar/Plank colors, icons, cursor, fonts and XFCE wallpaper. "
                 "Missing themes stop the process before any change. Previous values are backed up."
                 if applying else
-                "Restore previous XFCE, Plank and app theme values. If you changed them since applying, "
+                "Restore previous XFCE, Thunar, Plank and app theme values. If you changed them since applying, "
                 "MacRice will stop rather than overwrite your newer choices."
             )
             dialog = Gtk.MessageDialog(

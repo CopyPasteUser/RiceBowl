@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.0 — 2026-11-02
+
+- Live theme, height, launcher and battery-label configuration reload using a
+  lightweight GLib file monitor; no periodic config polling or restart.
+- Update the existing CSS provider in place instead of accumulating providers.
+- Coordinate inverted Aurora Night/Day bar themes with the MacRice 0.2.0 RC2 suite.
+
 ## 1.0.0 — 2026-11-01
 
 - Adaptive clock formatting and battery percentage on narrow displays.
