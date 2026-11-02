@@ -43,9 +43,9 @@ The Aero taskbar includes persistent right-click pins, a two-line clock, bounded
 
 ![RiceHub Aero selection in the native XFCE/X11 gallery](screenshots/ricehub-aero-gallery-0.2.0rc1.png)
 
-![Actual GTK3 Aero Start menu](screenshots/ricehub-aero-start-0.2.0rc1.png)
+![Complete RC2 Aero desktop and bottom taskbar](screenshots/windows7-aero-desktop-0.3.0rc2.png)
 
-These are real GTK3 application captures from XFCE/X11. The [macOS + Plank overview](screenshots/macos-rice-with-plank-0.2.0rc1.png) is explicitly an **illustrative** full-desktop composition, not a live Plank capture.
+The [complete Windows 7 screenshot gallery](WINDOWS7.md#screenshots--coverage) includes the live Start menu, search, Thunar and window borders. These are real XFCE/X11 captures; optional tray and Wnck window-list features were unavailable in the temporary test desktop. The [macOS + Plank overview](screenshots/macos-rice-with-plank-0.2.0rc1.png) is explicitly an **illustrative** full-desktop composition, not a live Plank capture.
 
 ## Product roadmap
 

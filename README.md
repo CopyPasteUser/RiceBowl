@@ -14,9 +14,13 @@ RiceHub is a small, native Linux app for turning an ordinary XFCE desktop into s
 
 ### Windows 7: original Aero for Linux
 
-![Working Aero Start menu listing real installed XFCE applications](screenshots/ricehub-aero-start-0.2.0rc1.png)
+| Complete desktop and Aero taskbar | Start menu and installed programs |
+| --- | --- |
+| ![Aero Cascade desktop with penguin Start button, pinned apps, clock and Show Desktop](screenshots/windows7-aero-desktop-0.3.0rc2.png) | ![Open GTK3 Aero Start menu with installed applications and places](screenshots/windows7-aero-startmenu-0.3.0rc2.png) |
+| Thunar and original XFWM4 window decoration | Search in the Start menu |
+| ![File manager in an Aero-decorated window over the Cascade wallpaper](screenshots/windows7-aero-files-0.3.0rc2.png) | ![Live Start-menu search filtered to installed terminal applications](screenshots/windows7-aero-search-0.3.0rc2.png) |
 
-*Real screenshot of the new GTK3 Start menu. It searches and launches installed desktop applications, and the Start button toggles it without rebuilding the process.*
+*Real RiceHub 0.3 RC2 captures from a temporary XFCE/X11 session, not painted mockups or a physical Linux Mint acceptance test. The optional Wnck window list and StatusNotifier icons were unavailable in this session, so they are not shown. See the [Windows 7 gallery and coverage notes](WINDOWS7.md#screenshots--coverage).*
 
 The two included [Aero Meadow](assets/wallpapers/aero-meadow.jpg) and [Aero Cascade](assets/wallpapers/aero-cascade.jpg) wallpapers were created for this project. Windows 7 also includes:
 

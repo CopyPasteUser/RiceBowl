@@ -2,13 +2,33 @@
 
 **RiceHub 0.3 release candidate · Windows 7 Aero feature set.** Original Linux-themed artwork inspired by the Aero era; not an installation of Microsoft Windows or a pixel-identical distribution. No Microsoft assets are included.
 
-## Preview
+## Screenshots & coverage
+
+These four images are **real desktop captures** of RiceHub 0.3 RC2 running on a temporary XFCE/X11 desktop, with the bundled Aero Cascade wallpaper, GTK Start/taskbar and original XFWM4 window borders. They are not generated desktop mockups or screenshots from a physically validated Linux Mint installation.
+
+### Desktop and taskbar
+
+![Complete Aero Cascade desktop with pinned taskbar launchers, Start button, clock and Show Desktop](screenshots/windows7-aero-desktop-0.3.0rc2.png)
+
+### Start menu
+
+![Open Aero Start menu listing installed applications, folders and system shortcuts](screenshots/windows7-aero-startmenu-0.3.0rc2.png)
+
+### File manager and window decoration
+
+![Thunar with active RiceHub-Aero XFWM4 borders, buttons and file icons](screenshots/windows7-aero-files-0.3.0rc2.png)
+
+### Start-menu search
+
+![Filtered installed-terminal search results in the live GTK Start menu](screenshots/windows7-aero-search-0.3.0rc2.png)
+
+**Capture coverage:** Start menu, search, wallpaper, desktop icons, launcher pins, bottom taskbar, clock, Show Desktop button and XFWM4 window chrome are visible. This test environment did not provide optional Wnck tracking, StatusNotifier clients, network/audio settings launchers or Plank, so running-window buttons, tray contents, quick links and the separate dock do **not** appear in these screenshots. GTK/Thunar widget styling can also differ from a complete applied rice. Those integrations still need captures and acceptance checks on a real Linux Mint XFCE machine.
+
+### RiceHub gallery
 
 ![Aero rice selection in RiceHub](screenshots/ricehub-aero-gallery-0.2.0rc1.png)
 
-![Real GTK3 Aero Start menu in XFCE/X11](screenshots/ricehub-aero-start-0.2.0rc1.png)
-
-These are **older genuine GTK3 screenshots** of the base Aero implementation, not new captures of the final layout. The new tray, clock, pins, Show Desktop and responsive layout still require physical-machine screenshots.
+The hub-gallery image is an older genuine GTK3 capture of the preset selector; the four desktop screenshots above show the newer RC2 shell.
 
 ## What is included
 
@@ -173,6 +193,6 @@ The real Aero shell is deliberately independent of the older visual prototype:
 - [ ] Widescreen, 1366×768, low resolution, HiDPI, second monitor, session restart
 - [ ] XFCE Panel coexistence, maximized windows and the optional workarea reservation
 - [ ] Recovery after failed apply, latest-settings conflict and session restart
-- [ ] PSS/CPU readings on target hardware; capture updated genuine screenshots
+- [ ] PSS/CPU readings and screenshots of optional Wnck/SNI/Plank integrations on target hardware
 
-**Release classification:** feature-rich Windows 7 Aero rice candidate, *not yet a physically signed-off stable 1.0*. Real machine acceptance and a current screenshot set are still required. No Win32 API emulation, Aero Peek/jump lists, legacy XEmbed, true blur, or Windows-specific software compatibility is claimed.
+**Release classification:** feature-rich Windows 7 Aero rice candidate, *not yet a physically signed-off stable 1.0*. Current core-shell screenshots are available, but real-machine acceptance and optional-integration screenshots remain open. No Win32 API emulation, Aero Peek/jump lists, legacy XEmbed, true blur, or Windows-specific software compatibility is claimed.
