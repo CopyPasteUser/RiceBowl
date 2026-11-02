@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import os
 import threading
+import traceback
 from pathlib import Path
 
 from .hub_art import aspect_fill
@@ -68,6 +69,37 @@ entry, combobox button {{ background: {surface_alt}; color: {text}; border: 1px 
 entry:focus {{ border-color: {accent}; }}
 scrolledwindow, viewport {{ background: transparent; border: none; }}
 """.format(**TOKENS).encode("utf-8")
+
+
+def _activate_hub_window(application, windows, factory) -> bool:
+    """Never leave a registered but invisible Gtk.ApplicationWindow behind.
+
+    Gtk.ApplicationWindow registers with the primary GApplication in its base
+    constructor. If building the rest of the interface raises, GTK can retain
+    that hidden window and its D-Bus name indefinitely. Subsequent launches
+    silently forward to the broken primary instance and return success.
+    """
+    try:
+        if windows:
+            windows[0].present()
+            return True
+        window = factory(application)
+        windows.append(window)
+        window.connect("destroy", lambda *_: windows.clear())
+        window.show_all()
+        window._select_family(window._selected)
+        window._filter_families()
+        return True
+    except Exception:
+        traceback.print_exc()
+        for registered in application.get_windows():
+            try:
+                registered.destroy()
+            except Exception:
+                traceback.print_exc()
+        windows.clear()
+        application.quit()
+        return False
 
 
 def run() -> int:
@@ -783,17 +815,13 @@ def run() -> int:
     Gtk.StyleContext.add_provider_for_screen(screen, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
     app = Gtk.Application(application_id="io.github.ricehub.xfce", flags=Gio.ApplicationFlags.FLAGS_NONE)
     windows = []
+    startup_failed = False
 
     def activate(application):
-        if not windows:
-            window = HubWindow(application)
-            windows.append(window)
-            window.connect("destroy", lambda *_: windows.clear())
-            window.show_all()
-            window._select_family(window._selected)
-            window._filter_families()
-        else:
-            windows[0].present()
+        nonlocal startup_failed
+        if not _activate_hub_window(application, windows, HubWindow):
+            startup_failed = True
 
     app.connect("activate", activate)
-    return app.run(["ricehub"])
+    status = app.run(["ricehub"])
+    return 1 if startup_failed else status

@@ -8,7 +8,7 @@ from pathlib import Path
 from unittest import mock
 
 from macrice.cli import main
-from macrice.hub import CSS, HUB_VERSION, run
+from macrice.hub import CSS, HUB_VERSION, _activate_hub_window, run
 from macrice.hub_catalog import (
     AVAILABLE_STYLE_KEYS, FAMILIES, FAMILY_BY_KEY, recent_backups, search_families,
 )
@@ -98,6 +98,40 @@ class HubStylingTests(unittest.TestCase):
     def test_headless_launch_fails_cleanly(self):
         with mock.patch.dict(os.environ, {"DISPLAY": "", "WAYLAND_DISPLAY": ""}):
             self.assertEqual(run(), 1)
+
+
+class HubActivationTests(unittest.TestCase):
+    def test_failed_constructor_destroys_invisible_gtk_window_and_quits(self):
+        application = mock.Mock()
+        invisible = mock.Mock()
+        application.get_windows.return_value = [invisible]
+        active = []
+
+        def create(_application):
+            raise ValueError("style missing after Gtk.ApplicationWindow was registered")
+
+        with mock.patch("traceback.print_exc") as trace:
+            self.assertFalse(_activate_hub_window(application, active, create))
+        trace.assert_called_once_with()
+        invisible.destroy.assert_called_once_with()
+        application.quit.assert_called_once_with()
+        self.assertEqual(active, [])
+
+    def test_activation_creates_or_presents_one_window(self):
+        application = mock.Mock()
+        window = mock.Mock()
+        window._selected = "macos"
+        active = []
+        factory = mock.Mock(return_value=window)
+
+        self.assertTrue(_activate_hub_window(application, active, factory))
+        self.assertEqual(active, [window])
+        window.show_all.assert_called_once_with()
+        window._select_family.assert_called_once_with("macos")
+        factory.assert_called_once_with(application)
+        self.assertTrue(_activate_hub_window(application, active, factory))
+        window.present.assert_called_once_with()
+        factory.assert_called_once()
 
 
 if __name__ == "__main__":

@@ -47,6 +47,12 @@ class FakeBackend(XfceBackend):
     def set(self, kind, channel, key, value, *, create=False):
         if key == self.fail_key:
             raise RiceError("Injected write failure")
+        # Match Plank's real GSettings enum; an arbitrary string would pass a
+        # simple dictionary fake but fail on the user's desktop during apply.
+        if (kind, channel, key) == ("gsettings", "plank", "hide-mode") and value not in {
+            "'none'", "'intelligent'", "'auto'", "'dodge-maximized'", "'window-dodge'", "'dodge-active'",
+        }:
+            raise RiceError(f"gsettings rejected hide-mode: {value}")
         if not create and (kind, channel, key) not in self.values:
             raise RiceError("Missing property; should have been created")
         self.values[(kind, channel, key)] = value

@@ -43,7 +43,7 @@ class AeroTests(unittest.TestCase):
             self.assertEqual(converted["icon-size"], "48")
             self.assertEqual(converted["alignment"], "'center'")
             self.assertEqual(converted["position"], "'left'")
-            self.assertEqual(converted["hide-mode"], "'autohide'")
+            self.assertEqual(converted["hide-mode"], "'auto'")
             self.assertTrue(target.name.startswith("aero-meadow-"))
             self.assertFalse((root / "data").exists())
             self.assertEqual(fake.calls, [])
