@@ -5662,8 +5662,6 @@ class ControlCenter(Gtk.Window):
         CFG.update({key: latest[key] for key in changed})
         if changed & {"theme", "accent_color"}:
             self._apply_visual_preferences()
-            if self._current_page == "settings":
-                self._act_fill()
         if "resource_profile" in changed:
             self._configure_polling()
         if changed & {"animation_speed", "reduce_motion"}:
@@ -5671,6 +5669,8 @@ class ControlCenter(Gtk.Window):
             self._act_rev.set_transition_duration(self._animation_duration(150))
         if "media_thumbnail" in changed:
             self._set_media(self._last.get("media"))
+        if self._act_mode in ("settings", "settings_theme", "settings_animation"):
+            self._act_fill()
         return False
 
     def _toggle_preference(self, key):
