@@ -7,6 +7,12 @@ Uses the installed Gio .desktop catalog; does not poll the process table.
 from __future__ import annotations
 
 from pathlib import Path
+import logging
+import os
+import shutil
+import subprocess
+
+from .aero_layout import PANEL_HEIGHT, menu_geometry, select_windows, task_capacity
 
 
 APP_ID = "io.github.copypasteuser.RiceHub.AeroShell"
@@ -49,7 +55,13 @@ CSS = b"""
 .aero-tray-icon { background: transparent; border: 0; padding: 3px; }
 .aero-tray-icon:hover { background: rgba(255,255,255,.22); border-radius: 4px; }
 .aero-glass { background-image: linear-gradient(to bottom, rgba(205,242,255,.79), rgba(94,172,221,.83) 48%, rgba(26,81,139,.90)); }
-.aero-time { color: #fff; font-size: 12px; font-weight: bold; }
+.aero-time { color: #fff; font-size: 11px; font-weight: bold; }
+.aero-quick { background: transparent; border: 1px solid transparent; color: white; border-radius: 4px; padding: 4px; }
+.aero-quick:hover, .aero-quick:focus { border-color: #d0f4ff; background: rgba(255,255,255,.24); }
+.aero-desktop { background: rgba(255,255,255,.12); border: 1px solid rgba(255,255,255,.5); border-radius: 2px; min-width: 11px; padding: 2px; }
+.aero-desktop:hover, .aero-desktop:focus { background: rgba(255,255,255,.47); }
+.aero-menu-footer { border-top: 1px solid #96c1dd; padding-top: 8px; }
+.aero-menu-power { color: #fff; border-radius: 4px; border: 1px solid #f4b99e; background-image: linear-gradient(to bottom, #fa946c, #c65530); padding: 6px 10px; }
 .aero-menu-root { background: #eaf4fb; border: 1px solid #5e9bcc; border-radius: 8px; }
 .aero-menu-heading { color: #244e6e; font-size: 20px; font-weight: bold; }
 .aero-menu-sub { color: #577d9c; font-size: 12px; }
@@ -85,6 +97,9 @@ def run(argv: list[str] | None = None) -> int:
             self._overflow_windows = ()
             self._menu_focused = False
             self._tray = None
+            self._pin_count = 0
+            self._task_capacity = 0
+            self.show_desktop_button = None
 
         def do_command_line(self, command_line):
             args = command_line.get_arguments()
@@ -109,6 +124,11 @@ def run(argv: list[str] | None = None) -> int:
             self._create_menu()
             self.connect("shutdown", self._shutdown)
             self._window_tracker = create_window_tracker(GLib.idle_add, self._windows_changed)
+            if self.show_desktop_button is not None:
+                self.show_desktop_button.set_sensitive(self._window_tracker is not None)
+            screen = Gdk.Screen.get_default()
+            screen.connect("monitors-changed", self._screen_changed)
+            screen.connect("size-changed", self._screen_changed)
             self._catalog_monitor = Gio.AppInfoMonitor.get()
             self._catalog_monitor.connect("changed", self._catalog_changed)
 
@@ -116,6 +136,44 @@ def run(argv: list[str] | None = None) -> int:
             if self._tray is not None:
                 self._tray.close()
                 self._tray = None
+
+        def _screen_changed(self, *_args):
+            rect = self._desktop_rect()
+            self.bar.resize(rect.width, PANEL_HEIGHT)
+            self.bar.move(rect.x, rect.y + rect.height - PANEL_HEIGHT)
+            self._task_capacity = task_capacity(rect.width, self._pin_count)
+            if self._window_tracker is not None:
+                from .aero_windows import is_task_window
+                screen = self._window_tracker.screen
+                self._windows_changed(tuple(
+                    win for win in screen.get_windows()
+                    if is_task_window(win, self._window_tracker.wnck)
+                ), screen.get_active_window())
+            if self.menu.get_visible():
+                self._hide_menu()
+
+        def _open_tool(self, command):
+            """Open a known XFCE utility without a shell or implicit system changes."""
+            allowed = ("xfce4-settings-manager", "xfce4-session-logout",
+                       "nm-connection-editor", "pavucontrol", "xfce4-display-settings")
+            if command not in allowed:
+                return
+            executable = shutil.which(command)
+            if not executable:
+                self._error(command + " is not installed.")
+                return
+            try:
+                subprocess.Popen([executable], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
+                                 stderr=subprocess.DEVNULL, close_fds=True, start_new_session=True)
+                self._hide_menu()
+            except OSError as exc:
+                self._error(str(exc))
+
+        def _show_desktop(self, *_args):
+            if self._window_tracker is not None:
+                screen = self._window_tracker.screen
+                screen.toggle_showing_desktop(not screen.get_showing_desktop())
+                self._hide_menu()
 
         def _catalog_changed(self, *_args):
             self.apps = app_catalog(Gio)
