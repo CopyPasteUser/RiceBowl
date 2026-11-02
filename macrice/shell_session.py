@@ -31,6 +31,21 @@ def _processes(name: str) -> list[int]:
     return [int(p) for p in result.stdout.split() if p.isdecimal() and int(p) != os.getpid()]
 
 
+def _macbar_running() -> bool:
+    """Find only the Python MacBar entrypoint, not arbitrary Python apps."""
+    for proc in Path("/proc").glob("[0-9]*"):
+        try:
+            if proc.stat().st_uid != os.getuid():
+                continue
+            args = [part.decode("utf-8", "replace") for part in
+                    (proc / "cmdline").read_bytes().split(b"\\0") if part]
+            if any(Path(arg).name == "macbar.py" for arg in args[1:]):
+                return True
+        except (OSError, ValueError):
+            continue
+    return False
+
+
 def _stop(name: str) -> list[str]:
     errors = []
     for pid in _processes(name):
@@ -51,7 +66,7 @@ def _stop(name: str) -> list[str]:
 
 
 def _start(name: str, argv: list[str]) -> list[str]:
-    if _processes(name):
+    if (_macbar_running() if name == "macbar" else bool(_processes(name))):
         return []
     try:
         proc = subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
@@ -99,7 +114,19 @@ def sync_theme(theme: str) -> tuple[str, ...]:
     if desired:
         # Plank may have been started by XFCE autostart, not by RiceHub.
         warnings.extend(_stop("plank"))
-        # MacBar is a Gtk.Application and often runs as python3, not as a\n        # process named macbar. Ask its application ID to quit over D-Bus.\n        if shutil.which("gapplication"):\n            try:\n                result = subprocess.run(["gapplication", "quit", "io.github.macbar.panel"],\n                                        capture_output=True, text=True, timeout=4, check=False)\n                if result.returncode and _processes("macbar"):\n                    warnings.append("MacBar could not quit: " + result.stderr.strip()[:120])\n            except (OSError, subprocess.TimeoutExpired) as exc:\n                warnings.append(f"MacBar quit request failed: {exc}")\n        else:\n            warnings.extend(_stop("macbar"))
+        # MacBar often runs as python3; use its GTK application ID.
+        if shutil.which("gapplication"):
+            try:
+                result = subprocess.run(
+                    ["gapplication", "quit", "io.github.macbar.panel"],
+                    capture_output=True, text=True, timeout=4, check=False,
+                )
+                if result.returncode and _macbar_running():
+                    warnings.append("MacBar could not quit: " + result.stderr.strip()[:120])
+            except (OSError, subprocess.TimeoutExpired) as exc:
+                warnings.append(f"MacBar quit request failed: {exc}")
+        else:
+            warnings.extend(_stop("macbar"))
         if not warnings:
             warnings.extend(_shell(desired, False))
     elif mac:
