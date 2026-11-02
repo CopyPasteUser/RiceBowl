@@ -4,13 +4,13 @@
 
 RiceHub is a small, native Linux app for turning an ordinary XFCE desktop into something personal. It started with a love of macOS's clean interface and XFCE's speed. The goal is bigger now: one friendly place to discover, preview, apply and eventually share complete desktop styles — without swapping out your desktop environment.
 
-**The macOS-inspired rice works today.** Windows 7 now has two reversible Aero-inspired styles and a substantially extended GTK Start/taskbar implementation. Windows 10 and 11 remain **Coming soon**. RiceHub `0.3.0 RC2` is a release candidate, not a pixel-perfect multi-OS emulator or a physically validated stable release.
+**The macOS-inspired rice works today.** Windows 7 has two reversible Aero-inspired styles and a GTK Start/taskbar implementation. **Windows 10 now has a first interactive GTK prototype**, while Windows 11 remains **Coming soon**. RiceHub `0.4.0 RC1` is a preview release, not a pixel-perfect multi-OS emulator or a physically validated stable release.
 
 ## Meet RiceHub
 
-![RiceHub gallery showing the Aero Cascade desktop style](screenshots/ricehub-aero-gallery-0.2.0rc1.png)
+![RiceHub gallery displaying the new Windows 10 prototype](screenshots/ricehub-windows10-gallery-0.4.0rc1.png)
 
-*Actual GTK3 RiceHub window on XFCE/X11. Choose a rice, inspect its wallpaper and check requirements before applying.*
+*Actual GTK3 RiceHub window in a virtual X11 session. Choose a rice, inspect its preview and check requirements for installable profiles. Windows 10 is still preview-only.*
 
 ### Windows 7: original Aero for Linux
 
@@ -42,6 +42,16 @@ sudo apt install gir1.2-wnck-3.0
 
 Without Wnck, the Aero taskbar still opens with pinned apps, Start search and a clock. RiceHub does not install packages for you. Live-window tracking requires an X11 session, not Wayland.
 
+### Windows 10: first interactive prototype
+
+| Start menu, search and blue tiles | Action Center and quick actions |
+| --- | --- |
+| ![Live GTK3 Windows 10 concept with Start menu and sample tiles](screenshots/windows10-start-preview-0.4.0rc1.png) | ![Live GTK3 Windows 10 concept with Action Center](screenshots/windows10-action-center-preview-0.4.0rc1.png) |
+
+*Real GTK3 screenshots in an isolated virtual X11 display, not an installed XFCE desktop. The visible applications and quick actions are interactive examples only; no system changes occur.*
+
+Select **Windows 10** in RiceHub's Discover gallery and choose **Explore Windows 10 preview**. The prototype includes a left-aligned dark taskbar, searchable app list, a productivity tile group, an original blue wallpaper and a separate Action Center. Installation, live applications and system tray integration are next steps. See [Windows 10 prototype details and roadmap](WINDOWS10.md).
+
 ### macOS rice with Plank
 
 ![Illustrative macOS-inspired XFCE desktop with a Plank-style dock](screenshots/macos-rice-with-plank-0.2.0rc1.png)
@@ -67,7 +77,7 @@ The hub itself is written with Python and GTK3. It opens when you need it and do
 | Family | Styles | Status |
 | --- | --- | --- |
 | macOS-inspired | Aurora Night, Aurora Day, Liquid Glass Night, Liquid Glass Day, Classic Aqua | **Available (preview)** |
-| Windows 10-inspired | Classic productivity desktop | **Coming soon** |
+| Windows 10-inspired | Classic productivity desktop | **Interactive preview only** |
 | Windows 11-inspired | Centered taskbar and launcher | **Coming soon** |
 | Windows 7-inspired | Aero Meadow, Aero Cascade | **Aero release candidate** |
 
@@ -124,11 +134,11 @@ For your XFCE shortcuts, use `macmenu --toggle` and `macos-control-center-toggle
 - **Recoverable changes.** Desktop snapshots live outside the replaceable app bundle, under `~/.local/share/macrice-state/`.
 - **No takeover.** The XFCE panel is not replaced automatically. Plank launchers and layout are not overwritten during installation.
 - **No extra background monitor.** The hub runs on demand. CPU/memory sampling happens only when you request it.
-- **Honest previews.** Windows 7 has an experimental Apply button and an optional separate sample preview. Windows 10 and 11 remain placeholders. Some graphical effects depend on your existing X11 compositor.
+- **Honest previews.** Windows 7 has an experimental Apply button and an optional separate sample preview. Windows 10 offers a non-installable interactive prototype; Windows 11 is a placeholder. Some graphical effects depend on your existing X11 compositor.
 
 ## Where this is going
 
-The first goal is a dependable macOS rice and a useful central manager. The Windows 7 Aero candidate shares the safe apply/restore engine and adds a user-configurable taskbar and optional SNI tray. Physical Mint XFCE testing and compatibility work remain before a stable Aero 1.0; Windows 10 and 11 are separate future rices. See the [RiceHub product roadmap](RICEHUB.md) and [MacRice engine roadmap](ROADMAP.md).
+The first goal is a dependable macOS rice and a useful central manager. The Windows 7 Aero candidate shares the safe apply/restore engine and adds a user-configurable taskbar and optional SNI tray. Physical Mint XFCE testing and compatibility work remain before a stable Aero 1.0; Windows 10 has started as an interactive proof of concept and Windows 11 is planned. See the [RiceHub product roadmap](RICEHUB.md) and [MacRice engine roadmap](ROADMAP.md).
 
 The existing MacMenu, Control Center and MacBar repositories have not been deleted. Their code stays independently testable while RiceHub becomes the main home for complete rices.
 

@@ -1,8 +1,8 @@
 """RiceHub: a native, on-demand XFCE rice gallery and recovery workbench.
 
 No extra daemon, browser, compositor, root privileges or hidden profile writes.
-The working macOS implementation is shared with MacRice. Other families are
-honest catalog entries until their shell integrations have been implemented.
+The working macOS implementation is shared with MacRice. The Windows 10
+concept is read-only until its real XFCE shell is implemented.
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ from .hub_art import aspect_fill
 from .hub_catalog import FAMILIES, FAMILY_BY_KEY, recent_backups, search_families
 
 
-HUB_VERSION = "0.3.0rc2"
+HUB_VERSION = "0.4.0rc1"
 
 # A restrained native palette. All GTK CSS colors and font choices live here.
 TOKENS = {
@@ -90,6 +90,7 @@ def run() -> int:
     from .performance import PROFILES as PERFORMANCE_PROFILES, apply_profile, measure_processes
     from .rice import STYLES, apply, plan, restore
     from .windows7_proto import install_css as install_windows7_css, teaser as windows7_teaser, show_dialog as show_windows7
+    from .windows10_proto import install_css as install_windows10_css, teaser as windows10_teaser, show_dialog as show_windows10
 
     def cls(widget, name):
         widget.get_style_context().add_class(name)
@@ -248,6 +249,8 @@ def run() -> int:
             self.preview_stack.add_named(image_layer, "macos")
             install_windows7_css(Gtk, Gdk)
             self.preview_stack.add_named(windows7_teaser(Gtk), "windows7")
+            install_windows10_css(Gtk, Gdk)
+            self.preview_stack.add_named(windows10_teaser(Gtk), "windows10")
             placeholder = vertical(9)
             placeholder.set_valign(Gtk.Align.CENTER)
             placeholder.set_halign(Gtk.Align.CENTER)
@@ -278,8 +281,7 @@ def run() -> int:
             controls.pack_start(self.plan_button, False, False, 0)
             self.apply_button = action("Apply rice", lambda _: self._plan_selected(apply_after=True), True)
             controls.pack_start(self.apply_button, False, False, 0)
-            self.prototype_button = action(
-                "Explore Aero Start preview", lambda _: show_windows7(self, Gtk, Gdk, GLib))
+            self.prototype_button = action("Explore prototype", lambda _: self._show_prototype())
             self.prototype_button.set_no_show_all(True)
             controls.pack_start(self.prototype_button, False, False, 0)
             self.future_note = label("Coming soon · No installation action is available yet.", "hub-soon")
@@ -432,7 +434,7 @@ def run() -> int:
             self._refresh_backups()
 
         def _build_roadmap(self):
-            body = self._page("roadmap", "What comes next", "A transparent roadmap. Only the macOS-based family is available today.")
+            body = self._page("roadmap", "What comes next", "A transparent roadmap for complete XFCE rices and previews.")
             for family in FAMILIES[1:]:
                 panel = cls(vertical(6), "hub-card")
                 row = horizontal(10)
@@ -467,16 +469,23 @@ def run() -> int:
                     context.add_class("hub-selected")
             self.preview_title.set_text(family.title + " — " + family.subtitle)
             self.preview_description.set_text(family.description)
-            self.preview_stack.set_visible_child_name("macos" if family.available else
-                                                      "windows7" if family.prototype else "future")
+            self.preview_stack.set_visible_child_name(
+                "windows7" if key == "windows7" else
+                "windows10" if key == "windows10" else
+                "macos" if family.available else "future")
             self.aero_preview_bar.set_visible(key == "windows7")
             self.style_picker.set_visible(family.available)
             self.plan_button.set_visible(family.available)
             self.apply_button.set_visible(family.available)
             self.prototype_button.set_visible(family.prototype)
+            self.prototype_button.set_label(
+                "Explore Windows 10 preview" if key == "windows10" else "Explore Aero Start preview")
+            self.prototype_button.get_accessible().set_name(self.prototype_button.get_label())
             self.future_note.set_text(
-                "Aero is installable. The separate Start preview is a safe visual demo."
-                if family.prototype else "Coming soon · No installation action is available yet.")
+                "Aero is installable; its separate Start preview changes nothing."
+                if key == "windows7" else
+                "Windows 10 prototype · Read-only. Installation is not available yet."
+                if key == "windows10" else "Coming soon · No installation action is available yet.")
             self.future_note.set_visible(family.prototype or not family.available)
             if family.available:
                 self._rebuilding_picker = True
@@ -486,6 +495,12 @@ def run() -> int:
                 self.style_picker.set_active_id(family.styles[0])
                 self._rebuilding_picker = False
                 self._on_style_changed()
+
+        def _show_prototype(self):
+            if self._selected == "windows7":
+                show_windows7(self, Gtk, Gdk, GLib)
+            elif self._selected == "windows10":
+                show_windows10(self, Gtk, Gdk, GLib)
 
         def _on_style_changed(self, *_args):
             if self._rebuilding_picker:
