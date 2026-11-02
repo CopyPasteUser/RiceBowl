@@ -5,13 +5,15 @@ from macrice import shell_session as s
 
 class SessionTests(unittest.TestCase):
     @mock.patch.dict("os.environ", {"DISPLAY": ":99"})
+    @mock.patch.object(s.subprocess, "run", return_value=mock.Mock(returncode=0, stderr=""))
     @mock.patch.object(s, "_start", return_value=[])
     @mock.patch.object(s, "_stop", return_value=[])
     @mock.patch.object(s, "_shell", return_value=[])
     @mock.patch.object(s.shutil, "which", return_value="/usr/bin/example")
-    def test_mac_to_aero_stops_plank_and_macbar(self, which, shell, stop, start):
+    def test_mac_to_aero_stops_plank_and_macbar(self, which, shell, stop, start, run):
         self.assertEqual(s.sync_theme("RiceHub-Aero"), ())
-        self.assertEqual([c.args[0] for c in stop.call_args_list], ["plank", "macbar"])
+        self.assertEqual([c.args[0] for c in stop.call_args_list], ["plank"])
+        self.assertEqual(run.call_args.args[0], ["gapplication", "quit", "io.github.macbar.panel"])
         self.assertEqual(shell.call_args_list[-1], mock.call("aero", False))
         start.assert_not_called()
 

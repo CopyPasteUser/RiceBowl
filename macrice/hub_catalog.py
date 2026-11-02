@@ -29,8 +29,8 @@ FAMILIES: tuple[RiceFamily, ...] = (
     RiceFamily(
         "macos", "macOS", "Aurora collection",
         "A calm desktop with a native menu bar, application launcher, Control Center and Plank dock.",
-        True, ("night", "day", "glass-night", "glass-day", "aqua"),
-        ("Five complete themes", "MacMenu + Control Center", "MacBar + Plank", "Reversible GTK and Thunar styling"),
+        True, ("night", "day", "aqua"),
+        ("Three complete themes", "MacMenu + Control Center", "MacBar + Plank", "Reversible GTK and Thunar styling"),
     ),
     RiceFamily(
         "windows10", "Windows 10", "Classic productivity",

@@ -19,6 +19,11 @@ class HubCatalogTests(unittest.TestCase):
     def test_macos_and_verified_aero_families_are_enabled(self):
         self.assertEqual([family.key for family in FAMILIES if family.available], ["macos", "windows10", "windows7"])
         self.assertEqual(AVAILABLE_STYLE_KEYS, set(STYLES))
+        self.assertEqual(FAMILY_BY_KEY["macos"].styles, ("night", "day", "aqua"))
+        # Every style used while constructing HubWindow must exist in the engine.
+        for family in FAMILIES:
+            for style in family.styles:
+                self.assertIn(style, STYLES, f"{family.key}: {style} would crash startup")
         for family in FAMILIES:
             self.assertIs(FAMILY_BY_KEY[family.key], family)
             self.assertEqual(bool(family.styles), family.available)
@@ -43,7 +48,7 @@ class HubCatalogTests(unittest.TestCase):
             root.mkdir(parents=True)
             good = root / "20261102T105520123456Z"
             good.mkdir()
-            (good / "manifest.json").write_text(json.dumps({"style": "glass-night", "schema": 2}))
+            (good / "manifest.json").write_text(json.dumps({"style": "night", "schema": 2}))
             restored = root / "20261102T105620123456Z"
             restored.mkdir()
             (restored / "manifest.json").write_text(json.dumps({"style": "day"}))
@@ -56,7 +61,7 @@ class HubCatalogTests(unittest.TestCase):
             (invalid / "manifest.json").write_text("invalid json")
             records = recent_backups(base)
             self.assertEqual(len(records), 1)
-            self.assertEqual(records[0].style, "glass-night")
+            self.assertEqual(records[0].style, "night")
             self.assertEqual(records[0].created, "2026-11-02 10:55")
             self.assertEqual(recent_backups(base, limit=0), [])
 
