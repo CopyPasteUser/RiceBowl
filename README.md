@@ -4,7 +4,7 @@
 
 RiceHub is a small, native Linux app for turning an ordinary XFCE desktop into something personal. It started with a love of macOS's clean interface and XFCE's speed. The goal is bigger now: one friendly place to discover, preview, apply and eventually share complete desktop styles — without swapping out your desktop environment.
 
-**Seven desktop families, one reversible XFCE/X11 session.** macOS, Windows 7, Windows 10, XP Luna, Windows 98/2000, ChromeOS and Frutiger Aero now have installable styles. The four newcomers in `0.6.0 RC1` use original GTK/XFWM, icon and wallpaper artwork plus live native taskbars, searchable launchers and quick settings. The existing interactive concept dialogs remain as harmless previews. Physical Mint hardware acceptance is still pending; RC1 is not a fully validated stable 1.0.
+**Seven desktop families, one reversible XFCE/X11 session.** macOS, Windows 7, Windows 10, XP Luna, Windows 98/2000, ChromeOS and Frutiger Aero now have installable styles. Release `0.6.0` adds four original GTK/XFWM, icon and wallpaper collections with live native taskbars, searchable launchers and quick settings. The older interactive concept dialogs remain harmless previews. Virtual-X11 integration tests pass; physical Mint hardware acceptance remains an open gate for 1.0.
 
 ## Meet RiceHub
 
@@ -60,7 +60,19 @@ Select **Windows 10** in RiceHub, choose **Midnight** or **Blue**, use **Check r
 
 ### Four new installable desktop rices
 
-**Windows XP Luna** brings a green Start button and blue taskbar; **Windows 98 / 2000 Classic** uses compact gray controls and teal wallpaper; **ChromeOS** provides a light shelf, application drawer and quick settings; and **Y2K / Frutiger Aero** pairs an aqua bar with an original eco-futurist landscape. All four use real installed applications, live Wnck window buttons (when available), Gio launchers, editable taskbar pins, keyboard toggles, and the same safe plan/apply/restore engine as Aero and Ten.
+**Windows XP Luna** brings a green Start button and blue taskbar; **Windows 98 / 2000 Classic** uses compact gray controls, a narrow retro Start menu and teal wallpaper; **ChromeOS** provides a light shelf, centered application drawer and quick settings; and **Y2K / Frutiger Aero** pairs an aqua bar with an original eco-futurist landscape. All four use real installed applications, live Wnck window buttons (when available), Gio launchers, editable taskbar pins, keyboard toggles, and the same safe plan/apply/restore engine as Aero and Ten.
+
+| Windows XP Luna | Windows 98 / 2000 Classic |
+| --- | --- |
+| ![Running XP Luna desktop with original hills wallpaper and real GTK Start menu](screenshots/ricehub-winxp-start-0.6.0.png) | ![Running Classic desktop with teal wallpaper and compact GTK Start menu](screenshots/ricehub-winclassic-start-0.6.0.png) |
+| [Control Panel screenshot](screenshots/ricehub-winxp-controls-0.6.0.png) | [Control Panel screenshot](screenshots/ricehub-winclassic-controls-0.6.0.png) |
+
+| ChromeOS Pastel Shelf | Y2K / Frutiger Aero |
+| --- | --- |
+| ![Live ChromeOS-inspired pastel desktop with launcher and shelf](screenshots/ricehub-chromeos-start-0.6.0.png) | ![Live Frutiger Aero desktop with aqua Start menu and eco-futurist scenery](screenshots/ricehub-frutiger-start-0.6.0.png) |
+| [Quick Settings screenshot](screenshots/ricehub-chromeos-controls-0.6.0.png) | [Quick Settings screenshot](screenshots/ricehub-frutiger-controls-0.6.0.png) |
+
+*These are actual running GTK3 components captured in isolated virtual X11 on GitHub Actions, not static mockups or screenshots from the author's ThinkPad. Native system tray icons and Wnck window switching depend on desktop services running in the target session.*
 
 Each family retains an optional interactive GTK3 **preview**. Preview apps and the sample file manager are illustrative; selecting **Apply rice** instead starts the actual desktop components. See the [implementation roadmap and hardware gates](CONCEPTS.md).
 
@@ -76,19 +88,19 @@ The hub itself is written with Python and GTK3. It opens when you need it and do
 | **Components** | Toggle MacMenu and Control Center, start MacBar and Plank, inspect or explicitly repair bundled apps. |
 | **Performance** | Choose Light, Balanced or Visual settings; measure process memory and CPU on demand. |
 | **Backups & Restore** | Find private full-rice restore points and recover the last supported state, while respecting later personal changes when possible. |
-| **What's Next** | Explore planned Windows styles and see what's actually still being built. |
+| **What's Next** | See outstanding reliability, compatibility and hardware-acceptance milestones. |
 
 ### Supported desktop styles
 
 | Family | Styles | Status |
 | --- | --- | --- |
-| macOS-inspired | Aurora Night, Aurora Day, Classic Aqua | **Available (preview)** |
-| Windows 10-inspired | Windows 10 Midnight, Windows 10 Blue | **Installable release candidate** |
-| Windows 7-inspired | Aero Meadow, Aero Cascade | **Aero release candidate** |
-| Windows XP Luna | XP Luna (blue/green) | **Installable — RC1** |
-| Windows 98 / 2000 | Classic (gray/teal) | **Installable — RC1** |
-| ChromeOS-inspired | Pastel Shelf | **Installable — RC1** |
-| Y2K / Frutiger Aero | Aqua Future | **Installable — RC1** |
+| macOS-inspired | Aurora Night, Aurora Day, Classic Aqua | **Installable** |
+| Windows 10-inspired | Windows 10 Midnight, Windows 10 Blue | **Installable** |
+| Windows 7-inspired | Aero Meadow, Aero Cascade | **Installable** |
+| Windows XP Luna | XP Luna (blue/green) | **Installable — 0.6** |
+| Windows 98 / 2000 | Classic (gray/teal) | **Installable — 0.6** |
+| ChromeOS-inspired | Pastel Shelf | **Installable — 0.6** |
+| Y2K / Frutiger Aero | Aqua Future | **Installable — 0.6** |
 
 The working macOS rice brings together [MacMenu](components/macmenu/), [Control Center](components/control-center/), [MacBar](components/macbar/), Plank, Thunar, WhiteSur-based GTK/window themes, icons and Aurora wallpapers. All three bundled apps keep their own tested installers. Plank remains a system package and your pinned dock items are preserved.
 
@@ -189,7 +201,7 @@ For your XFCE shortcuts, use `macmenu --toggle` and `macos-control-center-toggle
 
 ## Where this is going
 
-Version `0.6.0 RC1` expands real installation and switching to all seven families while keeping the existing read-only concept dialogs. The next full release requires physical Mint XFCE tests for rapid switching, login persistence, crash resilience, multi-monitor placement and rollback. See the [new-family acceptance plan](CONCEPTS.md), [RiceHub product roadmap](RICEHUB.md) and [MacRice engine roadmap](ROADMAP.md). The project explicitly does **not** plan Windows 11 or Liquid Glass presets.
+Version `0.6.0` expands real installation and switching to all seven families while keeping the original read-only concept dialogs. The next reliability milestone is physical Mint XFCE acceptance: rapid switching, login persistence, crash resilience, multi-monitor placement and rollback. See the [0.6.0 changelog](CHANGELOG.md), [new-family acceptance plan](CONCEPTS.md), [RiceHub product roadmap](RICEHUB.md) and [MacRice engine roadmap](ROADMAP.md). The project explicitly does **not** plan Windows 11 or Liquid Glass presets.
 
 The existing MacMenu, Control Center and MacBar repositories have not been deleted. Their code stays independently testable while RiceHub becomes the main home for complete rices.
 

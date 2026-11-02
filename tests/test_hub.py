@@ -83,7 +83,7 @@ class HubStylingTests(unittest.TestCase):
             fake.assert_called_once_with()
 
     def test_styling_is_native_and_does_not_require_web_stack(self):
-        self.assertEqual(HUB_VERSION, "0.6.0rc1")
+        self.assertEqual(HUB_VERSION, "0.6.0")
         self.assertIn(b"hub-card", CSS)
         self.assertNotIn(b"javascript", CSS.lower())
         try:

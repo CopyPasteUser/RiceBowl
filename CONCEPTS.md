@@ -6,7 +6,7 @@ interpretations, not copies of proprietary OS assets, trademarks or logos.
 Their optional GTK concept dialogs remain read-only and are intentionally
 separate from the live installable versions.
 
-## Implementation snapshot (2 November 2026, 0.6 RC1)
+## Implementation snapshot (2 November 2026, 0.6.0)
 
 - macOS Aurora Night/Day/Aqua, Windows 7 Aero and Windows 10 Ten remain the
   existing installable families. Unfinished Liquid Glass styles and Windows 11
@@ -37,13 +37,13 @@ separate from the live installable versions.
 
 ## Development roadmap
 
-### P0 — Design validation (current)
+### P0 — Design validation (completed in the concept stage)
 
-- [x] Include the four families in RiceHub Discover as **Prototype only**.
+- [x] Initially include the four families in RiceHub Discover as **Prototype only** before their 0.6 promotion.
 - [x] Create a distinct themed GTK3 teaser for each family.
 - [x] Provide an interactive, no-write desktop preview with launcher, search,
   empty-results state, sample file-manager window and task buttons.
-- [x] Keep the four families absent from `STYLES`, CLI apply and backup manifests.
+- [x] Keep the preview stage free of `STYLES`, CLI apply and backup writes; replace this limitation with guarded installable styles in 0.6.
 - [ ] Review each prototype's visual balance and keyboard/focus on real Mint XFCE.
 - [ ] Collect feedback on density, icon style, taskbar behavior and wallpapers.
 
@@ -65,8 +65,9 @@ separate from the live installable versions.
 - [x] Support keyboard search, Escape and focus dismissal, tray coexistence,
   Show Desktop, multi-monitor positioning and accessibility labels.
 - [x] Add explicit plan/apply/restore with snapshot and failure rollback.
-- [ ] Capture real GTK/X11 screenshots, run isolated virtual-session smoke and
-  conduct physical Mint XFCE login/apply/restore tests.
+- [x] Capture real GTK/X11 screenshots and run isolated virtual-session smoke
+  for every new shell and its search/quick settings.
+- [ ] Conduct physical Mint XFCE login/apply/restore tests.
 
 ### P3 — Installable ChromeOS and Y2K candidates
 
@@ -77,15 +78,17 @@ separate from the live installable versions.
 
 ### Release gate
 
-An entry becomes a **stable release** only after `plan` has no side effects; `apply`
-has recovery snapshots and full failure handling; `restore` reliably returns
-the previous active rice; shell switching survives logout/reboot; keyboard
-and real task switching work; desktop changes are verified on supported
-Mint XFCE/X11 hardware; and original-artwork licensing is checked.
+The `0.6.0` functional release requires side-effect-free `plan`, snapshots
+before `apply`, guarded failure rollback, an isolated restore test, working
+search and keyboard actions, original artwork and GTK/X11 integration smoke.
+Those automated gates pass. The **1.0 hardware-stable** milestone additionally
+requires logout/reboot persistence, compositor and multi-monitor testing,
+repeat switching on physical Mint XFCE/X11, and documented resource budgets.
 
-CI covers isolated GTK smoke checks for all four new shells, plus the original
-Wnck window-close crash integration test. A stable tag remains blocked on real
-Linux Mint XFCE/X11 acceptance and screenshot review. The RC label is deliberate.
+CI covers isolated GTK smoke checks for all four new shells, including genuine
+Start/quick-setting screenshots, plus the original Wnck window-close crash
+integration test. Screenshot and automated-review evidence accompanies `0.6.0`;
+real Linux Mint XFCE/X11 acceptance is the outstanding 1.0 gate.
 
 ## Try the full rices and previews
 
@@ -98,4 +101,4 @@ On the owner's Mint/XFCE machine, check in order: apply each of the four rices;
 open/close menus with `Super_L` and `Control_R`; launch and close CADCraft or
 another GTK app repeatedly; switch through macOS, Aero, Ten and back; log out
 and in; verify no stray taskbars or XFCE panels; perform a complete restore.
-Record any real-hardware failures before tagging `0.6.0` stable.
+Record any real-hardware failures before marking the 1.0 milestone accepted.
