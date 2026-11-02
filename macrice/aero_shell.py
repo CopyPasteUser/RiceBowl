@@ -108,6 +108,7 @@ def run(argv: list[str] | None = None) -> int:
             self.show_desktop_button = None
             self._app_page_size = 24
             self._smoke = False
+            self._smoke_failed = False
 
         def do_command_line(self, command_line):
             args = command_line.get_arguments()
@@ -157,7 +158,7 @@ def run(argv: list[str] | None = None) -> int:
             except Exception:
                 import traceback
                 traceback.print_exc()
-                self.set_exit_status(1)
+                self._smoke_failed = True
             self.quit()
             return False
 
@@ -240,10 +241,12 @@ def run(argv: list[str] | None = None) -> int:
             start = self._class(Gtk.Button(), "aero-start")
             contents = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
             logo = project_root() / "assets/aero-penguin.svg"
-            if logo.exists():
+            try:
                 img = Gtk.Image.new_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_scale(
                     str(logo), 34, 34, True))
-                contents.pack_start(img, False, False, 0)
+            except (GLib.Error, OSError):
+                img = self._icon("start-here", Gtk.IconSize.LARGE_TOOLBAR)
+            contents.pack_start(img, False, False, 0)
             contents.pack_start(Gtk.Label(label="Start"), False, False, 0)
             start.add(contents)
             start.get_accessible().set_name("Toggle Aero Start menu")
@@ -409,8 +412,11 @@ def run(argv: list[str] | None = None) -> int:
             main.pack_start(scroller, True, True, 0)
             body.pack_start(main, True, True, 0)
             side = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12), "aero-menu-side")
-            logo = Gtk.Image.new_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_scale(
-                str(project_root() / "assets/aero-penguin.svg"), 70, 70, True))
+            try:
+                logo = Gtk.Image.new_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_scale(
+                    str(project_root() / "assets/aero-penguin.svg"), 70, 70, True))
+            except (GLib.Error, OSError):
+                logo = self._icon("start-here", Gtk.IconSize.DIALOG)
             side.pack_start(logo, False, False, 0)
             for title, icon, uri in (
                 ("Home", "user-home", Path.home().as_uri()),
@@ -546,4 +552,6 @@ def run(argv: list[str] | None = None) -> int:
             dialog.run()
             dialog.destroy()
 
-    return AeroShell().run(argv or ["ricehub-aero-shell"])
+    app = AeroShell()
+    result = app.run(argv or ["ricehub-aero-shell"])
+    return 1 if app._smoke_failed else result
