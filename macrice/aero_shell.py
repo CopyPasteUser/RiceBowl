@@ -1532,9 +1532,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.tile_grid = Gtk.Grid(row_spacing=7, column_spacing=8)
             self.tile_grid.set_halign(Gtk.Align.CENTER)
             root.pack_start(self.tile_grid, False, False, 0)
-            root.pack_start(self._class(
-                Gtk.Label(label="All apps", xalign=0), "aero-menu-sub"),
-                False, False, 0)
+            all_apps_label = self._class(
+                Gtk.Label(label="Search results", xalign=0), "aero-menu-sub")
+            all_apps_label.set_no_show_all(True)
+            root.pack_start(all_apps_label, False, False, 0)
             scroller = Gtk.ScrolledWindow()
             scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
             scroller.set_min_content_height(120)
@@ -1549,6 +1550,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 needle = search.get_text().strip()
                 self.tile_grid.set_visible(not bool(needle))
                 pinned_label.set_visible(not bool(needle))
+                all_apps_label.set_visible(bool(needle))
                 scroller.set_visible(bool(needle))
                 self._populate(needle)
             search.connect("search-changed", search_changed)
@@ -1559,6 +1561,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._populate("")
             scroller.set_no_show_all(True)
             scroller.hide()
+            all_apps_label.hide()
 
         def _render_ten_tiles(self):
             if not hasattr(self, "tile_grid"):
@@ -1588,8 +1591,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                                         80 if profile == "chromeos" else 87)
                 box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
                 icon = app.get_icon()
-                box.pack_start(Gtk.Image.new_from_gicon(icon, Gtk.IconSize.LARGE_TOOLBAR) if icon else
-                               self._icon("applications-other"), True, True, 0)
+                box.pack_start(Gtk.Image.new_from_gicon(
+                    icon, Gtk.IconSize.DIALOG if profile == "chromeos" else Gtk.IconSize.LARGE_TOOLBAR
+                ) if icon else self._icon("applications-other",
+                    Gtk.IconSize.DIALOG if profile == "chromeos" else Gtk.IconSize.LARGE_TOOLBAR),
+                    True, True, 0)
                 name = app.get_display_name() or app.get_name() or "Application"
                 caption = self._class(Gtk.Label(label=name, xalign=0), "ten-tile-label")
                 caption.set_max_width_chars(15)
