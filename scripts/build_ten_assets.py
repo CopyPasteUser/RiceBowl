@@ -23,7 +23,7 @@ def chrome(destination: Path, palette: dict) -> None:
     folder = destination / "xfwm4"
     folder.mkdir(parents=True, exist_ok=True)
     (destination / "index.theme").write_text(
-        f"[Desktop Entry]\nType=X-GNOME-Metatheme\nName={destination.name}\nComment=Original RiceHub flat window theme\n",
+        f"[Desktop Entry]\nType=X-GNOME-Metatheme\nName={destination.name.replace('RiceHub', 'RiceBowl')}\nComment=Original RiceBowl flat window theme\n",
         encoding="utf-8",
     )
     (folder / "themerc").write_text(
@@ -73,7 +73,7 @@ def chrome(destination: Path, palette: dict) -> None:
 def gtk(destination: Path, palette: dict) -> None:
     folder = destination / "gtk-3.0"
     folder.mkdir(parents=True, exist_ok=True)
-    content = """/* RiceHub Ten: compact flat GTK3 theme, original artwork. */
+    content = """/* RiceBowl Ten: compact flat GTK3 theme, original artwork. */
 @define-color theme_bg_color BG;
 @define-color theme_fg_color INK;
 @define-color theme_base_color FIELD;
@@ -131,7 +131,7 @@ def icons() -> None:
     root = ROOT / "assets/icons/RiceHub-Ten-Penguin"
     root.mkdir(parents=True, exist_ok=True)
     (root / "index.theme").write_text(
-        "[Icon Theme]\nName=RiceHub Ten Penguin\nComment=Original flat icons with Linux penguin Start mark\n"
+        "[Icon Theme]\nName=RiceBowl Ten Penguin\nComment=Original flat icons with Linux penguin Start mark\n"
         "Inherits=Adwaita,hicolor\nDirectories=scalable/apps,scalable/places\n"
         "[scalable/apps]\nSize=48\nType=Scalable\nMinSize=16\nMaxSize=128\n"
         "[scalable/places]\nSize=48\nType=Scalable\nMinSize=16\nMaxSize=128\n",
@@ -185,4 +185,4 @@ if __name__ == "__main__":
         gtk(dest, colors)
     icons()
     wallpapers()
-    print("Regenerated RiceHub Ten dark/light themes, icons and wallpapers")
+    print("Regenerated RiceBowl Ten dark/light themes, icons and wallpapers")
