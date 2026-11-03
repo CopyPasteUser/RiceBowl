@@ -27,8 +27,8 @@ jobs:
           timeout 18s dbus-run-session -- xvfb-run -a -s '-screen 0 1600x900x24' /usr/bin/python3 screenshots/capture_ten_shell.py
           timeout 18s dbus-run-session -- xvfb-run -a /usr/bin/python3 screenshots/capture_windows10.py
           timeout 18s dbus-run-session -- xvfb-run -a /usr/bin/python3 screenshots/capture_windows10_hub.py
-          for profile in winxp winclassic chromeos frutiger; do
-            RICEHUB_PROFILE="$profile" timeout 20s dbus-run-session -- xvfb-run -a -s '-screen 0 1600x900x24' /usr/bin/python3 -c 'import os; from macrice.aero_shell import run; p=os.environ["RICEHUB_PROFILE"]; raise SystemExit(run([f"ricehub-{p}-shell", "--capture-gallery"], profile=p))'
+          for profile in aero windows10 winxp winclassic chromeos frutiger; do
+            RICEHUB_PROFILE="$profile" timeout 24s dbus-run-session -- xvfb-run -a -s '-screen 0 1600x900x24' /usr/bin/python3 -c 'import os; from macrice.aero_shell import run; p=os.environ["RICEHUB_PROFILE"]; raise SystemExit(run([f"ricebowl-{p}-shell", "--capture-gallery"], profile=p))'
           done
           (cd components/macmenu && /usr/bin/python3 -m unittest discover -s tests -v)
           (cd components/macbar && /usr/bin/python3 -m unittest discover -s tests -v)
@@ -37,14 +37,14 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ricebowl-0.7.1-native-x11-captures
-          path: screenshots/ricebowl-*-0.7.1.png
+          name: ricebowl-0.8.0-native-x11-captures
+          path: screenshots/ricebowl-*-0.8.0.png
           if-no-files-found: ignore
 
   publish-ricebowl:
-    name: Publish RiceBowl 0.7 after green CI
+    name: Publish RiceBowl 0.8 after green CI
     needs: test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'RiceBowl 0.7.1 release')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'RiceBowl 0.8.0 release')
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -56,14 +56,18 @@ jobs:
           test -f RELEASE_NOTES.md
           test -f assets/ricebowl-symbolic.svg
           mkdir -p dist
-          git archive --format=zip --output=dist/RiceBowl-v0.7.1-source.zip HEAD
-          (cd dist && sha256sum RiceBowl-v0.7.1-source.zip | tee SHA256SUMS)
+          git archive --format=zip --output=dist/RiceBowl-v0.8.0-source.zip HEAD
+          (cd dist && sha256sum RiceBowl-v0.8.0-source.zip | tee SHA256SUMS)
+      - uses: actions/download-artifact@v4
+        with:
+          name: ricebowl-0.8.0-native-x11-captures
+          path: dist/screenshots
       - name: Create release if absent
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh release view v0.7.1 >/dev/null 2>&1; then
-            echo 'RiceBowl v0.7.1 release already exists'
+          if gh release view v0.8.0 >/dev/null 2>&1; then
+            echo 'RiceBowl v0.8.0 release already exists'
             exit 0
           fi
-          gh release create v0.7.1 dist/RiceBowl-v0.7.1-source.zip dist/SHA256SUMS --target "$GITHUB_SHA" --title 'RiceBowl v0.7.1' --notes-file RELEASE_NOTES.md --prerelease
+          gh release create v0.8.0 dist/RiceBowl-v0.8.0-source.zip dist/SHA256SUMS dist/screenshots/*.png --target "$GITHUB_SHA" --title 'RiceBowl v0.8.0' --notes-file RELEASE_NOTES.md --prerelease
