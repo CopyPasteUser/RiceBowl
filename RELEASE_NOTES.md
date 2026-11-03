@@ -7,6 +7,7 @@ RiceBowl 0.8.0 is an XFCE/X11 pre-release centered on **six genuinely different 
 - Original **42 differentiated application and place icons** (file manager, settings, browser, terminal, home, folder, trash) for Windows 7 Aero, Windows 10, XP Luna, Classic 98/2000, ChromeOS and Frutiger Aero.
 - **66 matching status icons**, four individual heritage Start graphics and more expressive rice-specific taskbar/button/control CSS.
 - ChromeOS has a centered search and app-grid launcher, rather than the Windows 10 tile interface. Frutiger Aero has a separate aqua/eco dashboard; other profiles retain their own era-appropriate Start menus and system controls.
+- Windows XP's category-style Control Panel now uses a single-column layout: lengthy labels remain readable, and the popup stays inside the screen in real X11 captures.
 
 ## Battery, network and sound
 
@@ -45,7 +46,7 @@ Details: [README](README.md), [0.8.0 roadmap](RELEASE_0_8_0_ROADMAP.md), [Change
 
 ## Pre-release verification record
 
-The release candidate passed [GitHub Actions run 41585293457](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41585293457):
-**175 core Python tests**, native GTK/X11 smoke coverage for each desktop family, existing component regression suites, and **12 independently validated 1600 × 900 PNG captures** of real GTK windows under virtual X11. The captured gallery is attached to this GitHub pre-release, rather than represented as physical Mint screenshots.
+The release candidate passed [GitHub Actions run 41586128188](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41586128188):
+**176 core Python tests**, native GTK/X11 smoke coverage for each desktop family, existing component regression suites, and **12 independently validated 1600 × 900 PNG captures** of real GTK windows under virtual X11. The captured gallery is attached to this GitHub pre-release, rather than represented as physical Mint screenshots.
 
 The project has not yet passed physical Mint XFCE acceptance for Plank coexistence, battery charging on hardware, monitor hotplugging and long-running session changes.
