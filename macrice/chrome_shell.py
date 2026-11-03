@@ -7,6 +7,7 @@ No proprietary Google icons, Android apps or simulated cloud integrations.
 from __future__ import annotations
 
 import math
+import os
 
 
 def launcher_favorites(apps, pinned_ids, *, limit=4):
@@ -65,8 +66,13 @@ def apply_rounded_window_shape(window, radius=26):
             region.union(cairo.RectangleInt(inset, height - y - 1,
                                              max(1, width - 2 * inset), 1))
         native.shape_combine_region(region, 0, 0)
-    except (ImportError, AttributeError, OSError, ValueError, TypeError, KeyError):
-        pass
+        if os.environ.get("RICEBOWL_SHAPE_DEBUG") == "1":
+            print("ChromeOS X11 popup mask", window.get_title(),
+                  "size", (width, height), "origin", native.get_root_origin(),
+                  "corner in mask", region.contains_point(0, 0), flush=True)
+    except (ImportError, AttributeError, OSError, ValueError, TypeError, KeyError) as exc:
+        if os.environ.get("RICEBOWL_SHAPE_DEBUG") == "1":
+            print("ChromeOS X11 popup mask unavailable:", repr(exc), flush=True)
     return False
 
 

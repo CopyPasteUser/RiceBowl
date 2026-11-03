@@ -28,7 +28,7 @@ jobs:
           timeout 18s dbus-run-session -- xvfb-run -a /usr/bin/python3 screenshots/capture_windows10.py
           timeout 18s dbus-run-session -- xvfb-run -a /usr/bin/python3 screenshots/capture_windows10_hub.py
           for profile in aero windows10 winxp winclassic chromeos frutiger; do
-            RICEHUB_PROFILE="$profile" timeout 24s dbus-run-session -- xvfb-run -a -s '-screen 0 1600x900x24' /usr/bin/python3 -c 'import os; from macrice.aero_shell import run; p=os.environ["RICEHUB_PROFILE"]; raise SystemExit(run([f"ricebowl-{p}-shell", "--capture-gallery"], profile=p))'
+            RICEBOWL_SHAPE_DEBUG=1 RICEHUB_PROFILE="$profile" timeout 24s dbus-run-session -- xvfb-run -a -s '-screen 0 1600x900x24' /usr/bin/python3 -c 'import os; from macrice.aero_shell import run; p=os.environ["RICEHUB_PROFILE"]; raise SystemExit(run([f"ricebowl-{p}-shell", "--capture-gallery"], profile=p))'
           done
           # Fail the release if any gallery screen silently failed to capture.
           # Flat Windows 98 teal compresses to ~28 KiB as a valid 1600x900 PNG;
