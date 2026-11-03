@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>RiceBowl Luna Search</title>
+  <defs><linearGradient id="glass" x2="0" y2="1"><stop stop-color="#e9faff"/><stop offset="1" stop-color="#8abdf3"/></linearGradient></defs>
+  <circle cx="27" cy="25" r="18" fill="url(#glass)" stroke="#2f6fae" stroke-width="5"/>
+  <path d="M41 39L56 55" stroke="#174786" stroke-width="10" stroke-linecap="round"/>
+  <path d="M41 39L56 55" stroke="#6aaaf1" stroke-width="6" stroke-linecap="round"/>
+  <path d="M18 16Q25 10 32 16" fill="none" stroke="#fff" stroke-width="3" opacity=".9" stroke-linecap="round"/>
+</svg>

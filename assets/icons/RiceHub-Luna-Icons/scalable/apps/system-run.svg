@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>RiceBowl Luna Run</title>
+  <defs><linearGradient id="shell" x2="0" y2="1"><stop stop-color="#f6fdff"/><stop offset="1" stop-color="#9dc7ed"/></linearGradient></defs>
+  <rect x="5" y="11" width="54" height="41" rx="4" fill="url(#shell)" stroke="#275391" stroke-width="2"/>
+  <path d="M8 16Q8 14 11 14H53Q56 14 56 16V23H8Z" fill="#377ee1"/>
+  <path d="M15 31L22 36L15 41" fill="none" stroke="#234a84" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M25 42H46" stroke="#4373a5" stroke-width="3"/>
+  <path d="M16 55H49" stroke="#24509d" stroke-width="3" stroke-linecap="round"/>
+</svg>

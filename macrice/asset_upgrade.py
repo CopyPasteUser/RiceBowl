@@ -25,11 +25,19 @@ def git_blob_sha(content: bytes) -> str:
 
 @lru_cache(maxsize=1)
 def trusted_assets() -> dict[str, frozenset[str]]:
-    manifest = Path(__file__).resolve().parents[1] / "assets/trusted-ricehub-assets.json"
-    raw = json.loads(manifest.read_text(encoding="utf-8"))
-    if raw.get("schema") != 1 or not isinstance(raw.get("files"), dict):
-        raise AssetConflict("Unsupported trusted asset manifest")
-    return {name: frozenset(hashes) for name, hashes in raw["files"].items()}
+    root = Path(__file__).resolve().parents[1] / "assets"
+    trusted: dict[str, set[str]] = {}
+    for name in ("trusted-ricehub-assets.json", "trusted-ricebowl-luna-091.json"):
+        raw = json.loads((root / name).read_text(encoding="utf-8"))
+        if raw.get("schema") != 1 or not isinstance(raw.get("files"), dict):
+            raise AssetConflict("Unsupported trusted asset manifest")
+        for path, hashes in raw["files"].items():
+            if not isinstance(path, str) or not isinstance(hashes, list) or any(
+                    not isinstance(h, str) or len(h) != 40 or
+                    any(ch not in "0123456789abcdef" for ch in h) for h in hashes):
+                raise AssetConflict("Invalid trusted asset hash")
+            trusted.setdefault(path, set()).update(hashes)
+    return {name: frozenset(hashes) for name, hashes in trusted.items()}
 
 
 def _relative_source_key(source: Path, relative: Path) -> str:

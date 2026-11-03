@@ -35,6 +35,145 @@ PALETTES = {
 }
 
 
+def _luna_chrome(destination: Path) -> None:
+    """Original XP-inspired molded XFWM4 art; never embed Microsoft bitmaps."""
+    frame = destination / "xfwm4"
+    (frame / "themerc").write_text(
+        "active_text_color=#ffffff\ninactive_text_color=#eff4ff\n"
+        "button_offset=2\nbutton_spacing=1\nfull_width_title=true\n"
+        "frame_border_top=0\nmaximized_offset=0\nshow_app_icon=true\n"
+        "title_horizontal_offset=6\ntitle_vertical_offset_active=1\n"
+        "title_vertical_offset_inactive=1\ntitle_shadow_active=true\n"
+        "title_shadow_inactive=false\n",
+        encoding="utf-8",
+    )
+
+    def gradient(width, height, upper, lower):
+        image = Image.new("RGBA", (width, height))
+        draw = ImageDraw.Draw(image)
+        for y in range(height):
+            t = y / max(1, height - 1)
+            color = tuple(round(a * (1-t) + b*t) for a, b in zip(upper, lower)) + (255,)
+            draw.line((0, y, width, y), fill=color)
+        return image
+
+    for state, upper, lower in (
+        ("active", (74, 143, 239), (15, 65, 165)),
+        ("inactive", (144, 181, 228), (93, 129, 191)),
+    ):
+        for number in range(1, 6):
+            image = gradient(15, 32, upper, lower)
+            draw = ImageDraw.Draw(image)
+            draw.line((0, 0, 15, 0), fill=(163, 208, 255, 255), width=1)
+            draw.line((0, 2, 15, 2), fill=(109, 169, 245, 150), width=1)
+            image.save(frame / f"title-{number}-{state}.png")
+        for side in ("top-left", "top-right"):
+            image = gradient(6, 32, upper, lower)
+            draw = ImageDraw.Draw(image)
+            x = 0 if side == "top-left" else 5
+            draw.line((x, 4, x, 31), fill=(4, 43, 135, 255), width=1)
+            # Three transparent pixels evoke Luna's softly rounded top corners.
+            px = image.load()
+            for dy, n in ((0, 3), (1, 2), (2, 1)):
+                for dx in range(n):
+                    px[dx if side == "top-left" else 5-dx, dy] = (0, 0, 0, 0)
+            image.save(frame / f"{side}-{state}.png")
+        for side in ("left", "right"):
+            image = Image.new("RGBA", (4, 8), (39, 97, 192, 255) if state == "active" else
+                              (103, 139, 190, 255))
+            draw = ImageDraw.Draw(image)
+            draw.line((0 if side == "left" else 3, 0, 0 if side == "left" else 3, 8),
+                      fill=(23, 66, 154, 255), width=1)
+            image.save(frame / f"{side}-{state}.png")
+        for part in ("bottom", "bottom-left", "bottom-right"):
+            image = gradient(6, 5, lower, (8, 49, 144) if state == "active" else (74, 113, 178))
+            image.save(frame / f"{part}-{state}.png")
+
+    for button in ("close", "maximize", "hide", "menu", "shade", "stick"):
+        for state in ("active", "inactive", "prelight", "pressed"):
+            image = Image.new("RGBA", (27, 27), (0, 0, 0, 0))
+            draw = ImageDraw.Draw(image)
+            if button == "close":
+                upper, lower = ((252, 137, 100), (182, 40, 25))
+                if state == "prelight": upper, lower = ((255, 178, 137), (223, 56, 40))
+            else:
+                upper, lower = ((113, 170, 246), (25, 87, 190))
+                if state == "prelight": upper, lower = ((158, 207, 255), (43, 120, 221))
+            if state == "inactive":
+                upper, lower = ((192, 207, 232), (122, 149, 199))
+            if state == "pressed":
+                upper, lower = lower, upper
+            draw.rounded_rectangle((3, 3, 25, 24), radius=5, fill=lower,
+                                   outline=(245, 250, 255, 230), width=1)
+            for y in range(5, 15):
+                t = (y-5)/10
+                color = tuple(round(a*(1-t)+b*t) for a,b in zip(upper,lower))+(255,)
+                draw.line((5,y,23,y), fill=color)
+            symbol = (255, 255, 255, 255)
+            if button == "close":
+                draw.line((10, 10, 18, 18), fill=symbol, width=2)
+                draw.line((18, 10, 10, 18), fill=symbol, width=2)
+            elif button == "maximize":
+                draw.rectangle((10, 10, 19, 18), outline=symbol, width=2)
+                draw.line((10, 10, 19, 10), fill=symbol, width=2)
+            elif button == "hide":
+                draw.line((9, 18, 19, 18), fill=symbol, width=2)
+            elif button == "menu":
+                draw.rectangle((10, 10, 18, 18), outline=symbol, width=1)
+            elif button == "shade":
+                draw.polygon([(10, 15), (19, 15), (14, 10)], fill=symbol)
+            else:
+                draw.ellipse((12, 11, 17, 17), fill=symbol)
+            image.save(frame / f"{button}-{state}.png")
+
+
+def _luna_gtk(destination: Path) -> None:
+    """Layer tactile Luna Blue GTK3 widgets over the base theme, including Thunar."""
+    target = destination / "gtk-3.0/gtk.css"
+    base = target.read_text(encoding="utf-8")
+    if "/* Original RiceBowl Luna GTK3/Thunar chrome." in base:
+        return
+    target.write_text(base + """
+/* Original RiceBowl Luna GTK3/Thunar chrome. Keep Linux widget semantics. */
+window, dialog, .background, viewport { background-color: #ece9d8; color: #151515; }
+button { background-image: linear-gradient(#ffffff, #e4ecf9 65%, #c4d6ed);
+  border: 1px solid #7f9db9; border-radius: 3px; box-shadow: inset 0 1px #fff;
+  color: #171717; padding: 4px 9px; }
+button:hover { background-image: linear-gradient(#fff, #f5f8e5 60%, #f4d58d);
+  border-color: #d59e37; }
+button:active, button:checked { background-image: linear-gradient(#b9d5f5, #dceafc);
+  color: #15387d; border-color: #316ac5; }
+entry, spinbutton, combobox box.linked { background: #fff; color: #111;
+  border: 1px solid #7f9db9; border-radius: 1px; padding: 3px; }
+entry:focus { border-color: #316ac5; }
+selection, :selected, row:selected, treeview.view:selected { background: #316ac5; color: #fff; }
+menubar, menu, popover, .menu, .popup { background: #fff; color: #111;
+  border: 1px solid #a1a1a1; }
+menuitem:hover, modelbutton:hover { background: #316ac5; color: #fff; }
+headerbar, .titlebar { background-image: linear-gradient(#5798ed, #1453b6);
+  color: #fff; border: 1px solid #2154a0; box-shadow: inset 0 1px #91c6ff; }
+toolbar { background-image: linear-gradient(#ffffff, #f3f1e6);
+  color: #222; border-bottom: 1px solid #c6c4b4; }
+toolbar button { border-color: transparent; background: transparent; box-shadow: none; }
+toolbar button:hover { background: #fff5d9; border-color: #e3ad54; }
+notebook header { background: #ece9d8; border-color: #a7bce1; }
+notebook tab { background-image: linear-gradient(#e9eef9, #d2e2f6);
+  border: 1px solid #94afd6; border-radius: 4px 4px 0 0; padding: 4px 12px; }
+notebook tab:checked { background: #fff; color: #1b3c71; border-bottom: 1px solid #fff; }
+scrollbar slider { background-image: linear-gradient(#e9f3ff, #8cb6ed);
+  border: 1px solid #608fc5; border-radius: 2px; min-width: 11px; min-height: 11px; }
+scrollbar trough { background: #e3edfa; }
+progressbar progress, scale highlight { background-image: linear-gradient(#a6df71, #4da735);
+  border: 1px solid #478b25; border-radius: 1px; }
+tooltip { background: #fffcd9; color: #141414; border: 1px solid #8f8b7d; }
+/* Thunar's real navigation/sidebar remains functional; style visible widgets. */
+thunar toolbar, .thunar toolbar { background-image: linear-gradient(#fff, #e9e9db); }
+thunar treeview.view, .thunar treeview.view { background: #fff; color: #242424; }
+thunar treeview.view:selected, .thunar treeview.view:selected { background: #316ac5; color: #fff; }
+thunar paned separator, .thunar paned separator { background: #acbed8; }
+""", encoding="utf-8")
+
+
 def _vertical(upper, lower):
     image = Image.new("RGB", (W, H))
     draw = ImageDraw.Draw(image)
@@ -141,12 +280,25 @@ def _icons(name, palette):
         (base / "scalable/apps" / f"{filename}.svg").write_text(logo, encoding="utf-8")
 
 
-def main():
+def main(*, luna_only: bool = False):
     for name, palette in PALETTES.items():
+        if luna_only and name != "Luna":
+            continue
         path = ROOT / "assets/themes" / ("RiceHub-" + name)
-        chrome(path, palette)
-        gtk(path, palette)
-        _icons(name, palette)
+        if name == "Luna":
+            # Preserve hand-reviewed GTK/Thunar rules present in shipped builds.
+            if not (path / "gtk-3.0/gtk.css").exists():
+                gtk(path, palette)
+            _luna_chrome(path)
+            _luna_gtk(path)
+        else:
+            chrome(path, palette)
+            gtk(path, palette)
+        if not luna_only:
+            _icons(name, palette)
+    if luna_only:
+        print("Refreshed original Luna window chrome and GTK styles only")
+        return
     _luna()
     _classic()
     _chrome()
@@ -155,4 +307,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import argparse
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--luna-only", action="store_true",
+                        help="Refresh just Luna XFWM and GTK, preserving reviewed other rices")
+    main(luna_only=parser.parse_args().luna_only)

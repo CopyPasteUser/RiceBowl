@@ -151,74 +151,107 @@ CSS = {
 # macOS has its own unchanged implementation.
 DETAIL_CSS = {
     "winxp": b"""
-/* Luna: raised deep-blue taskbar, bright green Start, recessed system tray. */
+/* XP Luna Blue: molded plastic, tight 40px bar and one sky-blue tray. */
 .aero-taskbar {
-  background-image: linear-gradient(to bottom, #5fa5ff, #246add 18%, #1144b1 68%, #084099);
-  border-top: 2px solid #a9d7ff; border-bottom: 1px solid #092d84;
-  color: white; padding: 2px 6px; min-height: 43px;
+  background-image: linear-gradient(to bottom, #6daeff 0%, #3168db 12%,
+    #2456cc 56%, #1944aa 89%, #1642a6 100%);
+  border-top: 1px solid #93c7ff; border-bottom: 1px solid #102c78;
+  color: white; padding: 0 2px; min-height: 32px;
 }
 .aero-start {
-  background-image: linear-gradient(to bottom, #aafa74, #49bc27 37%, #168b20 78%, #107018);
-  border: 1px solid #d2ffc2; border-bottom: 2px solid #085c11;
-  border-radius: 21px 9px 9px 21px; color: white;
-  font-size: 17px; font-weight: bold; padding: 2px 15px 2px 5px;
-  box-shadow: inset 0 1px rgba(255,255,255,.70), 0 1px 3px #043786;
+  background-image: linear-gradient(to bottom, #9fe985 0%, #4cae32 30%,
+    #258c20 68%, #14771d 92%, #13721a 100%);
+  border: 1px solid #a1ef7e; border-bottom: 2px solid #0a5b1c;
+  border-radius: 0 16px 16px 0; color: white;
+  font-size: 15px; font-weight: bold; font-style: italic;
+  padding: 1px 16px 1px 5px;
+  box-shadow: inset 0 1px rgba(255,255,255,.55), 1px 1px 2px #133581;
 }
+.aero-start:hover, .aero-start:focus { background-image: linear-gradient(#b7ffa1, #56bb40 40%, #1a8a23); }
+.aero-start:active { background-image: linear-gradient(#125e15, #348f2e 80%, #78ce64); }
 .aero-task {
-  background-image: linear-gradient(#57a4ef, #1760cd); border: 1px solid #7eb9ff;
-  border-bottom: 2px solid #063f9a; border-radius: 5px; color: white;
-  box-shadow: inset 0 1px rgba(255,255,255,.25);
+  background-image: linear-gradient(#5c9dec, #2b70d9 49%, #1b5ac4);
+  border: 1px solid #70a8f5; border-bottom: 1px solid #16459f;
+  border-radius: 4px; color: white; padding: 3px 8px;
+  box-shadow: inset 0 1px rgba(255,255,255,.22);
 }
 .aero-task-active {
-  background-image: linear-gradient(#2c6ac2, #144ba5);
-  border: 1px solid #c5e4ff; border-top: 2px solid #11418d;
+  background-image: linear-gradient(#1750ba, #2c66ca 55%, #306ad3);
+  border: 1px solid #0b3d99; border-top: 2px solid #0b347c;
 }
-.rice-status, .aero-quick, .aero-time {
-  background-image: linear-gradient(#3892ee, #1761c6);
-  border: 1px solid #72a8ed; color: white; border-radius: 3px;
+.aero-pin { background: transparent; border: 1px solid transparent; box-shadow: none; padding: 2px; }
+.aero-pin:hover, .aero-pin:focus { background: #528ae0; border-color: #89b7f7; }
+.luna-tray {
+  background-image: linear-gradient(#52b6f3 0%, #168bd5 24%, #0e7bca 68%, #1176c2);
+  border-left: 1px solid #8ad3ff; border-top: 1px solid #8dd9ff;
+  padding: 1px 4px 0 7px; min-height: 32px;
 }
-.aero-time { font-size: 11px; font-weight: bold; padding: 4px 8px; }
-.luna-menu { background: #f6f6ef; border: 3px solid #245ec4; border-radius: 9px 9px 6px 6px; }
-.luna-user {
-  background-image: linear-gradient(#397fe2, #1261c9 58%, #1042a7);
-  border-bottom: 2px solid #febc5c; padding: 8px 11px; min-height: 52px;
-}
-.luna-user-name { color: #fff; font-size: 20px; font-weight: bold;
-  text-shadow: 0 1px #184085; }
-.luna-avatar { background: #fff; border: 2px solid #e2edff; border-radius: 4px; padding: 2px; }
-.luna-apps { background: #fff; padding: 9px 7px; }
-.luna-apps .aero-menu-search { border: 1px solid #8cb8e4; border-radius: 4px; }
-.luna-apps .aero-menu-app { color: #182c49; border-radius: 4px;
-  padding: 7px 5px; }
-.luna-apps .aero-menu-app:hover, .luna-apps .aero-menu-app:focus {
-  background: #286bd0; color: #fff; border-color: #18519f;
-}
-.luna-places {
-  background-image: linear-gradient(to right, #d3e3ff, #b7cff5);
-  border-left: 1px solid #93b4e4; padding: 10px 8px;
-}
-.luna-places .rice-place {
+.luna-tray .rice-status, .luna-tray .aero-quick, .luna-tray .aero-desktop {
   background: transparent; border: 1px solid transparent; box-shadow: none;
-  color: #194282; border-radius: 4px; padding: 6px 5px;
+  color: #fff; border-radius: 2px; padding: 2px 3px;
 }
-.luna-places .rice-place:hover, .luna-places .rice-place:focus {
-  background: #eff6ff; border: 1px solid #71a2e2;
+.luna-tray .rice-status:hover, .luna-tray .aero-quick:hover,
+.luna-tray .aero-desktop:hover { background: #54b5ed; border-color: #93d8ff; }
+.luna-tray .rice-status label { color: #fff; font-size: 10px; font-weight: normal; }
+.aero-time { background: transparent; color: #fff; border: 0; box-shadow: none;
+  font-size: 12px; font-weight: normal; padding: 2px 5px; }
+.luna-menu { background: #fff; border: 2px solid #1b55bd;
+  border-radius: 8px 8px 0 0; box-shadow: 1px 2px 7px rgba(11,35,98,.42); }
+.luna-user {
+  background-image: linear-gradient(#76aaff 0%, #3478dd 28%, #1555bd 74%, #1042a5);
+  border-bottom: 2px solid #e6a34e; padding: 6px 10px; min-height: 53px;
 }
+.luna-user-name { color: #fff; font-size: 18px; font-weight: bold;
+  text-shadow: 1px 1px #113d91; }
+.luna-avatar { background: #fff; border: 2px solid #dfedff;
+  border-radius: 4px; padding: 1px; box-shadow: 0 1px #164896; }
+.luna-apps { background: #fff; padding: 4px 5px 5px; }
+.luna-apps .aero-menu-search { border: 1px solid #7f9db9; border-radius: 0;
+  min-height: 28px; padding: 4px 7px; }
+.luna-program { background: transparent; color: #202020;
+  border: 1px solid transparent; border-radius: 0; min-height: 28px;
+  padding: 3px 5px; box-shadow: none; font-size: 12px; }
+.luna-program:hover, .luna-program:focus { background: #316ac5; color: #fff;
+  border-color: #316ac5; }
+.luna-featured { min-height: 43px; padding: 4px 5px; }
+.luna-program-category { font-size: 12px; font-weight: bold; color: #173a6e; }
+.luna-program:hover .luna-program-category, .luna-program:focus .luna-program-category { color: #fff; }
+.luna-empty { color: #56708b; font-size: 12px; }
+.luna-apps separator { background: #a7bddb; min-height: 1px; }
 .luna-all-programs {
-  background-image: linear-gradient(#fff, #e7f2ff);
-  border: 1px solid #b2cdeb; border-radius: 4px; color: #174a99;
-  font-weight: bold; padding: 7px; box-shadow: none;
+  background: #fff; color: #1e3351; border: 1px solid transparent;
+  border-top: 1px solid #b0c3da; border-radius: 0; min-height: 35px;
+  font-weight: bold; padding: 5px; box-shadow: none;
 }
+.luna-all-programs:hover, .luna-all-programs:focus { background: #316ac5; color: #fff; }
+.luna-places {
+  background: #d3e5fa; border-left: 1px solid #91b3e4; padding: 5px 3px 5px 5px;
+}
+.luna-place {
+  background: transparent; border: 1px solid transparent; box-shadow: none;
+  color: #183e78; border-radius: 0; padding: 1px 5px;
+  min-height: 25px; font-weight: bold; font-size: 11px;
+}
+.luna-place:hover, .luna-place:focus { background: #316ac5; color: #fff;
+  border-color: #316ac5; }
+.luna-place:disabled { color: #8198b7; }
+.luna-places separator { background: #9dbce6; min-height: 1px; }
 .luna-footer {
-  background-image: linear-gradient(#3078d6, #1248ae);
-  border-top: 2px solid #f8b45e; min-height: 44px; padding: 6px 12px;
+  background-image: linear-gradient(#4186e2, #1254bf 44%, #1645a8);
+  border-top: 1px solid #f6ad47; min-height: 43px; padding: 4px 8px;
 }
-.luna-power {
-  background-image: linear-gradient(#fb934f, #c94820);
-  border: 1px solid #ffcf9c; border-radius: 4px; color: white;
-  font-weight: bold; padding: 5px 9px;
-}
-.luna-power:hover { background: #ed7045; color: #fff; }
+.luna-power { border-radius: 3px; color: #fff; font-weight: bold;
+  font-size: 11px; padding: 3px 6px; box-shadow: inset 0 1px rgba(255,255,255,.65); }
+.luna-logoff { background-image: linear-gradient(#ffda6e, #c8861c);
+  border: 1px solid #ffd47c; }
+.luna-shutdown { background-image: linear-gradient(#ff856e, #c93d2c);
+  border: 1px solid #ffae9a; }
+.luna-power:hover, .luna-power:focus { border-color: #fff; color: #fff; }
+.luna-logoff:hover { background: #e8aa38; }
+.luna-shutdown:hover { background: #ed5944; }
+.luna-power:disabled { opacity: .5; }
+.luna-menu menu { background: #fff; border: 1px solid #316ac5; }
+.luna-menu menuitem:hover { background: #316ac5; color: #fff; }
 """,
     "winclassic": b"""
 /* 98/2000: no gradients, no glass, squared pixel-like geometry. */

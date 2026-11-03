@@ -10,7 +10,7 @@ PANEL_HEIGHT = 53
 
 def menu_geometry(x: int, y: int, width: int, height: int,
                   preferred_width: int = 490, preferred_height: int = 505,
-                  margin: int = 8) -> tuple[int, int, int, int]:
+                  margin: int = 8, panel_height: int = PANEL_HEIGHT) -> tuple[int, int, int, int]:
     """Place the Start menu directly above the panel, inside its monitor.
 
     Returns (x, y, width, height). Caller must avoid showing the menu
@@ -18,15 +18,15 @@ def menu_geometry(x: int, y: int, width: int, height: int,
     height < 180).
     """
     w = max(0, min(preferred_width, width - 2 * margin))
-    h = max(0, min(preferred_height, height - PANEL_HEIGHT - 2 * margin))
-    return (x + margin, y + height - PANEL_HEIGHT - margin - h, w, h)
+    h = max(0, min(preferred_height, height - panel_height - 2 * margin))
+    return (x + margin, y + height - panel_height - margin - h, w, h)
 
 
 def actual_popup_y(monitor_y: int, monitor_height: int, actual_height: int,
-                   margin: int = 8) -> int:
+                   margin: int = 8, panel_height: int = PANEL_HEIGHT) -> int:
     """Anchor a mapped GTK popup using its real, not requested, height."""
     return max(monitor_y + margin,
-               monitor_y + monitor_height - PANEL_HEIGHT - margin - actual_height)
+               monitor_y + monitor_height - panel_height - margin - actual_height)
 
 
 def task_capacity(width: int, pinned: int, tray_reserve: int = 185) -> int:
@@ -49,12 +49,12 @@ def select_windows(windows: tuple, active, capacity: int) -> tuple[tuple, tuple]
 
 
 def bottom_strut(x: int, y: int, width: int, height: int,
-                 root_height: int) -> tuple[tuple[int, ...], tuple[int, ...]]:
+                 root_height: int, panel_height: int = PANEL_HEIGHT) -> tuple[tuple[int, ...], tuple[int, ...]]:
     """EWMH bottom strut and partial strut; zero when not on root bottom edge.
 
     A monitor floating above another monitor must not reserve a global strip.
     """
-    bottom = PANEL_HEIGHT if width > 0 and height >= PANEL_HEIGHT and y + height == root_height else 0
+    bottom = panel_height if width > 0 and height >= panel_height and y + height == root_height else 0
     short = (0, 0, 0, bottom)
     partial = (0, 0, 0, bottom, 0, 0, 0, 0, 0, 0,
                max(0, x) if bottom else 0,
