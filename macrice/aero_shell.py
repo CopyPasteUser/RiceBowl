@@ -108,7 +108,7 @@ CSS = b"""
 def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
     from .heritage import PROFILES
     if profile not in ("aero", "windows10", *PROFILES):
-        raise ValueError("Unknown RiceHub shell profile")
+        raise ValueError("Unknown RiceBowl shell profile")
     ten = profile == "windows10"
     heritage = PROFILES.get(profile)
     tiles = ten or profile == "chromeos"
@@ -436,7 +436,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 finally:
                     lib.XCloseDisplay(display)
             except (OSError, AttributeError, RuntimeError, TypeError, ValueError) as exc:
-                logging.getLogger(__name__).warning("RiceHub workarea reservation unavailable: %s", exc)
+                logging.getLogger(__name__).warning("RiceBowl workarea reservation unavailable: %s", exc)
 
         def _open_tool(self, command):
             """Open a known XFCE utility without a shell or implicit system changes."""
@@ -483,8 +483,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
         def _create_taskbar(self):
             rect = self._desktop_rect()
             win = Gtk.ApplicationWindow(application=self)
-            win.set_title("RiceHub Windows 10 Taskbar" if ten else
-                          f"RiceHub {heritage.name} Taskbar" if heritage else "RiceHub Aero Taskbar")
+            win.set_title("RiceBowl Windows 10 Taskbar" if ten else
+                          f"RiceBowl {heritage.name} Taskbar" if heritage else "RiceBowl Aero Taskbar")
             win.set_decorated(False)
             win.set_resizable(False)
             win.set_skip_taskbar_hint(True)
