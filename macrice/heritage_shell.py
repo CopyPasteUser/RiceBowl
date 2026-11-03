@@ -229,8 +229,8 @@ DETAIL_CSS = {
 }
 .luna-place {
   background: transparent; border: 1px solid transparent; box-shadow: none;
-  color: #183e78; border-radius: 0; padding: 4px 5px;
-  min-height: 29px; font-weight: bold; font-size: 11px;
+  color: #183e78; border-radius: 0; padding: 1px 5px;
+  min-height: 25px; font-weight: bold; font-size: 11px;
 }
 .luna-place:hover, .luna-place:focus { background: #316ac5; color: #fff;
   border-color: #316ac5; }

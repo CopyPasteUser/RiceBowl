@@ -337,6 +337,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
         def _capture_menu(self):
             try:
                 self._assert_popup_on_monitor(self.menu)
+                if profile == "winxp":
+                    self._assert_luna_run_link_visible()
                 self._capture_screen(f"ricebowl-{profile}-start-0.9.1{self._capture_variant}.png")
                 self._hide_menu()
                 self._toggle_actions()
@@ -372,6 +374,14 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     f"{profile} popup outside usable monitor: "
                     f"{actual_x},{actual_y} {actual_w}x{actual_h}, "
                     f"monitor={rect.x},{rect.y} {rect.width}x{rect.height}")
+
+        def _assert_luna_run_link_visible(self):
+            """The final XP system action must not disappear beneath the footer."""
+            mapped, _x, link_y = self.luna_run_link.translate_coordinates(self.menu, 0, 0)
+            footer_mapped, _x, footer_y = self.luna_footer.translate_coordinates(self.menu, 0, 0)
+            if not mapped or not footer_mapped or link_y < 0 or (
+                    link_y + self.luna_run_link.get_allocated_height() > footer_y):
+                raise AssertionError("XP Luna Run action is clipped by its footer")
 
         def _shutdown(self, *_args):
             for name in self._popup_hide_sources:
@@ -1266,8 +1276,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             places.pack_start(self._luna_navigation("Search", "system-search",
                                                      command="catfish" if shutil.which("catfish") else None,
                                                      callback=self._reveal_luna_search), False, False, 0)
-            places.pack_start(self._luna_navigation("Run…", "system-run",
-                                                     command="xfce4-appfinder"), False, False, 0)
+            self.luna_run_link = self._luna_navigation(
+                "Run…", "system-run", command="xfce4-appfinder")
+            places.pack_start(self.luna_run_link, False, False, 0)
             place_scroll = Gtk.ScrolledWindow()
             place_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
             place_scroll.set_min_content_height(120)
@@ -1291,6 +1302,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                                self._open_tool("xfce4-session-logout"))
                 footer.pack_start(button, False, False, 0)
             root.pack_end(footer, False, False, 0)
+            self.luna_footer = footer
             menu.add(root)
             self._finish_heritage_menu(menu, search)
 
