@@ -1,25 +1,43 @@
-# RiceBowl 0.7.1 — Brand and upgrade compatibility
+# RiceBowl 0.8.0 — Distinct Rices and native system tray
 
-RiceHub has evolved into RiceBowl, a native GTK3 manager for seven opt-in XFCE/X11 desktop styles.
+RiceBowl 0.8.0 is an XFCE/X11 pre-release centered on **six genuinely different non-macOS desktops**. The proven macOS rice, user configuration, Plank settings, backup system and old launcher aliases remain unchanged.
 
-### Highlights
+## Desktop and artwork
 
-- RiceBowl application identity and original scalable bowl logo.
-- New `ricebowl` executable and desktop launcher, with backwards-compatible `ricehub` and `macrice` aliases.
-- Distinct, native system-control layouts for Windows XP Luna, Classic 98/2000, ChromeOS and Frutiger Aero, integrated with available XFCE system tools.
-- Expanded, profile-specific Thunar styling for all six non-macOS rices; safe migration from old managed CSS blocks and preservation of unrelated custom GTK CSS.
-- No changes to macOS rice implementation, settings, Plank integration or existing user backups.
+- Original **42 differentiated application and place icons** (file manager, settings, browser, terminal, home, folder, trash) for Windows 7 Aero, Windows 10, XP Luna, Classic 98/2000, ChromeOS and Frutiger Aero.
+- **66 matching status icons**, four individual heritage Start graphics and more expressive rice-specific taskbar/button/control CSS.
+- ChromeOS has a centered search and app-grid launcher, rather than the Windows 10 tile interface. Frutiger Aero has a separate aqua/eco dashboard; other profiles retain their own era-appropriate Start menus and system controls.
 
-### Compatibility
+## Battery, network and sound
 
-Existing D-Bus shell identifiers, internal theme names and startup entries remain compatible. The GitHub repository is now `CopyPasteUser/RiceBowl`. Former `CopyPasteUser/RiceHub` URLs are retained as GitHub redirects for existing installations.
+- The lower-right status area now displays **real battery charge and charging state**, not a fabricated icon. No battery: no battery widget.
+- Active Wi-Fi and Ethernet are determined from Linux interfaces and routing, with a VPN fallback for underlying Wi-Fi.
+- Audio percent and mute come from WirePlumber/PipeWire or PulseAudio, with bounded subprocesses and no UI-thread blocking.
+- Network, sound and battery buttons open appropriate installed settings tools; disabled or unavailable features are clearly reported.
 
-### Acceptance
+## Theme migration and recovery
 
-The release workflow requires the repository's Python and native GTK/X11 tests to pass before publishing. Physical Linux Mint XFCE panel switching, Plank autostart coexistence, HiDPI and multi-monitor validation remain outstanding; previous screenshots are retained as version-labeled historical captures.
+- The prior `Existing customized theme conflicts with RiceBowl` bug caused by routine official asset updates is addressed with a **version-aware migration**. Exact official 0.6, 0.7.0 and 0.7.1 assets are verified against bundled known Git hashes and upgraded with a dated full backup.
+- Unknown modifications still cannot be silently overwritten. The Hub's **Repair local theme assets…** action or `macrice rice repair-assets ten-dark` deliberately backs up and replaces only that Rice's themes/icons. No current desktop setting is switched by repair.
+- Reject symlinks and unmanaged asset paths; existing D-Bus IDs, theme directory names, old `ricehub` and `macrice` commands remain compatible.
 
-See [README](README.md) and [CHANGELOG](CHANGELOG.md) for setup and migration notes.
+## Verification and remaining gates
 
-### Branding maintenance
+GitHub Actions runs the Python suite, native GTK/X11 smoke and window tracking tests, and captures real GTK menu/control screenshots under a virtual X11 desktop. The release contains a source ZIP, SHA-256 checksum and the new captures.
 
-This 0.7.1 maintenance release aligns the application sidebar icon, window and prototype titles, packaging metadata, desktop autostarts and README with RiceBowl. Exact former managed autostart entries remain recognized for restoring pre-upgrade sessions. The 0.7.0 release tag remains an immutable historical snapshot.
+**Physical Linux Mint XFCE acceptance is not yet complete**: repeat switching, real battery, Wi-Fi under VPN, Plank autostart, multi-monitor and external display/compositor behavior should be checked on target hardware before promoting this from pre-release.
+
+## Upgrade
+
+From a clone of the canonical repository:
+
+```bash
+git pull --ff-only
+bash install.sh --dry-run
+bash install.sh
+ricebowl
+```
+
+Or clone: https://github.com/CopyPasteUser/RiceBowl
+
+Details: [README](README.md), [0.8.0 roadmap](RELEASE_0_8_0_ROADMAP.md), [Changelog](CHANGELOG.md).
