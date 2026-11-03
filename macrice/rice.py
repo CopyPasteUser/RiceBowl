@@ -332,6 +332,34 @@ def _preflight(styles: RiceStyle, changes: list[dict], backend: XfceBackend) -> 
         raise RiceError(f"{family} font is missing. Install it before applying the full rice.")
 
 
+def repair_assets(style_name: str, *, data_root: Path | None = None,
+                  source_root: Path | None = None) -> tuple[Path, ...]:
+    """Explicit, backed-up replacement of selected non-macOS managed assets.
+
+    Does not change XFCE settings; the user must separately apply the rice.
+    """
+    if os.geteuid() == 0:
+        raise RiceError("Repair RiceBowl assets as your desktop user, never with sudo")
+    if style_name not in STYLES or style_name in ("night", "day"):
+        raise RiceError("Asset repair is available only for a non-macOS rice")
+    data_root = data_root or data_home()
+    source_root = source_root or project_root()
+    style = STYLES[style_name]
+    if style.gtk == AERO_THEME:
+        bundles = __import__("macrice.aero", fromlist=["BUNDLES"]).BUNDLES
+    elif style.gtk in ten.THEMES:
+        bundles = ten.BUNDLES
+    else:
+        bundles = heritage.bundles(style_name)
+    packages = [(source_root / relative, data_root / destination)
+                for relative, destination in bundles]
+    try:
+        from .aero import repair as repair_bundles
+        return repair_bundles(packages)
+    except (OSError, ValueError) as exc:
+        raise RiceError(f"Asset repair failed safely: {exc}") from exc
+
+
 def plan(style_name: str, *, backend: XfceBackend | None = None,
          data_root: Path | None = None, source_root: Path | None = None,
          config_root: Path | None = None) -> tuple[list[dict], dict[str, str | None], Path, Path]:
