@@ -625,7 +625,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                              ("windowactivate", "--sync", window_id)):
                     subprocess.run(["xdotool", *args], check=True, timeout=4,
                                    capture_output=True)
-                GLib.timeout_add(420, self._capture_workspace_finish)
+                # Give Thunar time to finish its first folder scan; a captured
+                # loading throbber is not representative of the settled UI.
+                GLib.timeout_add(1100, self._capture_workspace_finish)
             except Exception:
                 import traceback
                 traceback.print_exc()

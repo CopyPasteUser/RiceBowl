@@ -29,7 +29,11 @@ class NativeWorkspaceGalleryTests(unittest.TestCase):
                     self.assertTrue((fixture / "Documents").is_dir())
                     self.assertTrue((fixture / "README.txt").is_file())
                     self.assertEqual(os.environ["RICEBOWL_CAPTURE_FIXTURE_DIR"], str(fixture))
-                    self.assertEqual(call.call_args.args[0][-1], style.xfwm)
+                    commands = [invocation.args[0] for invocation in call.call_args_list]
+                    self.assertEqual(commands[0][-1], style.xfwm)
+                    self.assertEqual(len(commands), 4)
+                    self.assertIn("/last-location-bar", commands[1])
+                    self.assertIn("ThunarLocationButtons", commands[1])
 
     def test_real_thunar_and_xfwm_are_required_for_workspace_capture(self):
         source = (REPO / "macrice/aero_shell.py").read_text(encoding="utf-8")
