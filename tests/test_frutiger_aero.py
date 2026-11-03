@@ -94,6 +94,11 @@ class FrutigerAeroContractTests(unittest.TestCase):
         self.assertIn("offer_create=True", frutiger)
         self.assertIn("self._open_luna_user_folder(folder)", frutiger)
 
+    def test_uncomposited_x11_popup_corners_are_rounded_if_supported(self):
+        source = (ROOT / "macrice/aero_shell.py").read_text(encoding="utf-8")
+        self.assertIn("GLib.idle_add(apply_rounded_window_shape, self.menu, 27)", source)
+        self.assertIn("GLib.idle_add(apply_rounded_window_shape, self.actions, 22)", source)
+
     def test_native_gtk_gloss_and_window_frame_assets(self):
         css = (FRUTIGER_THEME / "gtk-3.0/gtk.css").read_text(encoding="utf-8")
         for token in ("RiceBowl Aqua World", "linear-gradient", "button:focus",

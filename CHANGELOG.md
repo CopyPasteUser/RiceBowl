@@ -6,6 +6,8 @@
   mint app tiles, a clearer Discover section and distinct lime selected tabs.
   The home grid prioritizes saved pinned apps and familiar installed desktop
   programs, while search still covers the complete application catalog.
+  Optional native X11 corner masks eliminate rectangular popup backing when
+  XFWM4 runs without a compositor.
 - Quick Home/Documents/Music links and the Places page now resolve XDG user
   directories correctly; missing directories can be created only after an
   explicit confirmation. The launcher returns to Apps when reopened.

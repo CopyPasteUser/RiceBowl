@@ -60,6 +60,8 @@ this visual change. Original art only; do not bundle third-party assets.
 - **[x] Better visual hierarchy:** the top hero, shortcut row, navigation
   tabs, Discover caption, app tiles and footer now use distinct pearl, mint,
   lagoon and lime treatments instead of one continuous turquoise gradient.
+  Optional X11 shaping also removes square GTK backing around the two rounded
+  utility popups on systems without a compositor.
 - **[x] Real folder behavior:** XDG-aware user folders and explicit creation
   confirmation remove hardcoded English folder paths and disabled shortcuts.
 - **[x] Usable device controls:** Frutiger-only hero, larger readable captions,

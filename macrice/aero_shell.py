@@ -3276,6 +3276,14 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 # Some X11 window managers reset the shape during the first
                 # utility resize; reapply after that configure settles.
                 GLib.timeout_add(150, apply_rounded_window_shape, self.actions, 26)
+            elif profile == "frutiger":
+                # GTK's rounded CSS child still sits inside a rectangular
+                # utility window under uncomposited XFWM4. Use the proven
+                # optional X11 shape mask instead of painting square corners.
+                from .chrome_shell import apply_rounded_window_shape
+
+                GLib.idle_add(apply_rounded_window_shape, self.actions, 22)
+                GLib.timeout_add(150, apply_rounded_window_shape, self.actions, 22)
 
         def _open_search(self):
             if not self.menu.get_visible():
@@ -3599,6 +3607,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.menu.resize(w, h)
             self.menu.move(x, y)
             self.menu.present()
+            if profile == "frutiger":
+                from .chrome_shell import apply_rounded_window_shape
+
+                GLib.idle_add(apply_rounded_window_shape, self.menu, 27)
+                GLib.timeout_add(150, apply_rounded_window_shape, self.menu, 27)
             if profile == "winxp":
                 GLib.idle_add(self._reanchor_luna_menu)
                 first_app = next((widget for widget in self.results.get_children()
