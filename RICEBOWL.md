@@ -1,4 +1,4 @@
-# RiceBowl — Complete XFCE desktop styles
+# RiceBowl · Project identity and compatibility
 
 RiceBowl 0.7.0 is the public-facing successor to RiceHub 0.6. It manages seven reversible XFCE/X11 desktop families, including the unchanged macOS implementation.
 
@@ -16,3 +16,7 @@ Clone https://github.com/CopyPasteUser/RiceHub.git (the repository has not yet b
 See README.md for details, CHANGELOG.md for version history, RICEHUB.md for architecture and rollback notes.
 
 Hardware validation of Mint XFCE switching, Plank coexistence, compositing and multi-monitor behavior is still pending. Old README screenshots document earlier releases, not a new 0.7 image capture.
+
+## Source and project identity
+
+The Python distribution is `ricebowl-xfce` (version 0.7.0); the GTK hub uses the RiceBowl name and rice-bowl icon. Existing user-controlled appearance and backup identifiers are not renamed automatically. The former `ricehub` command and historical documentation stay available solely for migration.
