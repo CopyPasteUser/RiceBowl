@@ -41,7 +41,7 @@ PALETTES = {
 }
 
 
-def _block(style: str) -> str:
+def _legacy_block(style: str) -> str:
     p = PALETTES[style]
     return f"""{START}
 /* Scoped to Thunar's own GTK class; other applications are unaffected. */
@@ -51,6 +51,40 @@ window.thunar .sidebar .view:selected {{ background-color: {p['accent']}; color:
 window.thunar .location-button {{ border-radius: 7px; }}
 {END}
 """
+
+
+
+def _block(style: str) -> str:
+    """Scoped distinct Thunar chrome; macOS palettes remain unchanged."""
+    original = _legacy_block(style)
+    if style in ("night", "day"):
+        return original
+    palette = PALETTES[style]
+    common = (
+        f"window.thunar .sidebar {{ background: {palette['sidebar']}; }}\n"
+        f"window.thunar .sidebar .view:selected {{ background: {palette['accent']}; color: white; }}\n"
+        f"window.thunar statusbar {{ border-top: 1px solid {palette['edge']}; }}\n"
+        f"window.thunar .path-bar button:focus {{ border-color: {palette['accent']}; }}\n"
+    )
+    distinct = {
+        "aero": "window.thunar toolbar { background-image: linear-gradient(#f6fcff, #b8dcef); }\n"
+                "window.thunar .path-bar button { border-radius: 5px; }\n",
+        "ten-dark": "window.thunar toolbar { background: #222226; }\n"
+                    "window.thunar .path-bar button { border-radius: 0; }\n",
+        "ten-light": "window.thunar toolbar { background: #f4f4f4; }\n"
+                     "window.thunar .path-bar button { border-radius: 0; }\n",
+        "winxp": "window.thunar toolbar { background-image: linear-gradient(#fff, #b8d5f6); border-bottom: 2px solid #6595ce; }\n"
+                 "window.thunar .path-bar button { background-image: linear-gradient(#fff, #cfe5fd); border: 1px solid #92add6; border-radius: 4px; }\n",
+        "winclassic": "window.thunar toolbar, window.thunar statusbar { background: #c0c0c0; color: #111; border-radius: 0; }\n"
+                      "window.thunar .path-bar button { background: #c0c0c0; color: #111; border: 2px outset #eee; border-radius: 0; box-shadow: none; }\n"
+                      "window.thunar .path-bar button:active { border-style: inset; }\n",
+        "chromeos": "window.thunar toolbar { background: #f7faff; padding: 8px; }\n"
+                    "window.thunar .path-bar button { background: #e4edfc; color: #293b57; border-radius: 15px; padding: 6px 12px; }\n",
+        "frutiger": "window.thunar toolbar { background-image: linear-gradient(#fff, #c6f6ed 60%, #a7dff0); border-bottom: 2px solid #6dc6cb; }\n"
+                    "window.thunar .path-bar button { background-image: linear-gradient(#fff, #c1f4ea); border: 1px solid #74d6dc; border-radius: 12px; }\n"
+                    "window.thunar .sidebar { background-image: linear-gradient(#f1fffb, #c7f3e5); }\n",
+    }[style]
+    return original.replace(END + "\n", common + distinct + END + "\n")
 
 
 def _read_css(path: Path) -> str | None:
@@ -76,7 +110,7 @@ def plan_css(style: str, config_root: Path) -> dict[str, str | None]:
         left, tail = content.split(START, 1)
         inner, right = tail.split(END, 1)
         current_block = START + inner + END + "\n"
-        if current_block not in {_block(name) for name in PALETTES}:
+        if current_block not in ({_block(name) for name in PALETTES} | {_legacy_block(name) for name in PALETTES}):
             raise ValueError("MacRice Thunar styling was customized; refusing to replace it")
         # The existing block owns exactly one newline after END.
         if right.startswith("\n"):
