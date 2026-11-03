@@ -1,4 +1,4 @@
-"""Visual skins for four independent profiles of RiceHub's live GTK taskbar.
+"""Visual skins for four independent profiles of RiceBowl's live GTK taskbar.
 
 The shared GTK/Gio/Wnck lifecycle stays in aero_shell: no parallel window
 trackers, subprocess pollers, or duplicate launchers are introduced here.
