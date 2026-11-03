@@ -29,14 +29,15 @@ def actual_popup_y(monitor_y: int, monitor_height: int, actual_height: int,
                monitor_y + monitor_height - panel_height - margin - actual_height)
 
 
-def task_capacity(width: int, pinned: int, tray_reserve: int = 185) -> int:
+def task_capacity(width: int, pinned: int, tray_reserve: int = 185,
+                  *, compact: bool = False) -> int:
     """Conservatively reserve space for Start, launchers, status and tray.
 
     Task overflow is mandatory when there is no space; never force the
     panel larger than the monitor solely to display window titles.
     """
-    reserved = 125 + min(max(pinned, 0), 6) * 48 + max(tray_reserve, 0)
-    return max(0, min(9, (width - reserved) // 145))
+    reserved = (79 if compact else 125) + min(max(pinned, 0), 6) * 48 + max(tray_reserve, 0)
+    return max(0, min(12 if compact else 9, (width - reserved) // (49 if compact else 145)))
 
 
 def select_windows(windows: tuple, active, capacity: int) -> tuple[tuple, tuple]:

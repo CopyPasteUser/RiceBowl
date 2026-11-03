@@ -39,24 +39,35 @@ def gradient(size: tuple[int, int], stops: list[tuple[int, int, int]], *, vertic
 def frame_assets() -> None:
     CHROME.mkdir(parents=True, exist_ok=True)
     for state, colors in {
-        "active": [(213, 247, 255), (135, 201, 239), (82, 161, 213), (141, 207, 244)],
-        "inactive": [(238, 246, 250), (202, 222, 233), (172, 203, 221), (210, 228, 240)],
+        "active": [(220, 247, 255), (119, 183, 224), (82, 146, 200), (154, 215, 245)],
+        "inactive": [(245, 249, 251), (199, 219, 231), (161, 191, 211), (210, 227, 239)],
     }.items():
         base = gradient((15, 33), colors)
+        shine = ImageDraw.Draw(base)
+        shine.line((0, 0, 14, 0), fill=(255, 255, 255, 235))
+        shine.line((0, 2, 14, 2), fill=(246, 254, 255, 165))
+        shine.line((0, 16, 14, 16), fill=(218, 245, 255, 95))
+        shine.line((0, 32, 14, 32), fill=(18, 74, 131, 130))
         # XFWM4 tiles its title slices horizontally; edges/corners are separate sprites.
         for name in ("title-1", "title-2", "title-3", "title-4", "title-5"):
             base.save(CHROME / f"{name}-{state}.png")
         for name, flip in (("top-left", False), ("top-right", True)):
-            part = gradient((9, 33), colors)
+            part = base.resize((9, 33))
             d = ImageDraw.Draw(part)
             x = 8 if flip else 0
-            d.line([(x, 0), (x, 32)], fill=(36, 100, 153, 235), width=1)
+            d.line([(x, 2), (x, 32)], fill=(26, 91, 151, 235), width=1)
             d.line([(0, 0), (8, 0)], fill=(244, 254, 255), width=1)
+            # True rounded outer window corners, not rectangular blue blocks.
+            for dy, inset in ((0, 3), (1, 2), (2, 1)):
+                for dx in range(inset):
+                    part.putpixel((8 - dx if flip else dx, dy), (0, 0, 0, 0))
             part.save(CHROME / f"{name}-{state}.png")
         border = (47, 108, 158, 255) if state == "active" else (130, 166, 191, 255)
         for name in ("left", "right"):
-            tile = gradient((5, 8), colors, vertical=False)
-            ImageDraw.Draw(tile).line((0 if name == "left" else 4, 0, 0 if name == "left" else 4, 7), fill=border)
+            tile = gradient((5, 8), [(43, 113, 170), (137, 206, 239), (85, 160, 209)]) if state == "active" else gradient((5, 8), colors)
+            edge = ImageDraw.Draw(tile)
+            edge.line((0 if name == "left" else 4, 0, 0 if name == "left" else 4, 7), fill=border)
+            edge.line((1 if name == "left" else 3, 0, 1 if name == "left" else 3, 7), fill=(225, 248, 255, 140))
             tile.save(CHROME / f"{name}-{state}.png")
         bottom = gradient((9, 6), list(reversed(colors)))
         ImageDraw.Draw(bottom).line((0, 5, 8, 5), fill=border)
@@ -75,21 +86,24 @@ def button_assets() -> None:
         for state in ("active", "inactive", "prelight", "pressed"):
             red = button == "close"
             stops = (
-                [(255, 232, 227), (239, 93, 77)] if red else
-                [(244, 254, 255), (131, 193, 230)]
+                [(255, 216, 202), (227, 88, 66), (175, 49, 43)] if red else
+                [(236, 251, 255), (147, 207, 238), (85, 156, 204)]
             )
             if state == "inactive":
-                stops = [(238, 244, 248), (190, 211, 223)]
+                stops = [(239, 244, 247), (200, 216, 226), (182, 201, 215)]
             elif state == "prelight":
-                stops = [(255, 255, 247), (255, 139, 103)] if red else [(245, 255, 255), (99, 202, 251)]
+                stops = [(255, 236, 205), (255, 117, 68), (211, 43, 37)] if red else [(255, 255, 255), (148, 224, 255), (74, 170, 229)]
             elif state == "pressed":
-                stops = [(189, 79, 68), (242, 163, 147)] if red else [(50, 126, 181), (157, 212, 246)]
+                stops = [(159, 58, 48), (227, 121, 92), (193, 68, 50)] if red else [(49, 127, 184), (137, 205, 244), (91, 172, 217)]
             img = gradient((29, 23), stops)
             d = ImageDraw.Draw(img)
-            d.rounded_rectangle((1, 0, 27, 21), radius=4, outline=(44, 104, 149, 255), width=1)
-            d.line((5, 2, 22, 2), fill=(255, 255, 255, 180), width=1)
-            ink = (20, 57, 82, 255)
+            d.rounded_rectangle((1, 0, 27, 21), radius=4, outline=(103, 51, 45, 250) if red else (43, 103, 151, 255), width=1)
+            d.line((5, 2, 22, 2), fill=(255, 255, 255, 200), width=1)
+            d.line((5, 3, 22, 3), fill=(255, 255, 255, 95), width=1)
+            ink = (255, 255, 255, 250) if red else (27, 66, 99, 255)
             if button == "close":
+                d.line((11, 7, 18, 15), fill=(104, 35, 31, 220), width=3)
+                d.line((18, 7, 11, 15), fill=(104, 35, 31, 220), width=3)
                 d.line((11, 7, 18, 15), fill=ink, width=2)
                 d.line((18, 7, 11, 15), fill=ink, width=2)
             elif button == "maximize":
@@ -117,6 +131,10 @@ ART = {
     "places/user-home.svg": '<path d="M7 29 32 9l25 20" fill="none" stroke="#266eaa" stroke-width="5" stroke-linejoin="round"/><path d="M15 27h34v28H15Z" fill="url(#glass)" stroke="#266eaa" stroke-width="2"/><path d="M28 37h9v18h-9Z" fill="#e7f9ff" stroke="#4896c7" stroke-width="2"/>',
     "places/computer.svg": '<rect x="6" y="10" width="52" height="37" rx="5" fill="#235d92"/><rect x="9" y="13" width="46" height="30" rx="2" fill="url(#glass)"/><path d="M23 53h18m-9-6v6M17 57h30" stroke="#275b86" stroke-width="4" stroke-linecap="round"/>',
     "places/user-trash.svg": '<path d="M19 18h26l-3 38H22Z" fill="url(#glass)" stroke="#387aa8" stroke-width="2"/><path d="M17 18h30M26 14h12" stroke="#3c789e" stroke-width="4" stroke-linecap="round"/><path d="M28 25v24m8-24v24" stroke="#a0d5ef" stroke-width="3"/>',
+    "places/folder-documents.svg": '<path d="M5 16h20l6 6h28v34H5Z" fill="#dca84f" stroke="#996d2f" stroke-width="2"/><path d="M7 25h50v28H7Z" fill="url(#glass)" stroke="#4791c5" stroke-width="2"/><path d="M24 31h24v18H24Z" fill="#fff" stroke="#5a9dcc" stroke-width="1.6"/><path d="M28 36h16m-16 5h16m-16 5h12" stroke="#8ab4d0" stroke-width="2"/>',
+    "places/folder-pictures.svg": '<path d="M5 16h20l6 6h28v34H5Z" fill="#dca84f" stroke="#996d2f" stroke-width="2"/><path d="M7 25h50v28H7Z" fill="url(#glass)" stroke="#4791c5" stroke-width="2"/><rect x="19" y="29" width="31" height="21" rx="2" fill="#fff" stroke="#407fa6" stroke-width="2"/><path d="m21 47 9-10 7 6 5-6 6 10Z" fill="#4da466"/><circle cx="27" cy="35" r="3" fill="#efc65a"/>',
+    "places/folder-music.svg": '<path d="M5 16h20l6 6h28v34H5Z" fill="#dca84f" stroke="#996d2f" stroke-width="2"/><path d="M7 25h50v28H7Z" fill="url(#glass)" stroke="#4791c5" stroke-width="2"/><path d="M32 31v16m0-14 15-3v14" fill="none" stroke="#28618f" stroke-width="4"/><ellipse cx="27" cy="48" rx="6" ry="4" fill="#28618f"/><ellipse cx="42" cy="45" rx="6" ry="4" fill="#28618f"/>',
+    "places/folder-download.svg": '<path d="M5 16h20l6 6h28v34H5Z" fill="#dca84f" stroke="#996d2f" stroke-width="2"/><path d="M7 25h50v28H7Z" fill="url(#glass)" stroke="#4791c5" stroke-width="2"/><path d="M32 29v17m-9-8 9 10 9-10" stroke="#2b8c66" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="M22 51h20" stroke="#24744e" stroke-width="3"/>',
     "apps/system-file-manager.svg": '<path d="M8 15h20l5 5h22v30H8Z" fill="url(#glass)" stroke="#2a6eac" stroke-width="2"/><path d="M9 25h45M16 32h17m-17 7h25" stroke="#fff" stroke-opacity=".85" stroke-width="3"/>',
     "apps/web-browser.svg": '<circle cx="32" cy="32" r="26" fill="url(#glass)" stroke="#2e6d9f" stroke-width="2"/><path d="M8 33h48M32 6q-18 24 0 52M32 6q18 24 0 52" fill="none" stroke="#fff" stroke-opacity=".8" stroke-width="3"/><path d="M14 17h36m-36 30h36" stroke="#fff" stroke-opacity=".5" stroke-width="2"/>',
     "apps/utilities-terminal.svg": '<rect x="7" y="12" width="50" height="40" rx="5" fill="#183953" stroke="#85c9eb" stroke-width="3"/><path d="m17 23 8 8-8 8m15 0h12" fill="none" stroke="#a7f3c4" stroke-width="4" stroke-linecap="round"/>',
