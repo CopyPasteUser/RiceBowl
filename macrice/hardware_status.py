@@ -201,3 +201,33 @@ def set_sound_volume(percent: int) -> SoundState:
         errors.append(f"{args[0]}: read-back mismatch")
     raise RuntimeError("Unable to set verified audio volume" +
                        (": " + "; ".join(errors) if errors else " (no backend available)"))
+
+
+def set_sound_mute(muted: bool) -> SoundState:
+    """Change default sink mute state and verify it, without shell execution."""
+    if not isinstance(muted, bool):
+        raise ValueError("Mute target must be a boolean")
+    value = "1" if muted else "0"
+    candidates = (
+        ["wpctl", "set-mute", "@DEFAULT_AUDIO_SINK@", value],
+        ["pactl", "set-sink-mute", "@DEFAULT_SINK@", value],
+    )
+    failures = []
+    for args in candidates:
+        if not shutil.which(args[0]):
+            continue
+        try:
+            process = subprocess.run(
+                args, capture_output=True, text=True, timeout=2.0, check=False)
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            failures.append(f"{args[0]}: {type(exc).__name__}")
+            continue
+        if process.returncode:
+            failures.append(f"{args[0]}: exit {process.returncode}")
+            continue
+        actual = read_sound()
+        if actual.muted is muted:
+            return actual
+        failures.append(f"{args[0]}: read-back mismatch")
+    raise RuntimeError("Unable to verify mute state" +
+                       (": " + "; ".join(failures) if failures else " (no backend available)"))
