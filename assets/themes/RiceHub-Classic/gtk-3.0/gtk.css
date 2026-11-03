@@ -33,3 +33,17 @@ window.thunar toolbar, window.thunar statusbar { background: #c0c0c0; border: 2p
 window.thunar .path-bar button { background: #c0c0c0; border: 2px outset white; border-radius: 0; box-shadow: none; }
 window.thunar .path-bar button:active { border-style: inset; }
 window.thunar .sidebar { background: #d6d6d6; border-right: 2px inset #eee; }
+
+/* RiceBowl 0.9: high-fidelity, Thunar-only era chrome. */
+/* Win98/2000: pixel-sharp inset lists, raised toolbar, gray title context. */
+window.thunar menubar, window.thunar toolbar, window.thunar .location-bar { background: #c0c0c0; border-top: 2px solid #fff; border-left: 2px solid #fff; border-bottom: 2px solid #7b7b7b; padding: 1px 4px; color: #111; }
+window.thunar toolbar button, window.thunar .path-bar button { background: #c0c0c0; border: 2px outset #f4f4f4; border-radius: 0; box-shadow: none; color: #111; padding: 3px 6px; }
+window.thunar toolbar button:active, window.thunar .path-bar button:active { border-style: inset; }
+window.thunar toolbar button:hover { background: #d8d8d8; }
+window.thunar .sidebar, window.thunar .shortcuts-pane { background: #d4d4d4; border: 2px inset #efefef; color: #111; }
+window.thunar .sidebar .view, window.thunar .shortcuts-pane .view { background: #d4d4d4; color: #111; }
+window.thunar treeview.view, window.thunar .standard-view { background: #fff; border: 2px inset #eee; color: #111; }
+window.thunar treeview.view:selected, window.thunar .sidebar .view:selected { background: #000080; color: #fff; }
+window.thunar treeview header button { background: #c0c0c0; border: 2px outset #fff; border-radius: 0; color: #111; padding: 2px 4px; }
+window.thunar statusbar { background: #c0c0c0; border-top: 2px outset #fff; border-radius: 0; color: #111; padding: 2px; }
+window.thunar scrollbar slider { border-radius: 0; background: #b0b0b0; border: 1px solid #666; }
