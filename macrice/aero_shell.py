@@ -302,7 +302,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
     ten = profile == "windows10"
     heritage = PROFILES.get(profile)
     tiles = ten or profile == "chromeos"
-    panel_height = 40 if profile == "winxp" else 42 if profile == "aero" else PANEL_HEIGHT
+    panel_height = 34 if profile == "winclassic" else 40 if profile == "winxp" else 42 if profile == "aero" else PANEL_HEIGHT
     if ten:
         from .ten_shell import APP_ID as TEN_APP_ID, CSS as TEN_CSS
     if heritage:
@@ -361,7 +361,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def do_startup(self):
             Gtk.Application.do_startup(self)
-            if profile == "frutiger":
+            if profile in ("frutiger", "winclassic"):
                 # GTK's default Gdk screen exists after application startup;
                 # before it, IconTheme.get_default() may silently be None.
                 # Install scoped search path to show original Aqua icons even
@@ -371,7 +371,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     icon_theme.append_search_path(str(project_root() / "assets/icons"))
                 settings = Gtk.Settings.get_default()
                 if settings is not None:
-                    settings.set_property("gtk-icon-theme-name", "RiceHub-Frutiger-Icons")
+                    settings.set_property("gtk-icon-theme-name", (
+                        "RiceHub-Classic-Icons" if profile == "winclassic" else
+                        "RiceHub-Frutiger-Icons"))
             for name in ("toggle-menu", "toggle-control"):
                 action = Gio.SimpleAction.new(name, None)
                 action.connect("activate", self._on_fast_action, name)
@@ -401,7 +403,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._smoke = "--smoke-test" in args
             self._capture_gallery = "--capture-gallery" in args
             self._capture_variant = "-1024" if (
-                profile in ("winxp", "aero", "frutiger") and os.environ.get("RICEBOWL_CAPTURE_SIZE") == "1024") else ""
+                profile in ("winxp", "aero", "frutiger", "winclassic") and os.environ.get("RICEBOWL_CAPTURE_SIZE") == "1024") else ""
             self.activate()
             if self._smoke:
                 GLib.timeout_add(850, self._smoke_check)
@@ -764,7 +766,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             allowed = ("xfce4-settings-manager", "xfce4-session-logout",
                        "nm-connection-editor", "pavucontrol", "xfce4-display-settings",
                        "blueman-manager", "xfce4-appearance-settings",
-                       "xfce4-power-manager-settings", "system-config-printer")
+                       "xfce4-power-manager-settings", "system-config-printer",
+                       "xfce4-appfinder", "xfce4-about", "yelp",
+                       "xfce4-mouse-settings", "xfce4-keyboard-settings")
             if command not in allowed:
                 return
             executable = shutil.which(command)
@@ -838,9 +842,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             return screen.get_monitor_geometry(monitor if monitor >= 0 else 0)
 
         def _icon(self, name, size=Gtk.IconSize.LARGE_TOOLBAR):
-            if profile == "aero":
-                for category in ("places", "apps"):
-                    candidate = (project_root() / "assets/icons/RiceHub-Aero/scalable" /
+            if profile in ("aero", "winclassic"):
+                theme_dir = "RiceHub-Aero" if profile == "aero" else "RiceHub-Classic-Icons"
+                for category in ("places", "apps", "devices"):
+                    candidate = (project_root() / ("assets/icons/" + theme_dir + "/scalable") /
                                  category / (name + ".svg"))
                     if candidate.is_file():
                         pixels = 16 if size == Gtk.IconSize.MENU else 48 if size == Gtk.IconSize.DIALOG else 24
@@ -1102,7 +1107,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             win.move(rect.x, rect.y + rect.height - panel_height)
 
             row = self._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,
-                                      spacing=4 if profile in ("winxp", "aero") else 8), "aero-taskbar")
+                                      spacing=3 if profile == "winclassic" else
+                                      4 if profile in ("winxp", "aero") else 8), "aero-taskbar")
             if profile == "aero":
                 row.get_style_context().add_class("win7-taskbar")
             elif profile == "frutiger":
@@ -1119,8 +1125,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                                      "assets/" + heritage.logo if heritage else "assets/aero-penguin.svg")
             try:
                 img = Gtk.Image.new_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_scale(
-                    str(logo), 26 if ten or profile == "winxp" else 36,
-                    26 if ten or profile == "winxp" else 36, True))
+                    str(logo), 19 if profile == "winclassic" else 26 if ten or profile == "winxp" else 36,
+                    19 if profile == "winclassic" else 26 if ten or profile == "winxp" else 36, True))
             except (GLib.Error, OSError):
                 img = self._icon("start-here", Gtk.IconSize.LARGE_TOOLBAR)
             contents.pack_start(img, False, False, 0)
@@ -1131,7 +1137,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 "Windows 10" if ten else "Aero") + " application menu")
             start.connect("clicked", lambda _button: self._toggle_menu())
             start.set_tooltip_text("Start")
-            row.pack_start(start, False, False, 0 if profile in ("winxp", "aero") else 4)
+            row.pack_start(start, False, False, 0 if profile in ("winxp", "aero", "winclassic") else 4)
             if profile == "chromeos":
                 # Three independent visual zones: launcher, centered shelf,
                 # and the device-status pill at the far right.
@@ -1213,9 +1219,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     logging.getLogger(__name__).warning("Optional Aero tray unavailable: %s", exc)
             def update_clock():
                 clock.set_text(GLib.DateTime.new_now_local().format(
-                    "%H:%M" if profile == "winxp" else
+                    "%H:%M" if profile in ("winxp", "winclassic") else
                     "%H:%M\n%d %b" if not ten else "%H:%M\n%d/%m/%Y"))
-                if profile == "winxp":
+                if profile in ("winxp", "winclassic"):
                     clock.set_tooltip_text(GLib.DateTime.new_now_local().format("%A, %d %B %Y"))
                 return True
             update_clock()
@@ -1994,74 +2000,121 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._finish_heritage_menu(menu, search)
 
         def _create_classic_menu(self):
-            """Win9x: a narrow fly-out Programs hierarchy backed by installed apps."""
+            """Win98: dense native cascading Start menu, not an XP-style launcher."""
             menu = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
-            menu.set_title("RiceBowl 98 / 2000 Start")
+            menu.set_title("RiceBowl Windows 98 Start")
             menu.set_decorated(False)
-            menu.set_resizable(False)
+            menu.set_resizable(True)
             menu.set_skip_taskbar_hint(True)
             menu.set_skip_pager_hint(True)
             menu.set_type_hint(Gdk.WindowTypeHint.UTILITY)
             menu.set_transient_for(self.bar)
             menu.set_keep_above(True)
-            menu.set_default_size(285, 430)
+            menu.set_default_size(262, 332)
             root = self._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL),
                                "classic-menu")
             rail = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL), "classic-brand")
-            rail.set_size_request(34, -1)
-            word = self._class(Gtk.Label(label="RiceBowl  98 / 2000"), "classic-brand-label")
+            rail.set_size_request(27, -1)
+            word = self._class(Gtk.Label(label="RiceBowl 98"), "classic-brand-label")
             word.set_angle(90)
-            rail.pack_end(word, False, False, 14)
+            rail.pack_end(word, False, False, 9)
             root.pack_start(rail, False, False, 0)
             main = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0),
                                "classic-menu-list")
 
-            programs = self._class(Gtk.MenuButton(label="Programs   ▸"), "classic-menu-item")
-            programs.set_popup(self._programs_cascade(self._reveal_classic_search))
-            main.pack_start(programs, False, False, 0)
-
-            for title, icon, target in (
-                ("Documents", "folder-documents", Path.home() / "Documents"),
-                ("Home", "user-home", Path.home()),
-                ("Computer", "computer", Path("/")),
-            ):
-                button = self._place_button(title + "   ▸", icon, target, "classic-menu-item")
+            def menu_item(title, icon, *, cascade=None, action=None, enabled=True):
+                button = self._class(Gtk.MenuButton() if cascade else Gtk.Button(),
+                                     "classic-menu-item")
+                content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+                content.pack_start(self._icon(icon, Gtk.IconSize.MENU), False, False, 0)
+                label = Gtk.Label(label=title, xalign=0)
+                content.pack_start(label, True, True, 0)
+                if cascade is not None:
+                    content.pack_end(self._class(Gtk.Label(label="\u25b6"),
+                                                 "classic-chevron"), False, False, 0)
+                    button.set_direction(Gtk.ArrowType.RIGHT)
+                    button.set_popup(cascade)
+                    button.connect("enter-notify-event", lambda widget, _event:
+                                   widget.set_active(True) if widget.get_sensitive() else None)
+                elif action is not None:
+                    button.connect("clicked", lambda _widget: action())
+                button.add(content)
+                button.get_accessible().set_name(title)
+                button.set_sensitive(enabled)
                 main.pack_start(button, False, False, 0)
-            divider = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
-            main.pack_start(divider, False, False, 4)
-            tools = self._class(Gtk.Button(label="Settings   ▸"), "classic-menu-item")
-            tools.set_image(self._icon("preferences-system", Gtk.IconSize.MENU))
-            tools.set_always_show_image(True)
-            tools.set_sensitive(shutil.which("xfce4-settings-manager") is not None)
-            tools.connect("clicked", lambda _button:
-                          self._open_tool("xfce4-settings-manager"))
-            main.pack_start(tools, False, False, 0)
+                return button
 
-            find = self._class(Gtk.Button(label="Find…"), "classic-menu-item")
-            find.set_image(self._icon("edit-find", Gtk.IconSize.MENU))
-            find.set_always_show_image(True)
-            find.connect("clicked", lambda *_args: self._reveal_classic_search())
-            main.pack_start(find, False, False, 0)
+            def folder_menu(entries):
+                submenu = Gtk.Menu()
+                for title, icon, target in entries:
+                    item = Gtk.ImageMenuItem.new_with_label(title)
+                    item.set_image(self._icon(icon, Gtk.IconSize.MENU))
+                    item.set_always_show_image(True)
+                    item.set_sensitive(target.is_dir())
+                    item.connect("activate", lambda _item, folder=target:
+                                 self._open_uri(folder.as_uri()))
+                    submenu.append(item)
+                submenu.show_all()
+                return submenu
+
+            home = Path.home()
+            menu_item("Programs", "applications-other",
+                      cascade=self._programs_cascade(self._reveal_classic_search))
+            menu_item("Favorites", "user-home", cascade=folder_menu((
+                ("Home", "user-home", home),
+                ("Desktop", "user-desktop", home / "Desktop"),
+                ("Downloads", "folder-download", home / "Downloads"),
+            )))
+            menu_item("Documents", "folder-documents", cascade=folder_menu((
+                ("Documents", "folder-documents", home / "Documents"),
+                ("Pictures", "folder-pictures", home / "Pictures"),
+                ("Music", "folder-music", home / "Music"),
+            )))
+            main.pack_start(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL),
+                            False, False, 2)
+            settings_menu = Gtk.Menu()
+            for title, icon, command in (
+                ("Control Panel", "classic-control-panel", None),
+                ("Display", "video-display", "xfce4-display-settings"),
+                ("Network", "network-workgroup", "nm-connection-editor"),
+                ("Sound", "audio-card", "pavucontrol"),
+            ):
+                item = Gtk.ImageMenuItem.new_with_label(title)
+                item.set_image(self._icon(icon, Gtk.IconSize.MENU))
+                item.set_always_show_image(True)
+                item.set_sensitive(command is None or shutil.which(command) is not None)
+                item.connect("activate", lambda _item, program=command:
+                             self._toggle_actions() if program is None else self._open_tool(program))
+                settings_menu.append(item)
+            settings_menu.show_all()
+            menu_item("Settings", "classic-control-panel", cascade=settings_menu)
+            menu_item("Find", "edit-find", action=self._reveal_classic_search)
+            help_tool = next((cmd for cmd in ("xfce4-about", "yelp") if shutil.which(cmd)), None)
+            menu_item("Help", "help-browser", action=lambda: self._open_tool(help_tool),
+                      enabled=help_tool is not None)
+            menu_item("Run…", "system-run", action=lambda:
+                      self._open_tool("xfce4-appfinder"),
+                      enabled=shutil.which("xfce4-appfinder") is not None)
+            main.pack_start(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL),
+                            False, False, 2)
             self.classic_search = self._class(Gtk.SearchEntry(), "aero-menu-search")
             self.classic_search.set_placeholder_text("Find programs")
+            self.classic_search.get_accessible().set_name("Find installed programs")
             self.classic_search.set_no_show_all(True)
             main.pack_start(self.classic_search, False, False, 3)
             self.classic_results_scroll = Gtk.ScrolledWindow()
             self.classic_results_scroll.set_policy(Gtk.PolicyType.NEVER,
                                                     Gtk.PolicyType.AUTOMATIC)
-            self.classic_results_scroll.set_min_content_height(125)
+            self.classic_results_scroll.set_min_content_height(112)
             self.classic_results_scroll.set_no_show_all(True)
             self.results = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
             self.classic_results_scroll.add(self.results)
             main.pack_start(self.classic_results_scroll, True, True, 0)
 
-            footer = self._class(Gtk.Button(label="Shut Down…"), "classic-menu-item")
-            footer.set_image(self._icon("system-shutdown", Gtk.IconSize.MENU))
-            footer.set_always_show_image(True)
-            footer.set_sensitive(shutil.which("xfce4-session-logout") is not None)
-            footer.connect("clicked", lambda _button:
-                           self._open_tool("xfce4-session-logout"))
-            main.pack_end(footer, False, False, 3)
+            footer = menu_item("Shut Down…", "system-shutdown",
+                               action=lambda: self._open_tool("xfce4-session-logout"),
+                               enabled=shutil.which("xfce4-session-logout") is not None)
+            footer.set_tooltip_text("Open XFCE session options; no immediate shutdown")
             root.pack_start(main, True, True, 0)
             menu.add(root)
             self._finish_heritage_menu(menu, self.classic_search)
@@ -2072,6 +2125,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.classic_search.show()
             self.classic_results_scroll.show_all()
             self.classic_search.grab_focus()
+            GLib.idle_add(self._reanchor_luna_menu)
 
         def _create_frutiger_menu(self):
             """The real Aqua World launcher: nature, refractive glass and live apps."""
@@ -2522,10 +2576,14 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 )
             elif profile == "winclassic":
                 sections = (
-                    ("Control Panel", (("Display", "video-display", "xfce4-display-settings"),
-                                       ("Multimedia", "audio-card", "pavucontrol"),
-                                       ("Network", "network-workgroup", "nm-connection-editor"),
-                                       ("System", "computer", "xfce4-settings-manager"))),
+                    ("Choose an item", (("Display", "video-display", "xfce4-display-settings"),
+                                        ("Multimedia", "audio-card", "pavucontrol"),
+                                        ("Network", "network-workgroup", "nm-connection-editor"),
+                                        ("System", "computer", "xfce4-settings-manager"),
+                                        ("Mouse", "input-mouse", "xfce4-mouse-settings"),
+                                        ("Keyboard", "input-keyboard", "xfce4-keyboard-settings"),
+                                        ("Appearance", "preferences-desktop-theme", "xfce4-appearance-settings"),
+                                        ("Power", "battery", "xfce4-power-manager-settings"))),
                 )
             elif profile == "frutiger":
                 sections = (
@@ -2671,8 +2729,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 return
             self._hide_menu()
             rect = self._desktop_rect()
-            width = min(362 if profile == "frutiger" else 330, max(0, rect.width - 16))
-            height = min(560 if profile == "frutiger" else 430,
+            width = min(382 if profile == "winclassic" else 362 if profile == "frutiger" else 330,
+                        max(0, rect.width - 16))
+            height = min(488 if profile == "winclassic" else 560 if profile == "frutiger" else 430,
                          max(0, rect.height - panel_height - 16))
             if width < 235 or height < 250:
                 self._error("The display is too small for " + ("Action Center." if ten else "Control Panel."))
@@ -2922,7 +2981,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self._populate("")
             preferred_sizes = {
                 "winxp": (480, 540),
-                "winclassic": (285, 430),
+                "winclassic": (262, 332),
                 "chromeos": (650, 548),
                 "frutiger": (600, 600),
                 "windows10": (735, 565),
@@ -2941,6 +3000,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             if profile == "winxp":
                 self.search.set_no_show_all(True)
                 self.search.hide()
+            elif profile == "winclassic":
+                self.classic_search.set_no_show_all(True)
+                self.classic_search.hide()
+                self.classic_results_scroll.set_no_show_all(True)
+                self.classic_results_scroll.hide()
             self.menu.show_all()
             self.menu.resize(w, h)
             self.menu.move(x, y)
@@ -2956,6 +3020,12 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 # Win+typing is a core Windows 7 behavior: let keyboard input
                 # enter search even when the recent-app list is visible.
                 self.search.grab_focus()
+            elif profile == "winclassic":
+                GLib.idle_add(self._reanchor_luna_menu)
+                first = next((child for child in self.menu.get_child().get_children()[-1].get_children()
+                              if isinstance(child, Gtk.MenuButton)), None)
+                if first is not None:
+                    first.grab_focus()
             else:
                 self.search.grab_focus()
 

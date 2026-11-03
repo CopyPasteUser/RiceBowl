@@ -1,5 +1,22 @@
 # RiceBowl changelog
 
+## Unreleased — Windows 98 / 2000 Classic fidelity (3 November 2026)
+
+- Replaced the inaccurate ocean-style desktop with original solid Windows-98-era
+  teal; the actual Linux shell now uses a slim 34px gray beveled taskbar and a
+  19px pixel-art CRT/penguin Start emblem.
+- Rebuilt the native Classic launcher as a dense cascading Programs, Favorites,
+  Documents and Settings menu with real Gio apps, places, system tools, Find,
+  Run, Help and session-confirmation shutdown; unavailable tools stay disabled.
+- Drew original square XFWM4 navy/silver 27px titlebars and 22px buttons in
+  normal, disabled, hovered and pressed states. Coordinated GTK3, Thunar and
+  retro pixel menu controls retain native keyboard and accessibility semantics.
+- Added narrowly scoped `--classic-only` asset rebuilding and precise original
+  Classic asset hashes for backup-backed upgrades without overwriting user art.
+- Added Classic 1024×768 native-X11 gallery regression and Classic-specific
+  fidelity tests; all other themes remain outside this design change.
+- Source improvements are not a retroactive change to the tagged v0.9.1 build.
+
 ## Unreleased — Frutiger Aero / Aqua World fidelity (3 November 2026)
 
 - Hand-drew a deeper pearlescent cyan/lime taskbar, an organic water/leaf Start orb,

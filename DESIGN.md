@@ -48,7 +48,20 @@ original Linux artwork. Windows 11 and Liquid Glass are out of scope.
   XFWM4 titlebar/button states and layered GTK/Thunar controls without touching
   other reviewed themes. XP artwork is original; preserve valid installed
   `.desktop` launchers and disabled unavailable Linux utilities.
-- **98 / 2000:** square relief borders, cool gray chrome, high-density menus and teal wallpaper.
+- **98 / 2000:** visually faithful 1998 desktop: solid `#008080` wallpaper,
+  compact 34px `#c0c0c0` taskbar, 19px original CRT/penguin Start badge,
+  2px white/light-gray/dark recessed versus raised frames, `#000080` focused
+  menu and active XFWM title, and 27px high hard-edged window title chrome.
+  `aero_shell._create_classic_menu()` alone owns the dense 262px vertical
+  `RiceBowl 98` side rail plus true GTK cascading Programs, Favorites,
+  Documents and Settings; Find, Run, Help and Shutdown launch only real
+  installed Linux services or are disabled. `heritage_shell.DETAIL_CSS[
+  "winclassic"]` owns the live taskbar/menu states, including keyboard focus;
+  `scripts/build_heritage_assets.py --classic-only` owns the original GTK,
+  XFWM, pixel app icons and teal wallpaper, with carefully preserved existing
+  curated folder artwork. `assets/trusted-ricebowl-classic-before-fidelity.json`
+  enables safe, backup-backed upgrades of byte-identical older managed assets.
+  The palette must never use gloss, water, transparency or XP-rounded controls.
 - **ChromeOS:** light pastel background, soft shelf, rounded launcher and quiet blue accents.
 - **Frutiger Aero / Aqua World:** independent luminous turquoise/cyan and lime
   eco-futurist identity over original water/grass/blue-sky artwork. The live
