@@ -1166,14 +1166,97 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                                self._open_uri(address))
                 shortcuts.attach(button, i, 0, 1, 1)
             root.pack_start(shortcuts, False, False, 0)
-            root.pack_start(self._class(Gtk.Label(label="Applications", xalign=0),
-                                        "aero-menu-sub"), False, False, 0)
-            scroller = Gtk.ScrolledWindow()
-            scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-            scroller.set_min_content_height(110)
-            self.results = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
-            scroller.add(self.results)
-            root.pack_start(scroller, True, True, 0)
+            # Three live pages mirror the reference: Apps / Places / Settings.
+            tabs = self._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7),
+                               "aqua-tabs")
+            self.aqua_stack = Gtk.Stack()
+            self.aqua_stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
+            self.aqua_stack.set_transition_duration(140)
+            buttons = {}
+            for name in ("Apps", "Places", "Settings"):
+                button = self._class(Gtk.ToggleButton(label=name), "aqua-tab")
+                button.set_hexpand(True)
+                button.get_accessible().set_name("Show " + name + " page")
+                tabs.pack_start(button, True, True, 0)
+                buttons[name] = button
+            root.pack_start(tabs, False, False, 0)
+            def switch_to(name):
+                self.aqua_stack.set_visible_child_name(name)
+                for key, button in buttons.items():
+                    button.set_active(key == name)
+                if name == "Apps":
+                    search.grab_focus()
+            for name, button in buttons.items():
+                button.connect("clicked", lambda _button, chosen=name: switch_to(chosen))
+
+            apps_scroll = Gtk.ScrolledWindow()
+            apps_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+            apps_scroll.set_min_content_height(140)
+            self.results = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+            apps_scroll.add(self.results)
+            self.aqua_stack.add_named(apps_scroll, "Apps")
+
+            places_page = Gtk.ScrolledWindow()
+            places_page.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+            places_grid = Gtk.Grid(column_spacing=9, row_spacing=8)
+            places_grid.set_margin_top(7)
+            places_grid.set_margin_bottom(7)
+            home = Path.home()
+            entries = (
+                ("Home", "user-home", home),
+                ("Documents", "folder-documents", home / "Documents"),
+                ("Downloads", "folder-download", home / "Downloads"),
+                ("Music", "folder-music", home / "Music"),
+                ("Pictures", "folder-pictures", home / "Pictures"),
+                ("Videos", "folder-videos", home / "Videos"),
+            )
+            for index, (title, icon_name, path) in enumerate(entries):
+                button = self._place_button(title, icon_name, path, "aqua-place")
+                places_grid.attach(button, index % 2, index // 2, 1, 1)
+            places_page.add(places_grid)
+            self.aqua_stack.add_named(places_page, "Places")
+
+            settings_page = Gtk.ScrolledWindow()
+            settings_page.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+            settings_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=7)
+            for title, icon_name, command in (
+                ("Network connections", "network-wireless", "nm-connection-editor"),
+                ("Sound & media", "audio-volume-high", "pavucontrol"),
+                ("Appearance & themes", "preferences-desktop-theme", "xfce4-appearance-settings"),
+                ("Display", "video-display", "xfce4-display-settings"),
+                ("System settings", "preferences-system", "xfce4-settings-manager"),
+            ):
+                btn = self._class(Gtk.Button(), "aqua-place")
+                content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=11)
+                content.pack_start(self._icon(icon_name, Gtk.IconSize.MENU), False, False, 0)
+                content.pack_start(Gtk.Label(label=title, xalign=0), True, True, 0)
+                btn.add(content)
+                btn.set_sensitive(shutil.which(command) is not None)
+                btn.set_tooltip_text("Open " + title if shutil.which(command) else
+                                    command + " is not installed")
+                btn.connect("clicked", lambda _button, app=command: self._open_tool(app))
+                settings_box.pack_start(btn, False, False, 0)
+            settings_page.add(settings_box)
+            self.aqua_stack.add_named(settings_page, "Settings")
+
+            root.pack_start(self.aqua_stack, True, True, 0)
+            footer = self._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=9),
+                                 "aqua-footer")
+            footer.pack_start(self._class(Gtk.Label(label="RiceBowl  •  your desktop"),
+                                          "aqua-caption"), True, True, 0)
+            for icon_name, name in (("preferences-system", "Settings"),
+                                    ("system-shutdown", "Power")):
+                btn = self._class(Gtk.Button(), "aqua-footer-action")
+                btn.set_image(self._icon(icon_name, Gtk.IconSize.MENU))
+                btn.set_tooltip_text("Open " + name)
+                btn.get_accessible().set_name("Open " + name)
+                command = "xfce4-settings-manager" if name == "Settings" else "xfce4-session-logout"
+                btn.set_sensitive(shutil.which(command) is not None)
+                btn.connect("clicked", lambda _button, app=command: self._open_tool(app))
+                footer.pack_start(btn, False, False, 0)
+            root.pack_start(footer, False, False, 0)
+            buttons["Apps"].set_active(True)
+            self.aqua_stack.set_visible_child_name("Apps")
             menu.add(root)
             menu.connect("focus-in-event", self._menu_focus_in)
             menu.connect("focus-out-event", self._menu_focus_out)
