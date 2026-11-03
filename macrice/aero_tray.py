@@ -75,7 +75,7 @@ class StatusNotifierTray:
         self.own_watcher = False
         self.registration = None
         self.bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
-        self.host_name = "org.kde.StatusNotifierHost-RiceHub-" + str(os.getpid())
+        self.host_name = "org.kde.StatusNotifierHost-RiceBowl-" + str(os.getpid())
         self.host_owner = Gio.bus_own_name_on_connection(
             self.bus, self.host_name, Gio.BusNameOwnerFlags.NONE, self._host_acquired, None)
         self.watcher_owner = Gio.bus_own_name_on_connection(
