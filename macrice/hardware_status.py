@@ -107,15 +107,31 @@ def read_network(root: Path = Path("/sys/class/net"),
         if not (flags & 1) or not fields[0] or fields[0] == "lo":
             continue
         candidates.append((metric, fields[0]))
-    for _, interface in sorted(candidates):
+    def kind(interface: str) -> str | None:
         path = root / interface
-        # Linux exposes phy80211 for wireless interfaces; /wireless is also common.
         if (path / "wireless").exists() or (path / "phy80211").exists() or interface.startswith("wl"):
             return "wifi"
         if interface.startswith(("en", "eth")):
             return "ethernet"
-        # For bridges, VPNs or other tunnels do not pretend it is Wi-Fi.
-        return "ethernet"
+        return None  # VPNs, tunnels and virtual bridges are not Ethernet.
+
+    # Normally the default route points directly to the physical interface.
+    for _, interface in sorted(candidates):
+        physical = kind(interface)
+        if physical:
+            return physical
+    if candidates:
+        # A VPN/tunnel may own the default route. Infer its active underlying
+        # transport from the physical interfaces rather than calling it LAN.
+        try:
+            connected = [path.name for path in root.iterdir()
+                         if (_read(path / "operstate") == "up" or
+                             _read(path / "carrier") == "1") and kind(path.name)]
+        except OSError:
+            connected = []
+        for preferred in ("wifi", "ethernet"):
+            if any(kind(name) == preferred for name in connected):
+                return preferred
     return "offline"
 
 
