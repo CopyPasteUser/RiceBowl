@@ -17,13 +17,27 @@ CURATED_ICONS = frozenset({
 })
 
 
-def write_generated_icon(target: Path, relative: str, svg: str) -> bool:
+CURATED_HERITAGE_ICONS = frozenset({
+    "places/folder-documents.svg",
+    "places/folder-download.svg",
+    "places/folder-music.svg",
+    "places/folder-pictures.svg",
+    "places/folder-videos.svg",
+    "places/user-desktop.svg",
+    "devices/computer.svg",
+    "devices/drive-harddisk.svg",
+    "places/network-workgroup.svg",
+})
+
+
+def write_generated_icon(target: Path, relative: str, svg: str, *,
+                         heritage: bool = False) -> bool:
     """Write generator-owned icons only; fail if a curated source is missing.
 
     Returns True if written. This is deliberately strict: a fresh source
     checkout carries curated SVGs; missing ones mean a corrupt build tree.
     """
-    if relative in CURATED_ICONS:
+    if relative in CURATED_ICONS or (heritage and relative in CURATED_HERITAGE_ICONS):
         if not target.is_file() or target.is_symlink():
             raise FileNotFoundError(
                 f"Missing hand-curated RiceBowl artwork: {target}. "
