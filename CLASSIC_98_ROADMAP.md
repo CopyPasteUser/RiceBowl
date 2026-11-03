@@ -49,10 +49,13 @@ macOS behavior and artwork unchanged.
    safe session handoff and restore snapshots. Exact prior git blob hashes
    trust only unmodified managed files for backup-backed asset upgrades;
    custom user changes still block automatic replacement.
-7. **[ ] Validate and release real implementation.** Run all Python tests,
+7. **[x] Validate and release real implementation.** Run all Python tests,
    GTK CSS parser, CI native-Xvfb shells and real 1600×900 + 1024×768
    screenshots; inspect the result, refine if needed, update current-only
-   README gallery and then merge the tested PR into GitHub `main`.
+   README gallery and then merge the tested PR into GitHub `main`. Verified:
+   229 Python tests (1 environment skip), headless GTK/X11 smoke, 12 distinct
+   1600×900 native captures plus 1024×768 Classic, XP, Win7 and Frutiger
+   captures. Successful run: [41622039625](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41622039625).
 
 ## Acceptance criteria
 

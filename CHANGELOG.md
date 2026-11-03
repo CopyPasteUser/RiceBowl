@@ -14,7 +14,12 @@
 - Added narrowly scoped `--classic-only` asset rebuilding and precise original
   Classic asset hashes for backup-backed upgrades without overwriting user art.
 - Added Classic 1024×768 native-X11 gallery regression and Classic-specific
-  fidelity tests; all other themes remain outside this design change.
+  fidelity tests; 229 tests and all six native shell captures passed GitHub CI.
+- Corrected the gallery validator's old PNG-size assumption: solid teal really
+  produces smaller losslessly compressed screenshots, and proper screenshot
+  dimensions, uniqueness and visible controls remain independently checked.
+- The Classic Control Panel now has a functional navy 1998 caption and close
+  button while preserving its real audio/network/device settings.
 - Source improvements are not a retroactive change to the tagged v0.9.1 build.
 
 ## Unreleased — Frutiger Aero / Aqua World fidelity (3 November 2026)
