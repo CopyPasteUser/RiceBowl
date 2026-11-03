@@ -1,9 +1,9 @@
 # RiceBowl roadmap to 1.0
 
-**Next visual-fidelity milestone:** [XP Luna 2001 fidelity plan](XP_LUNA_ROADMAP.md)
-— live two-column Start menu, 40px molded taskbar, original XFWM4/GTK artwork,
-safe v0.9.1 asset migration and native-screen verification. This work is under
-review; it is not part of the published v0.9.1 release.
+**Next visual-fidelity milestone:** [Windows 7 Aero fidelity and acceptance](WIN7_AERO_ROADMAP.md)
+— a native icon-first Superbar, actual Aero Start menu, original custom-drawn
+XFWM4/GTK artwork, safe upgrade and real-X11 verification. The [XP Luna fidelity](XP_LUNA_ROADMAP.md)
+work is already on main; neither improvement changes the published v0.9.1 package.
 
 **RiceBowl is the umbrella application.** The 0.6.0 milestone introduced installable XP Luna, Windows 98/2000, ChromeOS and Frutiger Aero styles alongside macOS, Windows 7 and Windows 10. The new desktops share the tested session/recovery engine; physical Mint XFCE validation is still required for the 1.0 hardware-stability milestone. The original read-only design previews remain available. Unfinished Liquid Glass presets and Windows 11 are not planned. See the [new-rice acceptance checklist](CONCEPTS.md) and [historical project roadmap](RICEHUB.md#product-roadmap).
 

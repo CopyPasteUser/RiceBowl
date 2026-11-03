@@ -75,6 +75,19 @@ def luna_programs(apps, pins: tuple[str, ...], query: str, limit: int = 8):
     return tuple(featured), tuple(app for app in apps if app not in featured)[:limit]
 
 
+def win7_programs(apps, pins: tuple[str, ...], query: str, *, all_programs: bool = False,
+                  limit: int = 9):
+    """Windows 7's recent-like list prefers real pinned apps, without duplicates."""
+    if query.strip() or all_programs:
+        return matching_apps(apps, query)[:limit]
+    favorites = []
+    ids = set(pins)
+    for identifier in pins:
+        favorites.extend(app for app in apps if app.get_id() == identifier and app not in favorites)
+    favorites.extend(app for app in apps if app not in favorites and app.get_id() not in ids)
+    return tuple(favorites[:limit])
+
+
 CSS = b"""
 .aero-taskbar {
   background-image: linear-gradient(to bottom, rgba(193,232,255,.95), rgba(91,161,211,.96) 48%, rgba(24,74,133,.98));
@@ -132,6 +145,123 @@ CSS = b"""
 .rice-status:hover, .rice-status:focus { background: rgba(230,250,255,.33); border-color: #e3faff; }
 .rice-status label { color: #fff; font-size: 11px; }
 .rice-status-summary { color: #315c7f; font-size: 11px; }
+
+/* Windows 7 alone: the compact, icon-first Aero Superbar. The other rices
+   deliberately retain their own proportions and status treatments. */
+.aero-taskbar.win7-taskbar {
+  background-image: linear-gradient(to bottom,
+    rgba(212,235,248,.90) 0%, rgba(113,161,193,.78) 5%,
+    rgba(71,119,164,.75) 45%, rgba(22,60,104,.91) 48%,
+    rgba(34,78,126,.94) 86%, rgba(15,44,84,.96));
+  border-top: 1px solid rgba(246,253,255,.91);
+  border-bottom: 1px solid #092d55;
+  padding: 1px 5px;
+  color: white;
+}
+.aero-start.win7-start {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  border-radius: 24px;
+  padding: 0 4px 0 2px;
+  min-width: 40px;
+  min-height: 37px;
+}
+.win7-start:hover { background: radial-gradient(ellipse at center, rgba(255,255,255,.37), rgba(130,212,253,.10) 75%, transparent); }
+.win7-start:active, .win7-start:focus { background: radial-gradient(ellipse at center, rgba(207,247,255,.62), rgba(69,172,227,.14) 80%, transparent); }
+.aero-pin.win7-pin, .aero-task.win7-task {
+  min-width: 42px;
+  min-height: 34px;
+  background-image: linear-gradient(to bottom, rgba(230,247,255,.11), rgba(14,67,111,.05));
+  border: 1px solid rgba(214,242,255,.17);
+  border-bottom: 2px solid rgba(245,254,255,.37);
+  border-radius: 3px;
+  box-shadow: inset 0 1px rgba(255,255,255,.15);
+  padding: 2px 4px;
+}
+.win7-pin:hover, .win7-task:hover {
+  background-image: linear-gradient(to bottom, rgba(235,252,255,.55), rgba(92,173,218,.38));
+  border-color: rgba(247,255,255,.75);
+  box-shadow: inset 0 1px rgba(255,255,255,.56), 0 0 4px rgba(106,207,255,.48);
+}
+.aero-task-active.win7-task {
+  background-image: linear-gradient(to bottom, rgba(243,255,255,.49), rgba(75,165,208,.42) 48%, rgba(92,175,219,.58));
+  border-color: rgba(251,255,255,.74);
+  border-bottom: 2px solid #d0f5ff;
+  box-shadow: inset 0 1px rgba(255,255,255,.63), 0 0 4px rgba(145,227,255,.37);
+}
+.aero-desktop.win7-desktop {
+  background-image: linear-gradient(to right, rgba(255,255,255,.1), rgba(207,247,255,.34));
+  border: 1px solid rgba(220,245,255,.55);
+  border-radius: 0;
+  min-width: 10px;
+  padding: 0;
+}
+.win7-menu-root {
+  background-image: linear-gradient(to bottom, rgba(205,234,248,.98), rgba(67,115,161,.97) 58%, rgba(20,58,108,.97));
+  border: 1px solid #164270;
+  border-radius: 8px 8px 5px 5px;
+  padding: 6px;
+  box-shadow: inset 0 1px rgba(255,255,255,.94), inset 0 -1px rgba(12,44,86,.8);
+}
+.win7-menu-body { background: transparent; }
+.win7-programs {
+  background: #ffffff;
+  border: 1px solid #7497b4;
+  border-radius: 3px;
+  padding: 7px 5px 6px;
+}
+.win7-program { color: #1b2937; background: transparent; border: 1px solid transparent;
+  border-radius: 2px; box-shadow: none; padding: 5px 7px; }
+.win7-program:hover, .win7-program:focus { background-image: linear-gradient(to bottom, #eaf7ff, #b9dff7); border-color: #73b0d8; }
+.win7-program-label { color: #20272d; font-size: 12px; }
+.win7-programs-separator { background: #dde5ed; min-height: 1px; }
+.win7-all-programs { color: #223b4c; background: transparent; border: 1px solid transparent;
+  border-radius: 2px; padding: 7px; box-shadow: none; }
+.win7-all-programs:hover, .win7-all-programs:focus { background: #d4eaf8; border-color: #8dbfdc; }
+.win7-search { background: #fff; color: #1c3c52; border: 1px solid #718ea7;
+  border-radius: 2px; padding: 6px; margin-top: 5px; }
+.win7-search:focus { border-color: #3697d3; box-shadow: 0 0 2px rgba(20,115,182,.55); }
+.win7-side { background: transparent; padding: 0 5px 1px 11px; }
+.win7-user-orb { background: rgba(255,255,255,.34); border: 2px solid rgba(255,255,255,.78);
+  border-radius: 5px; padding: 2px; margin-bottom: 3px; }
+.win7-user-name { color: #fff; font-size: 12px; font-weight: bold; text-shadow: 0 1px #315a83; }
+.win7-place { color: white; background: transparent; border: 1px solid transparent;
+  border-radius: 3px; box-shadow: none; padding: 6px 3px; }
+.win7-place label { color: #fff; font-weight: bold; font-size: 11px; }
+.win7-place:hover, .win7-place:focus { background: rgba(235,250,255,.33); border-color: rgba(255,255,255,.6); }
+.win7-place:disabled label { color: #a8bfd0; }
+.win7-side-separator { background: rgba(227,248,255,.36); min-height: 1px; margin: 6px 3px; }
+.win7-power { color: #fff; border: 1px solid #9f622e; border-radius: 3px;
+  background-image: linear-gradient(to bottom, #ffba7e, #e38942 48%, #ad5721 52%, #c77632);
+  padding: 7px 14px; font-weight: bold; box-shadow: inset 0 1px rgba(255,255,255,.43); }
+.win7-power:hover { background-image: linear-gradient(to bottom, #ffdbaf, #f5a85f 48%, #c66a29 52%, #e28c48); }
+.win7-power:disabled { background: #6c8290; color: #dfebf2; }
+/* White Windows 7 Control Panel interior with a thin Aero-glass frame. */
+.aero-control-root.win7-control-root {
+  background-image: linear-gradient(to bottom, #ffffff, #eff7fc 17%, #e3f0f9);
+  border: 1px solid #669dc7;
+  border-radius: 5px;
+  box-shadow: inset 0 2px #ffffff;
+  padding: 13px;
+}
+.win7-control-root .aero-menu-heading { color: #205786; font-size: 18px; font-weight: normal; }
+.win7-control-root .aero-menu-sub { color: #426e8e; }
+.aero-control-quick.win7-control-tool {
+  background-image: linear-gradient(to bottom, #fefefe, #e1f0fa);
+  border: 1px solid #a2c3da;
+  border-radius: 3px;
+  box-shadow: inset 0 1px rgba(255,255,255,.96);
+  color: #21557f;
+  padding: 8px 5px;
+}
+.aero-control-quick.win7-control-tool:hover, .aero-control-quick.win7-control-tool:focus {
+  background-image: linear-gradient(to bottom, #fff, #c8e8fb);
+  border-color: #4a9ad3;
+}
+.win7-hardware { background: rgba(244,250,254,.94); border: 1px solid #c1d9ea;
+  border-radius: 3px; padding: 8px; }
+.win7-hardware .rice-control-detail { color: #2b526d; }
 """
 
 
@@ -142,7 +272,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
     ten = profile == "windows10"
     heritage = PROFILES.get(profile)
     tiles = ten or profile == "chromeos"
-    panel_height = 40 if profile == "winxp" else PANEL_HEIGHT
+    panel_height = 40 if profile == "winxp" else 42 if profile == "aero" else PANEL_HEIGHT
     if ten:
         from .ten_shell import APP_ID as TEN_APP_ID, CSS as TEN_CSS
     if heritage:
@@ -221,7 +351,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._smoke = "--smoke-test" in args
             self._capture_gallery = "--capture-gallery" in args
             self._capture_variant = "-1024" if (
-                profile == "winxp" and os.environ.get("RICEBOWL_CAPTURE_SIZE") == "1024") else ""
+                profile in ("winxp", "aero") and os.environ.get("RICEBOWL_CAPTURE_SIZE") == "1024") else ""
             self.activate()
             if self._smoke:
                 GLib.timeout_add(850, self._smoke_check)
@@ -398,7 +528,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.bar.move(rect.x, rect.y + rect.height - panel_height)
             if self.bar.get_realized():
                 self._reserve_workarea(self.bar)
-            self._task_capacity = task_capacity(rect.width, self._pin_count, 340 if tiles else 185)
+            self._task_capacity = task_capacity(rect.width, self._pin_count,
+                                                340 if tiles else 345 if profile == "aero" else 185,
+                                                compact=profile == "aero")
             if self._window_tracker is not None:
                 self._window_tracker.refresh()
             if self.menu.get_visible():
@@ -415,6 +547,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 if app is None:
                     continue
                 btn = self._class(Gtk.Button(), "aero-pin")
+                if profile == "aero":
+                    btn.get_style_context().add_class("win7-pin")
                 icon = app.get_icon()
                 btn.set_image(Gtk.Image.new_from_gicon(icon, Gtk.IconSize.LARGE_TOOLBAR) if icon else
                               self._icon("application-x-executable"))
@@ -466,7 +600,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self._render_ten_tiles()
             self._pin_count = len(candidate)
             self._task_capacity = task_capacity(self._desktop_rect().width, self._pin_count,
-                                                340 if tiles else 185)
+                                                340 if tiles else 345 if profile == "aero" else 185,
+                                                compact=profile == "aero")
             if self._window_tracker is not None:
                 self._window_tracker.refresh()
 
@@ -552,6 +687,17 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             return screen.get_monitor_geometry(monitor if monitor >= 0 else 0)
 
         def _icon(self, name, size=Gtk.IconSize.LARGE_TOOLBAR):
+            if profile == "aero":
+                for category in ("places", "apps"):
+                    candidate = (project_root() / "assets/icons/RiceHub-Aero/scalable" /
+                                 category / (name + ".svg"))
+                    if candidate.is_file():
+                        pixels = 16 if size == Gtk.IconSize.MENU else 48 if size == Gtk.IconSize.DIALOG else 24
+                        try:
+                            return Gtk.Image.new_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_scale(
+                                str(candidate), pixels, pixels, True))
+                        except (GLib.Error, OSError):
+                            pass
             return Gtk.Image.new_from_icon_name(name, size)
 
         def _set_status_icon(self, image, kind):
@@ -801,27 +947,32 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             win.move(rect.x, rect.y + rect.height - panel_height)
 
             row = self._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,
-                                      spacing=4 if profile == "winxp" else 8), "aero-taskbar")
+                                      spacing=4 if profile in ("winxp", "aero") else 8), "aero-taskbar")
+            if profile == "aero":
+                row.get_style_context().add_class("win7-taskbar")
             if not ten and os.environ.get("RICEHUB_AERO_GLASS") == "1":
                 row.get_style_context().add_class("aero-glass")
             start = self._class(Gtk.Button(), "aero-start")
+            if profile == "aero":
+                start.get_style_context().add_class("win7-start")
             contents = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
             logo = project_root() / ("assets/ten-start.svg" if ten else
                                      "assets/" + heritage.logo if heritage else "assets/aero-penguin.svg")
             try:
                 img = Gtk.Image.new_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_scale(
-                    str(logo), 26 if ten or profile == "winxp" else 34,
-                    26 if ten or profile == "winxp" else 34, True))
+                    str(logo), 26 if ten or profile == "winxp" else 36,
+                    26 if ten or profile == "winxp" else 36, True))
             except (GLib.Error, OSError):
                 img = self._icon("start-here", Gtk.IconSize.LARGE_TOOLBAR)
             contents.pack_start(img, False, False, 0)
-            if not ten and profile != "chromeos":
+            if not ten and profile not in ("chromeos", "aero"):
                 contents.pack_start(Gtk.Label(label=heritage.start_label if heritage else "Start"), False, False, 0)
             start.add(contents)
             start.get_accessible().set_name("Toggle " + (heritage.name if heritage else
                 "Windows 10" if ten else "Aero") + " application menu")
             start.connect("clicked", lambda _button: self._toggle_menu())
-            row.pack_start(start, False, False, 0 if profile == "winxp" else 4)
+            start.set_tooltip_text("Start")
+            row.pack_start(start, False, False, 0 if profile in ("winxp", "aero") else 4)
             if profile == "chromeos":
                 # Three independent visual zones: launcher, centered shelf,
                 # and the device-status pill at the far right.
@@ -845,7 +996,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._render_pins()
             self._pin_count = len(self._pinned_ids)
             self.tasks = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
-            self._task_capacity = task_capacity(rect.width, self._pin_count, 340 if tiles else 185)
+            self._task_capacity = task_capacity(rect.width, self._pin_count,
+                                                340 if tiles else 345 if profile == "aero" else 185,
+                                                compact=profile == "aero")
             self.overflow_button = self._class(Gtk.Button(), "aero-task-overflow")
             self.overflow_button.get_accessible().set_name("Show other running windows")
             self.overflow_button.connect("clicked", self._show_overflow)
@@ -858,6 +1011,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     "chrome-status-pill" if profile == "chromeos" else "luna-tray")
                 row.pack_end(right_area, False, False, 0 if profile == "winxp" else 4)
             desktop = self._class(Gtk.Button(), "aero-desktop")
+            if profile == "aero":
+                desktop.get_style_context().add_class("win7-desktop")
             desktop.set_tooltip_text("Show desktop / restore windows")
             desktop.get_accessible().set_name("Show desktop or restore windows")
             desktop.connect("clicked", self._show_desktop)
@@ -920,13 +1075,17 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                         button, icon, label = previous[xid]
                     else:
                         button = self._class(Gtk.Button(), "aero-task")
-                        button.set_size_request(42 if profile == "chromeos" else 135, 35)
+                        if profile == "aero":
+                            button.get_style_context().add_class("win7-task")
+                        button.set_size_request(44 if profile == "aero" else
+                                                42 if profile == "chromeos" else 135,
+                                                37 if profile == "aero" else 35)
                         content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
                         icon = Gtk.Image.new_from_icon_name("application-x-executable", Gtk.IconSize.MENU)
                         label = Gtk.Label(xalign=0)
                         label.set_max_width_chars(12)
                         label.set_ellipsize(Pango.EllipsizeMode.END)
-                        if profile == "chromeos":
+                        if profile in ("chromeos", "aero"):
                             label.set_no_show_all(True)
                             label.hide()
                         content.pack_start(icon, False, False, 0)
@@ -976,7 +1135,122 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             menu.show_all()
             menu.popup_at_widget(button, Gdk.Gravity.NORTH_WEST, Gdk.Gravity.SOUTH_WEST, None)
 
+        def _win7_side_action(self, title, icon, *, path=None, commands=()):
+            """Render a real Win7-style place, disabling unavailable Linux tools."""
+            if path is not None:
+                return self._place_button(title, icon, path, css_class="win7-place")
+            button = self._class(Gtk.Button(), "win7-place")
+            row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+            row.pack_start(self._icon(icon, Gtk.IconSize.MENU), False, False, 0)
+            row.pack_start(Gtk.Label(label=title, xalign=0), True, True, 0)
+            button.add(row)
+            selected = next((program for program in commands if shutil.which(program)), None)
+            button.set_sensitive(selected is not None)
+            button.get_accessible().set_name("Open " + title)
+            button.set_tooltip_text("Open " + title if selected else
+                                    "Requires " + " or ".join(commands))
+            if selected:
+                button.connect("clicked", lambda _button, program=selected: self._open_tool(program))
+            return button
+
+        def _win7_expand_programs(self):
+            self._win7_all_programs = not self._win7_all_programs
+            self._app_page_size = 24
+            self._populate(self.search.get_text())
+
+        def _create_win7_menu(self):
+            """Aero Start: white recent-program pane, blue glass links and search."""
+            import getpass
+
+            menu = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
+            menu.set_title("RiceBowl Windows 7 Start")
+            menu.set_decorated(False)
+            menu.set_resizable(True)  # shrink the scroller on 1024x768 displays
+            menu.set_skip_taskbar_hint(True)
+            menu.set_skip_pager_hint(True)
+            menu.set_type_hint(Gdk.WindowTypeHint.UTILITY)
+            menu.set_transient_for(self.bar)
+            menu.set_keep_above(True)
+            menu.set_default_size(525, 535)
+
+            frame = self._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL), "win7-menu-root")
+            left = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0),
+                               "win7-programs")
+            left.set_size_request(295, -1)
+            left.set_hexpand(True)
+            scroller = Gtk.ScrolledWindow()
+            scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+            scroller.set_min_content_height(165)
+            self.results = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+            scroller.add(self.results)
+            left.pack_start(scroller, True, True, 0)
+            divider = self._class(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL),
+                                  "win7-programs-separator")
+            left.pack_start(divider, False, False, 2)
+            self.win7_all_button = self._class(Gtk.Button(label="▸  All Programs"),
+                                               "win7-all-programs")
+            self.win7_all_button.get_accessible().set_name("Show all installed programs")
+            self.win7_all_button.connect("clicked", lambda *_args: self._win7_expand_programs())
+            left.pack_start(self.win7_all_button, False, False, 0)
+            search = self._class(Gtk.SearchEntry(), "win7-search")
+            search.set_placeholder_text("Search programs")
+            search.get_accessible().set_name("Search installed programs")
+            left.pack_end(search, False, False, 0)
+            frame.pack_start(left, True, True, 0)
+
+            side = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0),
+                               "win7-side")
+            side.set_size_request(202, -1)
+            avatar = self._class(Gtk.Image(), "win7-user-orb")
+            try:
+                avatar.set_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_scale(
+                    str(project_root() / "assets/aero-penguin.svg"), 55, 55, True))
+            except (GLib.Error, OSError):
+                avatar.set_from_icon_name("avatar-default", Gtk.IconSize.DIALOG)
+            header = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+            avatar.set_halign(Gtk.Align.CENTER)
+            header.pack_start(avatar, False, False, 0)
+            name = self._class(Gtk.Label(label=getpass.getuser()), "win7-user-name")
+            name.set_ellipsize(Pango.EllipsizeMode.END)
+            name.set_max_width_chars(18)
+            header.pack_start(name, False, False, 3)
+            side.pack_start(header, False, False, 7)
+
+            home = Path.home()
+            for label, icon, folder in (
+                ("Documents", "folder-documents", home / "Documents"),
+                ("Pictures", "folder-pictures", home / "Pictures"),
+                ("Music", "folder-music", home / "Music"),
+                ("Downloads", "folder-download", home / "Downloads"),
+                ("Computer", "computer", Path("/")),
+            ):
+                side.pack_start(self._win7_side_action(label, icon, path=folder), False, False, 0)
+            side.pack_start(self._class(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL),
+                                        "win7-side-separator"), False, False, 2)
+            for title, icon, commands in (
+                ("Control Panel", "preferences-system", ("xfce4-settings-manager",)),
+                ("Devices and Printers", "printer", ("system-config-printer",)),
+            ):
+                side.pack_start(self._win7_side_action(title, icon, commands=commands),
+                                False, False, 0)
+            side.pack_start(Gtk.Box(), True, True, 0)
+            power = self._class(Gtk.Button(label="Shut down…"), "win7-power")
+            power.get_accessible().set_name("Open XFCE session and power options")
+            power.set_tooltip_text("Opens the XFCE session dialog; does not immediately shut down")
+            power.set_sensitive(shutil.which("xfce4-session-logout") is not None)
+            power.connect("clicked", lambda _button: self._open_tool("xfce4-session-logout"))
+            power.set_halign(Gtk.Align.END)
+            side.pack_end(power, False, False, 3)
+            frame.pack_start(side, False, False, 0)
+
+            menu.add(frame)
+            self._win7_all_programs = False
+            self._finish_heritage_menu(menu, search)
+
         def _create_menu(self):
+            if profile == "aero":
+                self._create_win7_menu()
+                return
             if profile == "winxp":
                 self._create_luna_menu()
                 return
@@ -1754,7 +2028,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
         def _create_actions(self):
             """Profile-aware controls; never simulate state-changing toggles."""
             actions = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
-            heading = heritage.control_heading if heritage else ("Action Center" if ten else "Aero Control Panel")
+            heading = heritage.control_heading if heritage else ("Action Center" if ten else "Control Panel")
             actions.set_title("RiceBowl " + heading)
             actions.set_decorated(False)
             # GtkScrolledWindow has no useful implicit minimum height.
@@ -1769,6 +2043,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             actions.set_keep_above(True)
             root = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10),
                                "ten-action-root" if tiles else "aero-control-root")
+            if profile == "aero":
+                root.get_style_context().add_class("win7-control-root")
             root.set_size_request(300, 265)
 
             title = self._class(Gtk.Label(label=heading, xalign=0), "aero-menu-heading")
@@ -1819,7 +2095,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 )
             else:
                 sections = (
-                    ("Quick settings" if tiles else "System tools",
+                    ("Quick settings" if tiles else "Control Panel items" if profile == "aero" else "System tools",
                      (("Network", "network-wireless", "nm-connection-editor"),
                       ("Sound", "audio-volume-high", "pavucontrol"),
                       ("Display", "video-display", "xfce4-display-settings"),
@@ -1832,6 +2108,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 grid = Gtk.Grid(row_spacing=5, column_spacing=5)
                 for index, (label, icon_name, command) in enumerate(entries):
                     button = self._class(Gtk.Button(), "ten-quick" if tiles else "aero-control-quick")
+                    if profile == "aero":
+                        button.get_style_context().add_class("win7-control-tool")
                     contents = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
                     contents.pack_start(self._icon(icon_name, Gtk.IconSize.MENU), False, False, 0)
                     caption = Gtk.Label(label=label, xalign=0)
@@ -1857,6 +2135,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             hardware = self._class(
                 Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=7),
                 "rice-hardware-panel")
+            if profile == "aero":
+                hardware.get_style_context().add_class("win7-hardware")
             hardware.pack_start(self._class(
                 Gtk.Label(label="Device status", xalign=0), "aero-menu-sub"),
                 False, False, 0)
@@ -1977,6 +2257,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             if profile == "winxp":
                 self._populate_luna(query)
                 return
+            if profile == "aero":
+                self._populate_win7(query)
+                return
             matches = matching_apps(self.apps, query)
             if not matches:
                 self.results.pack_start(self._class(Gtk.Label(label="No matching applications", xalign=0),
@@ -2003,6 +2286,49 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 more.connect("clicked", expand)
                 self.results.pack_start(more, False, False, 0)
             self.results.show_all()
+
+        def _populate_win7(self, query):
+            apps = win7_programs(self.apps, self._pinned_ids, query,
+                                 all_programs=self._win7_all_programs,
+                                 limit=self._app_page_size if (query.strip() or self._win7_all_programs) else 9)
+            for app in apps:
+                button = self._class(Gtk.Button(), "win7-program")
+                content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=11)
+                icon = app.get_icon()
+                content.pack_start(Gtk.Image.new_from_gicon(icon, Gtk.IconSize.LARGE_TOOLBAR) if icon else
+                                   self._icon("applications-other", Gtk.IconSize.LARGE_TOOLBAR), False, False, 0)
+                label = self._class(Gtk.Label(label=app.get_display_name() or app.get_name(),
+                                              xalign=0), "win7-program-label")
+                label.set_ellipsize(Pango.EllipsizeMode.END)
+                label.set_max_width_chars(27)
+                content.pack_start(label, True, True, 0)
+                button.add(content)
+                button.get_accessible().set_name("Launch " + (app.get_display_name() or app.get_name()))
+                button.connect("clicked", lambda _btn, selected=app: self._launch(selected))
+                button.connect("button-press-event", lambda widget, event, selected=app:
+                               self._pin_context(widget, selected, event))
+                button.connect("popup-menu", lambda widget, selected=app:
+                               self._pin_context(widget, selected))
+                self.results.pack_start(button, False, False, 0)
+            if not apps:
+                label = self._class(Gtk.Label(label="No matching programs", xalign=0),
+                                    "aero-menu-sub")
+                label.set_margin_top(12)
+                self.results.pack_start(label, False, False, 0)
+            if (query.strip() or self._win7_all_programs) and (
+                    len(matching_apps(self.apps, query)) > self._app_page_size):
+                more = self._class(Gtk.Button(label="Show more programs…"), "win7-all-programs")
+                more.connect("clicked", lambda *_args: self._expand_win7_programs(query))
+                self.results.pack_start(more, False, False, 0)
+            self.win7_all_button.set_label("◂  Back" if self._win7_all_programs else "▸  All Programs")
+            self.win7_all_button.get_accessible().set_name(
+                "Show recent and pinned programs" if self._win7_all_programs else
+                "Show all installed programs")
+            self.results.show_all()
+
+        def _expand_win7_programs(self, query):
+            self._app_page_size += 24
+            self._populate(query)
 
         def _populate_luna(self, query):
             """XP: 2 prominent favorites, a separator and actual installed apps."""
@@ -2098,14 +2424,18 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             rect = self._desktop_rect()
             self._menu_focused = False
             self._menu_opened_at = GLib.get_monotonic_time()
+            if profile == "aero":
+                self._win7_all_programs = False
             self.search.set_text("")
+            if profile == "aero":
+                self._populate("")
             preferred_sizes = {
                 "winxp": (480, 540),
                 "winclassic": (285, 430),
                 "chromeos": (650, 548),
                 "frutiger": (535, 540),
                 "windows10": (735, 565),
-                "aero": (490, 505),
+                "aero": (525, 535),
             }
             preferred_width, preferred_height = preferred_sizes.get(profile, (490, 505))
             x, y, w, h = menu_geometry(
@@ -2130,6 +2460,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                                   if isinstance(widget, Gtk.Button)), None)
                 if first_app:
                     first_app.grab_focus()
+            elif profile == "aero":
+                GLib.idle_add(self._reanchor_luna_menu)
+                # Win+typing is a core Windows 7 behavior: let keyboard input
+                # enter search even when the recent-app list is visible.
+                self.search.grab_focus()
             else:
                 self.search.grab_focus()
 

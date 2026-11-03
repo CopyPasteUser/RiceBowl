@@ -85,6 +85,7 @@ def _check_layout(source: Path) -> None:
         "assets/ricebowl-symbolic.svg",
         "assets/trusted-ricehub-assets.json",
         "assets/trusted-ricebowl-luna-091.json",
+        "assets/trusted-ricebowl-aero-before-redesign.json",
         "assets/status/winxp/battery-50.svg",
         "assets/ricebowl-xp-start.svg",
         "assets/ricebowl-xp-user.svg",
