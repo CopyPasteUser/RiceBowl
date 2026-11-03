@@ -73,7 +73,7 @@ class Windows10FidelityTests(unittest.TestCase):
             self.assertIn(selector, CSS)
         shell = (ROOT / "macrice/aero_shell.py").read_text(encoding="utf-8")
         self.assertIn('Gtk.Button(), "ten-search"', shell)
-        self.assertIn('self._icon("edit-find", Gtk.IconSize.BUTTON)', shell)
+        self.assertIn('self._icon("edit-find-symbolic", Gtk.IconSize.BUTTON)', shell)
         self.assertIn(b"min-width: 36px", CSS)
         self.assertNotIn(b"min-width: 180px", CSS)
         self.assertNotIn("Type here to search", shell)

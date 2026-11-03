@@ -664,10 +664,30 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
         def _assert_control_footer_visible(self):
             """Keep the mute/status controls visible without an initial scroll."""
             location = self.mute_button.translate_coordinates(self.actions, 0, 0)
-            if location is None or location[1] < 0 or (
-                    location[1] + self.mute_button.get_allocated_height() >
-                    self.actions.get_allocated_height() - 8):
-                raise AssertionError(f"{profile} device controls are clipped on open")
+            bottom = (location[1] + self.mute_button.get_allocated_height()
+                      if location is not None else None)
+            window_height = self.actions.get_allocated_height()
+            viewport = self.actions.get_child()
+            adjustment = viewport.get_vadjustment()
+            if bottom is None or location[1] < 0:
+                raise AssertionError(f"{profile} device controls have invalid position")
+            if bottom > window_height - 8:
+                # At a short monitor height, clipping is unavoidable; verify
+                # the GTK scroller really exposes the rest of the controls.
+                can_scroll = adjustment.get_upper() > adjustment.get_page_size() + 4
+                full_height = self._control_natural_height()
+                available = self._desktop_rect().height - panel_height - 16
+                if full_height <= available or not can_scroll:
+                    raise AssertionError(
+                        f"{profile} device controls are clipped on open: "
+                        f"mute bottom={bottom}, window={window_height}, "
+                        f"natural={full_height}, usable={available}, scroll={can_scroll}")
+
+        def _control_natural_height(self):
+            content = self.actions.get_child().get_child()
+            if isinstance(content, Gtk.Viewport):
+                content = content.get_child()
+            return content.get_preferred_height()[1] + 20
 
         def _shutdown(self, *_args):
             if profile == "aero":
@@ -1255,7 +1275,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 # Windows 10 supports the compact taskbar search-icon mode.
                 # The functional text field remains inside Start, not twice on screen.
                 search_button = self._class(Gtk.Button(), "ten-search")
-                search_button.add(self._icon("edit-find", Gtk.IconSize.BUTTON))
+                search_button.add(self._icon("edit-find-symbolic", Gtk.IconSize.BUTTON))
                 search_button.get_accessible().set_name("Search installed applications")
                 search_button.set_tooltip_text("Search installed applications")
                 search_button.connect("clicked", lambda _button: self._open_search())
@@ -3028,12 +3048,17 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             rect = self._desktop_rect()
             width = min(396 if profile == "chromeos" else 362 if ten else 382 if profile == "winclassic" else 362 if profile == "frutiger" else 412 if profile == "aero" else 330,
                         max(0, rect.width - 16))
-            height = min(action_heights.get(profile, 430),
-                         max(0, rect.height - panel_height - 16))
+            self.actions.show_all()
+            desired_height = action_heights.get(profile, 430)
+            if profile in ("winxp", "winclassic"):
+                # gtk.ScrolledWindow reports a 260px minimum, not its full
+                # child's natural height; the 1998 icon view can be taller
+                # than a hard-coded utility-window size after font scaling.
+                desired_height = max(desired_height, self._control_natural_height())
+            height = min(desired_height, max(0, rect.height - panel_height - 16))
             if width < 235 or height < 250:
                 self._error("The display is too small for " + ("Action Center." if ten else "Control Panel."))
                 return
-            self.actions.show_all()
             if profile == "chromeos":
                 self.chrome_quick_clock.set_text(
                     GLib.DateTime.new_now_local().format("%a, %d %b · %H:%M"))
