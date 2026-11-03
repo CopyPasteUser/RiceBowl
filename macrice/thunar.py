@@ -54,7 +54,7 @@ window.thunar .location-button {{ border-radius: 7px; }}
 
 
 
-def _block(style: str) -> str:
+def _v080_block(style: str) -> str:
     """Scoped distinct Thunar chrome; macOS palettes remain unchanged."""
     original = _legacy_block(style)
     if style in ("night", "day"):
@@ -87,6 +87,23 @@ def _block(style: str) -> str:
     return original.replace(END + "\n", common + distinct + END + "\n")
 
 
+# Richer GTK3 styling for four non-macOS file manager identities. The code
+# acts only on Thunar windows and never changes macOS CSS.
+DETAIL_CSS = {
+    "winxp": "/* Luna file manager: warm command bar, glossy blue chrome and blue task pane. */\nwindow.thunar menubar { background-image: linear-gradient(#fff8e8, #e8e0c8); border-bottom: 1px solid #b8b092; color: #202020; padding: 3px 6px; }\nwindow.thunar toolbar, window.thunar .location-bar { background-image: linear-gradient(to bottom, #fcffff, #d8ebff 45%, #afceef); border-bottom: 2px solid #77a7da; padding: 4px 7px; }\nwindow.thunar toolbar button { background-image: linear-gradient(#fff, #d4e8fe); color: #17478c; border: 1px solid #a4bfe0; border-radius: 5px; padding: 6px; }\nwindow.thunar toolbar button:hover { background-image: linear-gradient(#fff, #b7d6ff); border-color: #4b90db; }\nwindow.thunar .sidebar, window.thunar .shortcuts-pane { background-image: linear-gradient(to right, #b0cafa, #dfedff); color: #163c79; border-right: 1px solid #91b0d8; }\nwindow.thunar .sidebar .view, window.thunar .shortcuts-pane .view { background: transparent; color: #143e7a; }\nwindow.thunar .sidebar .view:selected, window.thunar treeview.view:selected { background: #2767cb; color: white; }\nwindow.thunar .path-bar button, window.thunar .location-bar button { background-image: linear-gradient(#fff, #cce5fb); border: 1px solid #9cbadd; border-radius: 4px; padding: 5px 9px; color: #164481; }\nwindow.thunar .standard-view, window.thunar .view { background: #fff; }\nwindow.thunar statusbar { background-image: linear-gradient(#fff8e9, #eae3d1); color: #413a2e; border-top: 1px solid #c6bba1; padding: 3px 6px; }\n",
+    "winclassic": "/* Win98/2000: pixel-sharp inset lists, raised toolbar, gray title context. */\nwindow.thunar menubar, window.thunar toolbar, window.thunar .location-bar { background: #c0c0c0; border-top: 2px solid #fff; border-left: 2px solid #fff; border-bottom: 2px solid #7b7b7b; padding: 1px 4px; color: #111; }\nwindow.thunar toolbar button, window.thunar .path-bar button { background: #c0c0c0; border: 2px outset #f4f4f4; border-radius: 0; box-shadow: none; color: #111; padding: 3px 6px; }\nwindow.thunar toolbar button:active, window.thunar .path-bar button:active { border-style: inset; }\nwindow.thunar toolbar button:hover { background: #d8d8d8; }\nwindow.thunar .sidebar, window.thunar .shortcuts-pane { background: #d4d4d4; border: 2px inset #efefef; color: #111; }\nwindow.thunar .sidebar .view, window.thunar .shortcuts-pane .view { background: #d4d4d4; color: #111; }\nwindow.thunar treeview.view, window.thunar .standard-view { background: #fff; border: 2px inset #eee; color: #111; }\nwindow.thunar treeview.view:selected, window.thunar .sidebar .view:selected { background: #000080; color: #fff; }\nwindow.thunar treeview header button { background: #c0c0c0; border: 2px outset #fff; border-radius: 0; color: #111; padding: 2px 4px; }\nwindow.thunar statusbar { background: #c0c0c0; border-top: 2px outset #fff; border-radius: 0; color: #111; padding: 2px; }\nwindow.thunar scrollbar slider { border-radius: 0; background: #b0b0b0; border: 1px solid #666; }\n",
+    "chromeos": "/* ChromeOS: soft white tools, pill address field, cool lavender sidebar. */\nwindow.thunar menubar { background: #f4f6ff; border-bottom: 0; color: #344064; padding: 4px 8px; }\nwindow.thunar toolbar, window.thunar .location-bar { background-image: linear-gradient(#fafbff, #edf1fc); border-bottom: 1px solid #dde4f5; padding: 8px 11px; }\nwindow.thunar toolbar button { background: transparent; border: 1px solid transparent; border-radius: 14px; color: #35486d; padding: 6px 8px; }\nwindow.thunar toolbar button:hover { background: #e2eafd; border-color: #d1def5; }\nwindow.thunar .path-bar button, window.thunar .location-bar button { background: #e7ecfc; color: #303d67; border: 1px solid #dee3f5; border-radius: 16px; padding: 7px 13px; }\nwindow.thunar .sidebar, window.thunar .shortcuts-pane { background-image: linear-gradient(#eef1ff, #e4ebfc); color: #34476b; border-right: 1px solid #d4ddf3; }\nwindow.thunar .sidebar .view, window.thunar .shortcuts-pane .view { background: transparent; color: #34476b; }\nwindow.thunar .sidebar .view:selected { background: #cfdbfb; color: #24417a; border-radius: 9px; }\nwindow.thunar treeview.view:selected { background: #d6ddf9; color: #263966; }\nwindow.thunar .standard-view, window.thunar .view { background: #fcfdff; }\nwindow.thunar statusbar { background: #f2f4ff; color: #596987; border-top: 1px solid #e1e6f5; padding: 6px 10px; }\nwindow.thunar scrollbar slider { background: #c6d0ee; border-radius: 9px; }\n",
+    "frutiger": "/* Frutiger Aero: layered translucent aqua, neon-green selection and glass buttons. */\nwindow.thunar menubar { background-image: linear-gradient(#effffd, #cdf9f0); border-bottom: 1px solid #7bd7db; color: #075a79; padding: 4px 8px; }\nwindow.thunar toolbar, window.thunar .location-bar { background-image: linear-gradient(#fff, #c5fff2 47%, #83d9e7); border-bottom: 2px solid #65c9d0; padding: 7px 10px; }\nwindow.thunar toolbar button { background-image: linear-gradient(#fff, #b8f6e9 55%, #84d8db); border: 1px solid #70cfd3; border-radius: 11px; color: #096584; padding: 7px; box-shadow: inset 0 1px #fff; }\nwindow.thunar toolbar button:hover { background-image: linear-gradient(#fff, #9df5d8); border-color: #21abc2; }\nwindow.thunar .path-bar button, window.thunar .location-bar button { background-image: linear-gradient(#faffff, #aff7ed); border: 1px solid #61cbd3; border-radius: 16px; color: #09647e; padding: 7px 12px; }\nwindow.thunar .sidebar, window.thunar .shortcuts-pane { background-image: linear-gradient(to right, #d9fff0, #b0eee9); border-right: 2px solid #83d0d9; color: #09677c; }\nwindow.thunar .sidebar .view, window.thunar .shortcuts-pane .view { background: transparent; color: #07576f; }\nwindow.thunar .sidebar .view:selected, window.thunar treeview.view:selected { background: #a1ed43; color: #174960; border-radius: 8px; }\nwindow.thunar .standard-view, window.thunar .view { background: #f5fffe; color: #064f6b; }\nwindow.thunar statusbar { background-image: linear-gradient(#eafff8, #bcf5e6); color: #075f7d; border-top: 1px solid #81cdd7; padding: 5px 9px; }\nwindow.thunar scrollbar slider { background: #78d5d6; border-radius: 10px; }\n"
+}
+
+
+def _block(style: str) -> str:
+    original = _v080_block(style)
+    if style not in DETAIL_CSS:
+        return original
+    return original.replace(END + "\n", DETAIL_CSS[style] + END + "\n")
+
+
 def _read_css(path: Path) -> str | None:
     if path.parent.is_symlink() or path.is_symlink() or (path.exists() and not path.is_file()):
         raise ValueError("Unmanaged GTK CSS path; refusing to overwrite it")
@@ -110,7 +127,7 @@ def plan_css(style: str, config_root: Path) -> dict[str, str | None]:
         left, tail = content.split(START, 1)
         inner, right = tail.split(END, 1)
         current_block = START + inner + END + "\n"
-        if current_block not in ({_block(name) for name in PALETTES} | {_legacy_block(name) for name in PALETTES}):
+        if current_block not in ({_block(name) for name in PALETTES} | {_v080_block(name) for name in PALETTES} | {_legacy_block(name) for name in PALETTES}):
             raise ValueError("MacRice Thunar styling was customized; refusing to replace it")
         # The existing block owns exactly one newline after END.
         if right.startswith("\n"):
