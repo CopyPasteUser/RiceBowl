@@ -1,12 +1,14 @@
-# RiceHub
+# RiceBowl
 
-### Your desktop, your rules. A home for XFCE rices.
+### Seven desktop identities. One reversible XFCE/X11 session.
 
-RiceHub is a small, native Linux app for turning an ordinary XFCE desktop into something personal. It started with a love of macOS's clean interface and XFCE's speed. The goal is bigger now: one friendly place to discover, preview, apply and eventually share complete desktop styles — without swapping out your desktop environment.
+RiceBowl is the native Python/GTK3 successor to RiceHub. Version **0.7.0** introduces a rice-bowl logo, the new `ricebowl` launcher, distinct system-control layouts and stronger Thunar-specific styling for Windows 7, Windows 10, XP, Classic, ChromeOS and Frutiger Aero. **macOS rice behavior is unchanged.** Existing `ricehub`, `macrice`, D-Bus IDs, user settings and backup paths remain compatible.
 
-**Seven desktop families, one reversible XFCE/X11 session.** macOS, Windows 7, Windows 10, XP Luna, Windows 98/2000, ChromeOS and Frutiger Aero now have installable styles. Release `0.6.0` adds four original GTK/XFWM, icon and wallpaper collections with live native taskbars, searchable launchers and quick settings. The older interactive concept dialogs remain harmless previews. Virtual-X11 integration tests pass; physical Mint hardware acceptance remains an open gate for 1.0.
+The GitHub repository is **still named RiceHub** until its owner renames it in GitHub Settings. Installation links below therefore intentionally use the working `CopyPasteUser/RiceHub` URL. Older screenshots in this README belong to earlier versions; no new 0.7 screenshot capture has been claimed. Physical Mint XFCE acceptance remains open.
 
-## Meet RiceHub
+**New in 0.7:** [Release details](RICEBOWL.md) · [Changelog](CHANGELOG.md) · [Rollback notes](RICEHUB.md)
+
+## Meet RiceBowl
 
 ![RiceHub gallery offering installable Windows 10 Midnight and Blue styles with a Linux-penguin taskbar](screenshots/ricehub-windows10-gallery-0.5.0rc2.png)
 
@@ -116,7 +118,7 @@ git clone https://github.com/CopyPasteUser/RiceHub.git
 cd RiceHub
 bash install.sh --dry-run
 bash install.sh
-ricehub
+ricebowl
 ```
 
 The previous `macos-xfce-rice` GitHub address redirects to RiceHub, so old bookmarks and install commands should continue to work. No `sudo` for `install.sh`. The installer does **not** apply a full rice, remove the XFCE panel, change your icons, or silently install missing themes. It installs user-local tools and keeps existing component settings.
@@ -132,7 +134,8 @@ bash -c 'set -e; d="$(mktemp -d)"; git clone -q --depth 1 https://github.com/Cop
 ### Everyday commands
 
 ```bash
-ricehub                       # Open the new desktop rice hub
+ricebowl                      # Open RiceBowl 0.7
+ricehub                       # Legacy alias, retained
 macrice hub                   # Same application, legacy CLI
 macrice status                # Check installed components and appearance
 macrice rice plan night       # Inspect changes before applying anything
