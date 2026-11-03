@@ -1,6 +1,6 @@
 [Icon Theme]
-Name=RiceHub Luna Icons
-Comment=Original RiceHub themed icons; inherited Linux fallbacks
+Name=RiceBowl Luna Icons
+Comment=Original RiceBowl themed icons; inherited Linux fallbacks
 Inherits=Adwaita,hicolor
 Directories=scalable/apps,scalable/places
 [scalable/apps]
