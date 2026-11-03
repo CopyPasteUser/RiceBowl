@@ -21,7 +21,7 @@ STATE_FILE = "session-shortcuts.json"
 
 def command_for(action: str, theme: str) -> tuple[str, ...]:
     if action not in ("menu", "control"):
-        raise ValueError("Unknown RiceHub shortcut action")
+        raise ValueError("Unknown RiceBowl shortcut action")
     if theme in ("RiceHub-Ten-Dark", "RiceHub-Ten-Light"):
         return ("macrice", "windows10-shell", "--toggle-menu" if action == "menu" else "--actions")
     if theme == "RiceHub-Aero":
@@ -57,7 +57,7 @@ def dispatch(action: str) -> None:
 
 def _property(key: str) -> str:
     if key not in KEY_COMMANDS:
-        raise ValueError("Unknown RiceHub-managed key")
+        raise ValueError("Unknown RiceBowl-managed key")
     return f"/commands/custom/{key}"
 
 
@@ -86,7 +86,7 @@ def _state_path(state_dir: Path | None = None) -> Path:
     root = state_dir if state_dir is not None else private_state_root()
     path = root / STATE_FILE
     if path.is_symlink() or (path.exists() and (not path.is_file() or path.stat().st_uid != os.getuid())):
-        raise RuntimeError("RiceHub shortcut recovery file is not a user-owned regular file")
+        raise RuntimeError("RiceBowl shortcut recovery file is not a user-owned regular file")
     return path
 
 
@@ -109,7 +109,7 @@ def _load(path: Path) -> dict | None:
     state = json.loads(path.read_text(encoding="utf-8"))
     if (state.get("version") != 1 or set(state.get("original", {})) != set(KEY_COMMANDS)
             or set(state.get("managed", {})) != set(KEY_COMMANDS)):
-        raise RuntimeError("Invalid RiceHub shortcut recovery file; refusing to replace shortcuts")
+        raise RuntimeError("Invalid RiceBowl shortcut recovery file; refusing to replace shortcuts")
     return state
 
 
@@ -129,7 +129,7 @@ def _direct_commands(theme: str, bin_dir: Path) -> dict[str, str]:
         return {"Super_L": shlex.join([str(bin_dir / "macmenu"), "--toggle"]),
                 "Control_R": shlex.quote(str(bin_dir / "macos-control-center-toggle"))}
     else:
-        raise ValueError(f"RiceHub does not manage shortcuts for {theme!r}")
+        raise ValueError(f"RiceBowl does not manage shortcuts for {theme!r}")
     return {key: shlex.join([str(target), action]) for key, action in actions.items()}
 
 
