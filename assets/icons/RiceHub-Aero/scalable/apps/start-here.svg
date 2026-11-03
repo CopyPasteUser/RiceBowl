@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Aero Penguin, RiceHub's original Windows 7-inspired Linux mascot">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Aero Penguin, RiceBowl's original Windows 7-inspired Linux mascot">
   <defs>
     <radialGradient id="orb" cx="30%" cy="19%" r="85%"><stop stop-color="#e7ffff"/><stop offset=".26" stop-color="#80ddff"/><stop offset=".63" stop-color="#1886c4"/><stop offset="1" stop-color="#075087"/></radialGradient>
     <linearGradient id="rim" x2="0" y2="1"><stop stop-color="#e9fdff"/><stop offset=".5" stop-color="#67bef1"/><stop offset="1" stop-color="#153c78"/></linearGradient>
