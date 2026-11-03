@@ -712,13 +712,13 @@ def main(*, luna_only: bool = False, frutiger_only: bool = False,
         print("Refreshed original Windows 98 classic chrome, GTK and teal wallpaper")
         return
     if frutiger_only:
-        # Preserve every other rice and the already reviewed Frutiger wallpaper,
-        # icons and project-specific Thunar rules. Only redraw owned chrome.
+        # Preserve every other rice, the reviewed Frutiger wallpaper and all
+        # hand-curated icons. Only redraw owned chrome and the Thunar app alias.
         path = ROOT / "assets/themes/RiceHub-Frutiger"
         _frutiger_chrome(path)
         _frutiger_gtk(path)
         _frutiger_thunar_icon()
-        print("Refreshed original Frutiger window chrome and GTK styles only")
+        print("Refreshed Frutiger chrome, GTK and the native Thunar icon alias only")
         return
     for name, palette in PALETTES.items():
         if luna_only and name != "Luna":

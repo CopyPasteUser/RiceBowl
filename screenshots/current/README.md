@@ -25,13 +25,22 @@ Capture provenance (3 November 2026):
   panel, XDG-aware Start links, warm Explorer command bar and exact applied
   three-button XFWM4 layout are represented. The same artifact includes all
   three XP views at **1024×768**, including an actual Thunar process.
-- **Windows 10, Classic 98, ChromeOS and Frutiger**: passing Actions run
+- **Frutiger Aero launcher, Quick Settings and genuine Thunar**
+  (`frutiger-start.webp`, `frutiger-controls.webp`, `frutiger-workspace.webp`):
+  passing GitHub Actions run
+  [`41697201551`](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41697201551),
+  branch `feat/frutiger-refine`, source
+  `31551b0876eb2adbe35a0e4759573ea6465097ba`. These captures show the
+  pearl-glass/X11-rounded popups, pin-first real apps, the themed Thunar icon
+  and the new continuous Thunar breadcrumb/mint navigation; all three views
+  were also exercised at **1024×768**, including a genuine Thunar process.
+- **Windows 10, Classic 98 and ChromeOS**: passing Actions run
   [`41666644729`](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41666644729),
   source `c3406bc572f6f314d3acacb1f5572c6b08c5508d`.
 
 Uncompressed PNG sources, including the 1024×768 tests, remain in their
-respective CI run artifacts. No other desktop family was cosmetically changed
-by the XP review.
+respective CI run artifacts. The Frutiger review does not change the other
+desktop families' visual styles.
 
 The `workspace` images display a real Thunar process under a real XFWM4 window
 manager, using the same GTK/icon theme and Thunar view preferences that RiceBowl
@@ -45,4 +54,5 @@ recoverable from Git history, not in the current gallery.
 CI also verifies **1024×768** Start and settings capture for XP Luna, Windows 7,
 Frutiger Aero, Classic 98, Windows 10 and ChromeOS; the compact test screenshots
 remain CI artifacts rather than duplicates in this gallery.
-Windows 7 and XP artifacts additionally include 1024×768 genuine Thunar windows.
+Windows 7, XP and Frutiger artifacts additionally include 1024×768 genuine
+Thunar windows.
