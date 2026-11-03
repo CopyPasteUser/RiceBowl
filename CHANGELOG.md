@@ -1,5 +1,18 @@
 # RiceBowl changelog
 
+## 0.9.0 — Four reference-driven GTK/XFCE rice refinements (3 November 2026)
+
+### Implemented, not rendered mockups
+- **XP Luna:** independently built two-column Start menu, blue user band, light program list, bright blue Places column and real session-dialog controls; raised green Start button, glossy blue taskbar and live hardware controls.
+- **Windows 98 / 2000:** a native cascading Programs menu populated from installed desktop applications, vertical navy brand rail, inset gray taskbar, square controls, genuine Find search and real system shortcuts.
+- **ChromeOS:** 12 installed-app launcher tiles with search-on-demand, distinct left launcher, centered app shelf and rounded right-hand status cluster; icon-only running-window buttons and soft pastel control styling.
+- **Frutiger Aero:** live Apps / Places / Settings pages with actual installed apps, folders and XFCE tools; luminous cyan glass, bright lime selected tabs and profile-specific hardware controls.
+- More faithful native Thunar GTK3 chrome for each of those four: toolbars, menu bars, path controls, sidebars, selected rows and status bars. Thunar functionality remains Thunar; the reference mockups' custom file-dashboard layout is not claimed.
+- 36 additional original folder, document, media, desktop, disk and network icons, preserved by the heritage asset generator; previous curated assets retained.
+- Working, debounced **volume slider and mute toggle** with bounded PipeWire/PulseAudio commands and read-back verification. Battery and network detail text show real hardware state.
+- Recognize exact 0.8 managed theme hashes and old 0.8 Thunar CSS blocks during upgrades; protect unrelated customizations and preserve the entire macOS implementation.
+- Virtual X11 screenshot validation and additional migration, hardware, and icon regression tests. Physical Linux Mint XFCE/Plank/multi-monitor testing remains necessary before a stable release.
+
 ## 0.8.0 — Distinct identities, hardware tray and recoverable theme upgrades (3 November 2026)
 
 ### More individual non-macOS desktops
