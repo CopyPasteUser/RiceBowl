@@ -57,7 +57,7 @@ jobs:
           test -f assets/ricebowl-symbolic.svg
           mkdir -p dist
           git archive --format=zip --output=dist/RiceBowl-v0.7.0-source.zip HEAD
-          sha256sum dist/RiceBowl-v0.7.0-source.zip | tee dist/SHA256SUMS
+          (cd dist && sha256sum RiceBowl-v0.7.0-source.zip | tee SHA256SUMS)
       - name: Create release if absent
         env:
           GH_TOKEN: ${{ github.token }}
