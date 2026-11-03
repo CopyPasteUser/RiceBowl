@@ -1,0 +1,1385 @@
+{
+  "schema": 1,
+  "description": "Trusted Git blob SHA-1 IDs of bundled non-macOS theme and icon assets from RiceBowl 0.6, 0.7 and current main. Update deliberately for each release; never trust arbitrary local data.",
+  "files": {
+    "assets/icons/RiceHub-Aero/index.theme": [
+      "242499ff414ec666b1ab4279a777a45d5eb4958e",
+      "add95ca0118a4f32ae8feb49bafba61e789ae600"
+    ],
+    "assets/icons/RiceHub-Aero/scalable/apps/accessories-calculator.svg": [
+      "ea69164dd466d1167933314e6a5322ab36f16f79"
+    ],
+    "assets/icons/RiceHub-Aero/scalable/apps/accessories-text-editor.svg": [
+      "6c239934f0382d4dc7e28c550f0cfe28f995b2ca"
+    ],
+    "assets/icons/RiceHub-Aero/scalable/apps/applications-other.svg": [
+      "16658aa9870e952dabeae1424a713e1a2506ef40"
+    ],
+    "assets/icons/RiceHub-Aero/scalable/apps/preferences-system.svg": [
+      "5f8acafce5637ee8b88e908e9d6f0cc7b9525a9e"
+    ],
+    "assets/icons/RiceHub-Aero/scalable/apps/ricehub-aero.svg": [
+      "8c51fe81066fa295812025e6422e8a4e3b30832c",
+      "092055c740ae827326ac0ddb946f6ec21e869605"
+    ],
+    "assets/icons/RiceHub-Aero/scalable/apps/start-here.svg": [
+      "8c51fe81066fa295812025e6422e8a4e3b30832c",
+      "092055c740ae827326ac0ddb946f6ec21e869605"
+    ],
+    "assets/icons/RiceHub-Aero/scalable/apps/system-file-manager.svg": [
+      "65a82dfc093c321e77d9cde9b06bf3d9371929ed"
+    ],
+    "assets/icons/RiceHub-Aero/scalable/apps/utilities-terminal.svg": [
+      "a4cec1a0923e3037d75c8638558fc20bef4858b2"
+    ],
+    "assets/icons/RiceHub-Aero/scalable/apps/web-browser.svg": [
+      "8ac75b1792734ed57e70661a1439df9d3eba4316"
+    ],
+    "assets/icons/RiceHub-Aero/scalable/apps/xfce4-menu.svg": [
+      "8c51fe81066fa295812025e6422e8a4e3b30832c",
+      "092055c740ae827326ac0ddb946f6ec21e869605"
+    ],
+    "assets/icons/RiceHub-Aero/scalable/places/computer.svg": [
+      "d786ded60937a1c4a5b2c7c1c0bd9d7891f7376a"
+    ],
+    "assets/icons/RiceHub-Aero/scalable/places/folder.svg": [
+      "bfcba02375b00eaab5fb9494f951f644a96c9815"
+    ],
+    "assets/icons/RiceHub-Aero/scalable/places/user-home.svg": [
+      "9c939c987a4d72cf5b404cb3eb408eb2fc47cee4"
+    ],
+    "assets/icons/RiceHub-Aero/scalable/places/user-trash.svg": [
+      "6ab8913089a8a59a70d6b99ecea2b75e44cea0bf"
+    ],
+    "assets/icons/RiceHub-Chrome-Icons/index.theme": [
+      "2edd46a36ccbc3c482ee0c1584b9e0a739b2b40d",
+      "51995a28d91b68d7ca030bf2703b70648b746676"
+    ],
+    "assets/icons/RiceHub-Chrome-Icons/scalable/apps/accessories-calculator.svg": [
+      "a619217ed3f913e1cc699ef2174b7345f14237cc"
+    ],
+    "assets/icons/RiceHub-Chrome-Icons/scalable/apps/accessories-text-editor.svg": [
+      "f83c5dd270b1a0a425cb3d54fb4363164739f081"
+    ],
+    "assets/icons/RiceHub-Chrome-Icons/scalable/apps/applications-other.svg": [
+      "8dd9d98c28694fd3061d0fc20cf84e053979420c"
+    ],
+    "assets/icons/RiceHub-Chrome-Icons/scalable/apps/preferences-system.svg": [
+      "0871f6e24e3572e2cdf6ff89356a84aa2dc6f46d"
+    ],
+    "assets/icons/RiceHub-Chrome-Icons/scalable/apps/ricehub-start.svg": [
+      "36b282b8d571e8681d207399511771b339210b93",
+      "6e925ee0df64203d6388fa990c714c98e4068234"
+    ],
+    "assets/icons/RiceHub-Chrome-Icons/scalable/apps/start-here.svg": [
+      "36b282b8d571e8681d207399511771b339210b93",
+      "6e925ee0df64203d6388fa990c714c98e4068234"
+    ],
+    "assets/icons/RiceHub-Chrome-Icons/scalable/apps/system-file-manager.svg": [
+      "3d7649c3fd6beb2e05a5c2671c39cd5c1574d49b"
+    ],
+    "assets/icons/RiceHub-Chrome-Icons/scalable/apps/utilities-terminal.svg": [
+      "3929109f40f67d85c5444603884b84c9ebc48794"
+    ],
+    "assets/icons/RiceHub-Chrome-Icons/scalable/apps/web-browser.svg": [
+      "8a303e68d428d1f2faa48fc7fd667f97948c7ed2"
+    ],
+    "assets/icons/RiceHub-Chrome-Icons/scalable/apps/xfce4-menu.svg": [
+      "36b282b8d571e8681d207399511771b339210b93",
+      "6e925ee0df64203d6388fa990c714c98e4068234"
+    ],
+    "assets/icons/RiceHub-Chrome-Icons/scalable/places/computer.svg": [
+      "28edf78ad3291f92111179af992080517328640f"
+    ],
+    "assets/icons/RiceHub-Chrome-Icons/scalable/places/folder.svg": [
+      "3d7649c3fd6beb2e05a5c2671c39cd5c1574d49b"
+    ],
+    "assets/icons/RiceHub-Chrome-Icons/scalable/places/user-home.svg": [
+      "396a1fe49ffb47fdd3e98ffb550259d47b51c32c"
+    ],
+    "assets/icons/RiceHub-Chrome-Icons/scalable/places/user-trash.svg": [
+      "cddec079f9c976f0d9e0924ff18552e2468ecf0b"
+    ],
+    "assets/icons/RiceHub-Classic-Icons/index.theme": [
+      "984644969245a3271688d823aef9bc35141f46d9",
+      "2d474387c5be1a677300621fb5bd291dec3dd8d6"
+    ],
+    "assets/icons/RiceHub-Classic-Icons/scalable/apps/accessories-calculator.svg": [
+      "c984e8e7550eb68e63663287eaef51fa0a8108d5"
+    ],
+    "assets/icons/RiceHub-Classic-Icons/scalable/apps/accessories-text-editor.svg": [
+      "8a785bb85b730ac665b1a8bdf4f90fd7755c0a9b"
+    ],
+    "assets/icons/RiceHub-Classic-Icons/scalable/apps/applications-other.svg": [
+      "3045ed560e2d533cd5b974070a0f96387c7ca03f"
+    ],
+    "assets/icons/RiceHub-Classic-Icons/scalable/apps/preferences-system.svg": [
+      "4f764d63ffc2e32804ba7c7c4a2202d90783ce2f"
+    ],
+    "assets/icons/RiceHub-Classic-Icons/scalable/apps/ricehub-start.svg": [
+      "36b282b8d571e8681d207399511771b339210b93",
+      "6e925ee0df64203d6388fa990c714c98e4068234"
+    ],
+    "assets/icons/RiceHub-Classic-Icons/scalable/apps/start-here.svg": [
+      "36b282b8d571e8681d207399511771b339210b93",
+      "6e925ee0df64203d6388fa990c714c98e4068234"
+    ],
+    "assets/icons/RiceHub-Classic-Icons/scalable/apps/system-file-manager.svg": [
+      "3d7649c3fd6beb2e05a5c2671c39cd5c1574d49b"
+    ],
+    "assets/icons/RiceHub-Classic-Icons/scalable/apps/utilities-terminal.svg": [
+      "3929109f40f67d85c5444603884b84c9ebc48794"
+    ],
+    "assets/icons/RiceHub-Classic-Icons/scalable/apps/web-browser.svg": [
+      "4521110ec2d605e7308d6f1171f1ea677f6d91c5"
+    ],
+    "assets/icons/RiceHub-Classic-Icons/scalable/apps/xfce4-menu.svg": [
+      "36b282b8d571e8681d207399511771b339210b93",
+      "6e925ee0df64203d6388fa990c714c98e4068234"
+    ],
+    "assets/icons/RiceHub-Classic-Icons/scalable/places/computer.svg": [
+      "2658876ceb5ae662b5ca9e06da5cb3ff38d91b5a"
+    ],
+    "assets/icons/RiceHub-Classic-Icons/scalable/places/folder.svg": [
+      "3d7649c3fd6beb2e05a5c2671c39cd5c1574d49b"
+    ],
+    "assets/icons/RiceHub-Classic-Icons/scalable/places/user-home.svg": [
+      "396a1fe49ffb47fdd3e98ffb550259d47b51c32c"
+    ],
+    "assets/icons/RiceHub-Classic-Icons/scalable/places/user-trash.svg": [
+      "cddec079f9c976f0d9e0924ff18552e2468ecf0b"
+    ],
+    "assets/icons/RiceHub-Frutiger-Icons/index.theme": [
+      "d8583fee2a7ee142461a4aceb8b6b704f57693ac",
+      "5a72a937ef4eb741604b5ba875b68cf445ecd7e2"
+    ],
+    "assets/icons/RiceHub-Frutiger-Icons/scalable/apps/accessories-calculator.svg": [
+      "1fde6113a3624a3931327cf896e5b828d1150bec"
+    ],
+    "assets/icons/RiceHub-Frutiger-Icons/scalable/apps/accessories-text-editor.svg": [
+      "fcd7ff179c8a1e75825269326b25f6c1e1221cb5"
+    ],
+    "assets/icons/RiceHub-Frutiger-Icons/scalable/apps/applications-other.svg": [
+      "de6f79d3465d4bc46880b7774952f4b47cc94f85"
+    ],
+    "assets/icons/RiceHub-Frutiger-Icons/scalable/apps/preferences-system.svg": [
+      "e500af0f5a035e585a34365e8c2ba195b8738528"
+    ],
+    "assets/icons/RiceHub-Frutiger-Icons/scalable/apps/ricehub-start.svg": [
+      "8c51fe81066fa295812025e6422e8a4e3b30832c",
+      "092055c740ae827326ac0ddb946f6ec21e869605"
+    ],
+    "assets/icons/RiceHub-Frutiger-Icons/scalable/apps/start-here.svg": [
+      "8c51fe81066fa295812025e6422e8a4e3b30832c",
+      "092055c740ae827326ac0ddb946f6ec21e869605"
+    ],
+    "assets/icons/RiceHub-Frutiger-Icons/scalable/apps/system-file-manager.svg": [
+      "3d7649c3fd6beb2e05a5c2671c39cd5c1574d49b"
+    ],
+    "assets/icons/RiceHub-Frutiger-Icons/scalable/apps/utilities-terminal.svg": [
+      "3929109f40f67d85c5444603884b84c9ebc48794"
+    ],
+    "assets/icons/RiceHub-Frutiger-Icons/scalable/apps/web-browser.svg": [
+      "5a638f65a21be81a42337d8de5701344a3bb1867"
+    ],
+    "assets/icons/RiceHub-Frutiger-Icons/scalable/apps/xfce4-menu.svg": [
+      "8c51fe81066fa295812025e6422e8a4e3b30832c",
+      "092055c740ae827326ac0ddb946f6ec21e869605"
+    ],
+    "assets/icons/RiceHub-Frutiger-Icons/scalable/places/computer.svg": [
+      "0d1b688d70b7b295e4154e75d8559046e47e4851"
+    ],
+    "assets/icons/RiceHub-Frutiger-Icons/scalable/places/folder.svg": [
+      "3d7649c3fd6beb2e05a5c2671c39cd5c1574d49b"
+    ],
+    "assets/icons/RiceHub-Frutiger-Icons/scalable/places/user-home.svg": [
+      "396a1fe49ffb47fdd3e98ffb550259d47b51c32c"
+    ],
+    "assets/icons/RiceHub-Frutiger-Icons/scalable/places/user-trash.svg": [
+      "cddec079f9c976f0d9e0924ff18552e2468ecf0b"
+    ],
+    "assets/icons/RiceHub-Luna-Icons/index.theme": [
+      "50f7889e687b2a0bc734d9e8fb90be3d857ec3e6",
+      "f3a4451212ff316c7f63626ba13ac0e19c614427"
+    ],
+    "assets/icons/RiceHub-Luna-Icons/scalable/apps/accessories-calculator.svg": [
+      "9090835d91b8f8af2af4137abba2a740f59bb6c3"
+    ],
+    "assets/icons/RiceHub-Luna-Icons/scalable/apps/accessories-text-editor.svg": [
+      "ef2e0d64074dc4e12a1ed901d23d879d37466793"
+    ],
+    "assets/icons/RiceHub-Luna-Icons/scalable/apps/applications-other.svg": [
+      "72c566f94b1341212fab421d8da0f762060034e1"
+    ],
+    "assets/icons/RiceHub-Luna-Icons/scalable/apps/preferences-system.svg": [
+      "d524f7a982992e9672af8e901318fdbb1de1bcd1"
+    ],
+    "assets/icons/RiceHub-Luna-Icons/scalable/apps/ricehub-start.svg": [
+      "8c51fe81066fa295812025e6422e8a4e3b30832c",
+      "092055c740ae827326ac0ddb946f6ec21e869605"
+    ],
+    "assets/icons/RiceHub-Luna-Icons/scalable/apps/start-here.svg": [
+      "8c51fe81066fa295812025e6422e8a4e3b30832c",
+      "092055c740ae827326ac0ddb946f6ec21e869605"
+    ],
+    "assets/icons/RiceHub-Luna-Icons/scalable/apps/system-file-manager.svg": [
+      "3d7649c3fd6beb2e05a5c2671c39cd5c1574d49b"
+    ],
+    "assets/icons/RiceHub-Luna-Icons/scalable/apps/utilities-terminal.svg": [
+      "3929109f40f67d85c5444603884b84c9ebc48794"
+    ],
+    "assets/icons/RiceHub-Luna-Icons/scalable/apps/web-browser.svg": [
+      "679966e664877318b2ef4f2df7fa08f11646ea18"
+    ],
+    "assets/icons/RiceHub-Luna-Icons/scalable/apps/xfce4-menu.svg": [
+      "8c51fe81066fa295812025e6422e8a4e3b30832c",
+      "092055c740ae827326ac0ddb946f6ec21e869605"
+    ],
+    "assets/icons/RiceHub-Luna-Icons/scalable/places/computer.svg": [
+      "c00e967433f454bc9ee738ec48a28efb0fd30f78"
+    ],
+    "assets/icons/RiceHub-Luna-Icons/scalable/places/folder.svg": [
+      "3d7649c3fd6beb2e05a5c2671c39cd5c1574d49b"
+    ],
+    "assets/icons/RiceHub-Luna-Icons/scalable/places/user-home.svg": [
+      "396a1fe49ffb47fdd3e98ffb550259d47b51c32c"
+    ],
+    "assets/icons/RiceHub-Luna-Icons/scalable/places/user-trash.svg": [
+      "cddec079f9c976f0d9e0924ff18552e2468ecf0b"
+    ],
+    "assets/icons/RiceHub-Ten-Penguin/index.theme": [
+      "1eacc1e2b8017909beecd55ff552f28269c5ebed",
+      "7b05f6e2ce0343a2753ce23fde5dc1d8c061d556"
+    ],
+    "assets/icons/RiceHub-Ten-Penguin/scalable/apps/accessories-calculator.svg": [
+      "500e03c14a33c9658963c185dda97b34f6ea916e"
+    ],
+    "assets/icons/RiceHub-Ten-Penguin/scalable/apps/accessories-text-editor.svg": [
+      "e666ef0ac2bdcc7bb4b833a709cce5e17437640d"
+    ],
+    "assets/icons/RiceHub-Ten-Penguin/scalable/apps/applications-other.svg": [
+      "82a79f2034ca06874cbccb5cba5d34f111ff50e6"
+    ],
+    "assets/icons/RiceHub-Ten-Penguin/scalable/apps/preferences-system.svg": [
+      "18bb54c0576fca8b753b781d93a747af0f61ad28"
+    ],
+    "assets/icons/RiceHub-Ten-Penguin/scalable/apps/ricehub-ten.svg": [
+      "36b282b8d571e8681d207399511771b339210b93",
+      "6e925ee0df64203d6388fa990c714c98e4068234"
+    ],
+    "assets/icons/RiceHub-Ten-Penguin/scalable/apps/start-here.svg": [
+      "36b282b8d571e8681d207399511771b339210b93",
+      "6e925ee0df64203d6388fa990c714c98e4068234"
+    ],
+    "assets/icons/RiceHub-Ten-Penguin/scalable/apps/system-file-manager.svg": [
+      "3d7649c3fd6beb2e05a5c2671c39cd5c1574d49b"
+    ],
+    "assets/icons/RiceHub-Ten-Penguin/scalable/apps/utilities-terminal.svg": [
+      "3929109f40f67d85c5444603884b84c9ebc48794"
+    ],
+    "assets/icons/RiceHub-Ten-Penguin/scalable/apps/web-browser.svg": [
+      "e17e2c1f8e8af1f9eb3f4e5ea4093080eb581875"
+    ],
+    "assets/icons/RiceHub-Ten-Penguin/scalable/apps/xfce4-menu.svg": [
+      "36b282b8d571e8681d207399511771b339210b93",
+      "6e925ee0df64203d6388fa990c714c98e4068234"
+    ],
+    "assets/icons/RiceHub-Ten-Penguin/scalable/places/computer.svg": [
+      "1f41257855f2d34d655c8be8f65b37baba4cdabf"
+    ],
+    "assets/icons/RiceHub-Ten-Penguin/scalable/places/folder.svg": [
+      "3d7649c3fd6beb2e05a5c2671c39cd5c1574d49b"
+    ],
+    "assets/icons/RiceHub-Ten-Penguin/scalable/places/user-home.svg": [
+      "396a1fe49ffb47fdd3e98ffb550259d47b51c32c"
+    ],
+    "assets/icons/RiceHub-Ten-Penguin/scalable/places/user-trash.svg": [
+      "cddec079f9c976f0d9e0924ff18552e2468ecf0b"
+    ],
+    "assets/themes/RiceHub-Aero/gtk-3.0/gtk.css": [
+      "082318d3d88ac6ba94ab2344288112b53de850e4",
+      "47f556b5870094eb04bd84772043a3f360f71a58"
+    ],
+    "assets/themes/RiceHub-Aero/index.theme": [
+      "47d77c28b70f569a09073f3709468c3d7474e470",
+      "8b64e837e23a586e63af3cd7e4c2be9c2a7c92ed"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/bottom-active.png": [
+      "3d8c202dbe1773ca454c403e7712143e24703013"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/bottom-inactive.png": [
+      "e8c5e6e4e03475f9560e335ce8285970597b988d"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/bottom-left-active.png": [
+      "d03417ae2c2d7812f2961af097502750fce3bdf8"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/bottom-left-inactive.png": [
+      "2a8baa9468aa5b1aa656ea03d97f04e3397a02fc"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/bottom-right-active.png": [
+      "da33861eccd8e57c0910bdea5a4c331ccac2779a"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/bottom-right-inactive.png": [
+      "154e3826a8957cf33b08a57027b2a35da9a64063"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/close-active.png": [
+      "988492eedc625cb3e44be4ac55d55625bfdba63e"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/close-inactive.png": [
+      "470dd4b5454dd5fda05780cf143147feeea82add"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/close-prelight.png": [
+      "3149861388c7ce9dab42f7ef33114d80e9c4a43b"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/close-pressed.png": [
+      "85ca4114dfe98b6987bd4905921c90b3f6849e0a"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/hide-active.png": [
+      "b9ae1640a9606dbd81bcdb4c22a0a173db05b1c4"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/hide-inactive.png": [
+      "67c557449c8f06b3ed9b65a02a71850fcd548dab"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/hide-prelight.png": [
+      "4ea24594689d2c2ccbb1f2ac63e2427f1dd5ace0"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/hide-pressed.png": [
+      "b7d9d00aba4ccc0dd5fd09cac3eac1274195e4d4"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/left-active.png": [
+      "3d70203d380bf26363e8fc80898c342bb167064e"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/left-inactive.png": [
+      "de5443a2902e711f1fe3a1a89873d5516eedde8f"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/maximize-active.png": [
+      "369f44921aa88acd162c1a468dc0ca6263700f0c"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/maximize-inactive.png": [
+      "440aca7d0fe10d3e61a76094b52de4be0b042d84"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/maximize-prelight.png": [
+      "9a0d7b8b6d1af9afd35890728edca2f787631986"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/maximize-pressed.png": [
+      "bceda921ff7524390e6f085a94c04c0a6736defc"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/menu-active.png": [
+      "a1d2f4601722e2f8f15a05fbaf9e4368a79b3e08"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/menu-inactive.png": [
+      "6e7077235e68e36c7c96daf971c12facaa5c285b"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/menu-prelight.png": [
+      "5a2a84bee1719ac7856c321702babd7cfc6393af"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/menu-pressed.png": [
+      "0b93e9c7f466c68c00faeba5d7621d725bfad696"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/right-active.png": [
+      "0687462c7db43a6cec8cae8fed126f529d06c8d2"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/right-inactive.png": [
+      "f6f30835a0f120361c4166fb359c80bd8c6cd84d"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/shade-active.png": [
+      "2ee84ec57154cb42e515b506f3c7b7b27b6e4bd0"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/shade-inactive.png": [
+      "3bfb170868d06e6a50d7e83a74683a1f532858e6"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/shade-prelight.png": [
+      "d3dc03fe31debb8e6b6990b148ee93c637f27d92"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/shade-pressed.png": [
+      "6d645975d052f05cc6bc916e776a6e2e2bb93d69"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/stick-active.png": [
+      "c054cdef6846730dde29eb8e4da09b49ddaa0f6b"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/stick-inactive.png": [
+      "eb3db6986d9f8ccbeb6ffd3fda0e245466051a01"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/stick-prelight.png": [
+      "c6287f2ae6615f65aa18981c9970af11d7426520"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/stick-pressed.png": [
+      "d57ee0e644d386e38790dd4844ba1dee9a6edf5e"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/themerc": [
+      "e748d69191b1a0f1720cd8bbe50acc9d0ec0b874"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/title-1-active.png": [
+      "c30aa7f839be343ce1ca8ea9a19261c9e893fd77"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/title-1-inactive.png": [
+      "5ce327afc89ad46a78da88798787fe8d1d5f5303"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/title-2-active.png": [
+      "c30aa7f839be343ce1ca8ea9a19261c9e893fd77"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/title-2-inactive.png": [
+      "5ce327afc89ad46a78da88798787fe8d1d5f5303"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/title-3-active.png": [
+      "c30aa7f839be343ce1ca8ea9a19261c9e893fd77"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/title-3-inactive.png": [
+      "5ce327afc89ad46a78da88798787fe8d1d5f5303"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/title-4-active.png": [
+      "c30aa7f839be343ce1ca8ea9a19261c9e893fd77"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/title-4-inactive.png": [
+      "5ce327afc89ad46a78da88798787fe8d1d5f5303"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/title-5-active.png": [
+      "c30aa7f839be343ce1ca8ea9a19261c9e893fd77"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/title-5-inactive.png": [
+      "5ce327afc89ad46a78da88798787fe8d1d5f5303"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/top-left-active.png": [
+      "dd96de772c68c04e5243b10fca0fc05fbc97fb26"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/top-left-inactive.png": [
+      "346b946700d94c07d04d7cd1eedce85de2c068d6"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/top-right-active.png": [
+      "76f90bea9068c5d87fa87e68cf85875c3058c73e"
+    ],
+    "assets/themes/RiceHub-Aero/xfwm4/top-right-inactive.png": [
+      "12d39ecfe68630e68421335ddcf3db5f2c0c8073"
+    ],
+    "assets/themes/RiceHub-Chrome/gtk-3.0/gtk.css": [
+      "17598ee7b424bb24f666fdef19364ae3d6d8f733",
+      "d2f6f2dddaf7202c676d789450d51fa2a29f6364"
+    ],
+    "assets/themes/RiceHub-Chrome/index.theme": [
+      "14096f272bb8cf8bc52bdb08dedf1039637a4e3f",
+      "551e276a8a5e2e2360efbad23579ad979c6c9b41"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/bottom-active.png": [
+      "9cd8a106f7ec1ec0e7ee12bc5984f0c78cce27a4"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/bottom-inactive.png": [
+      "5eb837dc2a3a7fe8fa188fc5f1f1d1008dadcdcd"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/bottom-left-active.png": [
+      "9cd8a106f7ec1ec0e7ee12bc5984f0c78cce27a4"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/bottom-left-inactive.png": [
+      "5eb837dc2a3a7fe8fa188fc5f1f1d1008dadcdcd"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/bottom-right-active.png": [
+      "9cd8a106f7ec1ec0e7ee12bc5984f0c78cce27a4"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/bottom-right-inactive.png": [
+      "5eb837dc2a3a7fe8fa188fc5f1f1d1008dadcdcd"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/close-active.png": [
+      "d787bba72d724257f81f80ebec96097005fb27ab"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/close-inactive.png": [
+      "329cc511730b50cf0affd29273b1bde29965af1e"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/close-prelight.png": [
+      "4dc4ab6b5c99df2772c705dc5fc303c92cf1a32e"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/close-pressed.png": [
+      "4dc4ab6b5c99df2772c705dc5fc303c92cf1a32e"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/hide-active.png": [
+      "9decb270082cfd366016e1ddfc08f4c68d9ed355"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/hide-inactive.png": [
+      "b066c7cfb9a7f27ec45592be612cbc3cf0fe2d68"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/hide-prelight.png": [
+      "9082ea996f55bc0ee84e0292dbbd801c5bf78f07"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/hide-pressed.png": [
+      "9082ea996f55bc0ee84e0292dbbd801c5bf78f07"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/left-active.png": [
+      "a6c6ba339206c891a810ea5a9b9858f6deb63a25"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/left-inactive.png": [
+      "753b84083a705cdf6b945782aa0a96ef42361bc7"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/maximize-active.png": [
+      "d41f1117a8df94e4b573a124fab5a25a9b77d5e4"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/maximize-inactive.png": [
+      "1330d2dc6cbcf3de16514d0ea716e83ae56c3eb3"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/maximize-prelight.png": [
+      "cbfe6b910bb0310a6364edb133f46fd21f3b5b7d"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/maximize-pressed.png": [
+      "cbfe6b910bb0310a6364edb133f46fd21f3b5b7d"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/menu-active.png": [
+      "199f989da28c28faa3b5d1cca30265e9abea4095"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/menu-inactive.png": [
+      "0bb540e0045383727eb6a00a226c1113cae6e2b1"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/menu-prelight.png": [
+      "b3908ade1ec44ce39f7376792e73b30a9715c320"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/menu-pressed.png": [
+      "b3908ade1ec44ce39f7376792e73b30a9715c320"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/right-active.png": [
+      "a6c6ba339206c891a810ea5a9b9858f6deb63a25"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/right-inactive.png": [
+      "753b84083a705cdf6b945782aa0a96ef42361bc7"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/shade-active.png": [
+      "7df5007f2d6848f71c577cc5a55927f47a65c77e"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/shade-inactive.png": [
+      "47426f89b38d76c100377aaaa3cb835708adfab6"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/shade-prelight.png": [
+      "7c003e1afd7eba82ac39151f3783de9b24656728"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/shade-pressed.png": [
+      "7c003e1afd7eba82ac39151f3783de9b24656728"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/stick-active.png": [
+      "b2e1f181cf9cb7118375f99769ee3a5cfc41d222"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/stick-inactive.png": [
+      "99b14fd0fee1b996de5a21106abae0789b4c4e9c"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/stick-prelight.png": [
+      "f53971295ebb3689f20d9b5294f7ce547767697a"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/stick-pressed.png": [
+      "f53971295ebb3689f20d9b5294f7ce547767697a"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/themerc": [
+      "f675a48bc31d589e74471d4bd286bcc1dba70623"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/title-1-active.png": [
+      "6fa67b5047d7c32bb14489a0b7ca2bd0d2e7dee5"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/title-1-inactive.png": [
+      "ff24bde3f30daae80c3be1a4fa4985c2b8c17981"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/title-2-active.png": [
+      "6fa67b5047d7c32bb14489a0b7ca2bd0d2e7dee5"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/title-2-inactive.png": [
+      "ff24bde3f30daae80c3be1a4fa4985c2b8c17981"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/title-3-active.png": [
+      "6fa67b5047d7c32bb14489a0b7ca2bd0d2e7dee5"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/title-3-inactive.png": [
+      "ff24bde3f30daae80c3be1a4fa4985c2b8c17981"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/title-4-active.png": [
+      "6fa67b5047d7c32bb14489a0b7ca2bd0d2e7dee5"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/title-4-inactive.png": [
+      "ff24bde3f30daae80c3be1a4fa4985c2b8c17981"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/title-5-active.png": [
+      "6fa67b5047d7c32bb14489a0b7ca2bd0d2e7dee5"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/title-5-inactive.png": [
+      "ff24bde3f30daae80c3be1a4fa4985c2b8c17981"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/top-left-active.png": [
+      "abeffe513fefaab2c88082295c35bef63f96fddc"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/top-left-inactive.png": [
+      "0b452c4dc715867db1e078904cdf7557d809e0e0"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/top-right-active.png": [
+      "abeffe513fefaab2c88082295c35bef63f96fddc"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/top-right-inactive.png": [
+      "0b452c4dc715867db1e078904cdf7557d809e0e0"
+    ],
+    "assets/themes/RiceHub-Classic/gtk-3.0/gtk.css": [
+      "65a97106de44edd885cd13097fabfec780491d4b",
+      "395a35edfff9b049aeb6622fdb2cdfd562cd4525"
+    ],
+    "assets/themes/RiceHub-Classic/index.theme": [
+      "9ff00e6e2ed5fd20b8d29e9c3ee609c2d52e741c",
+      "99a3f23f2c3601f8ea06ffa24fb7e6f3bd749374"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/bottom-active.png": [
+      "5cef29d3e8815565d5d6a0dec86d800d0a9dce1e"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/bottom-inactive.png": [
+      "05f5e70cd4e8b53307228c1bd69d50b85998e674"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/bottom-left-active.png": [
+      "5cef29d3e8815565d5d6a0dec86d800d0a9dce1e"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/bottom-left-inactive.png": [
+      "05f5e70cd4e8b53307228c1bd69d50b85998e674"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/bottom-right-active.png": [
+      "5cef29d3e8815565d5d6a0dec86d800d0a9dce1e"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/bottom-right-inactive.png": [
+      "05f5e70cd4e8b53307228c1bd69d50b85998e674"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/close-active.png": [
+      "620c2af54dfcd451f125bc81bf71839a4c819610"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/close-inactive.png": [
+      "ea0b64b7bd56f822aa7f5e60a2f31d257008bcef"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/close-prelight.png": [
+      "4dc4ab6b5c99df2772c705dc5fc303c92cf1a32e"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/close-pressed.png": [
+      "4dc4ab6b5c99df2772c705dc5fc303c92cf1a32e"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/hide-active.png": [
+      "5b16a48a0b144a68ba6a74ac561a8111ab99f1f6"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/hide-inactive.png": [
+      "8e27c5d4a797a7b6a19cd2241c038d9eeef015e1"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/hide-prelight.png": [
+      "9082ea996f55bc0ee84e0292dbbd801c5bf78f07"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/hide-pressed.png": [
+      "9082ea996f55bc0ee84e0292dbbd801c5bf78f07"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/left-active.png": [
+      "c1f8670ce9fa6d21823eb8b26005fc48f3acda62"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/left-inactive.png": [
+      "78a02ca30ec65425b0515b1aa5330ec48202375a"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/maximize-active.png": [
+      "2fdf04b120dd3ffb3928a047b010cfcc44a55f20"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/maximize-inactive.png": [
+      "999a5b790881c1d002545838e15c393af1fff236"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/maximize-prelight.png": [
+      "cbfe6b910bb0310a6364edb133f46fd21f3b5b7d"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/maximize-pressed.png": [
+      "cbfe6b910bb0310a6364edb133f46fd21f3b5b7d"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/menu-active.png": [
+      "c2601ef9d85538cc1248fe59ec48b28911c0df39"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/menu-inactive.png": [
+      "c54307585d8ec98f029eb238dff7b015f69376f7"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/menu-prelight.png": [
+      "b3908ade1ec44ce39f7376792e73b30a9715c320"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/menu-pressed.png": [
+      "b3908ade1ec44ce39f7376792e73b30a9715c320"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/right-active.png": [
+      "c1f8670ce9fa6d21823eb8b26005fc48f3acda62"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/right-inactive.png": [
+      "78a02ca30ec65425b0515b1aa5330ec48202375a"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/shade-active.png": [
+      "4f60898b22ded9442a44f202a62ef9998aa71997"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/shade-inactive.png": [
+      "7199fcf5a28ae9418433eb652f24f550cfd42fa4"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/shade-prelight.png": [
+      "7c003e1afd7eba82ac39151f3783de9b24656728"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/shade-pressed.png": [
+      "7c003e1afd7eba82ac39151f3783de9b24656728"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/stick-active.png": [
+      "468b442445368b1c46cd96b76e44bc6a3380035a"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/stick-inactive.png": [
+      "138cd2efb8c4c95da07d439ff320abc946db3d97"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/stick-prelight.png": [
+      "f53971295ebb3689f20d9b5294f7ce547767697a"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/stick-pressed.png": [
+      "f53971295ebb3689f20d9b5294f7ce547767697a"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/themerc": [
+      "6fbe3db6fbde61e4cfb329152b96c48cc241fa46"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/title-1-active.png": [
+      "62fc06df6368cb559d03ccf3415d5e5ddd9b03e9"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/title-1-inactive.png": [
+      "9eb2c02de089486e9ca52a173acb7157b569019b"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/title-2-active.png": [
+      "62fc06df6368cb559d03ccf3415d5e5ddd9b03e9"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/title-2-inactive.png": [
+      "9eb2c02de089486e9ca52a173acb7157b569019b"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/title-3-active.png": [
+      "62fc06df6368cb559d03ccf3415d5e5ddd9b03e9"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/title-3-inactive.png": [
+      "9eb2c02de089486e9ca52a173acb7157b569019b"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/title-4-active.png": [
+      "62fc06df6368cb559d03ccf3415d5e5ddd9b03e9"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/title-4-inactive.png": [
+      "9eb2c02de089486e9ca52a173acb7157b569019b"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/title-5-active.png": [
+      "62fc06df6368cb559d03ccf3415d5e5ddd9b03e9"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/title-5-inactive.png": [
+      "9eb2c02de089486e9ca52a173acb7157b569019b"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/top-left-active.png": [
+      "846a952045218e1f42eb71105f4906cd0e9ca74e"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/top-left-inactive.png": [
+      "07095146efe51f61fb8f0b6df1403a0e58a23d57"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/top-right-active.png": [
+      "846a952045218e1f42eb71105f4906cd0e9ca74e"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/top-right-inactive.png": [
+      "07095146efe51f61fb8f0b6df1403a0e58a23d57"
+    ],
+    "assets/themes/RiceHub-Frutiger/gtk-3.0/gtk.css": [
+      "17a470c33b1174a2e5ab6290d26d36b501571830",
+      "47d6c1d5fbd8e6c29056fb3c10fe48be4445d7b4"
+    ],
+    "assets/themes/RiceHub-Frutiger/index.theme": [
+      "6a1e56e579280e647ef3e47bb36fc1a6faa96d00",
+      "2ee00ac909d95c43a7670b4a80da23521f223569"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/bottom-active.png": [
+      "f9713291db41f03a344e6857865a798c7350e6cc"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/bottom-inactive.png": [
+      "26b4c2a049d0f6cb358f1c4d8aad04de31a29feb"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/bottom-left-active.png": [
+      "f9713291db41f03a344e6857865a798c7350e6cc"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/bottom-left-inactive.png": [
+      "26b4c2a049d0f6cb358f1c4d8aad04de31a29feb"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/bottom-right-active.png": [
+      "f9713291db41f03a344e6857865a798c7350e6cc"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/bottom-right-inactive.png": [
+      "26b4c2a049d0f6cb358f1c4d8aad04de31a29feb"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/close-active.png": [
+      "4f05063c72ff5790e5575cd990ced4d00bf01233"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/close-inactive.png": [
+      "d625de6c513d14baa7e53b363490680176d9cb29"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/close-prelight.png": [
+      "4dc4ab6b5c99df2772c705dc5fc303c92cf1a32e"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/close-pressed.png": [
+      "4dc4ab6b5c99df2772c705dc5fc303c92cf1a32e"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/hide-active.png": [
+      "ff175041368ee2b7734ca5f3bb368f73486e6250"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/hide-inactive.png": [
+      "bfe828bd87734ca498eb28b56d1449e79650cd47"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/hide-prelight.png": [
+      "9082ea996f55bc0ee84e0292dbbd801c5bf78f07"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/hide-pressed.png": [
+      "9082ea996f55bc0ee84e0292dbbd801c5bf78f07"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/left-active.png": [
+      "79a4c93d1ade26f5c6c652379d7c7777b824a3f0"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/left-inactive.png": [
+      "8862350924753bdce4deb3c0c43e96cbe8ec3336"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/maximize-active.png": [
+      "80c43aef8dbf49e18593896e31dbae58f2d08a5b"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/maximize-inactive.png": [
+      "ddc461ea1d27372667f85bcce2ab1ff39a46dc6d"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/maximize-prelight.png": [
+      "cbfe6b910bb0310a6364edb133f46fd21f3b5b7d"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/maximize-pressed.png": [
+      "cbfe6b910bb0310a6364edb133f46fd21f3b5b7d"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/menu-active.png": [
+      "ceef712976cce7f94557678981fd5c3ce5d0478a"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/menu-inactive.png": [
+      "ea4ebb4b7333897ecf8d383373125c42d331ed15"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/menu-prelight.png": [
+      "b3908ade1ec44ce39f7376792e73b30a9715c320"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/menu-pressed.png": [
+      "b3908ade1ec44ce39f7376792e73b30a9715c320"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/right-active.png": [
+      "79a4c93d1ade26f5c6c652379d7c7777b824a3f0"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/right-inactive.png": [
+      "8862350924753bdce4deb3c0c43e96cbe8ec3336"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/shade-active.png": [
+      "47453aeee5caad5839c6bce42eeba3cd5893956a"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/shade-inactive.png": [
+      "086d1ca008d17bf151e368bb1477fe35532de359"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/shade-prelight.png": [
+      "7c003e1afd7eba82ac39151f3783de9b24656728"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/shade-pressed.png": [
+      "7c003e1afd7eba82ac39151f3783de9b24656728"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/stick-active.png": [
+      "b8a53cb387267f5a5039d148f0fde579c6a39082"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/stick-inactive.png": [
+      "7742fd5116c2887b725d4fe92b294ab761d2e983"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/stick-prelight.png": [
+      "f53971295ebb3689f20d9b5294f7ce547767697a"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/stick-pressed.png": [
+      "f53971295ebb3689f20d9b5294f7ce547767697a"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/themerc": [
+      "c524ebc01b6f9c82d7ac50791faf1ce521a46c70"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/title-1-active.png": [
+      "09e2e9bbb2cc6619c44d00144a575dd262b34bb3"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/title-1-inactive.png": [
+      "3ab1fe15b77bdfaf809885a32994bde21027bc19"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/title-2-active.png": [
+      "09e2e9bbb2cc6619c44d00144a575dd262b34bb3"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/title-2-inactive.png": [
+      "3ab1fe15b77bdfaf809885a32994bde21027bc19"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/title-3-active.png": [
+      "09e2e9bbb2cc6619c44d00144a575dd262b34bb3"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/title-3-inactive.png": [
+      "3ab1fe15b77bdfaf809885a32994bde21027bc19"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/title-4-active.png": [
+      "09e2e9bbb2cc6619c44d00144a575dd262b34bb3"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/title-4-inactive.png": [
+      "3ab1fe15b77bdfaf809885a32994bde21027bc19"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/title-5-active.png": [
+      "09e2e9bbb2cc6619c44d00144a575dd262b34bb3"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/title-5-inactive.png": [
+      "3ab1fe15b77bdfaf809885a32994bde21027bc19"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/top-left-active.png": [
+      "92e87f3b1c6225a63981b8b01660f170f77ed782"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/top-left-inactive.png": [
+      "262c463262d6f0b82af5d2837eb5bec871ad0de7"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/top-right-active.png": [
+      "92e87f3b1c6225a63981b8b01660f170f77ed782"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/top-right-inactive.png": [
+      "262c463262d6f0b82af5d2837eb5bec871ad0de7"
+    ],
+    "assets/themes/RiceHub-Luna/gtk-3.0/gtk.css": [
+      "44a1adbad3d119c574cd5548f1f140a105458ef1",
+      "01353ceb189ce356aefbb7a6012b04058337b937"
+    ],
+    "assets/themes/RiceHub-Luna/index.theme": [
+      "6f1ad8f294cc0ec46a242891a743ae5a6af83611",
+      "e6c436da29593d8a797349f6b4b8f5399b098a9a"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/bottom-active.png": [
+      "bbc963096966382fd56d40f539b06627b9dac842"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/bottom-inactive.png": [
+      "41ee06e1fb9268ee8d7e1a32073b96e648783a2c"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/bottom-left-active.png": [
+      "bbc963096966382fd56d40f539b06627b9dac842"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/bottom-left-inactive.png": [
+      "41ee06e1fb9268ee8d7e1a32073b96e648783a2c"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/bottom-right-active.png": [
+      "bbc963096966382fd56d40f539b06627b9dac842"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/bottom-right-inactive.png": [
+      "41ee06e1fb9268ee8d7e1a32073b96e648783a2c"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/close-active.png": [
+      "bcfed46b42552f4845f12b434cdb256e30b424f2"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/close-inactive.png": [
+      "4dc5fbeacabc74f624f31007f94f70edd37e099b"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/close-prelight.png": [
+      "4dc4ab6b5c99df2772c705dc5fc303c92cf1a32e"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/close-pressed.png": [
+      "4dc4ab6b5c99df2772c705dc5fc303c92cf1a32e"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/hide-active.png": [
+      "0331c9b37fe4b50d7444868bb650279bc0d32fd5"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/hide-inactive.png": [
+      "0951840427c91d2204747595c16e68e8cf5b1b1f"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/hide-prelight.png": [
+      "9082ea996f55bc0ee84e0292dbbd801c5bf78f07"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/hide-pressed.png": [
+      "9082ea996f55bc0ee84e0292dbbd801c5bf78f07"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/left-active.png": [
+      "aadd5801efccfeb85b28f51d4e8f46dff46eefad"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/left-inactive.png": [
+      "c9fdb756f2a11611cb9b93d9653e73670b72bb54"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/maximize-active.png": [
+      "2c88c24d37db03db286e3bc0a99eafc4ee14193f"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/maximize-inactive.png": [
+      "2a34682e312d7be26b9dbcf0e99adf39a62b2bdf"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/maximize-prelight.png": [
+      "cbfe6b910bb0310a6364edb133f46fd21f3b5b7d"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/maximize-pressed.png": [
+      "cbfe6b910bb0310a6364edb133f46fd21f3b5b7d"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/menu-active.png": [
+      "fa6cf7b63b708f9d8e95d85683044d96e4a7e5eb"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/menu-inactive.png": [
+      "dba6b1a27d15d34a2028fa32ace9ee8e6a12de54"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/menu-prelight.png": [
+      "b3908ade1ec44ce39f7376792e73b30a9715c320"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/menu-pressed.png": [
+      "b3908ade1ec44ce39f7376792e73b30a9715c320"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/right-active.png": [
+      "aadd5801efccfeb85b28f51d4e8f46dff46eefad"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/right-inactive.png": [
+      "c9fdb756f2a11611cb9b93d9653e73670b72bb54"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/shade-active.png": [
+      "d7a572dcedca6aa1f0a35a127fd6ceca7820501a"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/shade-inactive.png": [
+      "0fd4332bad112100b027ad331efe3bd9bf317db0"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/shade-prelight.png": [
+      "7c003e1afd7eba82ac39151f3783de9b24656728"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/shade-pressed.png": [
+      "7c003e1afd7eba82ac39151f3783de9b24656728"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/stick-active.png": [
+      "dbcc06a144141e361f17f57921b77019421332c1"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/stick-inactive.png": [
+      "b29383bab05538f03f7593a6db06628bc35d36ac"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/stick-prelight.png": [
+      "f53971295ebb3689f20d9b5294f7ce547767697a"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/stick-pressed.png": [
+      "f53971295ebb3689f20d9b5294f7ce547767697a"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/themerc": [
+      "de24a3a2cf34bd330565ef7dcda0186fc6fb9889"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/title-1-active.png": [
+      "cdf7e5ee0c2ac3b809060e4db7fec6a32145beff"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/title-1-inactive.png": [
+      "7737f2ab38340d3097f97f7a48c0f80fe8a46ec1"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/title-2-active.png": [
+      "cdf7e5ee0c2ac3b809060e4db7fec6a32145beff"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/title-2-inactive.png": [
+      "7737f2ab38340d3097f97f7a48c0f80fe8a46ec1"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/title-3-active.png": [
+      "cdf7e5ee0c2ac3b809060e4db7fec6a32145beff"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/title-3-inactive.png": [
+      "7737f2ab38340d3097f97f7a48c0f80fe8a46ec1"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/title-4-active.png": [
+      "cdf7e5ee0c2ac3b809060e4db7fec6a32145beff"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/title-4-inactive.png": [
+      "7737f2ab38340d3097f97f7a48c0f80fe8a46ec1"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/title-5-active.png": [
+      "cdf7e5ee0c2ac3b809060e4db7fec6a32145beff"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/title-5-inactive.png": [
+      "7737f2ab38340d3097f97f7a48c0f80fe8a46ec1"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/top-left-active.png": [
+      "8931174de12ff9ffcb2234bb0dd204c79497e139"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/top-left-inactive.png": [
+      "774eafd06fc84870d6063ed106113ea2f68b6731"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/top-right-active.png": [
+      "8931174de12ff9ffcb2234bb0dd204c79497e139"
+    ],
+    "assets/themes/RiceHub-Luna/xfwm4/top-right-inactive.png": [
+      "774eafd06fc84870d6063ed106113ea2f68b6731"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/gtk-3.0/gtk.css": [
+      "71b227c52babd8037f78e4de16dbc44b3a416382",
+      "63aa210dfef8aec16a9f77ddf94afd92f4020af5"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/index.theme": [
+      "a18fee25da98401f60e3965bd38ff78ff4fde03f",
+      "4c9a9273c86329cc0066ef7b618804abc2bdc1e6"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/bottom-active.png": [
+      "a00d3215273bcb4ca7aff18c0fcddaa03653b235"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/bottom-inactive.png": [
+      "4ff91434dc12eac94000c39b8fe38fda1c3e0daf"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/bottom-left-active.png": [
+      "a00d3215273bcb4ca7aff18c0fcddaa03653b235"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/bottom-left-inactive.png": [
+      "4ff91434dc12eac94000c39b8fe38fda1c3e0daf"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/bottom-right-active.png": [
+      "a00d3215273bcb4ca7aff18c0fcddaa03653b235"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/bottom-right-inactive.png": [
+      "4ff91434dc12eac94000c39b8fe38fda1c3e0daf"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/close-active.png": [
+      "c793b59e0b4c8f21979b75f9354710ac00dd88db"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/close-inactive.png": [
+      "781053490d888d727a47d1a9a781407484c17afb"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/close-prelight.png": [
+      "4dc4ab6b5c99df2772c705dc5fc303c92cf1a32e"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/close-pressed.png": [
+      "4dc4ab6b5c99df2772c705dc5fc303c92cf1a32e"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/hide-active.png": [
+      "0ff868c0922e229eafcca4bc7d8c274e79a1bd3b"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/hide-inactive.png": [
+      "f6d81addb15b3cbb059e647d2b2e0595ae451c98"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/hide-prelight.png": [
+      "9082ea996f55bc0ee84e0292dbbd801c5bf78f07"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/hide-pressed.png": [
+      "9082ea996f55bc0ee84e0292dbbd801c5bf78f07"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/left-active.png": [
+      "ee5953fa055353873e88441136079645d9b0061b"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/left-inactive.png": [
+      "718d8d9ddcbd307496b371ef58d0dac2b268bd0f"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/maximize-active.png": [
+      "7b9b9dbdf18b74775c16ab417ee4cb962a03f614"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/maximize-inactive.png": [
+      "feabbd97c2b16a33cc73ee6c04139ae1402fb791"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/maximize-prelight.png": [
+      "cbfe6b910bb0310a6364edb133f46fd21f3b5b7d"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/maximize-pressed.png": [
+      "cbfe6b910bb0310a6364edb133f46fd21f3b5b7d"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/menu-active.png": [
+      "1c70cb5146d59c055468a9ac01e89b6e0e6720ec"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/menu-inactive.png": [
+      "b927e5b0db40fc6e708a65995f072262fd74c771"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/menu-prelight.png": [
+      "b3908ade1ec44ce39f7376792e73b30a9715c320"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/menu-pressed.png": [
+      "b3908ade1ec44ce39f7376792e73b30a9715c320"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/right-active.png": [
+      "ee5953fa055353873e88441136079645d9b0061b"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/right-inactive.png": [
+      "718d8d9ddcbd307496b371ef58d0dac2b268bd0f"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/shade-active.png": [
+      "a8d8095753d01beaaf0d8cf3724bc6cdebdc2c61"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/shade-inactive.png": [
+      "90acadf3de21d5b81ef44446190bb52a60b727c0"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/shade-prelight.png": [
+      "7c003e1afd7eba82ac39151f3783de9b24656728"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/shade-pressed.png": [
+      "7c003e1afd7eba82ac39151f3783de9b24656728"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/stick-active.png": [
+      "ad55cb5f614193179835c3838bb1234b008440cd"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/stick-inactive.png": [
+      "9b15ee7898035a1db1ebf28fbf3dac34d13302a0"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/stick-prelight.png": [
+      "f53971295ebb3689f20d9b5294f7ce547767697a"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/stick-pressed.png": [
+      "f53971295ebb3689f20d9b5294f7ce547767697a"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/themerc": [
+      "14770f881cec7653b0001ca770ca95bdf527c280"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/title-1-active.png": [
+      "01f2911a69b537d632bc1a7fe1e0ab514394dacf"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/title-1-inactive.png": [
+      "638efe8c098c44a8a4c005158bec20530aac3d1d"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/title-2-active.png": [
+      "01f2911a69b537d632bc1a7fe1e0ab514394dacf"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/title-2-inactive.png": [
+      "638efe8c098c44a8a4c005158bec20530aac3d1d"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/title-3-active.png": [
+      "01f2911a69b537d632bc1a7fe1e0ab514394dacf"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/title-3-inactive.png": [
+      "638efe8c098c44a8a4c005158bec20530aac3d1d"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/title-4-active.png": [
+      "01f2911a69b537d632bc1a7fe1e0ab514394dacf"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/title-4-inactive.png": [
+      "638efe8c098c44a8a4c005158bec20530aac3d1d"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/title-5-active.png": [
+      "01f2911a69b537d632bc1a7fe1e0ab514394dacf"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/title-5-inactive.png": [
+      "638efe8c098c44a8a4c005158bec20530aac3d1d"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/top-left-active.png": [
+      "e5fe131600f951f228159a96fb5b274bb7881f48"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/top-left-inactive.png": [
+      "8263d999db6cbea9594725b6cc2390b3f41ea626"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/top-right-active.png": [
+      "e5fe131600f951f228159a96fb5b274bb7881f48"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/top-right-inactive.png": [
+      "8263d999db6cbea9594725b6cc2390b3f41ea626"
+    ],
+    "assets/themes/RiceHub-Ten-Light/gtk-3.0/gtk.css": [
+      "e1bd4632e738413c91997a83809fd15db5b0a3d1",
+      "d8523ed754c18b3fa000ed19766f5a56870804f9"
+    ],
+    "assets/themes/RiceHub-Ten-Light/index.theme": [
+      "02c1ee3cf700effa68407b9d4b4b96c82a3eb8b0",
+      "8d26bce2359d20575b48c54f5eda78412acd29c2"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/bottom-active.png": [
+      "7c6611ffa3f41ef1d1f74f482d876ffbc94e2cf2"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/bottom-inactive.png": [
+      "4b98bae46f25e8ac8d660e85cf0c1f8a27f29214"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/bottom-left-active.png": [
+      "7c6611ffa3f41ef1d1f74f482d876ffbc94e2cf2"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/bottom-left-inactive.png": [
+      "4b98bae46f25e8ac8d660e85cf0c1f8a27f29214"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/bottom-right-active.png": [
+      "7c6611ffa3f41ef1d1f74f482d876ffbc94e2cf2"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/bottom-right-inactive.png": [
+      "4b98bae46f25e8ac8d660e85cf0c1f8a27f29214"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/close-active.png": [
+      "c2e2cabb23e0d53c18f973541904664fc8f625c0"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/close-inactive.png": [
+      "7740c4305ebac41fbd960348d1eefaffad087cd9"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/close-prelight.png": [
+      "4dc4ab6b5c99df2772c705dc5fc303c92cf1a32e"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/close-pressed.png": [
+      "4dc4ab6b5c99df2772c705dc5fc303c92cf1a32e"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/hide-active.png": [
+      "65741f0802f1ad42b0424e95d14f268e690f7a8d"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/hide-inactive.png": [
+      "d42d82d94651f10a900b54ff20a30b56d49bb40a"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/hide-prelight.png": [
+      "9082ea996f55bc0ee84e0292dbbd801c5bf78f07"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/hide-pressed.png": [
+      "9082ea996f55bc0ee84e0292dbbd801c5bf78f07"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/left-active.png": [
+      "e0b8127059ccb81d5465b22eaa28bfe6ac4d2842"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/left-inactive.png": [
+      "d17a34fca350fddcba64bfc8f05f5989888f0bc8"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/maximize-active.png": [
+      "2f424c9632e33071e2c69d18a80c0d23946a0b37"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/maximize-inactive.png": [
+      "370f46715e4f33f269a4ffdcefcbefbda049f7b1"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/maximize-prelight.png": [
+      "cbfe6b910bb0310a6364edb133f46fd21f3b5b7d"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/maximize-pressed.png": [
+      "cbfe6b910bb0310a6364edb133f46fd21f3b5b7d"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/menu-active.png": [
+      "3b9b99ab5482c0cea655f1a3c8522dc37ce803e1"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/menu-inactive.png": [
+      "deb2818012a106dac411dfa1d0e6a26366030333"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/menu-prelight.png": [
+      "b3908ade1ec44ce39f7376792e73b30a9715c320"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/menu-pressed.png": [
+      "b3908ade1ec44ce39f7376792e73b30a9715c320"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/right-active.png": [
+      "e0b8127059ccb81d5465b22eaa28bfe6ac4d2842"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/right-inactive.png": [
+      "d17a34fca350fddcba64bfc8f05f5989888f0bc8"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/shade-active.png": [
+      "a6bc16be86bf7f8b66b0b0b140c11209531cf28c"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/shade-inactive.png": [
+      "1785d90a5c96927cbc635d853fbc8bbb832970d1"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/shade-prelight.png": [
+      "7c003e1afd7eba82ac39151f3783de9b24656728"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/shade-pressed.png": [
+      "7c003e1afd7eba82ac39151f3783de9b24656728"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/stick-active.png": [
+      "ee6631c02e5450c87a75328e810ad42f485ceb96"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/stick-inactive.png": [
+      "c12225a951810a1ae471c760511f3b0d94596fdc"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/stick-prelight.png": [
+      "f53971295ebb3689f20d9b5294f7ce547767697a"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/stick-pressed.png": [
+      "f53971295ebb3689f20d9b5294f7ce547767697a"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/themerc": [
+      "f784351184ea38c205e602ef4d297f43d317bd34"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/title-1-active.png": [
+      "d04737579ccfd44dac4d981aa0b33ef15151f671"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/title-1-inactive.png": [
+      "780d7f07a29c1e6896691380f9a2b3029dc963a5"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/title-2-active.png": [
+      "d04737579ccfd44dac4d981aa0b33ef15151f671"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/title-2-inactive.png": [
+      "780d7f07a29c1e6896691380f9a2b3029dc963a5"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/title-3-active.png": [
+      "d04737579ccfd44dac4d981aa0b33ef15151f671"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/title-3-inactive.png": [
+      "780d7f07a29c1e6896691380f9a2b3029dc963a5"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/title-4-active.png": [
+      "d04737579ccfd44dac4d981aa0b33ef15151f671"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/title-4-inactive.png": [
+      "780d7f07a29c1e6896691380f9a2b3029dc963a5"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/title-5-active.png": [
+      "d04737579ccfd44dac4d981aa0b33ef15151f671"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/title-5-inactive.png": [
+      "780d7f07a29c1e6896691380f9a2b3029dc963a5"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/top-left-active.png": [
+      "b744312400921b1ebda1e77c1efa5a97f4d60a36"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/top-left-inactive.png": [
+      "71cfe1d73f0118d286433f805efb2f215e92fd7c"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/top-right-active.png": [
+      "b744312400921b1ebda1e77c1efa5a97f4d60a36"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/top-right-inactive.png": [
+      "71cfe1d73f0118d286433f805efb2f215e92fd7c"
+    ]
+  }
+}
