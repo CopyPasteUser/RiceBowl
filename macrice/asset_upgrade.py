@@ -46,7 +46,9 @@ def _validate_destination(target: Path) -> None:
         if not target.is_dir() or target.stat().st_uid != os.getuid():
             raise AssetConflict(f"Unmanaged RiceBowl asset destination: {target}")
         for entry in target.rglob("*"):
-            if entry.is_symlink() or entry.stat().st_uid != os.getuid():
+            if entry.is_symlink():
+                raise AssetConflict(f"Refusing symlinked RiceBowl asset path: {entry}")
+            if entry.stat().st_uid != os.getuid():
                 raise AssetConflict(f"Unmanaged RiceBowl asset path: {entry}")
 
 
