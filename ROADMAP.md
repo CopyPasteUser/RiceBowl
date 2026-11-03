@@ -4,6 +4,19 @@
 
 MacRice is deliberately a thin integration layer. MacMenu, Control Center and MacBar keep their own tested lifecycles; Plank remains an external system dock.
 
+## 0.9 — Faithful XP, Classic, ChromeOS and Frutiger refinement (3 November 2026)
+
+- [x] Give XP its own actual two-column Start menu, account header, favorites list, places, power footer and vivid Luna taskbar.
+- [x] Build an authentic Classic Programs flyout from installed .desktop categories, with working Find and OS-style controls.
+- [x] Give ChromeOS a 12-app grid, live search, centered shelf and separate status capsule.
+- [x] Give Frutiger Aero working Apps / Places / Settings tabs, organic glass controls and real system shortcuts.
+- [x] Restyle actual GTK3/Thunar widgets, preserving file access and reversible desktop state (not a fake file manager).
+- [x] Draw 36 additional profile-unique folder/device icons and prevent the asset generator from replacing them.
+- [x] Add real, verified volume and mute controls, plus battery/network details; all hardware probes remain bounded.
+- [x] Preserve legacy 0.8 theme and Thunar CSS formats in safe migration logic.
+- [ ] Validate screenshots and CI for tagged 0.9 release, then publish.
+- [ ] Physical Mint XFCE acceptance on real laptop: repeated switches, Plank autostart, external displays and real battery/charging.
+
 ## 0.8 — Visual identity, status tray and repair (3 November 2026)
 
 [Detailed 0.8.0 engineering and acceptance roadmap](RELEASE_0_8_0_ROADMAP.md).
