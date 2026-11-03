@@ -1,0 +1,160 @@
+{
+  "schema": 1,
+  "description": "Unmodified Frutiger Aero theme blobs from the previous RiceBowl release, allowing safe automatic upgrades without overwriting customizations.",
+  "files": {
+    "assets/icons/RiceHub-Frutiger-Icons/scalable/apps/start-here.svg": ["cdd1978f263d46dee98b370171aac83970e78080"],
+    "assets/icons/RiceHub-Frutiger-Icons/scalable/apps/xfce4-menu.svg": ["cdd1978f263d46dee98b370171aac83970e78080"],
+    "assets/icons/RiceHub-Frutiger-Icons/scalable/apps/ricehub-start.svg": ["cdd1978f263d46dee98b370171aac83970e78080"],
+    "assets/icons/RiceHub-Frutiger-Icons/scalable/apps/ricebowl-start.svg": ["cdd1978f263d46dee98b370171aac83970e78080"],
+    "assets/themes/RiceHub-Frutiger/gtk-3.0/gtk.css": [
+      "d6eb5885a551baf36e8f8048b22dbac8f6cf2efb"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/bottom-active.png": [
+      "f9713291db41f03a344e6857865a798c7350e6cc"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/bottom-inactive.png": [
+      "26b4c2a049d0f6cb358f1c4d8aad04de31a29feb"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/bottom-left-active.png": [
+      "f9713291db41f03a344e6857865a798c7350e6cc"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/bottom-left-inactive.png": [
+      "26b4c2a049d0f6cb358f1c4d8aad04de31a29feb"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/bottom-right-active.png": [
+      "f9713291db41f03a344e6857865a798c7350e6cc"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/bottom-right-inactive.png": [
+      "26b4c2a049d0f6cb358f1c4d8aad04de31a29feb"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/close-active.png": [
+      "4f05063c72ff5790e5575cd990ced4d00bf01233"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/close-inactive.png": [
+      "d625de6c513d14baa7e53b363490680176d9cb29"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/close-prelight.png": [
+      "4dc4ab6b5c99df2772c705dc5fc303c92cf1a32e"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/close-pressed.png": [
+      "4dc4ab6b5c99df2772c705dc5fc303c92cf1a32e"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/hide-active.png": [
+      "ff175041368ee2b7734ca5f3bb368f73486e6250"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/hide-inactive.png": [
+      "bfe828bd87734ca498eb28b56d1449e79650cd47"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/hide-prelight.png": [
+      "9082ea996f55bc0ee84e0292dbbd801c5bf78f07"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/hide-pressed.png": [
+      "9082ea996f55bc0ee84e0292dbbd801c5bf78f07"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/left-active.png": [
+      "79a4c93d1ade26f5c6c652379d7c7777b824a3f0"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/left-inactive.png": [
+      "8862350924753bdce4deb3c0c43e96cbe8ec3336"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/maximize-active.png": [
+      "80c43aef8dbf49e18593896e31dbae58f2d08a5b"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/maximize-inactive.png": [
+      "ddc461ea1d27372667f85bcce2ab1ff39a46dc6d"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/maximize-prelight.png": [
+      "cbfe6b910bb0310a6364edb133f46fd21f3b5b7d"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/maximize-pressed.png": [
+      "cbfe6b910bb0310a6364edb133f46fd21f3b5b7d"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/menu-active.png": [
+      "ceef712976cce7f94557678981fd5c3ce5d0478a"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/menu-inactive.png": [
+      "ea4ebb4b7333897ecf8d383373125c42d331ed15"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/menu-prelight.png": [
+      "b3908ade1ec44ce39f7376792e73b30a9715c320"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/menu-pressed.png": [
+      "b3908ade1ec44ce39f7376792e73b30a9715c320"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/right-active.png": [
+      "79a4c93d1ade26f5c6c652379d7c7777b824a3f0"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/right-inactive.png": [
+      "8862350924753bdce4deb3c0c43e96cbe8ec3336"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/shade-active.png": [
+      "47453aeee5caad5839c6bce42eeba3cd5893956a"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/shade-inactive.png": [
+      "086d1ca008d17bf151e368bb1477fe35532de359"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/shade-prelight.png": [
+      "7c003e1afd7eba82ac39151f3783de9b24656728"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/shade-pressed.png": [
+      "7c003e1afd7eba82ac39151f3783de9b24656728"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/stick-active.png": [
+      "b8a53cb387267f5a5039d148f0fde579c6a39082"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/stick-inactive.png": [
+      "7742fd5116c2887b725d4fe92b294ab761d2e983"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/stick-prelight.png": [
+      "f53971295ebb3689f20d9b5294f7ce547767697a"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/stick-pressed.png": [
+      "f53971295ebb3689f20d9b5294f7ce547767697a"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/themerc": [
+      "c524ebc01b6f9c82d7ac50791faf1ce521a46c70"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/title-1-active.png": [
+      "09e2e9bbb2cc6619c44d00144a575dd262b34bb3"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/title-1-inactive.png": [
+      "3ab1fe15b77bdfaf809885a32994bde21027bc19"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/title-2-active.png": [
+      "09e2e9bbb2cc6619c44d00144a575dd262b34bb3"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/title-2-inactive.png": [
+      "3ab1fe15b77bdfaf809885a32994bde21027bc19"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/title-3-active.png": [
+      "09e2e9bbb2cc6619c44d00144a575dd262b34bb3"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/title-3-inactive.png": [
+      "3ab1fe15b77bdfaf809885a32994bde21027bc19"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/title-4-active.png": [
+      "09e2e9bbb2cc6619c44d00144a575dd262b34bb3"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/title-4-inactive.png": [
+      "3ab1fe15b77bdfaf809885a32994bde21027bc19"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/title-5-active.png": [
+      "09e2e9bbb2cc6619c44d00144a575dd262b34bb3"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/title-5-inactive.png": [
+      "3ab1fe15b77bdfaf809885a32994bde21027bc19"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/top-left-active.png": [
+      "92e87f3b1c6225a63981b8b01660f170f77ed782"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/top-left-inactive.png": [
+      "262c463262d6f0b82af5d2837eb5bec871ad0de7"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/top-right-active.png": [
+      "92e87f3b1c6225a63981b8b01660f170f77ed782"
+    ],
+    "assets/themes/RiceHub-Frutiger/xfwm4/top-right-inactive.png": [
+      "262c463262d6f0b82af5d2837eb5bec871ad0de7"
+    ]
+  }
+}

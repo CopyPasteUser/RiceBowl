@@ -89,6 +89,19 @@ def win7_programs(apps, pins: tuple[str, ...], query: str, *, all_programs: bool
     return tuple(favorites[:limit])
 
 
+def frutiger_status_summary(status) -> str:
+    """Summarize real hardware state for the Aqua World header; no fake toggles."""
+    if status is None:
+        return "Checking network and sound…"
+    network = {"wifi": "Wi-Fi", "ethernet": "Ethernet", "offline": "Offline"}.get(
+        status.network, "Network unavailable")
+    sound = status.sound
+    audio = ("Audio unavailable" if sound.percent is None else
+             "Muted" if sound.muted else f"Volume {sound.percent}%")
+    battery = f"Battery {status.battery.percent}%" if status.battery else "No battery"
+    return "  •  ".join((network, audio, battery))
+
+
 CSS = b"""
 .aero-taskbar {
   background-image: linear-gradient(to bottom, rgba(193,232,255,.95), rgba(91,161,211,.96) 48%, rgba(24,74,133,.98));
@@ -894,11 +907,15 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
         def _apply_status(self, status):
             self._status_pending = False
             if status is None:
+                if hasattr(self, "frutiger_status_label"):
+                    self.frutiger_status_label.set_text(frutiger_status_summary(None))
                 for button, _image, _label in self._status_widgets.values():
                     button.set_sensitive(False)
                     button.set_tooltip_text("Hardware status temporarily unavailable")
                 return False
             self._last_status = status
+            if hasattr(self, "frutiger_status_label"):
+                self.frutiger_status_label.set_text(frutiger_status_summary(status))
             if hasattr(self, "control_network_label"):
                 self.control_network_label.set_text(
                     "Network: " + {"wifi": "Wi-Fi", "ethernet": "Ethernet",
@@ -1077,11 +1094,15 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                                       spacing=4 if profile in ("winxp", "aero") else 8), "aero-taskbar")
             if profile == "aero":
                 row.get_style_context().add_class("win7-taskbar")
+            elif profile == "frutiger":
+                row.get_style_context().add_class("frutiger-taskbar")
             if not ten and os.environ.get("RICEHUB_AERO_GLASS") == "1":
                 row.get_style_context().add_class("aero-glass")
             start = self._class(Gtk.Button(), "aero-start")
             if profile == "aero":
                 start.get_style_context().add_class("win7-start")
+            elif profile == "frutiger":
+                start.get_style_context().add_class("frutiger-start")
             contents = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
             logo = project_root() / ("assets/ten-start.svg" if ten else
                                      "assets/" + heritage.logo if heritage else "assets/aero-penguin.svg")
@@ -1119,6 +1140,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     search_button.set_label("⌕")
                 row.pack_start(search_button, False, False, 0)
             self.pinned_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
+            if profile == "frutiger":
+                self.pinned_box.get_style_context().add_class("frutiger-pins")
             shelf_box.pack_start(self.pinned_box, False, False, 0)
             self._render_pins()
             self._pin_count = len(self._pinned_ids)
@@ -1132,10 +1155,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             shelf_box.pack_start(self.tasks, False, False, 4)
             row.pack_start(Gtk.Box(), True, True, 0)
             right_area = row
-            if profile in ("chromeos", "winxp"):
+            if profile in ("chromeos", "winxp", "frutiger"):
                 right_area = self._class(
                     Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5),
-                    "chrome-status-pill" if profile == "chromeos" else "luna-tray")
+                    "chrome-status-pill" if profile == "chromeos" else
+                    "luna-tray" if profile == "winxp" else "frutiger-tray")
                 row.pack_end(right_area, False, False, 0 if profile == "winxp" else 4)
             desktop = self._class(Gtk.Button(), "aero-desktop")
             if profile == "aero":
@@ -2039,7 +2063,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.classic_search.grab_focus()
 
         def _create_frutiger_menu(self):
-            """An airy Y2K/Frutiger dashboard, intentionally unlike Aero Start."""
+            """The real Aqua World launcher: nature, refractive glass and live apps."""
             menu = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
             menu.set_title("RiceBowl Frutiger Aero — Your World")
             menu.set_decorated(False)
@@ -2052,19 +2076,35 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             rect = self._desktop_rect()
             _x, _y, width, height = menu_geometry(
                 rect.x, rect.y, rect.width, rect.height,
-                preferred_width=535, preferred_height=540)
+                preferred_width=600, preferred_height=600)
             menu.set_default_size(width, height)
-            root = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=11),
+            root = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8),
                                "aqua-dashboard")
             root.get_style_context().add_class("aero-menu-root")
-            root.set_border_width(15)
-            heading = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-            mark = Gtk.Image()
-            self._set_status_icon(mark, "wifi")
-            heading.pack_start(mark, False, False, 0)
-            heading.pack_start(self._class(
+            root.set_border_width(11)
+            heading = self._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=11),
+                                  "aqua-hero")
+            logo = project_root() / "assets/ricebowl-frutiger-start.svg"
+            try:
+                mark = Gtk.Image.new_from_pixbuf(
+                    GdkPixbuf.Pixbuf.new_from_file_at_scale(str(logo), 49, 49, True))
+            except (GLib.Error, OSError):
+                mark = self._icon("start-here", Gtk.IconSize.DIALOG)
+            heading.pack_start(self._class(mark, "aqua-hero-orb"), False, False, 0)
+            titles = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+            titles.pack_start(self._class(
                 Gtk.Label(label="Your World", xalign=0), "aero-menu-heading"),
-                True, True, 0)
+                False, False, 0)
+            titles.pack_start(self._class(
+                Gtk.Label(label="Explore  •  Connect  •  Create", xalign=0),
+                "aero-menu-sub"), False, False, 0)
+            self.frutiger_status_label = self._class(Gtk.Label(
+                label=frutiger_status_summary(self._last_status), xalign=0),
+                "aqua-status-caption")
+            self.frutiger_status_label.set_ellipsize(Pango.EllipsizeMode.END)
+            self.frutiger_status_label.set_tooltip_text("Live desktop status")
+            titles.pack_start(self.frutiger_status_label, False, False, 0)
+            heading.pack_start(titles, True, True, 0)
             gear = self._class(Gtk.Button(), "aqua-gear")
             gear.set_image(self._icon("preferences-system", Gtk.IconSize.MENU))
             gear.get_accessible().set_name("Open desktop settings")
@@ -2073,14 +2113,13 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                          self._open_tool("xfce4-settings-manager"))
             heading.pack_end(gear, False, False, 0)
             root.pack_start(heading, False, False, 0)
-            root.pack_start(self._class(
-                Gtk.Label(label="Explore  •  Connect  •  Create", xalign=0),
-                "aero-menu-sub"), False, False, 0)
             search = self._class(Gtk.SearchEntry(), "aero-menu-search")
             search.set_placeholder_text("Search your applications")
             search.get_accessible().set_name("Search applications")
             root.pack_start(search, False, False, 0)
-            shortcuts = Gtk.Grid(column_spacing=8, row_spacing=6)
+            shortcuts = self._class(Gtk.Grid(column_spacing=8, row_spacing=6),
+                                    "aqua-shortcuts")
+            shortcuts.set_column_homogeneous(True)
             for i, (name, icon_name, uri) in enumerate((
                 ("Home", "user-home", Path.home().as_uri()),
                 ("Files", "system-file-manager", "file:///"),
@@ -2089,7 +2128,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             )):
                 button = self._class(Gtk.Button(), "aqua-shortcut")
                 col = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
-                col.pack_start(self._icon(icon_name, Gtk.IconSize.LARGE_TOOLBAR),
+                col.pack_start(self._icon(icon_name, Gtk.IconSize.DIALOG),
                                False, False, 0)
                 col.pack_start(Gtk.Label(label=name), False, False, 0)
                 button.add(col)
@@ -2123,8 +2162,14 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
             apps_scroll = Gtk.ScrolledWindow()
             apps_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-            apps_scroll.set_min_content_height(140)
-            self.results = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+            apps_scroll.set_min_content_height(135)
+            self.results = self._class(Gtk.FlowBox(), "aqua-app-grid")
+            self.results.set_selection_mode(Gtk.SelectionMode.NONE)
+            self.results.set_min_children_per_line(2)
+            self.results.set_max_children_per_line(3)
+            self.results.set_column_spacing(9)
+            self.results.set_row_spacing(9)
+            self.results.set_homogeneous(True)
             apps_scroll.add(self.results)
             self.aqua_stack.add_named(apps_scroll, "Apps")
 
@@ -2194,6 +2239,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             menu.connect("focus-out-event", self._menu_focus_out)
             def search_changed(*_args):
                 self._app_page_size = 24
+                if search.get_text().strip():
+                    switch_to("Apps")
                 self._populate(search.get_text())
             search.connect("search-changed", search_changed)
             search.connect("key-press-event", lambda _widget, event: self._search_key(event))
@@ -2632,6 +2679,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
         def _populate(self, query):
             for child in self.results.get_children():
                 self.results.remove(child)
+            if profile == "frutiger":
+                self._populate_frutiger(query)
+                return
             if profile == "winxp":
                 self._populate_luna(query)
                 return
@@ -2663,6 +2713,46 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     self._populate(self.search.get_text())
                 more.connect("clicked", expand)
                 self.results.pack_start(more, False, False, 0)
+            self.results.show_all()
+
+        def _populate_frutiger(self, query):
+            """Icon-first, fully functional Aqua grid of installed Gio apps."""
+            matches = matching_apps(self.apps, query)
+            for app in matches[:self._app_page_size]:
+                title = app.get_display_name() or app.get_name() or "Application"
+                button = self._class(Gtk.Button(), "aqua-app-tile")
+                content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+                icon = app.get_icon()
+                content.pack_start(
+                    Gtk.Image.new_from_gicon(icon, Gtk.IconSize.DIALOG) if icon else
+                    self._icon("applications-other", Gtk.IconSize.DIALOG),
+                    False, False, 0)
+                label = Gtk.Label(label=title)
+                label.set_max_width_chars(16)
+                label.set_ellipsize(Pango.EllipsizeMode.END)
+                content.pack_start(label, False, False, 0)
+                button.add(content)
+                button.get_accessible().set_name("Launch " + title)
+                button.set_tooltip_text(title)
+                button.connect("clicked", lambda _button, selected=app: self._launch(selected))
+                button.connect("button-press-event", lambda widget, event, selected=app:
+                               self._pin_context(widget, selected, event))
+                button.connect("popup-menu", lambda widget, selected=app:
+                               self._pin_context(widget, selected))
+                self.results.add(button)
+            if not matches:
+                empty = self._class(Gtk.Label(label="No matching applications"),
+                                    "aqua-empty")
+                self.results.add(empty)
+            if len(matches) > self._app_page_size:
+                more = self._class(Gtk.Button(label="Show more applications…"),
+                                   "aqua-app-tile")
+                more.get_accessible().set_name("Show more installed applications")
+                def expand(_button):
+                    self._app_page_size += 24
+                    self._populate(self.search.get_text())
+                more.connect("clicked", expand)
+                self.results.add(more)
             self.results.show_all()
 
         def _populate_win7(self, query):
@@ -2775,7 +2865,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     self._launch(apps[0])
                     return True
             if event.keyval == Gdk.KEY_Down and self.results.get_children():
-                self.results.get_children()[0].grab_focus()
+                first = self.results.get_children()[0]
+                if profile == "frutiger" and isinstance(first, Gtk.FlowBoxChild):
+                    first = first.get_child()
+                first.grab_focus()
                 return True
             return False
 
@@ -2811,7 +2904,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 "winxp": (480, 540),
                 "winclassic": (285, 430),
                 "chromeos": (650, 548),
-                "frutiger": (535, 540),
+                "frutiger": (600, 600),
                 "windows10": (735, 565),
                 "aero": (525, 535),
             }

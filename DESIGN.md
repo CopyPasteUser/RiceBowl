@@ -50,7 +50,23 @@ original Linux artwork. Windows 11 and Liquid Glass are out of scope.
   `.desktop` launchers and disabled unavailable Linux utilities.
 - **98 / 2000:** square relief borders, cool gray chrome, high-density menus and teal wallpaper.
 - **ChromeOS:** light pastel background, soft shelf, rounded launcher and quiet blue accents.
-- **Frutiger Aero:** translucent cyan-to-turquoise panels, nature-inspired green landscape and airy highlights.
+- **Frutiger Aero / Aqua World:** independent luminous turquoise/cyan and lime
+  eco-futurist identity over original water/grass/blue-sky artwork. The live
+  taskbar has a thick pearlescent top light, a recognizable aqua Start orb,
+  rounded glass-like running-window capsules and a separate green-blue status
+  cluster; it must never inherit Windows 7's slate-blue Superbar visual code.
+  `_create_frutiger_menu()` renders a rounded `Your World` head with **real**
+  Wi-Fi/Ethernet, audio and battery status; accessible search; four working
+  system locations; and **Apps / Places / Settings** pages. The Apps view is an
+  icon-first Gio app grid with working search, launch, Show more and pin menus;
+  unavailable Linux settings tools are disabled. Dedicated selectors live in
+  `heritage_shell.DETAIL_CSS["frutiger"]` and are scoped with `frutiger-*` /
+  `aqua-*`. `scripts/build_heritage_assets.py --frutiger-only` regenerates
+  original glossy XFWM4 button sprites and GTK3/Thunar widget styling without
+  rebuilding other rices. Exact prior asset hashes in
+  `assets/trusted-ricebowl-frutiger-before-aqua.json` allow backup-backed
+  upgrades while protecting genuine user customization. This is native GTK
+  refraction **suggestion**, not claimed GPU backdrop blur.
 
 Desktop styles must remain recognizable without blur, desktop GPU effects or
 third-party panels. Do not depend on non-existent proprietary OS resources.

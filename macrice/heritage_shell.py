@@ -325,50 +325,131 @@ menu menuitem:hover { background: #000080; color: #fff; }
   border-radius: 22px; border: 1px solid #d3dff4; }
 """,
     "frutiger": b"""
-/* Frutiger Aqua: luminous cyan glass, lime controls and rounded wave panels. */
-.aero-taskbar {
-  background-image: linear-gradient(to bottom, rgba(247,255,253,.97),
-    rgba(133,244,228,.92) 42%, rgba(36,177,199,.94));
-  border-top: 2px solid #faffff; border-bottom: 1px solid #218b9c;
-  color: #075676; padding: 5px 10px; min-height: 49px;
+/* Aqua World: independent 2005-2012 eco-futurist lens/glass, never Win7 cobalt.
+   These GTK-owned gradients retain their shape without a blur compositor. */
+.aero-taskbar.frutiger-taskbar {
+  background-image: linear-gradient(to bottom, #efffff 0%, #b3fff1 11%,
+    #7fe5e5 43%, #2fbdcb 47%, #26abb8 81%, #0f87aa 100%);
+  border-top: 2px solid #ffffff; border-bottom: 2px solid #0c86a8;
+  color: #064e69; padding: 3px 9px; min-height: 49px;
+  box-shadow: inset 0 1px #ffffff;
 }
-.aero-start { background-image: linear-gradient(#fff, #b8fff0 36%, #22b5ca);
-  color: #07657e; border: 2px solid #f1ffff; border-radius: 30px;
-  box-shadow: 0 2px 5px rgba(10,80,114,.35); padding: 3px 9px; }
-.aero-pin, .aero-task { background-image: linear-gradient(rgba(255,255,255,.7),
-  rgba(93,214,223,.48)); border: 1px solid rgba(246,255,255,.9);
-  border-radius: 17px; color: #08607e; box-shadow: inset 0 1px #fff; }
-.aero-pin:hover, .aero-task:hover, .aero-task-active {
-  background: #d0fff3; border: 1px solid #31a5c4; }
-.rice-status, .aero-quick, .aero-time { background: rgba(219,255,246,.50);
-  border: 1px solid rgba(244,255,255,.9); border-radius: 18px;
-  color: #075c75; padding: 4px 7px; }
-.aqua-dashboard { background-image: linear-gradient(to bottom, #ebfff9,
-  #aef1e8 48%, #7cdae3); border: 2px solid #67d7d8;
-  border-radius: 23px; box-shadow: 0 5px 17px rgba(7,87,120,.32); }
-.aqua-dashboard .aero-menu-heading { color: #096b89; font-size: 23px;
-  font-weight: bold; }
-.aqua-dashboard .aero-menu-search { border: 1px solid #70cddb; color: #075878;
-  background: rgba(253,255,255,.94); border-radius: 22px; padding: 8px 12px; }
-.aqua-tabs { background: rgba(242,255,252,.55); border: 1px solid #8ddde0;
-  border-radius: 18px; padding: 3px; }
-.aqua-tab { background-image: linear-gradient(#fff, #a5eee7); border: 1px solid #73ced4;
-  border-radius: 15px; color: #0c6887; padding: 8px 11px; box-shadow: inset 0 1px #fff; }
-.aqua-tab:checked { background-image: linear-gradient(#e7ff90, #82e633);
-  color: #174d6b; border: 1px solid #6ac63d; font-weight: bold; }
-.aqua-tab:hover { background: #d1fff0; }
-.aqua-place, .aqua-shortcut { background-image: linear-gradient(#f9ffff, #b6f5ee);
-  border: 1px solid #83d7df; border-radius: 16px; color: #075779;
-  padding: 10px; box-shadow: inset 0 1px #fff; }
-.aqua-place:hover, .aqua-place:focus, .aqua-shortcut:hover {
-  background-image: linear-gradient(#fff, #8decde);
-  border-color: #32abc5; color: #075479; }
-.aqua-footer { background: rgba(233,255,251,.70); border-top: 1px solid #82d8da;
-  border-radius: 12px; padding: 5px 8px; }
+.aero-start.frutiger-start {
+  background-image: linear-gradient(to bottom, #ffffff 0%, #f0ffff 26%,
+    #92ffe0 45%, #42d1a3 53%, #1ba6ac 100%);
+  color: #07526b; border: 2px solid #f7ffff; border-radius: 28px;
+  box-shadow: inset 0 2px rgba(255,255,255,.95), 0 1px 5px rgba(8,91,118,.36);
+  padding: 1px 15px 1px 4px; min-height: 40px; font-weight: bold;
+}
+.frutiger-start:hover, .frutiger-start:focus {
+  background-image: linear-gradient(#ffffff, #cefff1 40%, #64e6d8 52%, #1ab3bf);
+  border-color: #ffffff;
+}
+.frutiger-taskbar .aero-pin, .frutiger-taskbar .aero-task {
+  background-image: linear-gradient(to bottom, #f7ffff, #c2fff1 35%,
+    #8fe5e7 52%, #46c4d3);
+  border: 1px solid #eaffff; border-bottom: 2px solid #1c94ac;
+  border-radius: 15px; color: #074f6c; padding: 4px 9px;
+  box-shadow: inset 0 1px #fff, 0 1px 3px rgba(6,81,116,.20);
+}
+.frutiger-taskbar .aero-pin:hover, .frutiger-taskbar .aero-task:hover,
+.frutiger-taskbar .aero-pin:focus, .frutiger-taskbar .aero-task:focus {
+  background-image: linear-gradient(#fff, #d9ffef 36%, #8cf5d1 52%, #3fd2c8);
+  border-color: #fff; box-shadow: inset 0 1px #fff, 0 0 6px #d2fff7;
+}
+.frutiger-taskbar .aero-task-active {
+  background-image: linear-gradient(#ffffee, #dfff92 41%, #a8ec49 53%, #53bb55);
+  border-color: #faffcf; border-bottom-color: #388c5e;
+}
+.frutiger-tray {
+  background-image: linear-gradient(to bottom, rgba(248,255,255,.95),
+    rgba(175,250,230,.87) 48%, rgba(78,205,207,.91));
+  border: 1px solid rgba(249,255,255,.98); border-radius: 23px;
+  padding: 2px 5px; box-shadow: inset 0 1px #fff;
+}
+.frutiger-tray .rice-status, .frutiger-tray .aero-quick,
+.frutiger-tray .aero-time, .frutiger-tray .aero-desktop {
+  background: transparent; border: 1px solid transparent; border-radius: 15px;
+  box-shadow: none; color: #075571; padding: 4px 6px;
+}
+.frutiger-tray .rice-status label { color: #075571; font-weight: bold; }
+.frutiger-tray .rice-status:hover, .frutiger-tray .aero-quick:hover,
+.frutiger-tray .aero-desktop:hover { background: #dbfff1; border-color: #6ccfc5; }
+.aqua-dashboard {
+  background-image: linear-gradient(to bottom, rgba(251,255,255,.98) 0%,
+    rgba(221,255,240,.98) 15%, rgba(171,249,230,.98) 46%,
+    rgba(134,225,226,.99) 100%);
+  border: 3px solid #e6ffff; border-radius: 27px;
+  box-shadow: inset 0 2px #fff, inset 0 -2px #51c6d2,
+    0 6px 18px rgba(5,86,112,.38);
+  color: #08506c;
+}
+.aqua-hero {
+  background-image: linear-gradient(to bottom, #faffff, #d4fff1 44%, #9fe7e9);
+  border: 1px solid #85d6d8; border-radius: 21px;
+  box-shadow: inset 0 2px #fff; padding: 7px 10px;
+}
+.aqua-hero-orb { background: #e8fff7; border: 1px solid #fcffff;
+  border-radius: 28px; padding: 3px; box-shadow: 0 1px 4px rgba(4,99,132,.25); }
+.aqua-dashboard .aero-menu-heading { color: #096588; font-size: 26px;
+  font-weight: bold; text-shadow: 0 1px #fff; }
+.aqua-dashboard .aero-menu-sub { color: #087d8a; font-size: 12px; font-weight: bold; }
+.aqua-status-caption { color: #136b7b; font-size: 10px; }
+.aqua-dashboard .aero-menu-search {
+  border: 2px solid #69b9d0; color: #075878; background: #f9ffff;
+  border-radius: 22px; padding: 9px 14px; box-shadow: inset 0 1px #fff;
+}
+.aqua-dashboard .aero-menu-search:focus { border-color: #1a8fc3;
+  box-shadow: 0 0 4px rgba(23,155,202,.45); }
+.aqua-shortcuts { background: rgba(243,255,250,.35); border-radius: 19px;
+  padding: 3px; }
+.aqua-shortcut { background-image: linear-gradient(#fff 0%, #eefff9 30%,
+  #bdf7ed 45%, #75dcd7 100%); border: 1px solid #83d8db;
+  border-radius: 17px; color: #075779; min-height: 72px;
+  padding: 5px 9px; box-shadow: inset 0 2px #fff, 0 1px 3px rgba(13,111,136,.20); }
+.aqua-shortcut label { color: #075779; font-size: 11px; font-weight: bold; }
+.aqua-shortcut:hover, .aqua-shortcut:focus {
+  background-image: linear-gradient(#fff, #e8ffec 35%, #9ff2b4 53%, #56d2c3);
+  border-color: #1b9cad; box-shadow: inset 0 1px #fff, 0 0 5px #cbfff1;
+}
+.aqua-tabs { background: rgba(244,255,250,.65); border: 1px solid #84d6db;
+  border-radius: 20px; padding: 4px; }
+.aqua-tab { background-image: linear-gradient(#faffff, #dcfff8 48%, #90dce1);
+  border: 1px solid #93d6da; border-radius: 16px; color: #076584;
+  padding: 9px 13px; box-shadow: inset 0 1px #fff; font-weight: bold; }
+.aqua-tab:checked { background-image: linear-gradient(#f8ffcd 0%, #dfff8b 45%,
+  #91e44a 51%, #65c936); color: #19506c; border-color: #75c449;
+  box-shadow: inset 0 1px #ffffeb; }
+.aqua-tab:hover, .aqua-tab:focus { border-color: #259ebd; }
+.aqua-dashboard scrolledwindow, .aqua-dashboard viewport,
+.aqua-dashboard flowbox, .aqua-dashboard flowboxchild { background: transparent; }
+.aqua-app-grid { padding: 1px 3px 6px; }
+.aqua-app-tile { background-image: linear-gradient(#ffffff, #e5fff9 39%,
+  #bcf4ec 52%, #91e0e3); border: 1px solid #91d7dc; border-radius: 16px;
+  box-shadow: inset 0 1px #fff, 0 1px 3px rgba(8,96,130,.17);
+  min-width: 125px; min-height: 91px; padding: 7px 5px; color: #075778; }
+.aqua-app-tile label { color: #085773; font-weight: bold; font-size: 11px; }
+.aqua-app-tile:hover, .aqua-app-tile:focus {
+  background-image: linear-gradient(#fff, #f0ffdf 40%, #bbf0ac 54%, #79d8be);
+  border-color: #38acaf; box-shadow: inset 0 2px #fff, 0 0 6px #dcfff4; }
+.aqua-empty { color: #11677b; padding: 16px; font-weight: bold; }
+.aqua-place { background-image: linear-gradient(#fff, #d7fff4 42%, #a5e9e5);
+  border: 1px solid #8bd5d8; border-radius: 15px; color: #075779;
+  min-height: 39px; padding: 9px; box-shadow: inset 0 1px #fff; }
+.aqua-place:hover, .aqua-place:focus { background-image: linear-gradient(#fff,
+  #d0ffdc 45%, #92e9bf); border-color: #32abc5; color: #075479; }
+.aqua-footer { background-image: linear-gradient(rgba(255,255,255,.81),
+  rgba(167,240,224,.74)); border: 1px solid #8bd9d8;
+  border-radius: 17px; padding: 5px 9px; box-shadow: inset 0 1px #fff; }
 .aqua-caption { color: #08718a; font-weight: bold; font-size: 11px; }
-.aqua-footer-action, .aqua-gear {
-  background-image: linear-gradient(#fff, #baf3e6);
-  border: 1px solid #83d8d6; border-radius: 17px; padding: 5px; }
+.aqua-footer-action, .aqua-gear { background-image: linear-gradient(#fff, #dcfff4 42%, #97e4dd);
+  border: 1px solid #83d8d6; border-radius: 17px; padding: 6px;
+  box-shadow: inset 0 1px #fff; }
+.aqua-footer-action:hover, .aqua-gear:hover,
+.aqua-footer-action:focus, .aqua-gear:focus {
+  background-image: linear-gradient(#fff, #d0ffe8 42%, #7ae7c8);
+  border-color: #34a6b7; }
+.aqua-footer-action:disabled, .aqua-place:disabled { color: #4f848c; opacity: .72; }
 """,
 }
 
