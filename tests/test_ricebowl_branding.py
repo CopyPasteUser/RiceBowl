@@ -116,7 +116,7 @@ class RiceBowlBrandingTests(unittest.TestCase):
             compile(file.read_text(), str(file), "exec")
         project = (root / "pyproject.toml").read_text()
         self.assertIn('name = "ricebowl-xfce"', project)
-        self.assertIn('version = "0.8.0"', project)
+        self.assertIn('version = "0.9.0"', project)
 
 
 if __name__ == "__main__":
