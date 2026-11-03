@@ -1,34 +1,43 @@
-# Windows 7 · Aero Rice — complete component inventory
+# Windows 7 · Aero Rice
 
-**RiceHub 0.3 release candidate · Windows 7 Aero feature set.** Original Linux-themed artwork inspired by the Aero era; not an installation of Microsoft Windows or a pixel-identical distribution. No Microsoft assets are included.
+The latest native GTK3/XFWM4 Windows 7 Aero experience on `main`. It uses
+original RiceBowl Linux artwork, not Microsoft binaries, icons or wallpaper.
 
 ## Screenshots & coverage
 
-These four images are **real desktop captures** of RiceHub 0.3 RC2 running on a temporary XFCE/X11 desktop, with the bundled Aero Cascade wallpaper, GTK Start/taskbar and original XFWM4 window borders. They are not generated desktop mockups or screenshots from a physically validated Linux Mint installation.
+These images are from the **latest native virtual-X11 CI run**. They show
+working GTK windows, not mockups; owner hardware verification is separate.
 
 ### Desktop and taskbar
 
-![Complete Aero Cascade desktop with pinned taskbar launchers, Start button, clock and Show Desktop](screenshots/windows7-aero-desktop-0.3.0rc2.png)
+![Latest Aero Start and Superbar](screenshots/current/aero-start.webp)
 
 ### Start menu
 
-![Open Aero Start menu listing installed applications, folders and system shortcuts](screenshots/windows7-aero-startmenu-0.3.0rc2.png)
+The Start menu lists real installed apps, grouped recent/favorites, searchable
+All Programs and actual XDG folders. `Super_L` opens it with the search field
+focused; `Escape` dismisses it.
 
-### File manager and window decoration
+### Control Panel
 
-![Thunar with active RiceHub-Aero XFWM4 borders, buttons and file icons](screenshots/windows7-aero-files-0.3.0rc2.png)
+![Latest Aero Control Panel](screenshots/current/aero-controls.webp)
 
-### Start-menu search
+### Grouped taskbar, previews, Jump Lists and Peek
 
-![Filtered installed-terminal search results in the live GTK Start menu](screenshots/windows7-aero-search-0.3.0rc2.png)
+- Wnck groups windows by their actual X11 WM_CLASS; no synthetic grouping of unidentified windows.
+- Hover a running application icon for a GTK preview popover. It captures a
+  bounded X11 drawable when possible, otherwise displays the actual window icon.
+  Windows hidden behind others may not yield a usable thumbnail.
+- Click a grouped app to select its window; right-click to switch/close a
+  specific window or pin a recognized installed application.
+- Right-click pinned programs to open real MIME-compatible local recent files
+  through that program. Empty Jump Lists never invent entries.
+- Hover **Show Desktop** to temporarily reveal the desktop; moving away restores
+  the previous state, while clicking commits the Show Desktop action.
 
-**Capture coverage:** Start menu, search, wallpaper, desktop icons, launcher pins, bottom taskbar, clock, Show Desktop button and XFWM4 window chrome are visible. This test environment did not provide optional Wnck tracking, StatusNotifier clients, network/audio settings launchers or Plank, so running-window buttons, tray contents, quick links and the separate dock do **not** appear in these screenshots. GTK/Thunar widget styling can also differ from a complete applied rice. Those integrations still need captures and acceptance checks on a real Linux Mint XFCE machine.
-
-### RiceBowl gallery
-
-![Aero rice selection in RiceBowl](screenshots/ricehub-aero-gallery-0.2.0rc1.png)
-
-The hub-gallery image is an older genuine GTK3 capture of the preset selector; the four desktop screenshots above show the newer RC2 shell.
+The CI suite also verifies both 1600×900 and 1024×768. Native window tracking,
+real notifications, multiple monitors, and power/network hardware need the
+owner's Linux Mint XFCE acceptance; CI captures are not a physical desktop photo.
 
 ## What is included
 
@@ -36,9 +45,9 @@ The hub-gallery image is an older genuine GTK3 capture of the preset selector; t
 | --- | --- | --- |
 | **Start orb** | [Aero Penguin](assets/aero-penguin.svg) | Original branded Linux Start button; toggles a real GTK window |
 | **Start menu** | [aero_shell.py](macrice/aero_shell.py) | Installed desktop programs, search, Enter/Escape/Down keyboard operation, paging, Home/Computer/Documents, Control Panel, safe XFCE session dialog |
-| **Taskbar** | [aero_shell.py](macrice/aero_shell.py) | Original Aero gradient, active window indicator, minimize/restore, title ellipsis, overflow and primary-monitor layout |
+| **Taskbar** | [aero_shell.py](macrice/aero_shell.py) / [aero_superbar.py](macrice/aero_superbar.py) | 42px glass Superbar, WM_CLASS grouping, window previews, Jump Lists, minimize/restore, active group, overflow |
 | **Pinned applications** | [aero_pins.py](macrice/aero_pins.py) | Right-click a Start result to pin, right-click taskbar icon to unpin; 6 persistent launchers maximum |
-| **Show Desktop** | [aero_windows.py](macrice/aero_windows.py) | Via optional Wnck on X11; disabled if Wnck is unavailable |
+| **Show Desktop** | [aero_windows.py](macrice/aero_windows.py) | Wnck Show Desktop with safe reversible hover Peek and click action |
 | **Notification area** | [aero_tray.py](macrice/aero_tray.py) | Experimental D-Bus StatusNotifier icons, click and context menu, coexists with an existing watcher |
 | **Clock / quick links** | [aero_shell.py](macrice/aero_shell.py) | Date and time, optional direct native network and sound settings (launchers, not simulated connection state) |
 | **Glass** | [Aero shell CSS](macrice/aero_shell.py) | Glass-inspired gradient, optional translucent variant; no compositor blur guarantee |

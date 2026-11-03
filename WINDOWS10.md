@@ -27,13 +27,13 @@ The implementation phases have been completed in the repository. **The last phys
 
 ## Actual running GTK / X11 screenshots
 
-![RiceHub Windows 10 style selection and Apply button](screenshots/ricehub-windows10-gallery-0.5.0rc2.png)
-
 | Start menu and installed applications | Action Center and quick settings |
 | --- | --- |
-| ![RiceHub Ten penguin Start in X11 with real Gio application catalog, pinned tiles and original wallpaper](screenshots/windows10-live-start-0.5.0rc2.png) | ![RiceHub Ten real GTK Action Center with penguin taskbar over original wallpaper](screenshots/windows10-live-actions-0.5.0rc2.png) |
+| ![Latest Windows 10 Start](screenshots/current/windows10-start.webp) | ![Latest Windows 10 controls](screenshots/current/windows10-controls.webp) |
 
-Captured by `screenshots/capture_ten_shell.py` and `screenshots/capture_windows10_hub.py` against a disposable 1600×900 X11 display. The shell windows are **running GTK widgets**; the original wallpaper is a test fixture in the virtual desktop. These are not photographs of a complete physical Linux Mint installation. Some XFCE features (real notifications, system tray icons, session manager and Wnck windows) are not present in the isolated capture.
+Captured from the latest native GTK shell in isolated virtual X11. The
+original wallpaper is a test fixture; real notifications, tray applications
+and actual Mint hardware are not represented in these captures.
 
 ## Installation and use
 

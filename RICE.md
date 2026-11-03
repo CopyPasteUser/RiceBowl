@@ -40,12 +40,10 @@ does not download theme archives or run package manager commands for you.
 
 ![Aurora Night](assets/wallpapers/aurora-night.jpg)
 
-![Illustrative desktop preview with inverted bars and styled Thunar](screenshots/full-rice-overview-0.2.0rc2.png)
-
-![Illustrative Aurora Day preview with dark top bar, dark Plank and styled Thunar](screenshots/full-rice-thunar-day-0.2.0rc2.png)
-
-*These two release images are generated layout illustrations, not screenshots of
-someone's real XFCE session. The interactive preview is a native GTK window.*
+The old layout illustrations were removed from the public gallery; they did not
+represent a running XFCE session. The interactive preview remains a native GTK
+window, and the [current gallery](README.md#latest-screenshots-from-main) shows
+only actual virtual-X11 captures.
 
 ## Preview before applying
 

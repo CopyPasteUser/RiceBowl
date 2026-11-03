@@ -33,6 +33,9 @@ class FakeWindow:
     def get_mini_icon(self):
         return None
 
+    def get_class_group(self):
+        return SimpleNamespace(get_id=lambda: getattr(self, "wmclass", ""))
+
     def get_window_type(self):
         return self.kind
 
@@ -124,6 +127,7 @@ class AeroWindowTests(unittest.TestCase):
 
     def test_window_signals_are_coalesced_without_polling(self):
         first, second = FakeWindow("Files"), FakeWindow("Start", "utility")
+        first.wmclass = "Thunar"
         screen = FakeScreen([first, second])
         wnck = SimpleNamespace(Screen=SimpleNamespace(get_default=lambda: screen),
                                WindowType=SimpleNamespace(NORMAL="normal"))
@@ -136,6 +140,7 @@ class AeroWindowTests(unittest.TestCase):
         self.assertIsInstance(windows[0], WindowSnapshot)
         self.assertEqual((windows[0].xid, windows[0].title, windows[0].minimized),
                          (first.xid, "Files", False))
+        self.assertEqual(windows[0].group_id, "Thunar")
         self.assertEqual(active, windows[0])
         self.assertEqual(set(tracker._window_handlers), {first.xid, second.xid})
         first.emit("name-changed")
