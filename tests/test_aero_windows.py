@@ -24,6 +24,7 @@ class FakeWindow:
         self.minimized = False
         self.calls = []
         self.disposed = False
+        self.large_icon = object()  # GdkPixbuf stand-in, never a WnckWindow
         FakeWindow.next_xid += 1
         self.xid = FakeWindow.next_xid
 
@@ -32,6 +33,9 @@ class FakeWindow:
 
     def get_mini_icon(self):
         return None
+
+    def get_icon(self):
+        return self.large_icon
 
     def get_class_group(self):
         return SimpleNamespace(get_id=lambda: getattr(self, "wmclass", ""))
@@ -141,6 +145,7 @@ class AeroWindowTests(unittest.TestCase):
         self.assertEqual((windows[0].xid, windows[0].title, windows[0].minimized),
                          (first.xid, "Files", False))
         self.assertEqual(windows[0].group_id, "Thunar")
+        self.assertIs(windows[0].large_icon, first.large_icon)
         self.assertEqual(active, windows[0])
         self.assertEqual(set(tracker._window_handlers), {first.xid, second.xid})
         first.emit("name-changed")

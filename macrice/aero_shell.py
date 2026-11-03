@@ -178,14 +178,14 @@ CSS = b"""
   box-shadow: none;
   border-radius: 24px;
   padding: 0 4px 0 2px;
-  min-width: 40px;
-  min-height: 37px;
+  min-width: 44px;
+  min-height: 42px;
 }
 .win7-start:hover { background: radial-gradient(ellipse at center, rgba(255,255,255,.37), rgba(130,212,253,.10) 75%, transparent); }
 .win7-start:active, .win7-start:focus { background: radial-gradient(ellipse at center, rgba(207,247,255,.62), rgba(69,172,227,.14) 80%, transparent); }
 .aero-pin.win7-pin, .aero-task.win7-task {
-  min-width: 42px;
-  min-height: 34px;
+  min-width: 47px;
+  min-height: 41px;
   background-image: linear-gradient(to bottom, rgba(230,247,255,.11), rgba(14,67,111,.05));
   border: 1px solid rgba(214,242,255,.17);
   border-bottom: 2px solid rgba(245,254,255,.37);
@@ -242,7 +242,7 @@ CSS = b"""
 .win7-user-name { color: #fff; font-size: 12px; font-weight: bold; text-shadow: 0 1px #315a83; }
 .win7-place { color: white; background: transparent; border: 1px solid transparent;
   border-radius: 3px; box-shadow: none; padding: 6px 3px; }
-.win7-place label { color: #fff; font-weight: bold; font-size: 11px; }
+.win7-place label { color: #fff; font-weight: normal; font-size: 12px; }
 .win7-place:hover, .win7-place:focus { background: rgba(235,250,255,.33); border-color: rgba(255,255,255,.6); }
 .win7-place:disabled label { color: #e1ebf5; }
 .win7-side-separator { background: rgba(227,248,255,.36); min-height: 1px; margin: 6px 3px; }
@@ -251,34 +251,44 @@ CSS = b"""
   padding: 7px 14px; font-weight: bold; box-shadow: inset 0 1px rgba(255,255,255,.43); }
 .win7-power:hover { background-image: linear-gradient(to bottom, #ffdbaf, #f5a85f 48%, #c66a29 52%, #e28c48); }
 .win7-power:disabled { background: #6c8290; color: #dfebf2; }
-/* White Windows 7 Control Panel interior with a thin Aero-glass frame. */
-.aero-control-root.win7-control-root {
-  background-image: linear-gradient(to bottom, #ffffff, #eff7fc 17%, #e3f0f9);
-  border: 1px solid #669dc7;
-  border-radius: 5px;
-  box-shadow: inset 0 2px #ffffff;
-  padding: 13px;
-}
-.win7-control-root .aero-menu-heading { color: #205786; font-size: 18px; font-weight: normal; }
-.win7-control-root .aero-menu-sub { color: #426e8e; }
-.aero-control-quick.win7-control-tool {
-  background-image: linear-gradient(to bottom, #fefefe, #e1f0fa);
-  border: 1px solid #a2c3da;
-  border-radius: 3px;
-  box-shadow: inset 0 1px rgba(255,255,255,.96);
-  color: #21557f;
-  padding: 8px 5px;
-}
-.aero-control-quick.win7-control-tool:hover, .aero-control-quick.win7-control-tool:focus {
-  background-image: linear-gradient(to bottom, #fff, #c8e8fb);
-  border-color: #4a9ad3;
-}
-.win7-hardware { background: rgba(244,250,254,.94); border: 1px solid #c1d9ea;
-  border-radius: 3px; padding: 8px; }
-.win7-hardware .rice-control-detail { color: #2b526d; }
 .win7-control-search { background: #fff; color: #1f4059;
   border: 1px solid #91b8d4; border-radius: 2px; padding: 5px 8px; }
 .win7-control-search:focus { border-color: #328dca; }
+/* Windows 7 Control Panel: a full navigable Explorer-era application window.
+   The separate Linux hardware controls sit behind an explicit disclosure. */
+.win7-cp-root { background: #fff; color: #202a35; }
+.win7-cp-toolbar {
+  background-image: linear-gradient(to bottom, #f4fbff 0%, #d5e9f7 100%);
+  border-bottom: 1px solid #a7c8db; padding: 7px 12px;
+}
+.win7-cp-back { background-image: linear-gradient(to bottom, #fff, #bfdaf0);
+  border: 1px solid #7aa9c8; border-radius: 15px; min-width: 30px; min-height: 28px;
+  padding: 1px 4px; }
+.win7-cp-back:hover, .win7-cp-back:focus { border-color: #2989c5; background: #d1edff; }
+.win7-cp-breadcrumb { background: #fff; border: 1px solid #a5becd;
+  border-radius: 2px; box-shadow: inset 0 1px #fff; color: #2a4a5f;
+  font-size: 12px; padding: 6px 12px; }
+.win7-cp-breadcrumb:hover, .win7-cp-breadcrumb:focus { background: #effaff; border-color: #4b9cd1; }
+.win7-cp-content { background: #fff; padding: 24px 29px 20px; }
+.win7-cp-heading { color: #175483; font-size: 22px; }
+.win7-cp-viewby { color: #616f7c; font-size: 11px; }
+.win7-cp-category { padding: 2px 4px 7px; min-width: 275px; }
+.win7-cp-category-title, .win7-cp-link {
+  background: transparent; background-image: none; box-shadow: none;
+  border: 1px solid transparent; border-radius: 2px; color: #155b93;
+  text-shadow: none; padding: 2px 3px; font-size: 12px;
+}
+.win7-cp-category-title { font-size: 14px; font-weight: bold; }
+.win7-cp-category-title:hover, .win7-cp-category-title:focus,
+.win7-cp-link:hover, .win7-cp-link:focus {
+  color: #084879; background: #e6f4ff; border-color: #b2d9f2;
+}
+.win7-cp-link:disabled { color: #667987; background: transparent; border-color: transparent; }
+.win7-cp-empty { color: #647989; font-size: 13px; }
+.win7-cp-status-expander { background: #eaf4fb; border-top: 1px solid #b0cfdf;
+  padding: 5px 18px; color: #2f5c78; font-size: 11px; }
+.win7-cp-hardware { background: #f4f9fd; padding: 7px 10px; }
+.win7-cp-hardware .rice-control-detail { color: #274f66; }
 .win7-group-count { color: #fff; font-size: 10px; font-weight: bold;
   background: #246da9; border: 1px solid #caefff; border-radius: 8px;
   min-width: 12px; padding: 0 2px; }
@@ -308,7 +318,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
     panel_height = (34 if profile == "winclassic" else
                     40 if profile in ("winxp", "windows10") else
                     56 if profile == "chromeos" else
-                    42 if profile == "aero" else PANEL_HEIGHT)
+                    48 if profile == "aero" else PANEL_HEIGHT)
     action_heights = {"winxp": 630, "winclassic": 570, "aero": 530,
                       "frutiger": 560, "chromeos": 608, "windows10": 680}
     if ten:
@@ -487,6 +497,16 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self._toggle_actions()
                 assert not self.actions.get_visible()
                 if profile == "aero":
+                    assert len(self.win7_panel_rows) == 8
+                    self.win7_panel_search.set_text("power")
+                    assert sum(row.get_visible() for _, row in self.win7_panel_rows) == 1
+                    self.win7_panel_search.set_text("not-a-real-setting-39083")
+                    assert not any(row.get_visible() for _, row in self.win7_panel_rows)
+                    self.win7_panel_search.set_text("")
+                    self.win7_panel_show_category(self.win7_panel_rows[0][0])
+                    assert self.win7_panel_back.get_sensitive()
+                    self.win7_panel_back.clicked()
+                    assert not self.win7_panel_back.get_sensitive()
                     # Run the native group button / preview construction path
                     # even if the CI virtual desktop has no ordinary app windows.
                     first = WindowSnapshot(987654, "First window", False, None, "ricebowl-ci")
@@ -751,6 +771,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 icon = app.get_icon()
                 image = (Gtk.Image.new_from_gicon(icon, Gtk.IconSize.LARGE_TOOLBAR) if icon else
                          self._icon("application-x-executable"))
+                if profile == "aero":
+                    image.set_pixel_size(29)
                 if profile == "chromeos":
                     image.set_pixel_size(32)
                 btn.set_image(image)
@@ -1353,7 +1375,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 action.set_tooltip_text("Quick settings and notification information")
                 action.connect("clicked", lambda _button: self._toggle_actions())
                 right_area.pack_end(action, False, False, 0)
-            else:
+            elif profile != "aero":
                 control = self._class(Gtk.Button(), "aero-quick")
                 control.set_image(self._icon("preferences-system", Gtk.IconSize.MENU))
                 control.set_tooltip_text("Control Panel")
@@ -1467,7 +1489,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 for group in visible:
                     button = self._class(Gtk.Button(), "aero-task")
                     button.get_style_context().add_class("win7-task")
-                    button.set_size_request(44, 37)
+                    button.set_size_request(48, 42)
                     content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
                     icon = Gtk.Image.new_from_icon_name("application-x-executable", Gtk.IconSize.MENU)
                     badge = self._class(Gtk.Label(), "win7-group-count")
@@ -1489,8 +1511,15 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             for group in visible:
                 button, icon, badge = self._win7_group_buttons[group.key]
                 foreground = next((w for w in group.windows if w.xid == active_xid), group.windows[0])
-                if foreground.mini_icon is not None:
-                    icon.set_from_pixbuf(foreground.mini_icon)
+                artwork = foreground.large_icon or foreground.mini_icon
+                if artwork is not None:
+                    # Wnck's mini icon is normally 16px; the original Win7
+                    # large-icon Superbar uses a ~32px image, so prefer its
+                    # high-resolution counterpart without retaining Wnck objects.
+                    if foreground.large_icon is not None and (
+                            artwork.get_width() > 30 or artwork.get_height() > 30):
+                        artwork = artwork.scale_simple(30, 30, GdkPixbuf.InterpType.BILINEAR)
+                    icon.set_from_pixbuf(artwork)
                 count = len(group.windows)
                 badge.set_text(str(count))
                 if count > 1:
@@ -1707,7 +1736,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             menu.show_all()
             menu.popup_at_widget(button, Gdk.Gravity.NORTH_WEST, Gdk.Gravity.SOUTH_WEST, None)
 
-        def _win7_side_action(self, title, icon, *, path=None, commands=()):
+        def _win7_side_action(self, title, icon, *, path=None, commands=(), callback=None):
             """Render a real Win7-style place, disabling unavailable Linux tools."""
             if path is not None:
                 return self._place_button(title, icon, path, css_class="win7-place")
@@ -1717,11 +1746,13 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             row.pack_start(Gtk.Label(label=title, xalign=0), True, True, 0)
             button.add(row)
             selected = next((program for program in commands if shutil.which(program)), None)
-            button.set_sensitive(selected is not None)
+            button.set_sensitive(callback is not None or selected is not None)
             button.get_accessible().set_name("Open " + title)
-            button.set_tooltip_text("Open " + title if selected else
+            button.set_tooltip_text("Open " + title if callback or selected else
                                     "Requires " + " or ".join(commands))
-            if selected:
+            if callback is not None:
+                button.connect("clicked", lambda _button: callback())
+            elif selected:
                 button.connect("clicked", lambda _button, program=selected: self._open_tool(program))
             return button
 
@@ -1799,12 +1830,12 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 side.pack_start(self._win7_side_action(label, icon, path=folder), False, False, 0)
             side.pack_start(self._class(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL),
                                         "win7-side-separator"), False, False, 2)
-            for title, icon, commands in (
-                ("Control Panel", "preferences-system", ("xfce4-settings-manager",)),
-                ("Devices and Printers", "printer", ("system-config-printer",)),
-            ):
-                side.pack_start(self._win7_side_action(title, icon, commands=commands),
-                                False, False, 0)
+            side.pack_start(self._win7_side_action(
+                "Control Panel", "preferences-system", callback=self._toggle_actions),
+                False, False, 0)
+            side.pack_start(self._win7_side_action(
+                "Devices and Printers", "printer", commands=("system-config-printer",)),
+                False, False, 0)
             side.pack_start(Gtk.Box(), True, True, 0)
             power = self._class(Gtk.Button(label="Shut down…"), "win7-power")
             power.get_accessible().set_name("Open XFCE session and power options")
@@ -2792,6 +2823,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _create_actions(self):
             """Profile-aware controls; never simulate state-changing toggles."""
+            if profile == "aero":
+                from .win7_control_panel import build
+
+                self.actions = build(self, Gtk, Gdk)
+                return
             if ten:
                 from .ten_action_center import build
 
@@ -2822,9 +2858,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             actions.set_keep_above(True)
             root = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10),
                                "ten-action-root" if tiles else "aero-control-root")
-            if profile == "aero":
-                root.get_style_context().add_class("win7-control-root")
-            elif profile == "frutiger":
+            if profile == "frutiger":
                 root.get_style_context().add_class("aqua-control-root")
             root.set_size_request(300, 265)
 
@@ -2915,8 +2949,6 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     grid.get_style_context().add_class("classic-control-grid")
                 for index, (label, icon_name, command) in enumerate(entries):
                     button = self._class(Gtk.Button(), "ten-quick" if tiles else "aero-control-quick")
-                    if profile == "aero":
-                        button.get_style_context().add_class("win7-control-tool")
                     classic_icon = profile == "winclassic"
                     contents = Gtk.Box(
                         orientation=(Gtk.Orientation.VERTICAL if classic_icon else
@@ -2969,8 +3001,6 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             hardware = self._class(
                 Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=7),
                 "rice-hardware-panel")
-            if profile == "aero":
-                hardware.get_style_context().add_class("win7-hardware")
             hardware.pack_start(self._class(
                 Gtk.Label(label="Device status", xalign=0), "aero-menu-sub"),
                 False, False, 0)
@@ -3063,6 +3093,22 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 return
             self._hide_menu()
             rect = self._desktop_rect()
+            if profile == "aero":
+                width = min(810, max(0, rect.width - 32))
+                height = min(565, max(0, rect.height - panel_height - 32))
+                if width < 320 or height < 280:
+                    self._error("The display is too small for Control Panel.")
+                    return
+                self.actions.show_all()
+                # show_all also unhides no-show-all children: restore the
+                # authoritative category/search view before presenting.
+                self.win7_panel_search.set_text("")
+                self.win7_panel_show_home()
+                self.actions.resize(width, height)
+                self.actions.move(rect.x + (rect.width - width) // 2,
+                                  rect.y + (rect.height - panel_height - height) // 2)
+                self.actions.present()
+                return
             width = min(396 if profile == "chromeos" else 362 if ten else 382 if profile == "winclassic" else 362 if profile == "frutiger" else 412 if profile == "aero" else 330,
                         max(0, rect.width - 16))
             self.actions.show_all()

@@ -16,9 +16,10 @@ A lightweight, native GTK3 desktop-style manager for Linux Mint XFCE and other X
 
 RiceBowl transforms an XFCE desktop using original GTK3, XFWM4, icon, wallpaper, taskbar, launcher and file-manager themes. Select a desktop in the graphical hub, review its requirements and apply it with a restore snapshot. The application is written in Python/GTK3, without an Electron runtime, remote services or telemetry.
 
-**Current source:** Windows 7 Aero has its own 42px Superbar, grouped running windows,
+**Current source:** Windows 7 Aero has its own 48px Superbar, grouped running windows,
 native X11 window previews (with safe icon fallback), app Jump Lists, desktop Peek
-and a two-column Start menu, plus searchable Control Panel categories.
+and a two-column Start menu, plus a real eight-category Control Panel window
+with working task navigation and links to installed Linux settings utilities.
 XP Luna has a separately refined 2001-era Start, window chrome, 40px taskbar
 and a complete, scroll-safe device panel. **Windows 98 / 2000 Classic** now has the
 authentic teal desktop, a compact 34px beveled taskbar, real cascading Start
@@ -54,7 +55,7 @@ recoverable desktop settings backups.
 | Desktop | Included experience |
 | --- | --- |
 | **macOS · Aurora** | MacBar, MacMenu, Control Center, optional Plank dock, three palettes |
-| **Windows 7 · Aero** | Classic cobalt-blue Linux-penguin wallpaper, golden folders, smoke-blue glass Superbar, previews, Jump Lists, Peek, two-column Start and Aero chrome |
+| **Windows 7 · Aero** | Classic cobalt-blue Linux-penguin wallpaper, golden folders, 48px smoke-blue glass Superbar, previews, Jump Lists, Peek, two-column Start, eight-category Control Panel and Aero chrome |
 | **Windows 10 · Ten** | 40px charcoal bar, blue four-pane Linux wallpaper, real three-zone Start with alphabetical apps/grouped tiles, compact running windows, tall functional Action Center, Explorer-like dark/light chrome |
 | **Windows XP · Luna** | Blue/green taskbar, XP-inspired Start, categorized control panel |
 | **Windows 98 / 2000 · Classic** | Flat teal wallpaper, 34px embossed taskbar, Linux-penguin Start badge, keyboard-operable classic Programs / Favorites / Documents / Settings cascades, original navy XFWM windows and coordinated GTK/Thunar 3D controls |
@@ -83,6 +84,9 @@ Superseded screenshots are excluded.
 | ![ChromeOS Material You search and app launcher](screenshots/current/chromeos-start.webp) | ![Frutiger Aero apps and places dashboard](screenshots/current/frutiger-start.webp) |
 
 [Current Control Panels and six actual file-manager workspaces](screenshots/current/) · [CI full-resolution captures](https://github.com/CopyPasteUser/RiceBowl/actions/workflows/ci.yml)
+
+The checked-in Aero gallery still illustrates the **previous** Control Panel;
+the new eight-category window awaits fresh native-X11 screenshot verification.
 
 | Windows 7: actual Thunar + XFWM4 | ChromeOS: actual Thunar + XFWM4 |
 | --- | --- |

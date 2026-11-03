@@ -1,12 +1,17 @@
 # Current RiceBowl screenshot gallery
 
-Only the latest **actual** virtual-X11 captures are retained in this directory.
+Only the last verified **actual** virtual-X11 captures are retained in this directory.
 Each `*-start.webp`, `*-controls.webp` and `*-workspace.webp` image was captured
 from one successful Linux/Xvfb GitHub Actions run of the
 `review/cross-rice-fidelity-20261103` branch on 3 November 2026
 (workflow run `41666644729`, source `c3406bc572f6f314d3acacb1f5572c6b08c5508d`).
 Images are WebP-optimized from the **1600×900** screenshots; the original
 uncompressed PNGs remain in that CI run's screenshot artifact.
+
+The 3 November second-pass Windows 7 Control Panel/Superbar code is **newer**
+than `aero-start.webp`, `aero-controls.webp` and `aero-workspace.webp`. These
+images are historical for that rice until a new green native XFWM4 capture
+is inspected and checked in. The other five non-macOS rices are unchanged.
 
 The `workspace` images display a real Thunar process under a real XFWM4 window
 manager, using the same GTK/icon theme and Thunar view preferences that RiceBowl

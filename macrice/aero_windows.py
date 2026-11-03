@@ -18,6 +18,7 @@ class WindowSnapshot:
     minimized: bool = field(compare=False)
     mini_icon: object | None = field(compare=False, repr=False)
     group_id: str = field(default="", compare=False)
+    large_icon: object | None = field(default=None, compare=False, repr=False)
 
 
 def is_task_window(window, wnck) -> bool:
@@ -101,7 +102,7 @@ class WindowTracker:
                 group_id = (class_group.get_id() or "").strip() if class_group else ""
                 snapshots.append(WindowSnapshot(xid, window.get_name() or "Application",
                                                 bool(window.is_minimized()), window.get_mini_icon(),
-                                                group_id))
+                                                group_id, window.get_icon()))
         for old_xid in tuple(self._window_handlers):
             if old_xid not in current:
                 # Do not touch a native window that vanished without a signal.
