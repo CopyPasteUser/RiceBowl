@@ -8,7 +8,7 @@
 
 A lightweight, native GTK3 desktop-style manager for Linux Mint XFCE and other XFCE/X11 environments.
 
-[Latest release](https://github.com/CopyPasteUser/RiceBowl/releases/tag/v0.7.1) · [Changelog](CHANGELOG.md) · [Development roadmap](ROADMAP.md) · [CI](https://github.com/CopyPasteUser/RiceBowl/actions)
+[Latest release](https://github.com/CopyPasteUser/RiceBowl/releases/tag/v0.8.0) · [Changelog](CHANGELOG.md) · [Development roadmap](ROADMAP.md) · [CI](https://github.com/CopyPasteUser/RiceBowl/actions)
 
 </div>
 
@@ -16,7 +16,7 @@ A lightweight, native GTK3 desktop-style manager for Linux Mint XFCE and other X
 
 RiceBowl transforms an XFCE desktop using original GTK3, XFWM4, icon, wallpaper, taskbar, launcher and file-manager themes. Select a desktop in the graphical hub, review its requirements and apply it with a restore snapshot. The application is written in Python/GTK3, without an Electron runtime, remote services or telemetry.
 
-**Version 0.7.1** introduces the RiceBowl name and rice-bowl logo, profile-specific control panels, and more differentiated Thunar styling across the non-macOS rices. The established macOS rice is intentionally unchanged.
+**Version 0.8.0** is the **visual-identity and hardware-status release**: XP, Classic, ChromeOS, Frutiger Aero, Windows 7 and Windows 10 now have distinct hand-drawn app/places icons and themed notification indicators. ChromeOS and Frutiger use their own launcher structures rather than a repainted Windows menu. Taskbars read actual battery percentage/charging state, network route and audio state. The macOS rice is intentionally unchanged.
 
 ## Desktop families
 
@@ -32,7 +32,25 @@ RiceBowl transforms an XFCE desktop using original GTK3, XFWM4, icon, wallpaper,
 
 All seven families are installable and reversible. The non-macOS menus launch **real applications** from the desktop catalog, with Wnck-based window buttons when the relevant library is present. Control panels open installed system utilities; unavailable tools are disabled rather than simulated. No Microsoft, Google or Apple proprietary assets are bundled.
 
-### Gallery
+### Current 0.8.0 live-X11 gallery
+
+The images below are created by GitHub Actions from real GTK3 windows under a virtual X11 desktop. They are **not static mockups** or captures from a physical Mint system. The hardware test on a laptop remains pending.
+
+| XP Luna | Windows 98 / 2000 Classic |
+| --- | --- |
+| ![RiceBowl XP Luna Start menu](https://github.com/CopyPasteUser/RiceBowl/releases/download/v0.8.0/ricebowl-winxp-start-0.8.0.png) | ![RiceBowl Classic Start menu](https://github.com/CopyPasteUser/RiceBowl/releases/download/v0.8.0/ricebowl-winclassic-start-0.8.0.png) |
+
+| ChromeOS | Frutiger Aero |
+| --- | --- |
+| ![RiceBowl ChromeOS launcher](https://github.com/CopyPasteUser/RiceBowl/releases/download/v0.8.0/ricebowl-chromeos-start-0.8.0.png) | ![RiceBowl Frutiger dashboard](https://github.com/CopyPasteUser/RiceBowl/releases/download/v0.8.0/ricebowl-frutiger-start-0.8.0.png) |
+
+| Windows 7 Aero | Windows 10 |
+| --- | --- |
+| ![RiceBowl Aero 7 Start menu](https://github.com/CopyPasteUser/RiceBowl/releases/download/v0.8.0/ricebowl-aero-start-0.8.0.png) | ![RiceBowl Windows 10 Start menu](https://github.com/CopyPasteUser/RiceBowl/releases/download/v0.8.0/ricebowl-windows10-start-0.8.0.png) |
+
+[Browse all 12 menu and control-panel captures in the v0.8.0 release](https://github.com/CopyPasteUser/RiceBowl/releases/tag/v0.8.0).
+
+### Historical gallery
 
 | Windows 7 Aero | Windows 10 |
 | --- | --- |
@@ -92,6 +110,22 @@ macrice session-keys-restore        # Restore previous keyboard bindings
 ```
 
 RiceBowl binds the active rice's menu to **Super** and its quick settings / control panel to **Right Ctrl**, with backup and restoration of the previous XFCE shortcut bindings. The switch engine coordinates active taskbars, XFCE Panel and Plank without force-killing unrelated sessions.
+
+### Theme upgrades and safe repair
+
+RiceBowl recognizes exact original theme/icon files from releases 0.6, 0.7.0 and 0.7.1. Unmodified old assets are upgraded with a dated backup under `~/.local/share/{themes,icons}/.ricebowl-asset-backups/`. Genuine user modifications are **never silently overwritten**. If `Check requirements` reports an existing customized theme, select **Repair local theme assets…** in the hub (confirmation and backup required), or run:
+
+```bash
+macrice rice repair-assets ten-dark  # Explicitly replace only this Rice's bundled assets
+macrice rice plan ten-dark           # Read-only verification
+macrice rice apply ten-dark          # Apply after confirmation / snapshot
+```
+
+You can replace `ten-dark` with another non-macOS style. This repairs theme/icon assets only; it does not delete your XFCE settings or Plank configuration. Review the preserved recovery folders before cleaning them up.
+
+### Live taskbar indicators
+
+The **battery** reads Linux power_supply capacity and charging status (including weighted multi-battery devices); on machines without a battery the battery widget is hidden. **Wi-Fi/Ethernet** is based on the active physical route, including VPN-tunnel fallbacks. **Audio** reads PipeWire/WirePlumber or PulseAudio with bounded calls. No unavailable state is displayed as a working toggle, and every indicator opens a real settings application where installed.
 
 ## Architecture and safety
 
