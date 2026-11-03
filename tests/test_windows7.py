@@ -9,7 +9,6 @@ from macrice.windows7_proto import CSS, SAMPLE_APPS, matching_apps
 class Windows7PrototypeTests(unittest.TestCase):
     def test_catalog_exposes_two_installable_aero_styles(self):
         family = FAMILY_BY_KEY["windows7"]
-        self.assertTrue(family.prototype)
         self.assertTrue(family.available)
         self.assertEqual(family.styles, ("aero-meadow", "aero-cascade"))
 

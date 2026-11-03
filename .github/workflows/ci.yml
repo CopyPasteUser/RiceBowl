@@ -18,6 +18,8 @@ jobs:
         run: |
           /usr/bin/python3 -m compileall -q macrice launcher.py
           /usr/bin/python3 -m unittest discover -s tests -v
+          # Catch GTK constructor/style/asset regressions in the real hub.
+          RICEBOWL_HUB_SMOKE=1 timeout 18s dbus-run-session -- xvfb-run -a -s '-screen 0 1024x768x24' /usr/bin/python3 -c 'from macrice.hub import run; raise SystemExit(run())'
           timeout 18s dbus-run-session -- xvfb-run -a /usr/bin/python3 -c 'from macrice.aero_shell import run; raise SystemExit(run(["ricehub-aero-shell", "--smoke-test"]))'
           timeout 18s dbus-run-session -- xvfb-run -a /usr/bin/python3 -c 'from macrice.ten_shell import run; raise SystemExit(run(["ricehub-ten-shell", "--smoke-test"]))'
           for profile in winxp winclassic chromeos frutiger; do
@@ -83,6 +85,7 @@ jobs:
         with:
           name: ricebowl-0.9.1-native-x11-captures
           path: |
+            screenshots/ricebowl-hub-windows10-current.png
             screenshots/ricebowl-*-0.9.1.png
             screenshots/ricebowl-winxp-*-0.9.1-1024.png
             screenshots/ricebowl-winxp-workspace-0.9.1-1024.png
