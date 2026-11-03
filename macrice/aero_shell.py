@@ -586,8 +586,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     raise RuntimeError("Missing isolated screenshot fixture directory")
                 self._capture_file_manager = subprocess.Popen(
                     ["thunar", "--window", fixture], stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL)
-                GLib.timeout_add(1500, self._capture_workspace_position)
+                    stderr=subprocess.PIPE, text=True)
+                self._capture_window_attempts = 0
+                GLib.timeout_add(550, self._capture_workspace_position)
             except Exception:
                 import traceback
                 traceback.print_exc()
@@ -599,9 +600,23 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             try:
                 import subprocess
 
+                self._capture_window_attempts += 1
                 result = subprocess.run(
-                    ["xdotool", "search", "--onlyvisible", "--class", "Thunar"],
-                    check=True, capture_output=True, text=True, timeout=4)
+                    ["xdotool", "search", "--onlyvisible", "--name", "RiceBowl-Preview"],
+                    capture_output=True, text=True, timeout=3)
+                if not result.stdout.strip():
+                    # Gtk/Thunar first starts Xfconf and GApplication via D-Bus;
+                    # a fixed 1.5s sleep was not reliable on GitHub runners.
+                    if self._capture_window_attempts < 12:
+                        GLib.timeout_add(500, self._capture_workspace_position)
+                        return False
+                    process = self._capture_file_manager
+                    detail = ""
+                    if process.poll() is not None:
+                        detail = process.communicate(timeout=1)[1][-900:]
+                    raise AssertionError(
+                        "Thunar did not map a RiceBowl-Preview window within 6s; "
+                        f"exit={process.poll()}, stderr={detail!r}")
                 window_id = result.stdout.splitlines()[-1].strip()
                 if not window_id.isdecimal():
                     raise AssertionError("Thunar has no mapped X11 window")

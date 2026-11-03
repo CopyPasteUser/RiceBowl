@@ -34,7 +34,7 @@ class NativeWorkspaceGalleryTests(unittest.TestCase):
     def test_real_thunar_and_xfwm_are_required_for_workspace_capture(self):
         source = (REPO / "macrice/aero_shell.py").read_text(encoding="utf-8")
         for needle in ("--capture-workspace", '"thunar", "--window", fixture',
-                       '"xdotool", "search", "--onlyvisible", "--class", "Thunar"',
+                       '"xdotool", "search", "--onlyvisible", "--name", "RiceBowl-Preview"',
                        '"thunar" in (window.get_class_group().get_id() or "").casefold()',
                        "self._capture_screen(f\"ricebowl-{profile}-workspace-0.9.1.png\")"):
             self.assertIn(needle, source)
