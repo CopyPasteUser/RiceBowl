@@ -4,6 +4,20 @@
 
 MacRice is deliberately a thin integration layer. MacMenu, Control Center and MacBar keep their own tested lifecycles; Plank remains an external system dock.
 
+## 0.8 — Visual identity, status tray and repair (3 November 2026)
+
+[Detailed 0.8.0 engineering and acceptance roadmap](RELEASE_0_8_0_ROADMAP.md).
+
+- [x] Trust only exact known 0.6 / 0.7 asset hashes for automatic, backed-up theme upgrades.
+- [x] Expose an explicit, user-confirmed backup-and-repair action for modified themes.
+- [x] Add battery percentage/charging, active Wi-Fi/LAN, audio and clock with real system probes and bounded background refresh.
+- [x] Replace cloned placeholder graphics with 42 distinct, original profile-specific app/places icons; add 66 status icons.
+- [x] Give ChromeOS a dedicated centered apps launcher and Frutiger Aero an independent, organic dashboard.
+- [x] Polish tray controls and control surfaces for Aero, Windows 10, XP Luna, Classic 98/2000, ChromeOS, Frutiger.
+- [x] Add pure-Python migration/status regressions and virtual-X11 capture coverage for all six non-macOS shells.
+- [ ] Physical Linux Mint acceptance: repeated switching, Wi-Fi/VPN, real battery/charging, Plank autostart and multi-monitor.
+- [ ] Multi-monitor visual signoff and optional latency/performance profiling on physical hardware.
+
 ## 0.7 — RiceBowl naming and integration
 
 - [x] RiceBowl application icon, desktop entry, native GUI title and public CLI.
