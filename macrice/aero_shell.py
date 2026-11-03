@@ -287,7 +287,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _capture_menu(self):
             try:
-                self._capture_screen(f"ricehub-{profile}-start-0.6.0.png" if heritage else
+                self._capture_screen(f"ricebowl-{profile}-start-0.7.1.png" if heritage else
                                      "windows10-live-start-0.5.0rc2.png")
                 self._hide_menu()
                 self._toggle_actions()
@@ -302,7 +302,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _capture_actions(self):
             try:
-                self._capture_screen(f"ricehub-{profile}-controls-0.6.0.png" if heritage else
+                self._capture_screen(f"ricebowl-{profile}-controls-0.7.1.png" if heritage else
                                      "windows10-live-actions-0.5.0rc2.png")
             except Exception:
                 import traceback
