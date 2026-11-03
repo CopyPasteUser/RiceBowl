@@ -1206,14 +1206,22 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     button = self._class(Gtk.Button(), "ten-quick" if tiles else "aero-control-quick")
                     contents = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
                     contents.pack_start(self._icon(icon_name, Gtk.IconSize.MENU), False, False, 0)
-                    contents.pack_start(Gtk.Label(label=label, xalign=0), True, True, 0)
+                    caption = Gtk.Label(label=label, xalign=0)
+                    caption.set_line_wrap(True)
+                    caption.set_max_width_chars(27 if profile == "winxp" else 20)
+                    contents.pack_start(caption, True, True, 0)
                     button.add(contents)
                     button.set_tooltip_text("Open " + label if shutil.which(command) else
                                             label + " is not installed")
                     button.get_accessible().set_name("Open " + label)
                     button.set_sensitive(shutil.which(command) is not None)
                     button.connect("clicked", lambda _button, cmd=command: self._open_tool(cmd))
-                    grid.attach(button, index % 2, index // 2, 1, 1)
+                    # XP category names are full-length navigation entries, not
+                    # tiny quick-action tiles: a two-column layout overflows 330px.
+                    if profile == "winxp":
+                        grid.attach(button, 0, index, 1, 1)
+                    else:
+                        grid.attach(button, index % 2, index // 2, 1, 1)
                 root.pack_start(grid, False, False, 0)
 
             self.status_summary = self._class(Gtk.Label(label="Reading hardware status…", xalign=0),
