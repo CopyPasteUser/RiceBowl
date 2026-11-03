@@ -1,4 +1,4 @@
-# RiceBowl 0.7.0 — Distinct desktop styles
+# RiceBowl 0.7.1 — Brand and upgrade compatibility
 
 RiceHub has evolved into RiceBowl, a native GTK3 manager for seven opt-in XFCE/X11 desktop styles.
 
@@ -22,4 +22,4 @@ See [README](README.md) and [CHANGELOG](CHANGELOG.md) for setup and migration no
 
 ### Branding maintenance
 
-The source branch after the 0.7.0 tag aligns the application sidebar icon, window and prototype titles, packaging metadata, desktop autostarts and README with RiceBowl. Exact former managed autostart entries remain recognized for restoring pre-upgrade sessions. The original release tag remains an immutable historical snapshot; follow-up commits are documented in the main branch changelog.
+This 0.7.1 maintenance release aligns the application sidebar icon, window and prototype titles, packaging metadata, desktop autostarts and README with RiceBowl. Exact former managed autostart entries remain recognized for restoring pre-upgrade sessions. The 0.7.0 release tag remains an immutable historical snapshot.
