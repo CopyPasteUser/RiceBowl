@@ -76,7 +76,9 @@ class VisualIdentityTests(unittest.TestCase):
         source = Path(aero_shell.__file__).read_text()
         self.assertIn("def _create_chrome_launcher", source)
         self.assertIn("def _create_frutiger_menu", source)
-        self.assertIn("self._install_status_widgets(row)", source)
+        self.assertIn("self._install_status_widgets(right_area)", source)
+        self.assertIn("chrome-app-shelf", source)
+        self.assertIn("chrome-status-pill", source)
 
 
 if __name__ == "__main__":
