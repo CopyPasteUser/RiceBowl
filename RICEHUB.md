@@ -1,17 +1,18 @@
 > **RiceBowl 0.7 (3 November 2026):** This is the historical RiceHub architecture and rollback document. The current application is named RiceBowl; see [RICEBOWL.md](RICEBOWL.md) for 0.7 changes and [README.md](README.md) for installation. Internal state, legacy commands and D-Bus IDs remain compatible.
 
-# RiceHub · Desktop styles for XFCE
+# RiceBowl · Historical architecture and release roadmap
 
-RiceHub is the beginning of a bigger idea: one lightweight home for complete XFCE rices inspired by operating systems we know and love. The project is built around **a working system first, an honest roadmap second**. The macOS implementation comes from the existing MacRice projects. Release 0.6 adds four installable styles with original artwork and shared taskbar behavior; physical Mint/XFCE acceptance toward 1.0 is still open. The separate concept dialogs stay strictly read-only; see [the acceptance plan](CONCEPTS.md).
+RiceBowl began as RiceHub and is built around one idea: one lightweight home for complete XFCE rices inspired by operating systems we know and love. The project is built around **a working system first, an honest roadmap second**. The macOS implementation comes from the existing MacRice projects. Release 0.6 adds four installable styles with original artwork and shared taskbar behavior; physical Mint/XFCE acceptance toward 1.0 is still open. The separate concept dialogs stay strictly read-only; see [the acceptance plan](CONCEPTS.md).
 
 ## First launch
 
-The main installer installs both the old MacRice CLI and the new RiceHub desktop entry. It does not change GTK, icons, Plank or your XFCE Panel unless you explicitly apply a rice later.
+The main installer installs both the old MacRice CLI and the RiceBowl desktop entry. It does not change GTK, icons, Plank or your XFCE Panel unless you explicitly apply a rice later.
 
 ```bash
 bash install.sh --dry-run   # Preview without changing anything
 bash install.sh             # Install as your normal user, never with sudo
-ricehub                     # Open the new hub
+ricebowl                    # Open the current manager
+ricehub                     # Retained legacy shortcut
 ```
 
 If you prefer the existing command, `macrice hub` opens the same app; `macrice gui` still opens the older MacRice settings manager.
@@ -147,4 +148,4 @@ The current suite keeps MacMenu, Control Center and MacBar as self-contained com
 
 ## Contribution and originality
 
-These interfaces are *inspired by* familiar desktops; RiceHub is not affiliated with Apple or Microsoft and does not include their proprietary assets. The original Aurora wallpapers and monochrome RiceHub mark are included. The project is vibe-coded and human-directed with assistance from ChatGPT / OpenAI Codex; see [CONTRIBUTORS.md](CONTRIBUTORS.md).
+These interfaces are *inspired by* familiar desktops; RiceBowl is not affiliated with Apple or Microsoft and does not include their proprietary assets. The original Aurora wallpapers and monochrome RiceHub mark are included. The project is vibe-coded and human-directed with assistance from ChatGPT / OpenAI Codex; see [CONTRIBUTORS.md](CONTRIBUTORS.md).
