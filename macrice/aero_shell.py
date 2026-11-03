@@ -775,6 +775,12 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             menu.popup_at_widget(button, Gdk.Gravity.NORTH_WEST, Gdk.Gravity.SOUTH_WEST, None)
 
         def _create_menu(self):
+            if profile == "winxp":
+                self._create_luna_menu()
+                return
+            if profile == "winclassic":
+                self._create_classic_menu()
+                return
             if profile == "frutiger":
                 self._create_frutiger_menu()
                 return
@@ -868,6 +874,237 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.menu = menu
             self.search = search
             self._populate("")
+
+        def _place_button(self, title, icon_name, path, css_class="rice-place"):
+            """Use real XDG folders, never a placeholder filesystem action."""
+            button = self._class(Gtk.Button(), css_class)
+            content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=9)
+            content.pack_start(self._icon(icon_name, Gtk.IconSize.MENU), False, False, 0)
+            content.pack_start(Gtk.Label(label=title, xalign=0), True, True, 0)
+            button.add(content)
+            button.get_accessible().set_name("Open " + title)
+            exists = path.is_dir()
+            button.set_sensitive(exists)
+            button.set_tooltip_text("Open " + str(path) if exists else
+                                    "Folder does not exist: " + str(path))
+            button.connect("clicked", lambda _button, target=path:
+                           self._open_uri(target.as_uri()))
+            return button
+
+        def _finish_heritage_menu(self, menu, search):
+            """Same keyboard, focus and installed-app lifecycle for each identity."""
+            menu.connect("focus-in-event", self._menu_focus_in)
+            menu.connect("focus-out-event", self._menu_focus_out)
+            menu.connect("key-press-event", lambda _widget, event: self._search_key(event))
+            search.connect("key-press-event", lambda _widget, event: self._search_key(event))
+            def changed(*_args):
+                self._app_page_size = 24
+                self._populate(search.get_text())
+            search.connect("search-changed", changed)
+            self.menu, self.search = menu, search
+            self._populate("")
+
+        def _create_luna_menu(self):
+            """XP Luna: blue user band, ivory apps list, blue places and power footer."""
+            menu = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
+            menu.set_title("RiceBowl XP Luna Start")
+            menu.set_decorated(False)
+            menu.set_resizable(False)
+            menu.set_skip_taskbar_hint(True)
+            menu.set_skip_pager_hint(True)
+            menu.set_type_hint(Gdk.WindowTypeHint.UTILITY)
+            menu.set_transient_for(self.bar)
+            menu.set_keep_above(True)
+            menu.set_default_size(480, 560)
+
+            root = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0),
+                               "luna-menu")
+            header = self._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10),
+                                 "luna-user")
+            avatar = self._class(Gtk.Image(), "luna-avatar")
+            try:
+                avatar.set_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_scale(
+                    str(project_root() / "assets/ricebowl-xp-start.svg"), 44, 44, True))
+            except (GLib.Error, OSError):
+                avatar.set_from_icon_name("computer", Gtk.IconSize.DIALOG)
+            header.pack_start(avatar, False, False, 0)
+            user_label = self._class(
+                Gtk.Label(label=os.environ.get("USER", "Desktop"), xalign=0),
+                "luna-user-name")
+            header.pack_start(user_label, True, True, 0)
+            root.pack_start(header, False, False, 0)
+
+            columns = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+            apps = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5),
+                               "luna-apps")
+            apps.set_size_request(247, -1)
+            search = self._class(Gtk.SearchEntry(), "aero-menu-search")
+            search.set_placeholder_text("Find a program")
+            search.get_accessible().set_name("Search installed programs")
+            apps.pack_start(search, False, False, 2)
+            scroll = Gtk.ScrolledWindow()
+            scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+            scroll.set_min_content_height(326)
+            self.results = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1)
+            scroll.add(self.results)
+            apps.pack_start(scroll, True, True, 0)
+            browse = self._class(Gtk.Button(label="All Programs  ▸"), "luna-all-programs")
+            browse.connect("clicked", lambda _button: self._open_search())
+            apps.pack_end(browse, False, False, 3)
+            columns.pack_start(apps, True, True, 0)
+
+            places = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3),
+                                 "luna-places")
+            places.set_size_request(205, -1)
+            home = Path.home()
+            for name, icon, folder in (
+                ("Home", "user-home", home),
+                ("Documents", "folder-documents", home / "Documents"),
+                ("Downloads", "folder-download", home / "Downloads"),
+                ("Pictures", "folder-pictures", home / "Pictures"),
+                ("Music", "folder-music", home / "Music"),
+                ("Videos", "folder-videos", home / "Videos"),
+            ):
+                places.pack_start(self._place_button(name, icon, folder), False, False, 0)
+            separator = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
+            places.pack_start(separator, False, False, 6)
+            system = self._class(Gtk.Button(label="Control Panel"), "rice-place")
+            system.set_image(self._icon("preferences-system", Gtk.IconSize.MENU))
+            system.set_always_show_image(True)
+            system.set_sensitive(shutil.which("xfce4-settings-manager") is not None)
+            system.connect("clicked", lambda _button:
+                           self._open_tool("xfce4-settings-manager"))
+            places.pack_start(system, False, False, 0)
+            columns.pack_start(places, False, False, 0)
+            root.pack_start(columns, True, True, 0)
+
+            footer = self._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=9),
+                                 "luna-footer")
+            footer.pack_start(Gtk.Box(), True, True, 0)
+            for name, icon in (("Log off…", "system-log-out"), ("Turn off…", "system-shutdown")):
+                button = self._class(Gtk.Button(label=name), "luna-power")
+                button.set_image(self._icon(icon, Gtk.IconSize.MENU))
+                button.set_always_show_image(True)
+                button.set_tooltip_text("Open XFCE session dialog; no immediate logout")
+                button.set_sensitive(shutil.which("xfce4-session-logout") is not None)
+                button.connect("clicked", lambda _button:
+                               self._open_tool("xfce4-session-logout"))
+                footer.pack_start(button, False, False, 0)
+            root.pack_end(footer, False, False, 0)
+            menu.add(root)
+            self._finish_heritage_menu(menu, search)
+
+        def _create_classic_menu(self):
+            """Win9x: a narrow fly-out Programs hierarchy backed by installed apps."""
+            menu = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
+            menu.set_title("RiceBowl 98 / 2000 Start")
+            menu.set_decorated(False)
+            menu.set_resizable(False)
+            menu.set_skip_taskbar_hint(True)
+            menu.set_skip_pager_hint(True)
+            menu.set_type_hint(Gdk.WindowTypeHint.UTILITY)
+            menu.set_transient_for(self.bar)
+            menu.set_keep_above(True)
+            menu.set_default_size(285, 430)
+            root = self._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL),
+                               "classic-menu")
+            rail = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL), "classic-brand")
+            rail.set_size_request(34, -1)
+            word = self._class(Gtk.Label(label="RiceBowl  98 / 2000"), "classic-brand-label")
+            word.set_angle(90)
+            rail.pack_end(word, False, False, 14)
+            root.pack_start(rail, False, False, 0)
+            main = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0),
+                               "classic-menu-list")
+
+            programs_menu = Gtk.Menu()
+            groups = (
+                ("Accessories", ("Utility", "Accessories", "TextEditor")),
+                ("Graphics", ("Graphics", "Photography")),
+                ("Internet", ("Network", "WebBrowser", "Email")),
+                ("Multimedia", ("Audio", "Video", "Player")),
+                ("Office", ("Office", "Spreadsheet", "WordProcessor")),
+                ("System Tools", ("System", "Settings", "FileManager", "Terminal")),
+            )
+            for title, categories in groups:
+                submenu = Gtk.Menu()
+                count = 0
+                for app in self.apps:
+                    classifier = getattr(app, "get_categories", None)
+                    names = (classifier() or "").split(";") if callable(classifier) else []
+                    if not any(category in names for category in categories):
+                        continue
+                    item = Gtk.MenuItem(label=app.get_display_name() or app.get_name())
+                    item.connect("activate", lambda _item, selected=app: self._launch(selected))
+                    submenu.append(item)
+                    count += 1
+                    if count >= 20:
+                        break
+                if not count:
+                    continue
+                parent = Gtk.MenuItem(label=title)
+                parent.set_submenu(submenu)
+                programs_menu.append(parent)
+            all_item = Gtk.MenuItem(label="Find all installed programs…")
+            all_item.connect("activate", lambda *_args: self._reveal_classic_search())
+            programs_menu.append(all_item)
+            programs_menu.show_all()
+            programs = self._class(Gtk.MenuButton(label="Programs   ▸"), "classic-menu-item")
+            programs.set_popup(programs_menu)
+            main.pack_start(programs, False, False, 0)
+
+            for title, icon, target in (
+                ("Documents", "folder-documents", Path.home() / "Documents"),
+                ("Home", "user-home", Path.home()),
+                ("Computer", "computer", Path("/")),
+            ):
+                button = self._place_button(title + "   ▸", icon, target, "classic-menu-item")
+                main.pack_start(button, False, False, 0)
+            divider = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
+            main.pack_start(divider, False, False, 4)
+            tools = self._class(Gtk.Button(label="Settings   ▸"), "classic-menu-item")
+            tools.set_image(self._icon("preferences-system", Gtk.IconSize.MENU))
+            tools.set_always_show_image(True)
+            tools.set_sensitive(shutil.which("xfce4-settings-manager") is not None)
+            tools.connect("clicked", lambda _button:
+                          self._open_tool("xfce4-settings-manager"))
+            main.pack_start(tools, False, False, 0)
+
+            find = self._class(Gtk.Button(label="Find…"), "classic-menu-item")
+            find.set_image(self._icon("edit-find", Gtk.IconSize.MENU))
+            find.set_always_show_image(True)
+            find.connect("clicked", lambda *_args: self._reveal_classic_search())
+            main.pack_start(find, False, False, 0)
+            self.classic_search = self._class(Gtk.SearchEntry(), "aero-menu-search")
+            self.classic_search.set_placeholder_text("Find programs")
+            self.classic_search.set_no_show_all(True)
+            main.pack_start(self.classic_search, False, False, 3)
+            self.classic_results_scroll = Gtk.ScrolledWindow()
+            self.classic_results_scroll.set_policy(Gtk.PolicyType.NEVER,
+                                                    Gtk.PolicyType.AUTOMATIC)
+            self.classic_results_scroll.set_min_content_height(125)
+            self.classic_results_scroll.set_no_show_all(True)
+            self.results = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+            self.classic_results_scroll.add(self.results)
+            main.pack_start(self.classic_results_scroll, True, True, 0)
+
+            footer = self._class(Gtk.Button(label="Shut Down…"), "classic-menu-item")
+            footer.set_image(self._icon("system-shutdown", Gtk.IconSize.MENU))
+            footer.set_always_show_image(True)
+            footer.set_sensitive(shutil.which("xfce4-session-logout") is not None)
+            footer.connect("clicked", lambda _button:
+                           self._open_tool("xfce4-session-logout"))
+            main.pack_end(footer, False, False, 3)
+            root.pack_start(main, True, True, 0)
+            menu.add(root)
+            self._finish_heritage_menu(menu, self.classic_search)
+
+        def _reveal_classic_search(self):
+            self.classic_search.set_no_show_all(False)
+            self.classic_results_scroll.set_no_show_all(False)
+            self.classic_search.show()
+            self.classic_results_scroll.show_all()
+            self.classic_search.grab_focus()
 
         def _create_frutiger_menu(self):
             """An airy Y2K/Frutiger dashboard, intentionally unlike Aero Start."""
