@@ -41,3 +41,10 @@ ricebowl
 Or clone: https://github.com/CopyPasteUser/RiceBowl
 
 Details: [README](README.md), [0.8.0 roadmap](RELEASE_0_8_0_ROADMAP.md), [Changelog](CHANGELOG.md).
+
+## Pre-release verification record
+
+The release candidate passed [GitHub Actions run 41585293457](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41585293457):
+**175 core Python tests**, native GTK/X11 smoke coverage for each desktop family, existing component regression suites, and **12 independently validated 1600 × 900 PNG captures** of real GTK windows under virtual X11. The captured gallery is attached to this GitHub pre-release, rather than represented as physical Mint screenshots.
+
+The project has not yet passed physical Mint XFCE acceptance for Plank coexistence, battery charging on hardware, monitor hotplugging and long-running session changes.
