@@ -41,6 +41,12 @@ def default_pins(apps) -> tuple[str, ...]:
         for app in apps:
             identifier = app.get_id()
             label = (app.get_display_name() or app.get_name() or "").casefold()
+            # XFCE ships "File Manager Settings" as a separate .desktop
+            # launcher. It sorts before "Thunar File Manager", but it should
+            # never become the default Files shortcut on a fresh desktop.
+            if keyword == "file manager" and any(
+                    term in label for term in ("settings", "preferences", "configuration")):
+                continue
             if keyword in label and identifier and identifier not in selected:
                 selected.append(identifier)
                 break
@@ -51,6 +57,33 @@ def matching_apps(apps, query: str):
     needle = query.casefold().strip()
     return tuple(app for app in apps if needle in
                  (app.get_display_name() or app.get_name() or "").casefold())
+
+
+def frutiger_apps(apps, pins: tuple[str, ...], query: str):
+    """Put the user's real favorites first in Aqua World, not alphabetic tools.
+
+    Search always covers the complete installed Gio catalog. The home view
+    starts with pinned apps, followed by recognizable desktop applications;
+    neither category introduces duplicate tiles or pretend launchers.
+    """
+    matches = matching_apps(apps, query)
+    if query.strip():
+        return matches
+    order = {identifier: index for index, identifier in enumerate(pins)}
+    categories = ("FileManager", "WebBrowser", "TerminalEmulator")
+
+    def rank(app):
+        identifier = app.get_id()
+        if identifier in order:
+            return (0, order[identifier], "")
+        category_reader = getattr(app, "get_categories", None)
+        app_categories = (category_reader() or "").split(";") if callable(category_reader) else ()
+        for index, category in enumerate(categories):
+            if category in app_categories:
+                return (1, index, (app.get_display_name() or app.get_name() or "").casefold())
+        return (2, 0, (app.get_display_name() or app.get_name() or "").casefold())
+
+    return tuple(sorted(matches, key=rank))
 
 
 def luna_programs(apps, pins: tuple[str, ...], query: str, limit: int = 8):
@@ -1978,7 +2011,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.search = search
             self._populate("")
 
-        def _place_button(self, title, icon_name, path, css_class="rice-place"):
+        def _place_button(self, title, icon_name, path, css_class="rice-place",
+                          *, offer_create=False):
             """Use real XDG folders, never a placeholder filesystem action."""
             button = self._class(Gtk.Button(), css_class)
             content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=9)
@@ -1987,10 +2021,12 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             button.add(content)
             button.get_accessible().set_name("Open " + title)
             exists = path.is_dir()
-            button.set_sensitive(exists)
+            button.set_sensitive(exists or offer_create)
             button.set_tooltip_text("Open " + str(path) if exists else
-                                    "Folder does not exist: " + str(path))
+                                    ("Create and open " + str(path) + " (with confirmation)"
+                                     if offer_create else "Folder does not exist: " + str(path)))
             button.connect("clicked", lambda _button, target=path:
+                           self._open_luna_user_folder(target) if offer_create else
                            self._open_uri(target.as_uri()))
             return button
 
@@ -2391,7 +2427,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 rect.x, rect.y, rect.width, rect.height,
                 preferred_width=600, preferred_height=600)
             menu.set_default_size(width, height)
-            root = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8),
+            root = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6),
                                "aqua-dashboard")
             root.get_style_context().add_class("aero-menu-root")
             # CSS padding is painted. GTK border-width exposes an ugly opaque
@@ -2435,11 +2471,17 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             shortcuts = self._class(Gtk.Grid(column_spacing=8, row_spacing=6),
                                     "aqua-shortcuts")
             shortcuts.set_column_homogeneous(True)
-            for i, (name, icon_name, uri) in enumerate((
-                ("Home", "user-home", Path.home().as_uri()),
-                ("Files", "system-file-manager", "file:///"),
-                ("Documents", "folder-documents", (Path.home() / "Documents").as_uri()),
-                ("Music", "folder-music", (Path.home() / "Music").as_uri()),
+            def xdg_path(kind, fallback):
+                location = GLib.get_user_special_dir(kind)
+                return Path(location) if location else Path.home() / fallback
+
+            documents = xdg_path(GLib.UserDirectory.DIRECTORY_DOCUMENTS, "Documents")
+            music = xdg_path(GLib.UserDirectory.DIRECTORY_MUSIC, "Music")
+            for i, (name, icon_name, target) in enumerate((
+                ("Home", "user-home", Path.home()),
+                ("Files", "system-file-manager", Path("/")),
+                ("Documents", "folder-documents", documents),
+                ("Music", "folder-music", music),
             )):
                 button = self._class(Gtk.Button(), "aqua-shortcut")
                 col = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
@@ -2448,8 +2490,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 col.pack_start(Gtk.Label(label=name), False, False, 0)
                 button.add(col)
                 button.get_accessible().set_name("Open " + name)
-                button.connect("clicked", lambda _button, address=uri:
-                               self._open_uri(address))
+                button.set_tooltip_text("Open " + str(target) if target.is_dir() else
+                                        "Create and open " + str(target) + " (with confirmation)")
+                button.connect("clicked", lambda _button, folder=target:
+                               self._open_luna_user_folder(folder))
                 shortcuts.attach(button, i, 0, 1, 1)
             root.pack_start(shortcuts, False, False, 0)
             # Three live pages mirror the reference: Apps / Places / Settings.
@@ -2466,12 +2510,21 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 tabs.pack_start(button, True, True, 0)
                 buttons[name] = button
             root.pack_start(tabs, False, False, 0)
+            section = self._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8),
+                                  "aqua-section")
+            section.pack_start(self._class(Gtk.Label(label="DISCOVER YOUR APPS", xalign=0),
+                                           "aqua-section-title"), True, True, 0)
+            section.pack_end(self._class(Gtk.Label(label="Right-click to pin", xalign=1),
+                                         "aqua-section-hint"), False, False, 0)
+            root.pack_start(section, False, False, 0)
             def switch_to(name):
                 self.aqua_stack.set_visible_child_name(name)
                 for key, button in buttons.items():
                     button.set_active(key == name)
+                section.set_visible(name == "Apps")
                 if name == "Apps":
                     search.grab_focus()
+            self._frutiger_switch_to = switch_to
             for name, button in buttons.items():
                 button.connect("clicked", lambda _button, chosen=name: switch_to(chosen))
 
@@ -2496,14 +2549,14 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             home = Path.home()
             entries = (
                 ("Home", "user-home", home),
-                ("Documents", "folder-documents", home / "Documents"),
-                ("Downloads", "folder-download", home / "Downloads"),
-                ("Music", "folder-music", home / "Music"),
-                ("Pictures", "folder-pictures", home / "Pictures"),
-                ("Videos", "folder-videos", home / "Videos"),
+                ("Documents", "folder-documents", documents),
+                ("Downloads", "folder-download", xdg_path(GLib.UserDirectory.DIRECTORY_DOWNLOAD, "Downloads")),
+                ("Music", "folder-music", music),
+                ("Pictures", "folder-pictures", xdg_path(GLib.UserDirectory.DIRECTORY_PICTURES, "Pictures")),
+                ("Videos", "folder-videos", xdg_path(GLib.UserDirectory.DIRECTORY_VIDEOS, "Videos")),
             )
             for index, (title, icon_name, path) in enumerate(entries):
-                button = self._place_button(title, icon_name, path, "aqua-place")
+                button = self._place_button(title, icon_name, path, "aqua-place", offer_create=True)
                 places_grid.attach(button, index % 2, index // 2, 1, 1)
             places_page.add(places_grid)
             self.aqua_stack.add_named(places_page, "Places")
@@ -2916,7 +2969,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             actions.set_resizable(True)
             rect = self._desktop_rect()
             actions.set_default_size(
-                382 if profile == "winclassic" else 362 if profile == "frutiger" else
+                382 if profile == "winclassic" else 388 if profile == "frutiger" else
                 412 if profile == "aero" else 330,
                 min(action_heights.get(profile, 430), rect.height - panel_height - 16))
             actions.set_skip_taskbar_hint(True)
@@ -2945,7 +2998,16 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 root.pack_start(caption, False, False, 0)
             else:
                 title = self._class(Gtk.Label(label=heading, xalign=0), "aero-menu-heading")
-                root.pack_start(title, False, False, 0)
+                if profile == "frutiger":
+                    hero = self._class(
+                        Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=9),
+                        "aqua-control-hero")
+                    hero.pack_start(self._icon("preferences-system", Gtk.IconSize.DIALOG),
+                                    False, False, 0)
+                    hero.pack_start(title, True, True, 0)
+                    root.pack_start(hero, False, False, 0)
+                else:
+                    root.pack_start(title, False, False, 0)
             descriptions = {
                 "winxp": "Pick a category to configure your computer",
                 "winclassic": "Configure Linux desktop settings",
@@ -3070,7 +3132,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=7),
                 "rice-hardware-panel")
             hardware.pack_start(self._class(
-                Gtk.Label(label="Device status", xalign=0), "aero-menu-sub"),
+                Gtk.Label(label="Live device status" if profile == "frutiger" else
+                          "Device status", xalign=0), "aero-menu-sub"),
                 False, False, 0)
             self.control_network_label = self._class(
                 Gtk.Label(label="Network: reading…", xalign=0),
@@ -3189,7 +3252,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                                   rect.y + (rect.height - panel_height - height) // 2)
                 self.actions.present()
                 return
-            width = min(396 if profile == "chromeos" else 362 if ten else 382 if profile == "winclassic" else 362 if profile == "frutiger" else 412 if profile == "aero" else 330,
+            width = min(396 if profile == "chromeos" else 362 if ten else 382 if profile == "winclassic" else 388 if profile == "frutiger" else 412 if profile == "aero" else 330,
                         max(0, rect.width - 16))
             self.actions.show_all()
             desired_height = action_heights.get(profile, 430)
@@ -3219,6 +3282,14 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 # Some X11 window managers reset the shape during the first
                 # utility resize; reapply after that configure settles.
                 GLib.timeout_add(150, apply_rounded_window_shape, self.actions, 26)
+            elif profile == "frutiger":
+                # GTK's rounded CSS child still sits inside a rectangular
+                # utility window under uncomposited XFWM4. Use the proven
+                # optional X11 shape mask instead of painting square corners.
+                from .chrome_shell import apply_rounded_window_shape
+
+                GLib.idle_add(apply_rounded_window_shape, self.actions, 22)
+                GLib.timeout_add(150, apply_rounded_window_shape, self.actions, 22)
 
         def _open_search(self):
             if not self.menu.get_visible():
@@ -3323,7 +3394,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _populate_frutiger(self, query):
             """Icon-first, fully functional Aqua grid of installed Gio apps."""
-            matches = matching_apps(self.apps, query)
+            matches = frutiger_apps(self.apps, self._pinned_ids, query)
             for app in matches[:self._app_page_size]:
                 title = app.get_display_name() or app.get_name() or "Application"
                 button = self._class(Gtk.Button(), "aqua-app-tile")
@@ -3508,6 +3579,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.search.set_text("")
             if profile == "aero":
                 self._populate("")
+            elif profile == "frutiger":
+                # Opening the launcher always returns to the app overview;
+                # last session's Settings/Places tab is not a hidden surprise.
+                self._frutiger_switch_to("Apps")
             preferred_sizes = {
                 "winxp": (480, 540),
                 "winclassic": (262, 332),
@@ -3538,6 +3613,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.menu.resize(w, h)
             self.menu.move(x, y)
             self.menu.present()
+            if profile == "frutiger":
+                from .chrome_shell import apply_rounded_window_shape
+
+                GLib.idle_add(apply_rounded_window_shape, self.menu, 27)
+                GLib.timeout_add(150, apply_rounded_window_shape, self.menu, 27)
             if profile == "winxp":
                 GLib.idle_add(self._reanchor_luna_menu)
                 first_app = next((widget for widget in self.results.get_children()

@@ -31,6 +31,7 @@ def trusted_assets() -> dict[str, frozenset[str]]:
                  "trusted-ricebowl-aero-before-redesign.json",
                  "trusted-ricebowl-aero-seven-icons.json",
                  "trusted-ricebowl-frutiger-before-aqua.json",
+                 "trusted-ricebowl-frutiger-aqua-091.json",
                  "trusted-ricebowl-classic-before-fidelity.json",
                  "trusted-ricebowl-ten-before-fidelity.json",
                  "trusted-ricebowl-chrome-before-fidelity.json"):

@@ -379,12 +379,105 @@ window.thunar scrollbar slider {
 """
 
 
+# Thunar owns the real filesystem operations; GTK can only style its widgets.
+# One continuous pearl address field, calmer file canvas and lime selected
+# navigation replace the previous wall of identical turquoise pill buttons.
+FRUTIGER_EXPLORER_CSS = """/* Aqua World Explorer: pearl content beneath refractive chrome. */
+window.thunar menubar {
+  background-image: linear-gradient(to bottom, #fff, #e4fbf5);
+  color: #17566b; border-bottom: 1px solid #8dcbd2; padding: 2px 6px;
+}
+window.thunar toolbar, window.thunar .location-bar {
+  background-image: linear-gradient(to bottom, #fff 0%, #eafffa 43%,
+    #b7e8eb 46%, #c8f5f1 100%);
+  border-top: 1px solid #fff; border-bottom: 1px solid #80c0d1;
+  padding: 3px 6px; box-shadow: inset 0 1px #fff;
+}
+window.thunar toolbar button {
+  background: transparent; border: 1px solid transparent; border-radius: 7px;
+  box-shadow: none; color: #0a536e; padding: 4px 6px;
+  min-height: 22px; min-width: 22px;
+}
+window.thunar toolbar button:hover, window.thunar toolbar button:focus {
+  background-image: linear-gradient(#fff, #b0efdd 48%, #7bdacb);
+  border-color: #62bed0; box-shadow: inset 0 1px #fff;
+}
+window.thunar toolbar button:active, window.thunar toolbar button:checked {
+  background-image: linear-gradient(#e3ffc7, #92e18c);
+  border-color: #58a776;
+}
+window.thunar toolbar button:disabled {
+  background: transparent; border-color: transparent; box-shadow: none;
+  color: #72949c;
+}
+window.thunar .path-bar {
+  background-image: linear-gradient(#fff, #eafff9);
+  border: 1px solid #83becb; border-radius: 10px;
+  padding: 1px 3px; box-shadow: inset 0 1px #fff;
+}
+window.thunar .path-bar button, window.thunar .location-bar button {
+  background: transparent; border: 1px solid transparent; border-radius: 7px;
+  box-shadow: none; color: #0b526e; padding: 3px 7px;
+}
+window.thunar .path-bar button:hover, window.thunar .location-bar button:hover {
+  background-image: linear-gradient(#fff, #b5f0e1);
+  border-color: #70bac8;
+}
+window.thunar toolbar entry {
+  background: #fff; color: #0b526e;
+  border: 1px solid #85bbc7; border-radius: 9px;
+  box-shadow: inset 0 1px #f5fff9;
+}
+window.thunar .sidebar, window.thunar .shortcuts-pane {
+  background-image: linear-gradient(to right, #f4fff5, #e3faf3 68%, #c8f0e8);
+  border-right: 1px solid #9eced0; color: #195c68;
+}
+window.thunar .sidebar .view, window.thunar .shortcuts-pane .view,
+window.thunar .sidebar treeview, window.thunar .shortcuts-pane treeview {
+  background: transparent; color: #17586a; border: 0;
+  border-radius: 0; box-shadow: none;
+}
+window.thunar .sidebar .view:selected,
+window.thunar .shortcuts-pane .view:selected {
+  background-image: linear-gradient(#efffcf, #b5ea86);
+  color: #205447; border: 1px solid #8dc780; border-radius: 5px;
+}
+window.thunar .sidebar .view:hover, window.thunar .shortcuts-pane .view:hover {
+  background-color: #dbf7e5;
+}
+window.thunar .standard-view, window.thunar .standard-view .view,
+window.thunar treeview.view, window.thunar iconview {
+  background: #fbfffd; color: #204453;
+  border: 0; border-radius: 0; box-shadow: none;
+}
+window.thunar .standard-view .view:selected, window.thunar treeview.view:selected {
+  background: #b7ed88; color: #204d43;
+}
+window.thunar treeview header button {
+  background-image: linear-gradient(#fff, #e6f6f1);
+  border: 0; border-right: 1px solid #b3d9d6;
+  border-bottom: 1px solid #95c8ce; border-radius: 0;
+  color: #19566a; box-shadow: none; padding: 4px 8px;
+}
+window.thunar statusbar {
+  background-image: linear-gradient(#faffff, #dcf8ee 55%, #b8e9e4);
+  color: #245c68; border-top: 1px solid #8dcad0; padding: 4px 8px;
+}
+window.thunar scrollbar slider {
+  background-image: linear-gradient(#eefff6, #8ad9cc);
+  border: 1px solid #62b7bf; border-radius: 8px;
+}
+"""
+
+
 def _block(style: str) -> str:
     original = _v091_block(style)
     if style == "aero":
         return original.replace(END + "\n", AERO_EXPLORER_CSS + END + "\n")
     if style == "winxp":
         return original.replace(END + "\n", LUNA_EXPLORER_CSS + END + "\n")
+    if style == "frutiger":
+        return original.replace(END + "\n", FRUTIGER_EXPLORER_CSS + END + "\n")
     return original
 
 

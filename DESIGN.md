@@ -145,6 +145,16 @@ original Linux artwork. Windows 11 and Liquid Glass are out of scope.
   `assets/trusted-ricebowl-frutiger-before-aqua.json` allow backup-backed
   upgrades while protecting genuine user customization. This is native GTK
   refraction **suggestion**, not claimed GPU backdrop blur.
+  The refined Aqua launcher puts real pinned/familiar Gio apps first, preserves
+  full search and returns to Apps on reopening. Its locations resolve XDG
+  folders and require explicit confirmation to create any that are missing.
+  Frutiger alone uses `thunar.FRUTIGER_EXPLORER_CSS`, reducing the breadcrumb
+  into a single pearl glass address surface, compacting real GTK toolbar
+  actions and calming the file canvas and mint navigation pane. The native GTK
+  asset generator mirrors this visual polish. The older unmodified Aqua GTK
+  asset is upgradeable through an exact-hash manifest, without overwriting
+  edited user themes. A future optional RiceExplorer could own the structural
+  UI that GTK CSS cannot control; Thunar remains the stable default.
 
 Desktop styles must remain recognizable without blur, desktop GPU effects or
 third-party panels. Do not depend on non-existent proprietary OS resources.

@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "description": "Unmodified Aqua World v0.9.1 GTK3 theme, whitelisted for backup-safe upgrades to the refined pearl Explorer style.",
+  "files": {
+    "assets/themes/RiceHub-Frutiger/gtk-3.0/gtk.css": [
+      "bb76b91cd14948884fab6c10ba5c26f0282f2a1b"
+    ]
+  }
+}

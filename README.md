@@ -30,6 +30,9 @@ hierarchies, a three-column icon-view Control Panel and square window chrome.
 **Frutiger Aero / Aqua World** has a distinct
 water-and-nature identity with pearl-glass taskbar, live Apps / Places / Settings
 launcher, original refractive XFWM artwork and matching GTK/Thunar controls.
+The refined launcher features pin-first apps, XDG-aware Places and stronger
+pearl/mint visual hierarchy; its file manager has a real Thunar breadcrumb,
+calmer pastel sidebar and compact Aqua navigation instead of giant pills.
 **Windows 10** now has a three-zone Start with genuine pinned app tiles and
 an XFCE-backed right-side Action Center and a compact taskbar search button,
 against original cobalt four-pane

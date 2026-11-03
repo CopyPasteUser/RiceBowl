@@ -52,6 +52,35 @@ this visual change. Original art only; do not bundle third-party assets.
 
 ## Product acceptance criteria
 
+### Follow-up: Pearl Glass and native Thunar refinement (3 November 2026)
+
+- **[x] Launcher relevance:** the initial native Gio grid is ordered by saved
+  pins, then installed file manager/browser/terminal, then other programs.
+  Search still covers every visible app; context pin menus still work.
+- **[x] Better visual hierarchy:** the top hero, shortcut row, navigation
+  tabs, Discover caption, app tiles and footer now use distinct pearl, mint,
+  lagoon and lime treatments instead of one continuous turquoise gradient.
+  Optional X11 shaping also removes square GTK backing around the two rounded
+  utility popups on systems without a compositor.
+- **[x] Real folder behavior:** XDG-aware user folders and explicit creation
+  confirmation remove hardcoded English folder paths and disabled shortcuts.
+- **[x] App-icon identity:** the `org.xfce.thunar` desktop launcher resolves to
+  RiceBowl's own turquoise file-manager SVG, rather than the OS fallback.
+- **[x] Usable device controls:** Frutiger-only hero, larger readable captions,
+  real status readings, volume and mute share the existing verified backend.
+- **[x] Actual file-manager controls:** `FRUTIGER_EXPLORER_CSS` styles real
+  Thunar widgets with a continuous breadcrumb surface, compact toolbar,
+  pale-green navigation sidebar, white file canvas and subdued lime states.
+  Replacing Thunar's *structure* remains a separate optional RiceExplorer
+  project, never a fake GTK overlay.
+- **[x] Recoverable installation:** the exact existing Frutiger GTK asset hash
+  is in `trusted-ricebowl-frutiger-aqua-091.json`; historical managed Thunar
+  blocks migrate, whereas modified/user-owned GTK CSS remains untouched.
+- **[x] Automated QA:** unit and CSS parser tests, all-rice smoke capture and
+  a new 1024×768 *actual Thunar* acceptance capture in isolated Xvfb.
+  Owner's physical Mint/XFCE test is still required.
+
+
 - Frutiger is recognizable without blur/compositor effects or a mocked panel.
 - All three menu pages display real content and work with mouse and keyboard.
 - App icons, titlebar, Thunar and taskbar read as one cohesive eco-glass family.

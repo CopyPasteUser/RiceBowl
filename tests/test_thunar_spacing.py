@@ -69,7 +69,25 @@ class ThunarMenubarTests(unittest.TestCase):
         self.assertIn("Luna Explorer", _block("winxp"))
         self.assertNotIn("Luna Explorer", _block("aero"))
         self.assertNotIn("Luna Explorer", _block("winclassic"))
-        self.assertEqual(_block("frutiger"), _v091_block("frutiger"))
+        self.assertIn("Aqua World Explorer", _block("frutiger"))
+        self.assertIn("window.thunar .path-bar", _block("frutiger"))
+        self.assertNotIn("Aqua World Explorer", _block("aero"))
+        self.assertNotIn("Aqua World Explorer", _block("winxp"))
+
+    def test_frutiger_explorer_migrates_only_exact_old_managed_block(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            target = root / "gtk-3.0/gtk.css"
+            target.parent.mkdir()
+            prefix, suffix = "/* personal CSS */\n", "/* saved override */\n"
+            target.write_text(prefix + _v091_block("frutiger") + suffix)
+            planned = plan_css("frutiger", root)
+            self.assertEqual(planned["after"], prefix + _block("frutiger") + suffix)
+            target.write_text(planned["after"])
+            self.assertEqual(plan_css("frutiger", root)["before"], planned["after"])
+            target.write_text(planned["after"].replace("#fbfffd", "#faefee"))
+            with self.assertRaisesRegex(ValueError, "customized"):
+                plan_css("frutiger", root)
 
     def test_luna_explorer_migrates_previous_version_without_touching_custom_css(self):
         with tempfile.TemporaryDirectory() as directory:

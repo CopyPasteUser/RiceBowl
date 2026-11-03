@@ -61,6 +61,10 @@ jobs:
           # Aqua World must also fit on older 1024x768 laptops while preserving tab/search controls.
           RICEBOWL_CAPTURE_SIZE=1024 timeout 24s dbus-run-session -- xvfb-run -a -s '-screen 0 1024x768x24' /usr/bin/python3 -c 'from macrice.aero_shell import run; raise SystemExit(run(["ricebowl-frutiger-shell", "--capture-gallery"], profile="frutiger"))'
           /usr/bin/python3 -c 'from pathlib import Path; import struct; fs=sorted(Path("screenshots").glob("ricebowl-frutiger-*-0.9.1-1024.png")); assert len(fs)==2, "Frutiger small-screen captures missing"; assert all(struct.unpack(">II", p.read_bytes()[16:24])==(1024,768) for p in fs), "Frutiger 1024x768 capture invalid"'
+          # Frutiger's redesigned Thunar chrome is also an actual XFWM4 window,
+          # not just a cropped shell mockup; verify its compact-screen fit.
+          RICEBOWL_CAPTURE_SIZE=1024 timeout 35s dbus-run-session -- xvfb-run -a -s '-screen 0 1024x768x24' /usr/bin/python3 screenshots/capture_native_workspace.py frutiger
+          /usr/bin/python3 -c 'from pathlib import Path; import struct; p=Path("screenshots/ricebowl-frutiger-workspace-0.9.1-1024.png"); b=p.read_bytes(); assert len(b)>30000 and struct.unpack(">II", b[16:24])==(1024,768), "Frutiger 1024x768 Thunar window invalid"'
           # Win98 Classic must keep its narrow cascades above a 34px taskbar at 1024x768.
           RICEBOWL_CAPTURE_SIZE=1024 timeout 24s dbus-run-session -- xvfb-run -a -s '-screen 0 1024x768x24' /usr/bin/python3 -c 'from macrice.aero_shell import run; raise SystemExit(run(["ricebowl-winclassic-shell", "--capture-gallery"], profile="winclassic"))'
           /usr/bin/python3 -c 'from pathlib import Path; import struct; fs=sorted(Path("screenshots").glob("ricebowl-winclassic-*-0.9.1-1024.png")); assert len(fs)==2, "Classic small-screen captures missing"; assert all(struct.unpack(">II", p.read_bytes()[16:24])==(1024,768) for p in fs), "Classic 1024x768 capture invalid"'
@@ -84,6 +88,7 @@ jobs:
             screenshots/ricebowl-winxp-workspace-0.9.1-1024.png
             screenshots/ricebowl-aero-*-0.9.1-1024.png
             screenshots/ricebowl-frutiger-*-0.9.1-1024.png
+            screenshots/ricebowl-frutiger-workspace-0.9.1-1024.png
             screenshots/ricebowl-winclassic-*-0.9.1-1024.png
             screenshots/ricebowl-windows10-*-0.9.1-1024.png
             screenshots/ricebowl-chromeos-*-0.9.1-1024.png
