@@ -19,7 +19,7 @@ REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
 
 from macrice.rice import STYLES  # noqa: E402
-from macrice.thunar import PREFERENCES, _block  # noqa: E402
+from macrice.thunar import _block, preference_type, preferences_for  # noqa: E402
 
 
 SAMPLES = {
@@ -68,10 +68,10 @@ def prepare_isolated_desktop(base: Path, profile: str) -> Path:
         check=True, timeout=8, capture_output=True)
     # The applied Rice also owns these precise Thunar preferences; a native
     # acceptance screenshot must exercise the same breadcrumb/icon-view layout.
-    for property_name, value in PREFERENCES:
+    for property_name, value in preferences_for(palette):
         subprocess.run(
             ["xfconf-query", "-c", "thunar", "-p", property_name,
-             "--create", "-t", "string", "-s", value],
+             "--create", "-t", preference_type(property_name), "-s", value],
             check=True, timeout=8, capture_output=True)
     return fixture
 

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><title>Aero Seven text document</title>
+<defs><linearGradient id="page" x2="0" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#edf4fa"/></linearGradient></defs>
+<path d="M12 5h28l13 13v40H12Z" fill="url(#page)" stroke="#96adbd" stroke-width="2"/>
+<path d="M40 5v13h13" fill="#d9eaf5" stroke="#91a9b9" stroke-width="2"/>
+<path d="M19 27h27M19 33h27M19 39h23M19 45h27M19 51h19" stroke="#7fa7c4" stroke-width="2.4" stroke-linecap="round"/>
+<path d="M16 9v44" stroke="#fff" opacity=".9" stroke-width="1.6"/></svg>

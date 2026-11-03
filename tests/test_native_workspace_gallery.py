@@ -31,9 +31,12 @@ class NativeWorkspaceGalleryTests(unittest.TestCase):
                     self.assertEqual(os.environ["RICEBOWL_CAPTURE_FIXTURE_DIR"], str(fixture))
                     commands = [invocation.args[0] for invocation in call.call_args_list]
                     self.assertEqual(commands[0][-1], style.xfwm)
-                    self.assertEqual(len(commands), 4)
+                    self.assertEqual(len(commands), 5)
                     self.assertIn("/last-location-bar", commands[1])
                     self.assertIn("ThunarLocationButtons", commands[1])
+                    self.assertIn("/last-menubar-visible", commands[-1])
+                    self.assertIn("bool", commands[-1])
+                    self.assertEqual(commands[-1][-1], "false" if profile == "aero" else "true")
 
     def test_real_thunar_and_xfwm_are_required_for_workspace_capture(self):
         source = (REPO / "macrice/aero_shell.py").read_text(encoding="utf-8")

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><title>Aero Seven videos folder</title>
+<defs><linearGradient id="folder" x2="0" y2="1"><stop stop-color="#ffefa6"/><stop offset="1" stop-color="#d99c3c"/></linearGradient></defs>
+<path d="M5 16h20l6 6h28v33H5Z" fill="#ad762f" stroke="#936029" stroke-width="2"/><path d="M7 26h50v28H7Z" fill="url(#folder)" stroke="#a97830" stroke-width="1.5"/>
+<rect x="20" y="30" width="29" height="21" rx="1.5" fill="#275779" stroke="#20425d" stroke-width="1.5"/>
+<path d="m31 35 10 6-10 6Z" fill="#effbff"/><path d="M24 32v17m22-17v17" stroke="#a3cee5" stroke-dasharray="3 3" stroke-width="2"/></svg>

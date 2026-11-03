@@ -9,7 +9,8 @@ from xml.etree import ElementTree
 
 from macrice.aero_layout import actual_popup_y, bottom_strut, menu_geometry, task_capacity
 from macrice.aero_shell import CSS, win7_programs
-from macrice.asset_upgrade import AssetConflict, git_blob_sha, inspect_bundle, trusted_assets
+from macrice.asset_upgrade import (AssetConflict, git_blob_sha, inspect_bundle,
+                                   install_bundle, trusted_assets)
 from macrice.installer import project_root
 from macrice.rice import STYLES
 from macrice.win7_control_panel import CATEGORIES, Task, installed_command, matching_categories
@@ -148,6 +149,28 @@ class Win7ArtworkTests(unittest.TestCase):
                              "{http://www.w3.org/2000/svg}svg")
         self.assertEqual(len(set(icons)), 4)
 
+    def test_explorer_has_original_files_navigation_and_disk_icons(self):
+        root = project_root() / "assets/icons/RiceHub-Aero"
+        index = (root / "index.theme").read_text()
+        self.assertIn("scalable/mimetypes", index)
+        for group, names in {
+            "places": ("folder-open", "folder-desktop", "folder-videos",
+                       "folder-templates", "folder-publicshare", "folder-recent",
+                       "network-server", "network-workgroup", "drive-harddisk",
+                       "drive-removable-media"),
+            "mimetypes": ("text-x-generic", "application-x-generic",
+                          "image-x-generic", "audio-x-generic", "video-x-generic",
+                          "application-pdf", "application-x-archive",
+                          "application-x-executable"),
+        }.items():
+            for name in names:
+                with self.subTest(group=group, icon=name):
+                    svg = root / "scalable" / group / (name + ".svg")
+                    doc = ElementTree.parse(svg).getroot()
+                    self.assertEqual(doc.tag, "{http://www.w3.org/2000/svg}svg")
+                    self.assertEqual(doc.get("viewBox"), "0 0 64 64")
+                    self.assertIsNotNone(doc.find("{http://www.w3.org/2000/svg}title"))
+
     def test_xfwm4_rounded_corners_and_hover_states(self):
         try:
             from PIL import Image
@@ -164,6 +187,21 @@ class Win7ArtworkTests(unittest.TestCase):
 
 
 class Win7UpgradeTests(unittest.TestCase):
+    def test_previous_icon_theme_index_is_safe_to_upgrade(self):
+        old = b"[Icon Theme]\nName=RiceBowl Aero\nComment=Original Aqua-blue XFCE icons with Adwaita fallback\nInherits=Adwaita,hicolor\nDirectories=scalable/apps,scalable/places\n\n[scalable/apps]\nSize=48\nType=Scalable\nMinSize=16\nMaxSize=256\nContext=Applications\n\n[scalable/places]\nSize=48\nType=Scalable\nMinSize=16\nMaxSize=256\nContext=Places\n"
+        self.assertIn(git_blob_sha(old), trusted_assets()["assets/icons/RiceHub-Aero/index.theme"])
+        with tempfile.TemporaryDirectory() as directory:
+            destination = Path(directory) / "icons/RiceHub-Aero"
+            destination.mkdir(parents=True)
+            (destination / "index.theme").write_bytes(old)
+            source = project_root() / "assets/icons/RiceHub-Aero"
+            inspect_bundle(source, destination)
+            backup = install_bundle(source, destination)
+            self.assertIsNotNone(backup)
+            self.assertEqual((destination / "index.theme").read_bytes(),
+                             (source / "index.theme").read_bytes())
+            self.assertTrue((destination / "scalable/mimetypes/text-x-generic.svg").exists())
+
     def test_previous_blue_folders_are_accepted_but_unknown_edits_are_not(self):
         root = project_root()
         previous = {

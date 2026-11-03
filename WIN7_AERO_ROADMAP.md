@@ -7,6 +7,36 @@ native Xvfb CI in pull request #15. Physical Mint/XFCE acceptance remains open. 
 native Xvfb/GTK/XFWM4 CI matrix in PR #22 and received fresh gallery images;
 physical Linux Mint acceptance remains open.
 
+## Explorer fidelity refinement (implemented locally; native visual QA pending)
+
+- [x] Check original Microsoft Windows 7 Explorer behavior and Xfce's documented
+  Thunar layout, toolbar, breadcrumb and configuration capabilities.
+- [x] Hide Thunar's real menu bar under Seven and restore it when another rice
+  is applied. Journal the setting, create it as xfconf Boolean and test the
+  transition and restore path.
+- [x] Flatten native toolbar buttons; join the breadcrumb/address field; remove
+  boxed shortcuts-pane rows; style hover/selection, white file canvas, detailed
+  list headers, statusbar and scrollbars.
+- [x] Add 18 original scalable Explorer-era icons for folders, drives, network
+  and actual MIME files, preserving exact old managed theme index fingerprints.
+- [x] Migrate the 0.9.1 scoped Thunar CSS block without changing unrelated
+  GTK CSS or overwriting personalized managed rules.
+- [x] Add unit/integration checks, icon XML and GdkPixbuf decoding validation.
+- [ ] Inspect real XFWM4/Thunar captures at 1600×900 and 1024×768; replace
+  earlier gallery screenshots only after genuine X11 capture verification.
+- [ ] Confirm on the owner's Mint XFCE desktop that the toolbar's native menu
+  or Ctrl+M/F10 still opens the hidden menu.
+
+The current development runner cannot bind an X11 socket, so native visual QA
+must use an authorized external CI run or the owner's laptop. CSS cannot add
+the original Explorer Libraries, bottom details/preview pane, or contextual
+Organize/New folder toolbar to Thunar. No nonfunctional imitation buttons
+are inserted.
+
+Sources: [Microsoft Explorer controls](https://learn.microsoft.com/en-us/windows/win32/shell/developing-with-windows-explorer),
+[Windows 7 libraries](https://learn.microsoft.com/en-us/windows/win32/win7devguide/managing-files-and-data),
+[Xfce Thunar window and toolbar](https://docs.xfce.org/xfce/thunar/the-file-manager-window).
+
 ## Reference and constraints
 
 Microsoft's original Windows 7 taskbar design emphasized an icon-first Superbar, persistent pins, grouped running apps, thumbnail previews, and Aero Peek. The classic Start menu had a searchable white program list, a translucent blue right-hand system-links pane, and a compact shutdown control. See the historical [Windows Experience taskbar design](https://blogs.windows.com/windowsexperience/2008/11/20/happy-anniversary-windows-7/) and [Microsoft Taskbar Extensions](https://learn.microsoft.com/en-us/windows/win32/shell/taskbar-extensions). These are behavior/design references, not distributable assets.

@@ -9,7 +9,7 @@ from unittest import mock
 from macrice.aero import (AeroAssetError, autostart_file, preflight, read_autostart)
 from macrice.aero_shell import CSS, app_catalog, matching_apps
 from macrice.installer import project_root
-from macrice.rice import RiceError, STYLES, apply, plan, restore
+from macrice.rice import RiceError, STYLES, XfceBackend, apply, plan, restore
 from tests.test_rice import FakeBackend, setup_apps
 
 
@@ -99,9 +99,20 @@ class AeroTests(unittest.TestCase):
             from gi.repository import Gtk
         except (ImportError, ValueError):
             self.skipTest("GTK3 unavailable")
-        for contents in (CSS, (project_root() / "assets/themes/RiceHub-Aero/gtk-3.0/gtk.css").read_bytes()):
+        from macrice.thunar import _block
+        for contents in (CSS, (project_root() / "assets/themes/RiceHub-Aero/gtk-3.0/gtk.css").read_bytes(),
+                         _block("aero").encode()):
             provider = Gtk.CssProvider()
             provider.load_from_data(contents)
+
+    def test_new_thunar_menubar_setting_is_created_with_boolean_xfconf_type(self):
+        with mock.patch.object(XfceBackend, "_run") as run, \
+                mock.patch.object(XfceBackend, "get", return_value="false"):
+            XfceBackend().set("xfconf", "thunar", "/last-menubar-visible", "false", create=True)
+            args = run.call_args.args
+            self.assertEqual(args[0], "xfconf-query")
+            self.assertIn("bool", args)
+            self.assertNotIn("string", args)
 
     def test_start_search_is_case_insensitive_and_unpaginated(self):
         class App:

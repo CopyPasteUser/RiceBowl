@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><title>Aero Seven shared folder</title>
+<defs><linearGradient id="folder" x2="0" y2="1"><stop stop-color="#fff0ac"/><stop offset="1" stop-color="#d79935"/></linearGradient></defs>
+<path d="M5 16h20l6 6h28v33H5Z" fill="#ad7930" stroke="#92632a" stroke-width="2"/><path d="M7 26h50v28H7Z" fill="url(#folder)" stroke="#ad7930" stroke-width="1.5"/>
+<circle cx="32" cy="34" r="5" fill="#477fa8"/><circle cx="22" cy="39" r="4" fill="#679ac1"/><circle cx="42" cy="39" r="4" fill="#679ac1"/>
+<path d="M25 49q0-10 7-10t7 10M16 50q0-8 6-8t5 8M37 50q0-8 5-8t6 8" fill="#e5f2fa" stroke="#4b7da0" stroke-width="1.5"/></svg>

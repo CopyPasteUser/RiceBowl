@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><title>Aero Seven executable file</title>
+<defs><linearGradient id="page" x2="0" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#e8f2f8"/></linearGradient><linearGradient id="steel" x2="0" y2="1"><stop stop-color="#9bd2ed"/><stop offset="1" stop-color="#387ba9"/></linearGradient></defs>
+<path d="M11 5h29l13 13v40H11Z" fill="url(#page)" stroke="#92aaba" stroke-width="2"/>
+<path d="M40 5v13h13" fill="#d8eaf5" stroke="#92aaba" stroke-width="2"/>
+<path d="M29 27h6l2 5 5 1 3 5-3 5-5 1-2 5h-6l-2-5-5-1-3-5 3-5 5-1Z" fill="url(#steel)" stroke="#386c95" stroke-width="1.5"/>
+<circle cx="32" cy="38" r="5" fill="#effaff" stroke="#397aa7" stroke-width="1.5"/></svg>

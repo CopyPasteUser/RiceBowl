@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><title>Aero Seven PDF document</title>
+<defs><linearGradient id="page" x2="0" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#eef3f7"/></linearGradient><linearGradient id="badge" x2="0" y2="1"><stop stop-color="#e36c63"/><stop offset="1" stop-color="#a62f35"/></linearGradient></defs>
+<path d="M11 5h29l13 13v40H11Z" fill="url(#page)" stroke="#99abb8" stroke-width="2"/>
+<path d="M40 5v13h13" fill="#dce9f2" stroke="#99abb8" stroke-width="2"/>
+<rect x="15" y="32" width="34" height="18" rx="2" fill="url(#badge)" stroke="#9f3434" stroke-width="1"/>
+<text x="32" y="45" font-family="DejaVu Sans,sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#fff">PDF</text></svg>

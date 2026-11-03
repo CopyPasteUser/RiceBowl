@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><title>Aero Seven templates folder</title>
+<defs><linearGradient id="folder" x2="0" y2="1"><stop stop-color="#fff0af"/><stop offset="1" stop-color="#dfa143"/></linearGradient></defs>
+<path d="M5 16h20l6 6h28v33H5Z" fill="#b17b30" stroke="#92642b" stroke-width="2"/><path d="M7 26h50v28H7Z" fill="url(#folder)" stroke="#a87a30" stroke-width="1.5"/>
+<path d="M21 31h21v20H21Z" fill="#e8f2f8" stroke="#6693b3"/><path d="M24 28h21v21H24Z" fill="#fff" stroke="#6995b7"/>
+<path d="M29 35h11m-11 5h11m-11 5h8" stroke="#9bc0d9" stroke-width="1.8"/></svg>

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><title>Aero Seven hard disk</title>
+<defs><linearGradient id="case" x2="0" y2="1"><stop stop-color="#fcfeff"/><stop offset=".48" stop-color="#cedce5"/><stop offset="1" stop-color="#8fa8b7"/></linearGradient></defs>
+<path d="M10 21h44l5 22v10H5V43Z" fill="url(#case)" stroke="#65889d" stroke-width="2"/>
+<path d="M5 43h54v10H5Z" fill="#9bb6c7" stroke="#64849a" stroke-width="1.6"/>
+<path d="M11 48h22" stroke="#eef6fa" stroke-width="2"/><circle cx="49" cy="48" r="2.4" fill="#63cb81"/>
+<path d="M11 23h42l4 17H7Z" fill="#eaf1f6" opacity=".6"/></svg>

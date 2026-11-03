@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><title>Aero Seven compressed file</title>
+<defs><linearGradient id="page" x2="0" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#edf4f8"/></linearGradient></defs>
+<path d="M11 5h29l13 13v40H11Z" fill="url(#page)" stroke="#92a9bb" stroke-width="2"/>
+<path d="M40 5v13h13" fill="#d8eaf5" stroke="#92a9bb" stroke-width="2"/>
+<path d="M32 23v25" stroke="#a9843f" stroke-width="7" stroke-dasharray="4 3"/>
+<rect x="25" y="43" width="14" height="11" rx="2" fill="#dfc178" stroke="#98783b" stroke-width="1.5"/>
+<rect x="30" y="45" width="4" height="4" rx=".5" fill="#f8efcd"/></svg>
