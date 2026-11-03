@@ -1,4 +1,22 @@
-# RiceHub changelog
+# RiceBowl changelog
+
+## 0.7.0 — RiceBowl identity and themed controls (3 November 2026)
+
+### Desktop experience
+- Introduced the RiceBowl name, original rice-bowl SVG application icon and user-local `ricebowl` desktop/CLI launcher.
+- Refined live system-control panels for XP Luna, Windows 98/2000 Classic, ChromeOS and Frutiger Aero. The controls expose actual available XFCE/system settings applications and disable unavailable commands.
+- Added differentiated Thunar toolbars, location controls and sidebars for **all six non-macOS** desktop families (Aero 7, Ten, XP, Classic, ChromeOS, Frutiger). Existing 0.6 managed CSS is recognized during upgrades, while modifications outside the owned block remain untouched.
+- Preserved the existing macOS implementation and dock behavior.
+
+### Upgrade safety
+- The `ricehub` and `macrice` commands, user state paths, managed startup entries and D-Bus shell identifiers remain compatible.
+- The old RiceHub desktop shortcut stays installed but is hidden from the app menu to avoid duplicates.
+- Added regression tests for new/legacy launcher coexistence, Thunar migration, custom CSS protection and SVG validity.
+- Repository rename is **not complete**. Until owner-side GitHub Settings changes the name, the canonical clone URL remains `CopyPasteUser/RiceHub`.
+
+### Validation
+- Automated Python tests and isolated GTK/X11 checks are managed by the repository's GitHub Actions workflow; results must be checked per commit.
+- Physical Linux Mint XFCE multi-monitor, compositor, fast profile switching and Plank-autostart acceptance remain open.
 
 ## 0.6.0 — Seven installable rices (2 November 2026)
 
