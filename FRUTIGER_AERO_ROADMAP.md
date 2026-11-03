@@ -44,7 +44,7 @@ this visual change. Original art only; do not bundle third-party assets.
    disabled tools, readable contrast, click targets, no clipped menu, no
    startup/background process regression, no cross-rice style leakage, safe
    restore and narrowly scoped changes.
-7. **[ ] Capture and release the implemented result.** Run Python tests,
+7. **[x] Capture and release the implemented result.** Run Python tests,
    syntax and asset checks and native Xvfb screenshots; inspect them visually;
    update only the current screenshots and the English README/Design guide;
    merge into GitHub `main` after green CI. Owner's physical Mint XFCE
