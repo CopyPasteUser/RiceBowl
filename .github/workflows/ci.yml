@@ -85,6 +85,7 @@ jobs:
         with:
           name: ricebowl-0.9.1-native-x11-captures
           path: |
+            screenshots/ricebowl-hub-windows10-current.png
             screenshots/ricebowl-*-0.9.1.png
             screenshots/ricebowl-winxp-*-0.9.1-1024.png
             screenshots/ricebowl-winxp-workspace-0.9.1-1024.png

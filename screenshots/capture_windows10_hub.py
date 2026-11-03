@@ -33,13 +33,12 @@ def capture():
         pixels = Gdk.pixbuf_get_from_window(window.get_window(), 0, 0, *window.get_size())
         if pixels is None:
             raise RuntimeError("Unable to capture the RiceHub gallery")
-        pixels.savev(str(ROOT / "screenshots/ricehub-windows10-gallery-0.5.0rc2.png"), "png", [], [])
+        pixels.savev(str(ROOT / "screenshots/ricebowl-hub-windows10-current.png"), "png", [], [])
         app.quit()
         return False
 
     for widget in descendants(window):
-        if isinstance(widget, Gtk.Button) and (widget.get_accessible().get_name() or "").startswith(
-                "Windows 10 —"):
+        if isinstance(widget, Gtk.Button) and widget.get_accessible().get_name() == "Select Windows 10":
             widget.clicked()
             GLib.timeout_add(450, save)
             return False
