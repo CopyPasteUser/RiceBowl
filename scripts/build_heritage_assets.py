@@ -111,8 +111,8 @@ def _icons(name, palette):
     base = ROOT / "assets/icons" / ("RiceHub-" + name + "-Icons")
     base.mkdir(parents=True, exist_ok=True)
     (base / "index.theme").write_text(
-        "[Icon Theme]\nName=RiceHub " + name + " Icons\n"
-        "Comment=Original RiceHub themed icons; inherited Linux fallbacks\n"
+        "[Icon Theme]\nName=RiceBowl " + name + " Icons\n"
+        "Comment=Original RiceBowl themed icons; inherited Linux fallbacks\n"
         "Inherits=Adwaita,hicolor\nDirectories=scalable/apps,scalable/places\n"
         "[scalable/apps]\nSize=48\nType=Scalable\nMinSize=16\nMaxSize=128\n"
         "[scalable/places]\nSize=48\nType=Scalable\nMinSize=16\nMaxSize=128\n",
