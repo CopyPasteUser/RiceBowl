@@ -22,6 +22,8 @@ DESKTOP_MARKER = "X-MacRice-Managed=true"
 HUB_LAUNCHER_MARKER = "# Managed by RiceHub XFCE"
 HUB_DESKTOP_MARKER = "X-RiceHub-Managed=true"
 FAST_TOGGLE_MARKER = "# Managed by RiceHub fast keyboard toggles"
+RICEBOWL_LAUNCHER_MARKER = "# Managed by RiceBowl XFCE"
+RICEBOWL_DESKTOP_MARKER = "X-RiceBowl-Managed=true"
 
 
 class InstallationError(RuntimeError):
@@ -78,6 +80,7 @@ def _check_layout(source: Path) -> None:
         "launcher.py",
         "assets/macrice-symbolic.svg",
         "assets/ricehub-symbolic.svg",
+        "assets/ricebowl-symbolic.svg",
     ) + tuple(asset for profile in PROFILES.values() for asset in (
         f"assets/themes/{profile.theme}/gtk-3.0/gtk.css",
         f"assets/themes/{profile.theme}/xfwm4/themerc",
@@ -138,7 +141,7 @@ def _copy_bundle(source: Path, stage: Path) -> None:
 
     for folder in ("macrice", "components", "assets"):
         shutil.copytree(source / folder, stage / folder, ignore=ignore)
-    for file in ("launcher.py", "README.md", "LICENSE", "ROADMAP.md", "RICE.md", "RICEHUB.md", "CONTRIBUTORS.md"):
+    for file in ("launcher.py", "README.md", "LICENSE", "ROADMAP.md", "RICE.md", "RICEHUB.md", "RICEBOWL.md", "CONTRIBUTORS.md"):
         shutil.copy2(source / file, stage / file)
     (stage / MANAGED_MARKER).write_text("Managed by MacRice XFCE\n", encoding="ascii")
 
@@ -198,6 +201,13 @@ def _write_entrypoints(installed: Path) -> None:
         + 'exec /usr/bin/python3 "' + str(installed / "launcher.py") + '" hub "$@"\n'
     )
     _atomic_write(hub_launcher, hub_content, 0o755)
+    # New public name; keep the old aliases and on-disk state compatible.
+    bowl_launcher = binaries / "ricebowl"
+    bowl_content = (
+        '#!/bin/sh\n' + RICEBOWL_LAUNCHER_MARKER + '\n'
+        + 'exec /usr/bin/python3 "' + str(installed / "launcher.py") + '" hub "$@"\n'
+    )
+    _atomic_write(bowl_launcher, bowl_content, 0o755)
     fast_launcher = binaries / "ricehub-toggle"
     from .heritage import PROFILES
     heritage_commands = "".join(
@@ -231,7 +241,20 @@ def _write_entrypoints(installed: Path) -> None:
         "Terminal=false\nCategories=Settings;Utility;\nStartupNotify=true\n"
         f"{HUB_DESKTOP_MARKER}\n"
     )
+    # Preserve RiceHub's owned shortcut for compatibility without duplicate menu items.
+    hub_desktop_content = hub_desktop_content.replace("StartupNotify=true\n",
+                                                      "StartupNotify=true\nNoDisplay=true\n")
     _atomic_write(hub_desktop, hub_desktop_content, 0o644)
+    bowl_desktop = applications / "ricebowl.desktop"
+    bowl_desktop_content = (
+        "[Desktop Entry]\nType=Application\nVersion=1.0\n"
+        "Name=RiceBowl\nComment=Explore and manage complete XFCE desktop styles\n"
+        f'Exec="{bowl_launcher}"\n'
+        f"Icon={installed / 'assets/ricebowl-symbolic.svg'}\n"
+        "Terminal=false\nCategories=Settings;Utility;\nStartupNotify=true\n"
+        f"{RICEBOWL_DESKTOP_MARKER}\n"
+    )
+    _atomic_write(bowl_desktop, bowl_desktop_content, 0o644)
 
 
 def _check_entrypoints() -> None:
@@ -241,6 +264,8 @@ def _check_entrypoints() -> None:
         (data_home() / "applications/macrice.desktop", DESKTOP_MARKER),
         (bin_home() / "ricehub", HUB_LAUNCHER_MARKER),
         (bin_home() / "ricehub-toggle", FAST_TOGGLE_MARKER),
+        (bin_home() / "ricebowl", RICEBOWL_LAUNCHER_MARKER),
+        (data_home() / "applications/ricebowl.desktop", RICEBOWL_DESKTOP_MARKER),
         (data_home() / "applications/ricehub.desktop", HUB_DESKTOP_MARKER),
     )
     for path, marker in candidates:
@@ -309,7 +334,7 @@ def install(options: InstallOptions, source: Path | None = None, output=print) -
         output("Plank: existing dock detected; no changes to its settings or launchers.")
     else:
         output("Plank: not installed. Optional on Mint: sudo apt install plank")
-    output("RiceHub installed. Run 'ricehub' to explore desktop styles.")
+    output("RiceBowl installed. Run 'ricebowl' (ricehub remains compatible).")
     output("The original MacRice manager remains available via 'macrice gui'.")
     output("The XFCE Panel was not replaced. No theme or icon was changed.")
     return installed
