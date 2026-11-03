@@ -19,3 +19,7 @@ Existing D-Bus shell identifiers, internal theme names and startup entries remai
 The release workflow requires the repository's Python and native GTK/X11 tests to pass before publishing. Physical Linux Mint XFCE panel switching, Plank autostart coexistence, HiDPI and multi-monitor validation remain outstanding; previous screenshots are retained as version-labeled historical captures.
 
 See [README](README.md) and [CHANGELOG](CHANGELOG.md) for setup and migration notes.
+
+### Branding maintenance
+
+The source branch after the 0.7.0 tag aligns the application sidebar icon, window and prototype titles, packaging metadata, desktop autostarts and README with RiceBowl. Exact former managed autostart entries remain recognized for restoring pre-upgrade sessions. The original release tag remains an immutable historical snapshot; follow-up commits are documented in the main branch changelog.
