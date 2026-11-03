@@ -336,7 +336,7 @@ def plan(style_name: str, *, backend: XfceBackend | None = None,
          data_root: Path | None = None, source_root: Path | None = None,
          config_root: Path | None = None) -> tuple[list[dict], dict[str, str | None], Path, Path]:
     if style_name not in STYLES:
-        raise RiceError("Choose one of the available RiceHub desktop styles")
+        raise RiceError("Choose one of the available RiceBowl desktop styles")
     backend = backend or XfceBackend()
     data_root = data_root or data_home()
     source_root = source_root or project_root()
