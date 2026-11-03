@@ -1,4 +1,4 @@
-/* RiceHub Ten: compact flat GTK3 theme, original artwork. */
+/* RiceBowl 0.7: RiceHub-Luna GTK3 theme, original artwork. */
 @define-color theme_bg_color #e9f2ff;
 @define-color theme_fg_color #123c79;
 @define-color theme_base_color #ffffff;
@@ -27,3 +27,8 @@ scrollbar slider { background: #85a8da; border-radius: 0; min-height: 7px; min-w
 scrollbar slider:hover { background: #5075a3; }
 progressbar progress, scale highlight, switch:checked { background: #2265cf; border-radius: 0; }
 tooltip { background: #d1e6fd; color: #123c79; border: 1px solid #85a8da; }
+
+/* RiceBowl 0.7 Thunar treatment: scoped to the file manager only. */
+window.thunar toolbar { background-image: linear-gradient(#fff, #c0dbf9 60%, #94bbe9); border-bottom: 2px solid #679bd5; }
+window.thunar .path-bar button { background-image: linear-gradient(#fff, #d5e9ff); border: 1px solid #8bb0d9; border-radius: 5px; }
+window.thunar .sidebar { background-image: linear-gradient(to right, #bdd4f5, #e4f0ff); }
