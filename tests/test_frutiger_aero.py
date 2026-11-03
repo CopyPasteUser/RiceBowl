@@ -47,7 +47,7 @@ class FrutigerAeroContractTests(unittest.TestCase):
         self.assertIn("self._launch(selected)", grid)
         self.assertIn("self._pin_context", grid)
         self.assertIn("picture.set_pixel_size(48)", grid)
-        self.assertIn('profile in ("winxp", "aero", "frutiger", "winclassic", "windows10")', source)
+        self.assertIn('profile in ("winxp", "aero", "frutiger", "winclassic", "windows10", "chromeos")', source)
 
     def test_aqua_glass_css_is_profile_scoped(self):
         css = CSS["frutiger"]

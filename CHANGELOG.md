@@ -1,5 +1,21 @@
 # RiceBowl changelog
 
+## Unreleased — ChromeOS Material You native fidelity (3 November 2026)
+
+- Rebuilt the 56px ChromeOS shelf with native Gio pinned and running app icons,
+  distinct launcher glyph, activity highlights and live hardware status.
+- Added a left-anchored rounded application launcher with bounded 4-column
+  grid, genuine installed applications, favorites, search and context pinning.
+- Rebuilt right-side Quick Settings around verified output volume/mute,
+  battery/network status, local date and real XFCE settings navigation;
+  unavailable utilities are visibly disabled, and notifications are not faked.
+- Shipped an original flowing pastel wallpaper, rounded XFWM4 button sprites
+  and coordinated GTK3/Thunar controls, with a deterministic single-theme
+  regeneration command and exact historical managed hashes for safe upgrades.
+- Added focused ChromeOS tests, 1024×768 X11 capture checks and up-to-date
+  screenshot gallery. Other Rices retain their own designs.
+- The historical v0.9.1 release tag remains unchanged; use `main` for current work.
+
 ## Unreleased — Windows 10 native fidelity (3 November 2026)
 
 - Replaced the oversized penguin wallpaper with an original deep-blue

@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install GTK introspection for Linux tests
-        run: sudo apt-get update && sudo apt-get install -y python3-gi python3-pil gir1.2-gtk-3.0 xvfb dbus-x11 gir1.2-wnck-3.0 librsvg2-common xfwm4
+        run: sudo apt-get update && sudo apt-get install -y python3-gi python3-cairo python3-gi-cairo python3-pil gir1.2-gtk-3.0 xvfb dbus-x11 gir1.2-wnck-3.0 librsvg2-common xfwm4
       - name: Validate and test the suite
         run: |
           /usr/bin/python3 -m compileall -q macrice launcher.py
@@ -51,6 +51,9 @@ jobs:
           # Windows 10's real three-column Start and tall Action Center stay inside 1024x768.
           RICEBOWL_CAPTURE_SIZE=1024 timeout 24s dbus-run-session -- xvfb-run -a -s '-screen 0 1024x768x24' /usr/bin/python3 -c 'from macrice.ten_shell import run; raise SystemExit(run(["ricebowl-windows10-shell", "--capture-gallery"]))'
           /usr/bin/python3 -c 'from pathlib import Path; import struct; fs=sorted(Path("screenshots").glob("ricebowl-windows10-*-0.9.1-1024.png")); assert len(fs)==2, "Ten small-screen captures missing"; assert all(struct.unpack(">II", p.read_bytes()[16:24])==(1024,768) for p in fs), "Ten 1024x768 capture invalid"'
+          # Material You Launcher + Quick Settings must both be fully visible on 1024x768.
+          RICEBOWL_CAPTURE_SIZE=1024 timeout 24s dbus-run-session -- xvfb-run -a -s '-screen 0 1024x768x24' /usr/bin/python3 -c 'from macrice.aero_shell import run; raise SystemExit(run(["ricebowl-chromeos-shell", "--capture-gallery"], profile="chromeos"))'
+          /usr/bin/python3 -c 'from pathlib import Path; import struct; fs=sorted(Path("screenshots").glob("ricebowl-chromeos-*-0.9.1-1024.png")); assert len(fs)==2, "ChromeOS small-screen captures missing"; assert all(struct.unpack(">II", p.read_bytes()[16:24])==(1024,768) for p in fs), "ChromeOS 1024x768 capture invalid"'
           (cd components/macmenu && /usr/bin/python3 -m unittest discover -s tests -v)
           (cd components/macbar && /usr/bin/python3 -m unittest discover -s tests -v)
           (cd components/control-center && PATH=/usr/bin:/bin bash run-tests.sh)
@@ -66,6 +69,7 @@ jobs:
             screenshots/ricebowl-frutiger-*-0.9.1-1024.png
             screenshots/ricebowl-winclassic-*-0.9.1-1024.png
             screenshots/ricebowl-windows10-*-0.9.1-1024.png
+            screenshots/ricebowl-chromeos-*-0.9.1-1024.png
           if-no-files-found: ignore
 
   publish-ricebowl:

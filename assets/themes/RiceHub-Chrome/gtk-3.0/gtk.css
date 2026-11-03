@@ -1,49 +1,47 @@
-/* RiceBowl 0.7: RiceHub-Chrome GTK3 theme, original artwork. */
-@define-color theme_bg_color #f5f8fe;
-@define-color theme_fg_color #293b57;
-@define-color theme_base_color #ffffff;
-@define-color theme_text_color #293b57;
-@define-color theme_selected_bg_color #4a7ed4;
-@define-color theme_selected_fg_color #ffffff;
-@define-color insensitive_fg_color #5e759a;
-@define-color borders #bfcfe4;
-window, dialog, .background, viewport { color: #293b57; background-color: #f5f8fe; }
-entry, textview text, treeview.view, .view, spinbutton { color: #293b57; background-color: #ffffff; }
-entry, spinbutton, combobox box.linked { border: 1px solid #bfcfe4; border-radius: 0; padding: 5px; }
-entry:focus { border: 1px solid #4a7ed4; }
-selection, :selected, row:selected { background: #4a7ed4; color: #ffffff; }
-button { border: 1px solid #bfcfe4; border-radius: 0; padding: 5px 12px; background-image: none; background-color: #e9effb; color: #293b57; box-shadow: none; }
-button:hover { background-color: #e5f1fb; border-color: #4a7ed4; }
-button:active, button:checked { background-color: #4a7ed4; color: #ffffff; }
-button:disabled { color: #5e759a; opacity: .62; }
-headerbar, .titlebar, toolbar { background-image: none; background-color: #e9effb; color: #293b57; border-bottom: 1px solid #bfcfe4; box-shadow: none; }
-headerbar button { border: 0; padding: 4px 8px; }
-menubar, menu, popover, .menu, .popup { background: #e9effb; color: #293b57; border: 1px solid #bfcfe4; }
-menuitem:hover, modelbutton:hover { background: #4a7ed4; color: #ffffff; }
-notebook header { background: #f5f8fe; border-bottom: 1px solid #bfcfe4; }
-notebook tab { padding: 7px 12px; border-radius: 0; }
-notebook tab:checked { background: #e9effb; border-bottom: 2px solid #4a7ed4; }
-scrollbar slider { background: #bfcfe4; border-radius: 0; min-height: 7px; min-width: 7px; }
-scrollbar slider:hover { background: #5e759a; }
-progressbar progress, scale highlight, switch:checked { background: #4a7ed4; border-radius: 0; }
-tooltip { background: #e9effb; color: #293b57; border: 1px solid #bfcfe4; }
-
-/* RiceBowl 0.7 Thunar treatment: scoped to the file manager only. */
-window.thunar toolbar { background: #f7faff; border-bottom: 1px solid #d5e0f0; padding: 7px; }
-window.thunar .path-bar button { background: #e8effc; border: 1px solid #dae5f6; border-radius: 15px; padding: 6px 11px; }
-window.thunar .sidebar { background: #edf3ff; }
-
-/* RiceBowl 0.9: high-fidelity, Thunar-only era chrome. */
-/* ChromeOS: soft white tools, pill address field, cool lavender sidebar. */
-window.thunar menubar { background: #f4f6ff; border-bottom: 0; color: #344064; padding: 4px 8px; }
-window.thunar toolbar, window.thunar .location-bar { background-image: linear-gradient(#fafbff, #edf1fc); border-bottom: 1px solid #dde4f5; padding: 8px 11px; }
-window.thunar toolbar button { background: transparent; border: 1px solid transparent; border-radius: 14px; color: #35486d; padding: 6px 8px; }
-window.thunar toolbar button:hover { background: #e2eafd; border-color: #d1def5; }
-window.thunar .path-bar button, window.thunar .location-bar button { background: #e7ecfc; color: #303d67; border: 1px solid #dee3f5; border-radius: 16px; padding: 7px 13px; }
-window.thunar .sidebar, window.thunar .shortcuts-pane { background-image: linear-gradient(#eef1ff, #e4ebfc); color: #34476b; border-right: 1px solid #d4ddf3; }
-window.thunar .sidebar .view, window.thunar .shortcuts-pane .view { background: transparent; color: #34476b; }
-window.thunar .sidebar .view:selected { background: #cfdbfb; color: #24417a; border-radius: 9px; }
-window.thunar treeview.view:selected { background: #d6ddf9; color: #263966; }
-window.thunar .standard-view, window.thunar .view { background: #fcfdff; }
-window.thunar statusbar { background: #f2f4ff; color: #596987; border-top: 1px solid #e1e6f5; padding: 6px 10px; }
-window.thunar scrollbar slider { background: #c6d0ee; border-radius: 9px; }
+/* Original RiceBowl ChromeOS Material You GTK3/Thunar */
+@define-color iris #506cd6;
+@define-color primary_text #262b43;
+@define-color soft_surface #f9faff;
+@define-color outline #d6daeb;
+window, dialog, .background, viewport { background-color: #f9faff; color: #262b43; }
+headerbar, .titlebar { background: #eff1fc; color: #262b43;
+  border: 0; border-bottom: 1px solid #d9dff0; box-shadow: none; }
+button { background: #e8ecfa; color: #303a59; border: 1px solid #d9dff0;
+  border-radius: 13px; padding: 6px 12px; box-shadow: none; }
+button:hover { background: #dce5ff; border-color: #b3c1f2; }
+button:active, button:checked { background: #c5d4fd; color: #243c8d; }
+button:disabled { background: #f1f2f7; color: #9399ab; }
+entry, searchentry, spinbutton { background: #eef0f9; color: #252b42;
+  border: 1px solid #d8ddec; border-radius: 16px; padding: 7px 12px; }
+entry:focus, searchentry:focus { background: #fff; border-color: #506cd6; }
+selection, :selected, row:selected, treeview.view:selected {
+  background: #c8d4ff; color: #202e67; }
+menubar, menu, popover, .menu, .popup { background: #fdfdff;
+  color: #252b43; border: 1px solid #dfe3f0; border-radius: 12px; }
+menuitem:hover, modelbutton:hover { background: #e1e8ff; color: #283e8d; }
+toolbar { background: #f0f3fc; color: #2b3453;
+  border-bottom: 1px solid #dce1ef; }
+toolbar button { background: transparent; border-color: transparent; }
+toolbar button:hover { background: #dae3ff; }
+notebook header { background: #eef1fa; border: 0; }
+notebook tab { background: #e7ebf8; border: 1px solid #dce2f0;
+  border-radius: 13px 13px 0 0; padding: 7px 13px; }
+notebook tab:checked { background: #fff; color: #354caa; }
+scrollbar trough { background: #edf0fa; }
+scrollbar slider { background: #c5cee7; border-radius: 8px;
+  min-width: 8px; min-height: 8px; }
+scrollbar slider:hover { background: #9facd1; }
+scale highlight, progressbar progress { background: #506cd6; border-radius: 7px; }
+tooltip { background: #f1f3fd; color: #252b43;
+  border: 1px solid #cdd5e9; border-radius: 8px; }
+thunar treeview.view, .thunar treeview.view { background: #fff; color: #29334b; }
+window.thunar menubar { background: #f0f3fc; color: #2b3453; }
+window.thunar .sidebar { background: #eef2fc; color: #303955; }
+window.thunar .sidebar row:selected { background: #c8d4ff; color: #202e67; }
+window.thunar toolbar { background: #f0f3fc; border-bottom: 1px solid #dce1ef; }
+window.thunar statusbar { background: #f2f4fb; color: #4d5974;
+  border-top: 1px solid #dce1ef; }
+thunar treeview.view:selected, .thunar treeview.view:selected {
+  background: #c8d4ff; color: #202e67; }
+thunar paned separator, .thunar paned separator { background: #d8dff0; }
+button:focus { outline: 2px solid #506cd6; outline-offset: -2px; }

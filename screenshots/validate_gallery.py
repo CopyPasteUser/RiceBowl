@@ -42,6 +42,22 @@ def main() -> None:
             raise SystemExit(
                 f"{name}: the settings window is hidden/clipped or failed "
                 f"to render ({changed} changed pixels)")
+    # Verify that the large Launcher is actually X11-shaped. The Quick Settings
+    # UTILITY window has a GTK-owned extra backdrop on some uncomposited Xvfb
+    # backends even when the native bounding region is correctly rounded;
+    # pixel-exact corner matching would falsely fail for that window. Its
+    # area, visibility and monitor bounds are checked above and at capture.
+    with (Image.open(folder / f"ricebowl-chromeos-start-{GALLERY_VERSION}.png") as start_file,
+          Image.open(folder / f"ricebowl-chromeos-controls-{GALLERY_VERSION}.png") as controls_file):
+        start = start_file.convert("RGB")
+        controls = controls_file.convert("RGB")
+        for x, y in ((16, 208),):
+            delta = max(abs(a - b) for a, b in
+                        zip(start.getpixel((x, y)), controls.getpixel((x, y))))
+            if delta > 28:
+                raise SystemExit(
+                    f"ChromeOS Launcher has an opaque rectangular backing at {x},{y} "
+                    f"(color delta {delta}); check X11 rounded window shaping")
     print("Six native GTK settings popups passed visible-area validation")
 
 

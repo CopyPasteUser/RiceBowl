@@ -304,6 +304,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
     tiles = ten or profile == "chromeos"
     panel_height = (34 if profile == "winclassic" else
                     40 if profile in ("winxp", "windows10") else
+                    56 if profile == "chromeos" else
                     42 if profile == "aero" else PANEL_HEIGHT)
     if ten:
         from .ten_shell import APP_ID as TEN_APP_ID, CSS as TEN_CSS
@@ -363,7 +364,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def do_startup(self):
             Gtk.Application.do_startup(self)
-            if profile in ("frutiger", "winclassic"):
+            if profile in ("frutiger", "winclassic", "chromeos"):
                 # GTK's default Gdk screen exists after application startup;
                 # before it, IconTheme.get_default() may silently be None.
                 # Install scoped search path to show original Aqua icons even
@@ -375,6 +376,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 if settings is not None:
                     settings.set_property("gtk-icon-theme-name", (
                         "RiceHub-Classic-Icons" if profile == "winclassic" else
+                        "RiceHub-Chrome-Icons" if profile == "chromeos" else
                         "RiceHub-Frutiger-Icons"))
             for name in ("toggle-menu", "toggle-control"):
                 action = Gio.SimpleAction.new(name, None)
@@ -405,7 +407,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._smoke = "--smoke-test" in args
             self._capture_gallery = "--capture-gallery" in args
             self._capture_variant = "-1024" if (
-                profile in ("winxp", "aero", "frutiger", "winclassic", "windows10")
+                profile in ("winxp", "aero", "frutiger", "winclassic", "windows10", "chromeos")
                 and os.environ.get("RICEBOWL_CAPTURE_SIZE") == "1024") else ""
             self.activate()
             if self._smoke:
@@ -419,7 +421,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self._toggle_menu()
                 return
             provider = Gtk.CssProvider()
-            provider.load_from_data(CSS + (TEN_CSS if ten else HERITAGE_CSS[profile] if heritage else b""))
+            extra_css = TEN_CSS if ten else HERITAGE_CSS[profile] if heritage else b""
+            if profile == "chromeos":
+                from .chrome_shell import CSS as CHROME_CSS
+                extra_css += CHROME_CSS
+            provider.load_from_data(CSS + extra_css)
             Gtk.StyleContext.add_provider_for_screen(
                 Gdk.Screen.get_default(), provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
             self._provider = provider
@@ -624,8 +630,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 if profile == "aero":
                     btn.get_style_context().add_class("win7-pin")
                 icon = app.get_icon()
-                btn.set_image(Gtk.Image.new_from_gicon(icon, Gtk.IconSize.LARGE_TOOLBAR) if icon else
-                              self._icon("application-x-executable"))
+                image = (Gtk.Image.new_from_gicon(icon, Gtk.IconSize.LARGE_TOOLBAR) if icon else
+                         self._icon("application-x-executable"))
+                if profile == "chromeos":
+                    image.set_pixel_size(32)
+                btn.set_image(image)
                 name = app.get_display_name() or app.get_name() or identifier
                 btn.set_tooltip_text(name)
                 btn.get_accessible().set_name("Launch " + name)
@@ -783,7 +792,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 subprocess.Popen([executable], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                                  stderr=subprocess.DEVNULL, close_fds=True, start_new_session=True)
                 self._hide_menu()
-                if ten:
+                if ten or profile == "chromeos":
                     self._hide_actions()
             except OSError as exc:
                 self._error(str(exc))
@@ -942,6 +951,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self.control_network_label.set_text(
                     "Network: " + {"wifi": "Wi-Fi", "ethernet": "Ethernet",
                                    "offline": "No active route"}[status.network])
+                if hasattr(self, "chrome_network_detail"):
+                    self.chrome_network_detail.set_text({
+                        "wifi": "Wi-Fi · connected", "ethernet": "Ethernet · connected",
+                        "offline": "Offline",
+                    }[status.network])
                 battery = status.battery
                 self.control_battery_label.set_text(
                     f"Battery: {battery.percent}% — {battery.label}" if battery else
@@ -1199,9 +1213,21 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.show_desktop_button = desktop
             clock = self._class(Gtk.Label(), "aero-time")
             clock.set_justify(Gtk.Justification.CENTER)
-            right_area.pack_end(clock, False, False, 6)
+            if profile == "chromeos":
+                clock_button = self._class(Gtk.Button(), "chrome-clock-button")
+                clock_button.add(clock)
+                clock_button.set_tooltip_text("Open Quick Settings")
+                clock_button.get_accessible().set_name("Open Quick Settings")
+                clock_button.connect("clicked", lambda _button: self._toggle_actions())
+                right_area.pack_end(clock_button, False, False, 4)
+            else:
+                right_area.pack_end(clock, False, False, 6)
             if tiles:
-                action = self._class(Gtk.Button(label="▤"), "aero-quick")
+                action = self._class(
+                    Gtk.Button() if profile == "chromeos" else Gtk.Button(label="▤"),
+                    "aero-quick")
+                if profile == "chromeos":
+                    action.set_image(self._icon("preferences-system", Gtk.IconSize.MENU))
                 action.get_accessible().set_name("Toggle " + (heritage.control_heading if heritage else "Windows 10 Action Center"))
                 action.set_tooltip_text("Quick settings and notification information")
                 action.connect("clicked", lambda _button: self._toggle_actions())
@@ -2453,11 +2479,12 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._populate("")
 
         def _create_chrome_launcher(self):
-            """ChromeOS-inspired centered search and app grid, not a Windows tile menu."""
+            """Material You launcher with genuine Gio applications and real shelf pins."""
+            from .chrome_shell import apply_rounded_window_shape
             menu = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
             menu.set_title("RiceBowl ChromeOS App Launcher")
             menu.set_decorated(False)
-            menu.set_resizable(False)
+            menu.set_resizable(True)
             menu.set_skip_taskbar_hint(True)
             menu.set_skip_pager_hint(True)
             menu.set_type_hint(Gdk.WindowTypeHint.UTILITY)
@@ -2466,57 +2493,72 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             rect = self._desktop_rect()
             _x, _y, menu_w, menu_h = menu_geometry(
                 rect.x, rect.y, rect.width, rect.height,
-                preferred_width=650, preferred_height=548)
+                preferred_width=610, preferred_height=628, panel_height=panel_height)
             menu.set_default_size(menu_w, menu_h)
             root = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12),
                                "chrome-launcher")
-            root.get_style_context().add_class("aero-menu-root")
-            root.set_border_width(18)
-            header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=9)
-            emblem = self._icon("start-here", Gtk.IconSize.DIALOG)
+            header = self._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=9),
+                                 "chrome-launcher-header")
+            try:
+                emblem = Gtk.Image.new_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_scale(
+                    str(project_root() / "assets/ricebowl-chrome-start.svg"), 29, 29, True))
+            except (GLib.Error, OSError):
+                emblem = self._icon("start-here", Gtk.IconSize.LARGE_TOOLBAR)
             header.pack_start(emblem, False, False, 0)
             header.pack_start(self._class(
-                Gtk.Label(label="Apps", xalign=0), "aero-menu-heading"), True, True, 0)
+                Gtk.Label(label="Launcher", xalign=0),
+                "chrome-launcher-title"), True, True, 0)
             settings = self._class(Gtk.Button(), "chrome-launcher-settings")
             settings.set_image(self._icon("preferences-system", Gtk.IconSize.MENU))
-            settings.set_tooltip_text("Open device settings")
-            settings.get_accessible().set_name("Open device settings")
+            settings.set_tooltip_text("Open Linux desktop settings")
+            settings.get_accessible().set_name("Open Linux desktop settings")
+            settings.set_sensitive(shutil.which("xfce4-settings-manager") is not None)
             settings.connect("clicked", lambda _button:
                              self._open_tool("xfce4-settings-manager"))
             header.pack_end(settings, False, False, 0)
             root.pack_start(header, False, False, 0)
 
             search = self._class(Gtk.SearchEntry(), "aero-menu-search")
-            search.set_placeholder_text("Search apps on this device")
+            search.set_placeholder_text("Search your installed apps")
             search.get_accessible().set_name("Search all installed applications")
             root.pack_start(search, False, False, 0)
 
             pinned_label = self._class(
-                Gtk.Label(label="Your apps", xalign=0), "aero-menu-sub")
+                Gtk.Label(label="Pinned", xalign=0), "chrome-section-heading")
             root.pack_start(pinned_label, False, False, 0)
-            self.tile_grid = Gtk.Grid(row_spacing=7, column_spacing=8)
-            self.tile_grid.set_halign(Gtk.Align.CENTER)
+            self.tile_grid = Gtk.Grid(row_spacing=4, column_spacing=7)
+            self.tile_grid.set_halign(Gtk.Align.START)
             root.pack_start(self.tile_grid, False, False, 0)
+            root.pack_start(self._class(
+                Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL),
+                "chrome-divider"), False, False, 1)
             all_apps_label = self._class(
-                Gtk.Label(label="Search results", xalign=0), "aero-menu-sub")
-            all_apps_label.set_no_show_all(True)
+                Gtk.Label(label="All apps", xalign=0), "chrome-section-heading")
             root.pack_start(all_apps_label, False, False, 0)
             scroller = Gtk.ScrolledWindow()
             scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-            scroller.set_min_content_height(120)
-            self.results = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+            scroller.set_min_content_height(185)
+            self.results = Gtk.Grid(row_spacing=5, column_spacing=7)
+            self.results.set_halign(Gtk.Align.START)
+            self.results.set_valign(Gtk.Align.START)
             scroller.add(self.results)
             root.pack_start(scroller, True, True, 0)
+            root.pack_start(self._class(Gtk.Label(
+                label="Right-click an app to pin or unpin it on the shelf",
+                xalign=0), "chrome-quick-detail"), False, False, 0)
             menu.add(root)
             menu.connect("focus-in-event", self._menu_focus_in)
             menu.connect("focus-out-event", self._menu_focus_out)
+            def shape_later(*_args):
+                GLib.idle_add(apply_rounded_window_shape, menu, 26)
+                return False
+            menu.connect("configure-event", shape_later)
             def search_changed(*_args):
                 self._app_page_size = 24
                 needle = search.get_text().strip()
                 self.tile_grid.set_visible(not bool(needle))
                 pinned_label.set_visible(not bool(needle))
-                all_apps_label.set_visible(bool(needle))
-                scroller.set_visible(bool(needle))
+                all_apps_label.set_text("Search results" if needle else "All apps")
                 self._populate(needle)
             search.connect("search-changed", search_changed)
             search.connect("key-press-event", lambda _widget, event: self._search_key(event))
@@ -2524,9 +2566,52 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.menu, self.search = menu, search
             self._render_ten_tiles()
             self._populate("")
-            scroller.set_no_show_all(True)
-            scroller.hide()
-            all_apps_label.hide()
+
+        def _chrome_app_button(self, app):
+            """Uniform real Gio icons: never let intrinsic SVG sizes break the grid."""
+            button = self._class(Gtk.Button(), "chrome-app-card")
+            content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+            icon = app.get_icon()
+            picture = (Gtk.Image.new_from_gicon(icon, Gtk.IconSize.DIALOG) if icon else
+                       self._icon("applications-other", Gtk.IconSize.DIALOG))
+            picture.set_pixel_size(44)
+            picture.set_halign(Gtk.Align.CENTER)
+            content.pack_start(picture, False, False, 0)
+            title = app.get_display_name() or app.get_name() or "Application"
+            name = self._class(Gtk.Label(label=title), "chrome-app-label")
+            name.set_max_width_chars(14)
+            name.set_ellipsize(Pango.EllipsizeMode.END)
+            content.pack_start(name, False, False, 0)
+            button.add(content)
+            button.set_size_request(125, 91)
+            button.set_tooltip_text(title + " · Right-click to pin or unpin")
+            button.get_accessible().set_name("Launch " + title)
+            button.connect("clicked", lambda _button, selected=app: self._launch(selected))
+            button.connect("button-press-event", lambda widget, event, selected=app:
+                           self._pin_context(widget, selected, event))
+            button.connect("popup-menu", lambda widget, selected=app:
+                           self._pin_context(widget, selected))
+            return button
+
+        def _populate_chrome_apps(self, query):
+            matches = matching_apps(self.apps, query)
+            for index, app in enumerate(matches[:self._app_page_size]):
+                self.results.attach(self._chrome_app_button(app),
+                                    index % 4, index // 4, 1, 1)
+            if not matches:
+                self.results.attach(self._class(Gtk.Label(
+                    label="No installed applications match your search", xalign=0),
+                    "chrome-empty"), 0, 0, 4, 1)
+            if len(matches) > self._app_page_size:
+                more = self._class(Gtk.Button(label="Show more apps"), "chrome-app-card")
+                more.get_accessible().set_name("Show more installed applications")
+                def expand(_button):
+                    self._app_page_size += 24
+                    self._populate(self.search.get_text())
+                more.connect("clicked", expand)
+                more_row = (min(len(matches), self._app_page_size) + 3) // 4
+                self.results.attach(more, 0, more_row, 4, 1)
+            self.results.show_all()
 
         def _render_ten_tiles(self):
             if not hasattr(self, "tile_grid"):
@@ -2576,45 +2661,13 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 return
             for child in self.tile_grid.get_children():
                 self.tile_grid.remove(child)
-            lookup = {app.get_id(): app for app in self.apps if app.get_id()}
-            pinned = [lookup[identifier] for identifier in self._pinned_ids
-                      if identifier in lookup][:12 if profile == "chromeos" else 6]
             if profile == "chromeos":
-                # A Chromebook launcher must work without manually pinning apps.
-                # Fill the grid with REAL installed apps, never mocked tiles.
-                pinned_ids = {app.get_id() for app in pinned}
-                for app in self.apps:
-                    identifier = app.get_id()
-                    if identifier and identifier not in pinned_ids:
-                        pinned.append(app)
-                        pinned_ids.add(identifier)
-                    if len(pinned) >= 12:
-                        break
-            if not pinned:
-                self.tile_grid.attach(self._class(Gtk.Label(label="Pin an app from the list", xalign=0),
-                                                  "ten-muted"), 0, 0, 2, 1)
-            for index, app in enumerate(pinned):
-                button = self._class(Gtk.Button(), "ten-tile")
-                button.set_size_request(110 if profile == "chromeos" else 116,
-                                        80 if profile == "chromeos" else 87)
-                box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
-                icon = app.get_icon()
-                box.pack_start(Gtk.Image.new_from_gicon(
-                    icon, Gtk.IconSize.DIALOG if profile == "chromeos" else Gtk.IconSize.LARGE_TOOLBAR
-                ) if icon else self._icon("applications-other",
-                    Gtk.IconSize.DIALOG if profile == "chromeos" else Gtk.IconSize.LARGE_TOOLBAR),
-                    True, True, 0)
-                name = app.get_display_name() or app.get_name() or "Application"
-                caption = self._class(Gtk.Label(label=name, xalign=0), "ten-tile-label")
-                caption.set_max_width_chars(15)
-                caption.set_ellipsize(Pango.EllipsizeMode.END)
-                box.pack_start(caption, False, False, 0)
-                button.add(box)
-                button.get_accessible().set_name("Launch " + name)
-                button.connect("clicked", lambda _button, selected=app: self._launch(selected))
-                self.tile_grid.attach(button, index % (4 if profile == "chromeos" else 2),
-                                      index // (4 if profile == "chromeos" else 2), 1, 1)
-            self.tile_grid.show_all()
+                from .chrome_shell import launcher_favorites
+                for index, app in enumerate(
+                        launcher_favorites(self.apps, self._pinned_ids)):
+                    self.tile_grid.attach(self._chrome_app_button(app), index, 0, 1, 1)
+                self.tile_grid.show_all()
+                return
 
         def _create_actions(self):
             """Profile-aware controls; never simulate state-changing toggles."""
@@ -2622,6 +2675,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 from .ten_action_center import build
 
                 self.actions = build(self, Gtk, Gdk)
+                return
+            if profile == "chromeos":
+                from .chrome_quick_settings import build
+
+                self.actions = build(self, Gtk, Gdk, GLib)
                 return
             actions = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
             heading = heritage.control_heading if heritage else ("Action Center" if ten else "Control Panel")
@@ -2846,18 +2904,31 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 return
             self._hide_menu()
             rect = self._desktop_rect()
-            width = min(362 if ten else 382 if profile == "winclassic" else 362 if profile == "frutiger" else 330,
+            width = min(396 if profile == "chromeos" else 362 if ten else 382 if profile == "winclassic" else 362 if profile == "frutiger" else 330,
                         max(0, rect.width - 16))
-            height = min(680 if ten else 488 if profile == "winclassic" else 560 if profile == "frutiger" else 430,
+            height = min(608 if profile == "chromeos" else 680 if ten else 488 if profile == "winclassic" else 560 if profile == "frutiger" else 430,
                          max(0, rect.height - panel_height - 16))
             if width < 235 or height < 250:
                 self._error("The display is too small for " + ("Action Center." if ten else "Control Panel."))
                 return
             self.actions.show_all()
+            if profile == "chromeos":
+                self.chrome_quick_clock.set_text(
+                    GLib.DateTime.new_now_local().format("%a, %d %b · %H:%M"))
             self.actions.resize(width, height)
-            self.actions.move(rect.x + rect.width - width - (0 if ten else 8),
-                              rect.y + rect.height - panel_height - height - (0 if ten else 8))
+            margin = 10 if profile == "chromeos" else 0 if ten else 8
+            self.actions.move(rect.x + rect.width - width - margin,
+                              rect.y + rect.height - panel_height - height - margin)
             self.actions.present()
+            if profile == "chromeos":
+                # Utility popups don't reliably emit a second configure event
+                # after present() under Xvfb. Apply the X11 mask once mapped.
+                from .chrome_shell import apply_rounded_window_shape
+
+                GLib.idle_add(apply_rounded_window_shape, self.actions, 26)
+                # Some X11 window managers reset the shape during the first
+                # utility resize; reapply after that configure settles.
+                GLib.timeout_add(150, apply_rounded_window_shape, self.actions, 26)
 
         def _open_search(self):
             if not self.menu.get_visible():
@@ -2875,6 +2946,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self.results.remove(child)
             if ten:
                 self._populate_windows10(query)
+                return
+            if profile == "chromeos":
+                self._populate_chrome_apps(query)
                 return
             if profile == "frutiger":
                 self._populate_frutiger(query)
@@ -3147,7 +3221,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             preferred_sizes = {
                 "winxp": (480, 540),
                 "winclassic": (262, 332),
-                "chromeos": (650, 548),
+                "chromeos": (610, 628),
                 "frutiger": (600, 600),
                 "windows10": (690, 560),
                 "aero": (525, 535),
@@ -3161,7 +3235,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self._error("The display is too small for the Start menu.")
                 return
             if profile == "chromeos":
-                x = rect.x + (rect.width - w) // 2
+                x = rect.x + min(16, max(8, rect.width - w))
             if profile == "winxp":
                 self.search.set_no_show_all(True)
                 self.search.hide()
