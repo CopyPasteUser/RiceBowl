@@ -85,8 +85,9 @@ Superseded screenshots are excluded.
 
 [Current Control Panels and six actual file-manager workspaces](screenshots/current/) · [CI full-resolution captures](https://github.com/CopyPasteUser/RiceBowl/actions/workflows/ci.yml)
 
-The checked-in Aero gallery still illustrates the **previous** Control Panel;
-the new eight-category window awaits fresh native-X11 screenshot verification.
+The Aero Start, Control Panel and Thunar screenshots come from the verified
+second-pass XFWM4 capture. Other rice images retain their last verified run;
+see [capture provenance](screenshots/current/README.md).
 
 | Windows 7: actual Thunar + XFWM4 | ChromeOS: actual Thunar + XFWM4 |
 | --- | --- |

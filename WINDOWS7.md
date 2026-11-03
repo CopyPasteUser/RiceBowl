@@ -5,10 +5,10 @@ original RiceBowl Linux artwork, not Microsoft binaries, icons or wallpaper.
 
 ## Screenshots & coverage
 
-These images show genuine windows from the **previous native virtual-X11 CI
-run**, before the second Control Panel/Superbar fidelity pass. The newly
-designed framed Control Panel still needs a fresh CI capture before the gallery
-can represent it; owner hardware verification is separate.
+These are real XFWM4/GTK3 desktop captures from the passing virtual-X11 CI run
+[`41678284256`](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41678284256).
+They include the second Control Panel/Superbar fidelity pass. The same pipeline
+also checks **1024×768** placement. Owner Mint hardware verification is separate.
 
 ### Desktop and taskbar
 
