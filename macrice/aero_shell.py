@@ -41,6 +41,12 @@ def default_pins(apps) -> tuple[str, ...]:
         for app in apps:
             identifier = app.get_id()
             label = (app.get_display_name() or app.get_name() or "").casefold()
+            # XFCE ships "File Manager Settings" as a separate .desktop
+            # launcher. It sorts before "Thunar File Manager", but it should
+            # never become the default Files shortcut on a fresh desktop.
+            if keyword == "file manager" and any(
+                    term in label for term in ("settings", "preferences", "configuration")):
+                continue
             if keyword in label and identifier and identifier not in selected:
                 selected.append(identifier)
                 break

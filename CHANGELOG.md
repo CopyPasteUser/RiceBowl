@@ -6,6 +6,8 @@
   mint app tiles, a clearer Discover section and distinct lime selected tabs.
   The home grid prioritizes saved pinned apps and familiar installed desktop
   programs, while search still covers the complete application catalog.
+  A fresh desktop no longer mistakes XFCE's File Manager Settings for the
+  actual Thunar File Manager when seeding its default taskbar pins.
   Optional native X11 corner masks eliminate rectangular popup backing when
   XFWM4 runs without a compositor.
 - Quick Home/Documents/Music links and the Places page now resolve XDG user

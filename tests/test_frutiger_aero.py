@@ -6,7 +6,7 @@ from types import SimpleNamespace
 
 from PIL import Image
 
-from macrice.aero_shell import frutiger_apps, frutiger_status_summary
+from macrice.aero_shell import default_pins, frutiger_apps, frutiger_status_summary
 from macrice.asset_upgrade import trusted_assets
 from macrice.hardware_status import BatteryState, DesktopStatus, SoundState
 from macrice.heritage_shell import CSS
@@ -18,6 +18,17 @@ FRUTIGER_THEME = ROOT / "assets/themes/RiceHub-Frutiger"
 
 
 class FrutigerAeroContractTests(unittest.TestCase):
+    def test_fresh_default_files_pin_opens_files_not_file_manager_settings(self):
+        def app(title, identifier):
+            return SimpleNamespace(get_display_name=lambda: title, get_name=lambda: title,
+                                   get_id=lambda: identifier)
+        apps = (app("File Manager Settings", "thunar-settings.desktop"),
+                app("Firefox Web Browser", "firefox.desktop"),
+                app("Terminal", "terminal.desktop"),
+                app("Thunar File Manager", "thunar.desktop"))
+        self.assertEqual(default_pins(apps),
+                         ("thunar.desktop", "firefox.desktop", "terminal.desktop"))
+
     def test_home_grid_prioritizes_real_pins_but_searches_every_app(self):
         def app(name, identifier, categories=""):
             return SimpleNamespace(get_display_name=lambda: name, get_name=lambda: name,
