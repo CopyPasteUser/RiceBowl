@@ -341,3 +341,62 @@ menu menuitem:hover { background: #000080; color: #fff; }
 
 for _profile, _details in DETAIL_CSS.items():
     CSS[_profile] += _details
+
+
+# Functional device controls inherit the native design language, including
+# scale/progress tracks and stateful mute, not the generic GTK button defaults.
+CONTROL_DETAIL_CSS = {
+    "winxp": b"""
+.rice-hardware-panel { background-image: linear-gradient(#ffffff, #e2efff);
+  border: 1px solid #9dbce5; border-radius: 5px; padding: 10px; }
+.rice-control-detail { color: #174a94; font-weight: bold; font-size: 11px; }
+.rice-hardware-panel scale trough { background: #fff; border: 1px solid #7d9cbd;
+  border-radius: 3px; min-height: 9px; }
+.rice-hardware-panel scale highlight, .rice-hardware-panel levelbar block.filled {
+  background-image: linear-gradient(#bdff76, #57b92d); border-radius: 2px; }
+.rice-mute { background-image: linear-gradient(#fff, #cfe0f9);
+  color: #204d88; border-radius: 4px; }
+.rice-mute:checked { background: #357bd1; color: white; }
+""",
+    "winclassic": b"""
+.rice-hardware-panel { background: #c0c0c0; border: 2px inset #fff; border-radius: 0;
+  padding: 6px; }
+.rice-control-detail { color: #111; font-family: monospace; font-size: 11px; }
+.rice-hardware-panel scale trough { background: white; border: 2px inset #fff;
+  border-radius: 0; min-height: 8px; }
+.rice-hardware-panel scale slider { background: #c0c0c0; border: 2px outset #fff;
+  border-radius: 0; }
+.rice-hardware-panel scale highlight, .rice-hardware-panel levelbar block.filled {
+  background: #000080; border-radius: 0; }
+.rice-mute { background: #c0c0c0; border: 2px outset #fff; border-radius: 0; box-shadow: none; }
+.rice-mute:checked { border: 2px inset #fff; background: #888; color: #111; }
+""",
+    "chromeos": b"""
+.rice-hardware-panel { background: #edf2ff; border: 1px solid #d4ddf1;
+  border-radius: 19px; padding: 13px; }
+.rice-control-detail { color: #3c4f77; font-size: 12px; }
+.rice-hardware-panel scale trough { background: #ced9f0; border-radius: 9px;
+  min-height: 8px; }
+.rice-hardware-panel scale highlight, .rice-hardware-panel levelbar block.filled {
+  background: #5e8cea; border-radius: 9px; }
+.rice-mute { background: #fff; border: 1px solid #d4ddf0;
+  border-radius: 20px; color: #435987; padding: 8px; }
+.rice-mute:checked { background: #dae3ff; border-color: #8ea8e5; }
+""",
+    "frutiger": b"""
+.rice-hardware-panel { background-image: linear-gradient(#faffff, #c4fff0 50%, #9fe4e8);
+  border: 1px solid #68c5d2; border-radius: 17px; padding: 12px;
+  box-shadow: inset 0 1px #fff; }
+.rice-control-detail { color: #076b83; font-size: 12px; font-weight: bold; }
+.rice-hardware-panel scale trough { background: #efffff; border: 1px solid #7dd8d1;
+  border-radius: 11px; min-height: 10px; }
+.rice-hardware-panel scale highlight, .rice-hardware-panel levelbar block.filled {
+  background-image: linear-gradient(#e9ff9d, #80e33f);
+  border-radius: 10px; }
+.rice-mute { background-image: linear-gradient(#fff, #b3f8e4);
+  color: #0b6a86; border: 1px solid #71c9d5; border-radius: 16px; padding: 8px; }
+.rice-mute:checked { background-image: linear-gradient(#dcffc0, #69d85d); }
+""",
+}
+for _profile, _detail in CONTROL_DETAIL_CSS.items():
+    CSS[_profile] += _detail
