@@ -1,4 +1,4 @@
-"""RiceHub: a native, on-demand XFCE rice gallery and recovery workbench.
+"""RiceBowl: a native, on-demand XFCE rice gallery and recovery workbench.
 
 No extra daemon, browser, compositor, root privileges or hidden profile writes.
 The working macOS implementation is shared with MacRice. Windows 7 and
@@ -16,7 +16,7 @@ from .hub_art import aspect_fill
 from .hub_catalog import FAMILIES, FAMILY_BY_KEY, recent_backups, search_families
 
 
-HUB_VERSION = "0.6.0"
+HUB_VERSION = "0.7.0"
 
 # A restrained native palette. All GTK CSS colors and font choices live here.
 TOKENS = {
@@ -28,7 +28,7 @@ TOKENS = {
     "preview_veil": "rgba(16,23,33,.91)", "font": "Inter, sans-serif",
 }
 
-CSS = """/* RiceHub native GTK3 app screen — measured, accessible, low-motion. */
+CSS = """/* RiceBowl native GTK3 app screen — measured, accessible, low-motion. */
 #ricehub-window {{ background: {window}; color: {text}; }}
 #ricehub-sidebar {{ background: {sidebar}; border-right: 1px solid {border}; }}
 #ricehub-content {{ background: {window}; }}
@@ -104,7 +104,7 @@ def _activate_hub_window(application, windows, factory) -> bool:
 
 def run() -> int:
     if not os.environ.get("DISPLAY") and not os.environ.get("WAYLAND_DISPLAY"):
-        print("RiceHub needs a graphical XFCE session.", file=__import__("sys").stderr)
+        print("RiceBowl needs a graphical XFCE session.", file=__import__("sys").stderr)
         return 1
     try:
         import gi
@@ -113,7 +113,7 @@ def run() -> int:
         gi.require_version("GdkPixbuf", "2.0")
         from gi.repository import Gdk, GdkPixbuf, Gio, GLib, Gtk
     except (ImportError, ValueError) as exc:
-        print(f"RiceHub needs GTK3/PyGObject: {exc}", file=__import__("sys").stderr)
+        print(f"RiceBowl needs GTK3/PyGObject: {exc}", file=__import__("sys").stderr)
         return 1
 
     from .cli import open_component
@@ -149,7 +149,7 @@ def run() -> int:
 
     class HubWindow(Gtk.ApplicationWindow):
         def __init__(self, application):
-            super().__init__(application=application, title="RiceHub — XFCE Rices")
+            super().__init__(application=application, title="RiceBowl — XFCE Rices")
             self.set_name("ricehub-window")
             self.set_default_size(1060, 720)
             self.set_size_request(760, 510)
@@ -164,7 +164,7 @@ def run() -> int:
             self._preview_style = "night"
             self._preview_rendered = None
             try:
-                self.set_icon_from_file(str(project_root() / "assets/ricehub-symbolic.svg"))
+                self.set_icon_from_file(str(project_root() / "assets/ricebowl-symbolic.svg"))
             except (OSError, GLib.Error):
                 pass
 
@@ -215,7 +215,7 @@ def run() -> int:
                 except GLib.Error:
                     pass
             title = vertical(2)
-            title.pack_start(label("RiceHub", "hub-brand"), False, False, 0)
+            title.pack_start(label("RiceBowl", "hub-brand"), False, False, 0)
             title.pack_start(label("XFCE desktop studio", "hub-hint"), False, False, 0)
             brand.pack_start(title, True, True, 0)
             side.pack_start(brand, False, False, 6)
@@ -240,7 +240,7 @@ def run() -> int:
                 self._nav_buttons[key] = button
 
             side.pack_start(Gtk.Box(), True, True, 0)
-            side.pack_start(label(f"RiceHub {HUB_VERSION}", "hub-hint"), False, False, 0)
+            side.pack_start(label(f"RiceBowl {HUB_VERSION}", "hub-hint"), False, False, 0)
             side.pack_start(label("Locally managed. No telemetry.", "hub-hint"), False, False, 0)
 
         def _page(self, key, title, intro):
@@ -429,7 +429,7 @@ def run() -> int:
                                      ("balanced", "Balanced — recommended"),
                                      ("visual", "Visual — smoother effects")):
                 self.performance_picker.append(key, description)
-            self.performance_picker.set_tooltip_text("Select a profile to apply; RiceHub does not assume your current preference")
+            self.performance_picker.set_tooltip_text("Select a profile to apply; RiceBowl does not assume your current preference")
             pane.pack_start(self.performance_picker, False, False, 0)
             pane.pack_start(label("Light reduces motion and media artwork; Balanced preserves responsive controls; Visual prioritizes smooth animation.",
                                   "hub-body", True), False, False, 0)
@@ -459,7 +459,7 @@ def run() -> int:
             buttons.pack_start(action("Refresh history", lambda _: self._refresh_backups()), False, False, 0)
             self.restore_button = action("Restore previous desktop", lambda _: self._restore_confirmed(), True)
             buttons.pack_start(self.restore_button, False, False, 0)
-            body.pack_start(label("Restore only reverts settings still controlled by RiceHub. Later personal changes are preserved and reported.",
+            body.pack_start(label("Restore only reverts settings still controlled by RiceBowl. Later personal changes are preserved and reported.",
                                   "hub-hint", True), False, False, 0)
             self._refresh_backups()
 
@@ -697,7 +697,7 @@ def run() -> int:
                 return
             self._confirm(
                 "Restore the previous desktop?",
-                "RiceHub will restore the latest MacRice snapshot. Settings changed afterward are kept and reported.",
+                "RiceBowl will restore the latest MacRice snapshot. Settings changed afterward are kept and reported.",
                 lambda: self._work("Restoring your desktop…", restore, self._after_restore),
             )
 
@@ -806,11 +806,11 @@ def run() -> int:
     try:
         provider.load_from_data(CSS)
     except GLib.Error as exc:
-        print(f"RiceHub CSS could not be loaded: {exc}", file=__import__("sys").stderr)
+        print(f"RiceBowl CSS could not be loaded: {exc}", file=__import__("sys").stderr)
         return 1
     screen = Gdk.Screen.get_default()
     if screen is None:
-        print("RiceHub: GTK could not find a desktop display.", file=__import__("sys").stderr)
+        print("RiceBowl: GTK could not find a desktop display.", file=__import__("sys").stderr)
         return 1
     Gtk.StyleContext.add_provider_for_screen(screen, provider, Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION)
     app = Gtk.Application(application_id="io.github.ricehub.xfce", flags=Gio.ApplicationFlags.FLAGS_NONE)
