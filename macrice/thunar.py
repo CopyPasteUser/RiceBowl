@@ -18,6 +18,23 @@ PREFERENCES = (
     ("/last-side-pane", "ThunarShortcutsPane"),
     ("/last-view", "ThunarIconView"),
 )
+MENUBAR_PREFERENCE = "/last-menubar-visible"
+MANAGED_PREFERENCES = PREFERENCES + ((MENUBAR_PREFERENCE, "true"),)
+
+
+def preferences_for(style: str) -> tuple[tuple[str, str], ...]:
+    """Keep Explorer's menu hidden without leaking that choice into other rices.
+
+    Thunar 4.20 exposes the menu via a toolbar button when the bar is hidden;
+    older Thunar builds retain their native Ctrl+M/F10 menu shortcuts.
+    """
+    if style not in PALETTES:
+        raise ValueError("Unknown Thunar palette")
+    return PREFERENCES + ((MENUBAR_PREFERENCE, "false" if style == "aero" else "true"),)
+
+
+def preference_type(key: str) -> str:
+    return "bool" if key == MENUBAR_PREFERENCE else "string"
 
 PALETTES = {
     "night": {"chrome": "#202733", "sidebar": "#19212d", "text": "#f0f3f7",
@@ -105,7 +122,8 @@ def _pre_spacing_block(style: str) -> str:
     return original.replace(END + "\n", DETAIL_CSS[style] + END + "\n")
 
 
-def _block(style: str) -> str:
+def _v091_block(style: str) -> str:
+    """Exact pre-Explorer managed CSS, preserved for upgrade matching."""
     original = _pre_spacing_block(style)
     if style not in ("aero", "winxp", "chromeos", "frutiger"):
         return original
@@ -115,6 +133,145 @@ def _block(style: str) -> str:
     return original.replace(
         END + "\n",
         "window.thunar menubar > menuitem { padding: 3px 10px; }\n" + END + "\n")
+
+
+# Windows 7 Explorer is much flatter inside the window than the Aero frame.
+# The native GTK toolbar, breadcrumb, shortcuts pane, file view and statusbar
+# remain fully operational. CSS cannot add Explorer's Libraries, details pane or
+# contextual command bar to Thunar; no misleading controls are drawn here.
+AERO_EXPLORER_CSS = """/* Seven Explorer: pale command strip, not Frutiger's turquoise gloss. */
+window.thunar toolbar, window.thunar .location-bar {
+  background-image: linear-gradient(to bottom, #fdfefe, #f0f7fc 54%, #dceaf5);
+  border-top: 1px solid #ffffff;
+  border-bottom: 1px solid #b0cadc;
+  padding: 2px 5px;
+  box-shadow: inset 0 1px rgba(255,255,255,.9);
+}
+window.thunar toolbar button {
+  background-image: none;
+  background-color: transparent;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  box-shadow: none;
+  color: #244c69;
+  min-width: 20px;
+  min-height: 20px;
+  padding: 3px 5px;
+}
+window.thunar toolbar button:hover {
+  background-image: linear-gradient(to bottom, #ffffff, #d1eafa);
+  border-color: #87b8da;
+}
+window.thunar toolbar button:active, window.thunar toolbar button:checked {
+  background-image: linear-gradient(to bottom, #a8d6f2, #dceffc);
+  border-color: #5d9bc8;
+}
+window.thunar toolbar button:disabled {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  color: #a0afbb;
+}
+/* One continuous Explorer address field; real path buttons still navigate. */
+window.thunar .path-bar {
+  background: #ffffff;
+  border: 1px solid #92b1c8;
+  border-radius: 2px;
+  padding: 1px 2px;
+  box-shadow: inset 0 1px #f8fbfe;
+}
+window.thunar .path-bar button, window.thunar .location-bar button {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 1px;
+  box-shadow: none;
+  color: #264a65;
+  padding: 2px 7px;
+}
+window.thunar .path-bar button:hover, window.thunar .location-bar button:hover {
+  background-image: linear-gradient(to bottom, #f4fbff, #d1eaf9);
+  border-color: #86b5d6;
+}
+window.thunar .path-bar button:checked, window.thunar .path-bar button:active {
+  background: #e1f0fa;
+  border-color: #a8cbe2;
+  color: #244763;
+}
+window.thunar toolbar entry {
+  background: #ffffff;
+  border: 1px solid #8daec8;
+  border-radius: 2px;
+  color: #26455d;
+  box-shadow: inset 0 1px #f6fbff;
+}
+/* Explorer's light navigation pane: no blue boxed border on every row. */
+window.thunar .sidebar, window.thunar .shortcuts-pane {
+  background: #e9f2fa;
+  border-right: 1px solid #bdd2e1;
+  color: #244760;
+}
+window.thunar .sidebar .view, window.thunar .shortcuts-pane .view,
+window.thunar .sidebar treeview, window.thunar .shortcuts-pane treeview {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  color: #254760;
+  box-shadow: none;
+}
+window.thunar .sidebar .view:selected, window.thunar .shortcuts-pane .view:selected {
+  background-image: linear-gradient(to bottom, #e0f3fd, #b8daf1);
+  border-color: #79afd2;
+  color: #174467;
+}
+window.thunar .sidebar .view:hover, window.thunar .shortcuts-pane .view:hover {
+  background-color: #d5eafb;
+}
+/* No input-field border around the white file canvas or icon grid. */
+window.thunar .standard-view, window.thunar .standard-view .view,
+window.thunar iconview, window.thunar treeview.view {
+  background: #ffffff;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  color: #253e50;
+}
+window.thunar .standard-view .view:selected, window.thunar treeview.view:selected {
+  background: #c2e4f9;
+  color: #173b57;
+}
+window.thunar treeview header button {
+  background-image: linear-gradient(to bottom, #ffffff, #e4edf5);
+  border: 0;
+  border-bottom: 1px solid #c2d1dd;
+  border-right: 1px solid #d1dfe9;
+  border-radius: 0;
+  box-shadow: none;
+  color: #405b6d;
+  padding: 4px 8px;
+}
+window.thunar statusbar, window.thunar .statusbar {
+  background-image: linear-gradient(to bottom, #f8fcfe, #e3f0f9);
+  border-top: 1px solid #bfd5e4;
+  color: #35556a;
+  padding: 3px 8px;
+}
+window.thunar scrollbar slider {
+  background-image: linear-gradient(to right, #d6e8f3, #fafcfe 45%, #bfd9e9);
+  border: 1px solid #a6c4d7;
+  border-radius: 3px;
+}
+window.thunar scrollbar slider:hover {
+  background: #b4d8ee;
+  border-color: #76add0;
+}
+"""
+
+
+def _block(style: str) -> str:
+    original = _v091_block(style)
+    if style != "aero":
+        return original
+    return original.replace(END + "\n", AERO_EXPLORER_CSS + END + "\n")
 
 
 def _read_css(path: Path) -> str | None:
@@ -141,6 +298,7 @@ def plan_css(style: str, config_root: Path) -> dict[str, str | None]:
         inner, right = tail.split(END, 1)
         current_block = START + inner + END + "\n"
         if current_block not in ({_block(name) for name in PALETTES} |
+                                 {_v091_block(name) for name in PALETTES} |
                                  {_pre_spacing_block(name) for name in PALETTES} |
                                  {_v080_block(name) for name in PALETTES} |
                                  {_legacy_block(name) for name in PALETTES}):

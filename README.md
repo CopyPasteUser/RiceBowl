@@ -55,7 +55,7 @@ recoverable desktop settings backups.
 | Desktop | Included experience |
 | --- | --- |
 | **macOS · Aurora** | MacBar, MacMenu, Control Center, optional Plank dock, three palettes |
-| **Windows 7 · Aero** | Classic cobalt-blue Linux-penguin wallpaper, golden folders, 48px smoke-blue glass Superbar, previews, Jump Lists, Peek, two-column Start, eight-category Control Panel and Aero chrome |
+| **Windows 7 · Aero** | Cobalt-blue Linux-penguin wallpaper, golden folders, Explorer-style Thunar with original file icons, 48px glass Superbar, previews, Jump Lists, Peek, two-column Start and eight-category Control Panel |
 | **Windows 10 · Ten** | 40px charcoal bar, blue four-pane Linux wallpaper, real three-zone Start with alphabetical apps/grouped tiles, compact running windows, tall functional Action Center, Explorer-like dark/light chrome |
 | **Windows XP · Luna** | Blue/green taskbar, XP-inspired Start, categorized control panel |
 | **Windows 98 / 2000 · Classic** | Flat teal wallpaper, 34px embossed taskbar, Linux-penguin Start badge, keyboard-operable classic Programs / Favorites / Documents / Settings cascades, original navy XFWM windows and coordinated GTK/Thunar 3D controls |
@@ -85,9 +85,10 @@ Superseded screenshots are excluded.
 
 [Current Control Panels and six actual file-manager workspaces](screenshots/current/) · [CI full-resolution captures](https://github.com/CopyPasteUser/RiceBowl/actions/workflows/ci.yml)
 
-The Aero Start, Control Panel and Thunar screenshots come from the verified
-second-pass XFWM4 capture. Other rice images retain their last verified run;
-see [capture provenance](screenshots/current/README.md).
+The Aero Thunar screenshot now comes from the passing **Explorer-refinement**
+X11 capture; Start and Control Panel remain from the verified previous
+fidelity pass. Other rice images retain their last verified run; see
+[capture provenance](screenshots/current/README.md).
 
 | Windows 7: actual Thunar + XFWM4 | ChromeOS: actual Thunar + XFWM4 |
 | --- | --- |

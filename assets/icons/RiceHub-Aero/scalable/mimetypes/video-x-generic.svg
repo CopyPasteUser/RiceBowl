@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><title>Aero Seven video file</title>
+<defs><linearGradient id="page" x2="0" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#e9f3f9"/></linearGradient><linearGradient id="film" x2="0" y2="1"><stop stop-color="#7bb2d7"/><stop offset="1" stop-color="#285b87"/></linearGradient></defs>
+<path d="M11 5h29l13 13v40H11Z" fill="url(#page)" stroke="#96adbd" stroke-width="2"/>
+<path d="M40 5v13h13" fill="#d8e9f4" stroke="#96adbd" stroke-width="2"/>
+<rect x="16" y="27" width="32" height="23" rx="2" fill="url(#film)" stroke="#264e70" stroke-width="1.5"/>
+<path d="m29 32 11 7-11 7Z" fill="#fff"/><path d="M19 29v19m26-19v19" stroke="#c1e9fb" stroke-dasharray="3 3" stroke-width="2"/></svg>

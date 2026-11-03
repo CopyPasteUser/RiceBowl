@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><title>Aero Seven network computer</title>
+<defs><linearGradient id="screen" x2="0" y2="1"><stop stop-color="#baf2fc"/><stop offset="1" stop-color="#347fac"/></linearGradient><linearGradient id="case" x2="0" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#c2d2db"/></linearGradient></defs>
+<path d="M6 12h38v30H6Z" fill="#345a73" stroke="#295270" stroke-width="2"/><path d="M9 15h32v24H9Z" fill="url(#screen)"/>
+<path d="M25 42v8m-12 0h24" stroke="#819daa" stroke-width="4" stroke-linecap="round"/>
+<rect x="43" y="18" width="15" height="37" rx="2" fill="url(#case)" stroke="#6c8ca0" stroke-width="1.5"/>
+<path d="M47 25h7m-7 7h7m-7 7h7" stroke="#94b5c9" stroke-width="2"/><circle cx="50" cy="48" r="2" fill="#60bf77"/></svg>

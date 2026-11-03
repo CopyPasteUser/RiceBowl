@@ -25,7 +25,16 @@ original Linux artwork. Windows 11 and Liquid Glass are out of scope.
   smoky slate-blue (not cyan-water) taskbar with active/hover glass backplates,
   two-column ivory-program/steel-blue-places Start,
   working All Programs and search, amber session-dialog shutdown, original blue
-  XFWM4 frame/button sprites and Explorer-like Thunar controls. The live Win7
+  XFWM4 frame/button sprites and Explorer-like Thunar controls. The Aero file
+  manager has its own light Windows 7 Explorer styling in
+  `macrice/thunar.py:AERO_EXPLORER_CSS`: native flat toolbar buttons, a unified
+  breadcrumb, unboxed shortcut navigation, white canvas and pale status strip.
+  The applied profile manages Thunar's real `/last-menubar-visible` Boolean:
+  hidden in Seven, restored visible on the other rices, journaled for rollback.
+  Original golden folder, drive, network and MIME-type icons live in the Aero
+  icon theme's scalable places/mimetypes directories; they never alter the
+  other themes. True Libraries, native details pane and contextual Explorer
+  commands are beyond CSS-only Thunar theming and are not simulated. The live Win7
   shell owns `win7-*` CSS classes and `_create_win7_menu()` in `aero_shell.py`;
   `macrice/aero_superbar.py` groups immutable Wnck snapshots by WM_CLASS,
   supplies active-aware group overflow, and feeds GTK window previews and Jump

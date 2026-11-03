@@ -650,8 +650,15 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 window_id = result.stdout.splitlines()[-1].strip()
                 if not window_id.isdecimal():
                     raise AssertionError("Thunar has no mapped X11 window")
-                for args in (("windowsize", window_id, "1020", "640"),
-                             ("windowmove", window_id, "290", "105"),
+                # Center the genuine Thunar window on either the 1600x900
+                # gallery canvas or a compact 1024x768 acceptance desktop.
+                monitor = self._desktop_rect()
+                width = min(1020, max(1, monitor.width - 32))
+                height = min(640, max(1, monitor.height - 48 - 40))
+                x = monitor.x + (monitor.width - width) // 2
+                y = monitor.y + max(20, (monitor.height - 48 - height) // 2)
+                for args in (("windowsize", window_id, str(width), str(height)),
+                             ("windowmove", window_id, str(x), str(y)),
                              ("windowactivate", "--sync", window_id)):
                     subprocess.run(["xdotool", *args], check=True, timeout=4,
                                    capture_output=True)
@@ -679,7 +686,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                             "thunar" in (window.get_class_group().get_id() or "").casefold())
                         for window in screen.get_windows()):
                     raise AssertionError("Real Thunar window missing from XFWM4 workspace")
-                self._capture_screen(f"ricebowl-{profile}-workspace-0.9.1.png")
+                compact = "-1024" if os.environ.get("RICEBOWL_CAPTURE_SIZE") == "1024" else ""
+                self._capture_screen(f"ricebowl-{profile}-workspace-0.9.1{compact}.png")
             except Exception:
                 import traceback
                 traceback.print_exc()

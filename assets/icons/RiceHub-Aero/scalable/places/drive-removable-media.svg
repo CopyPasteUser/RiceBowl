@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><title>Aero Seven removable drive</title>
+<defs><linearGradient id="metal" x2="0" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#91aeba"/></linearGradient></defs>
+<path d="M21 10h22v15H21Z" fill="url(#metal)" stroke="#64889e" stroke-width="2"/><path d="M25 13v9m14-9v9" stroke="#91afc0" stroke-width="3"/>
+<rect x="16" y="24" width="32" height="34" rx="5" fill="url(#metal)" stroke="#66899e" stroke-width="2"/>
+<rect x="21" y="31" width="22" height="14" rx="2" fill="#4e91bd"/><path d="M27 38h10" stroke="#d8f7ff" stroke-width="2"/>
+<circle cx="32" cy="51" r="2.5" fill="#51ba75"/></svg>

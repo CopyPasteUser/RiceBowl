@@ -2,6 +2,7 @@
   "schema": 1,
   "description": "Exact previous blue Aero folder icon blobs accepted during the Windows 7 yellow-folder update. User-modified SVG files remain protected.",
   "files": {
+    "assets/icons/RiceHub-Aero/index.theme": ["add95ca0118a4f32ae8feb49bafba61e789ae600"],
     "assets/icons/RiceHub-Aero/scalable/places/folder.svg": ["7af0aa5d6b668414a4c2b1d975025dfb9aea9e87"],
     "assets/icons/RiceHub-Aero/scalable/places/folder-documents.svg": ["134cde567bddcfb1da7249a55d26f2485da86f86"],
     "assets/icons/RiceHub-Aero/scalable/places/folder-download.svg": ["ed258c073dfc16777f748b347ffb4c0407c45922"],

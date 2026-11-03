@@ -1,8 +1,8 @@
 [Icon Theme]
 Name=RiceBowl Aero
-Comment=Original Aqua-blue XFCE icons with Adwaita fallback
+Comment=Original Windows 7 Aero-inspired XFCE places and file-type icons
 Inherits=Adwaita,hicolor
-Directories=scalable/apps,scalable/places
+Directories=scalable/apps,scalable/places,scalable/mimetypes
 
 [scalable/apps]
 Size=48
@@ -17,3 +17,10 @@ Type=Scalable
 MinSize=16
 MaxSize=256
 Context=Places
+
+[scalable/mimetypes]
+Size=48
+Type=Scalable
+MinSize=16
+MaxSize=256
+Context=MimeTypes

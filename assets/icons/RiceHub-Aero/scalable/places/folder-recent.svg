@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><title>Aero Seven recent folder</title>
+<defs><linearGradient id="folder" x2="0" y2="1"><stop stop-color="#fff0aa"/><stop offset="1" stop-color="#db9f3d"/></linearGradient></defs>
+<path d="M5 16h20l6 6h28v33H5Z" fill="#b37a31" stroke="#97642a" stroke-width="2"/><path d="M7 26h50v28H7Z" fill="url(#folder)" stroke="#a97830" stroke-width="1.5"/>
+<circle cx="34" cy="40" r="11" fill="#f7fdff" stroke="#548cbb" stroke-width="2.5"/>
+<path d="M34 32v9l6 4" fill="none" stroke="#3777a5" stroke-width="2.8" stroke-linecap="round"/></svg>

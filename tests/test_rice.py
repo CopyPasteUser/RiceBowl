@@ -81,6 +81,22 @@ def setup_apps(config):
 
 
 class RiceTests(unittest.TestCase):
+    def test_switching_out_of_aero_restores_visible_thunar_menu(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            fake = FakeBackend()
+            setup_apps(root / "config")
+            settings = ("xfconf", "thunar", "/last-menubar-visible")
+            self.assertNotIn(settings, fake.values)
+            apply("aero-meadow", backend=fake, data_root=root / "data",
+                  config_root=root / "config")
+            self.assertEqual(fake.values[settings], "false")
+            apply("winxp", backend=fake, data_root=root / "data",
+                  config_root=root / "config")
+            self.assertEqual(fake.values[settings], "true")
+            restore(backend=fake, data_root=root / "data", config_root=root / "config")
+            self.assertEqual(fake.values[settings], "false")
+
     def test_additional_full_rice_themes_switch_and_restore(self):
         from macrice.rice import STYLES
         for style in ("aqua",):

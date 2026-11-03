@@ -27,7 +27,9 @@ from .environment import config_home, data_home, private_state_root
 from .installer import project_root
 from .plank import DOCK_SCHEMA
 from .themes import CONFIG_FILES, _read_preferences, preset_values, set_theme_values
-from .thunar import END as CSS_END, START as CSS_START, PREFERENCES as THUNAR_PREFS, _read_css, plan_css, write_css
+from .thunar import (END as CSS_END, START as CSS_START,
+                     MANAGED_PREFERENCES as THUNAR_PREFS, _read_css,
+                     preference_type, preferences_for, plan_css, write_css)
 
 
 class RiceError(RuntimeError):
@@ -149,7 +151,8 @@ class XfceBackend:
 
     def set(self, kind: str, channel: str, key: str, value: str, *, create: bool = False) -> None:
         if kind == "xfconf":
-            args = ("-n", "-t", "string") if create else ()
+            kind_name = preference_type(key) if channel == "thunar" else "string"
+            args = ("-n", "-t", kind_name) if create else ()
             self._run("xfconf-query", "-c", channel, "-p", key, *args, "-s", value)
         else:
             self._run("gsettings", "set", DOCK_SCHEMA, key, value)
@@ -300,7 +303,8 @@ def _changes(style: RiceStyle, backend: XfceBackend, target: Path, plank_theme: 
                        ("zoom-enabled", style.plank_zoom)):
         changes.append({"kind": "gsettings", "channel": "plank", "key": key,
                         "before": backend.get("gsettings", "plank", key), "after": value})
-    for key, value in THUNAR_PREFS:
+    # Keep the hidden Windows 7 menu bar from persisting after a rice switch.
+    for key, value in preferences_for("aero" if style.gtk == AERO_THEME else "day"):
         changes.append({"kind": "xfconf", "channel": "thunar", "key": key,
                         "before": backend.get_optional("xfconf", "thunar", key), "after": value})
     for image in backend.wallpaper_keys():

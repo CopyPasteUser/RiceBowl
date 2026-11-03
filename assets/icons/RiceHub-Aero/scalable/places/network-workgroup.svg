@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><title>Aero Seven network</title>
+<defs><linearGradient id="screen" x2="0" y2="1"><stop stop-color="#dcf7fd"/><stop offset="1" stop-color="#418bc2"/></linearGradient></defs>
+<rect x="4" y="9" width="31" height="26" rx="3" fill="#285a83"/><rect x="7" y="12" width="25" height="20" fill="url(#screen)"/>
+<rect x="30" y="25" width="30" height="25" rx="3" fill="#285a83"/><rect x="33" y="28" width="24" height="19" fill="url(#screen)"/>
+<path d="M19 35v5m-10 0h20m16 10v5m-9 0h18" stroke="#7a9dae" stroke-width="3" stroke-linecap="round"/>
+<path d="M22 19c5-5 11-4 16 1" fill="none" stroke="#e8f9ff" stroke-width="2.4" stroke-dasharray="3 3"/></svg>

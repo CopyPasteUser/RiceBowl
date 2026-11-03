@@ -5,10 +5,12 @@ original RiceBowl Linux artwork, not Microsoft binaries, icons or wallpaper.
 
 ## Screenshots & coverage
 
-These are real XFWM4/GTK3 desktop captures from the passing virtual-X11 CI run
-[`41678284256`](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41678284256).
-They include the second Control Panel/Superbar fidelity pass. The same pipeline
-also checks **1024×768** placement. Owner Mint hardware verification is separate.
+These are real XFWM4/GTK3 desktop captures. Start and Control Panel come from
+passing CI run [`41678284256`](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41678284256);
+the **new Explorer-style Thunar workspace** comes from passing native CI run
+[`41686544328`](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41686544328).
+The pipeline also checks **1024×768** Start/Control Panel and Thunar placement. Owner Mint
+hardware verification is separate.
 
 ### Desktop and taskbar
 
@@ -64,8 +66,8 @@ owner's Linux Mint XFCE acceptance; CI captures are not a physical desktop photo
 | **Glass** | [Aero shell CSS](macrice/aero_shell.py) | Glass-inspired gradient, optional translucent variant; no compositor blur guarantee |
 | **Window decoration** | [XFWM4 theme](assets/themes/RiceHub-Aero/xfwm4/) | Real minimize, maximize, close, shading, sticky, border and title button artwork |
 | **GTK widgets** | [GTK3 theme](assets/themes/RiceHub-Aero/gtk-3.0/gtk.css) | Unified buttons, menus, controls and palettes |
-| **Application / places icons** | [RiceHub-Aero icon theme](assets/icons/RiceHub-Aero/) | Era-appropriate golden folder SVGs, original scalable applications and FreeDesktop fallback |
-| **File manager** | [Thunar integration](macrice/thunar.py) | Reversible application styling |
+| **Application / places icons** | [RiceHub-Aero icon theme](assets/icons/RiceHub-Aero/) | Original golden folders (desktop, videos, templates, sharing), drive/network icons and eight distinct SVG MIME-type icons |
+| **File manager** | [Thunar integration](macrice/thunar.py) | Seven-only native GTK toolbar, unified breadcrumb, unboxed navigation, white file view, subdued statusbar and reversible hidden menu bar |
 | **Dock** | [Aero glass Plank theme](assets/plank-themes/RiceHub-Aero-Glass/dock.theme) | Existing Plank configuration shifted away from the bottom taskbar during Aero apply |
 | **Wallpapers** | [Seven Blue](assets/wallpapers/aero-seven-blue.jpg) / [Seven Night](assets/wallpapers/aero-seven-night.jpg) | Two original cobalt-blue 2009 Aero Linux-penguin desktops, distinct from Frutiger Aero |
 | **Session startup** | [aero.py](macrice/aero.py) | RiceBowl-managed, user-local XFCE autostart; no global systemd service |
@@ -91,6 +93,26 @@ macrice rice restore             # Restore previous rice snapshot
 ```
 
 Use `macrice aero-shell` to open/toggle Start and `macrice aero-shell --quit` to stop the resident shell. The ordinary installer does **not** activate Aero, replace XFCE Panel or alter your wallpaper.
+
+### Thunar / Explorer refinement
+
+![Verified Seven-style Thunar window under XFWM4](screenshots/current/aero-workspace.webp)
+
+Seven hides the native Thunar menu bar, while other rice families restore its
+visibility. The genuine pathbar, native navigation buttons, search, shortcuts
+pane, file operations and keyboard accessibility remain intact. On Thunar 4.20
+the hidden menu is available through its automatic toolbar menu button; for
+earlier versions use `Ctrl+M` or reapply another rice. Manual recovery:
+
+```bash
+xfconf-query -c thunar -p /last-menubar-visible -s true
+thunar -q
+```
+
+GTK CSS does not expose Windows 7's Libraries namespace, metadata preview
+pane or contextual `Organize / New folder` command strip. Those would need a
+separate file-manager frontend or a substantial Thunar extension; RiceBowl
+does not add fake, nonfunctional buttons.
 
 ### Customization and compatibility
 
