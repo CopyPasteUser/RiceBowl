@@ -24,12 +24,7 @@ CSS = {
 .aero-control-quick { background-image: linear-gradient(#fff, #e3eef9); color: #14467a; border: 1px solid #a3bdd7; border-radius: 4px; padding: 9px; }
 .aero-control-quick:hover { background: #d3e8ff; border-color: #4d88c6; }
 """,
-    "winclassic": b
-.aero-control-root { padding: 9px; color: #111; }
-.aero-control-root .aero-menu-heading { font-size: 15px; color: #000080; }
-.aero-control-root .aero-menu-sub { color: #333; font-size: 11px; }
-.aero-control-quick { padding: 6px; font-size: 12px; }
-"""
+    "winclassic": b"""
 .aero-taskbar { background: #c0c0c0; color: #111; border-top: 2px solid #fff; border-bottom: 1px solid #666; padding: 2px 4px; }
 .aero-start { background: #c0c0c0; border: 2px outset #eee; border-radius: 0; box-shadow: none; color: #111; padding: 4px 8px; font-weight: bold; }
 .aero-start:hover { background: #d8d8d8; }
@@ -49,6 +44,10 @@ CSS = {
 .aero-control-root { background: #c0c0c0; border: 2px outset #fff; border-radius: 0; }
 .aero-control-quick { background: #c0c0c0; color: #111; border-radius: 0; border: 2px outset #fff; box-shadow: none; }
 .aero-control-quick:hover, .aero-control-quick:focus { background: #d7d7d7; border: 2px inset #fff; }
+.aero-control-root { padding: 9px; color: #111; }
+.aero-control-root .aero-menu-heading { font-size: 15px; color: #000080; }
+.aero-control-root .aero-menu-sub { color: #333; font-size: 11px; }
+.aero-control-quick { padding: 6px; font-size: 12px; }
 """,
     "chromeos": b"""
 .aero-taskbar { background: rgba(242,246,255,.97); color: #26364e; border-top: 1px solid #c4d1e7; padding: 4px 12px; }
