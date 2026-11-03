@@ -32,3 +32,17 @@ tooltip { background: #c0f3ee; color: #0b4a68; border: 1px solid #7ec8cf; }
 window.thunar toolbar { background-image: linear-gradient(to bottom, #fff, #d9fff2 45%, #a0def0); border-bottom: 2px solid #68d1d8; }
 window.thunar .path-bar button { background-image: linear-gradient(#fff, #a7ecdf); border: 1px solid #80d0d3; border-radius: 13px; }
 window.thunar .sidebar { background-image: linear-gradient(#f0fff7, #beeeeb); }
+
+/* RiceBowl 0.9: high-fidelity, Thunar-only era chrome. */
+/* Frutiger Aero: layered translucent aqua, neon-green selection and glass buttons. */
+window.thunar menubar { background-image: linear-gradient(#effffd, #cdf9f0); border-bottom: 1px solid #7bd7db; color: #075a79; padding: 4px 8px; }
+window.thunar toolbar, window.thunar .location-bar { background-image: linear-gradient(#fff, #c5fff2 47%, #83d9e7); border-bottom: 2px solid #65c9d0; padding: 7px 10px; }
+window.thunar toolbar button { background-image: linear-gradient(#fff, #b8f6e9 55%, #84d8db); border: 1px solid #70cfd3; border-radius: 11px; color: #096584; padding: 7px; box-shadow: inset 0 1px #fff; }
+window.thunar toolbar button:hover { background-image: linear-gradient(#fff, #9df5d8); border-color: #21abc2; }
+window.thunar .path-bar button, window.thunar .location-bar button { background-image: linear-gradient(#faffff, #aff7ed); border: 1px solid #61cbd3; border-radius: 16px; color: #09647e; padding: 7px 12px; }
+window.thunar .sidebar, window.thunar .shortcuts-pane { background-image: linear-gradient(to right, #d9fff0, #b0eee9); border-right: 2px solid #83d0d9; color: #09677c; }
+window.thunar .sidebar .view, window.thunar .shortcuts-pane .view { background: transparent; color: #07576f; }
+window.thunar .sidebar .view:selected, window.thunar treeview.view:selected { background: #a1ed43; color: #174960; border-radius: 8px; }
+window.thunar .standard-view, window.thunar .view { background: #f5fffe; color: #064f6b; }
+window.thunar statusbar { background-image: linear-gradient(#eafff8, #bcf5e6); color: #075f7d; border-top: 1px solid #81cdd7; padding: 5px 9px; }
+window.thunar scrollbar slider { background: #78d5d6; border-radius: 10px; }
