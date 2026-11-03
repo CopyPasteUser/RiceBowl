@@ -316,16 +316,6 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
     from .aero_windows import WindowSnapshot, create_window_tracker, toggle_window_id
     from .installer import project_root
 
-    if profile == "frutiger":
-        # Use original Aqua icons in temporary previews/Xvfb as well as in an
-        # installed session; the GTK setting is local to this shell process.
-        icon_theme = Gtk.IconTheme.get_default()
-        if icon_theme is not None:
-            icon_theme.append_search_path(str(project_root() / "assets/icons"))
-        settings = Gtk.Settings.get_default()
-        if settings is not None:
-            settings.set_property("gtk-icon-theme-name", "RiceHub-Frutiger-Icons")
-
     class AeroShell(Gtk.Application):
         def __init__(self):
             app_id = (TEN_APP_ID if ten else
@@ -371,6 +361,17 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def do_startup(self):
             Gtk.Application.do_startup(self)
+            if profile == "frutiger":
+                # GTK's default Gdk screen exists after application startup;
+                # before it, IconTheme.get_default() may silently be None.
+                # Install scoped search path to show original Aqua icons even
+                # in preview Xvfb without changing global XFCE preferences.
+                icon_theme = Gtk.IconTheme.get_default()
+                if icon_theme is not None:
+                    icon_theme.append_search_path(str(project_root() / "assets/icons"))
+                settings = Gtk.Settings.get_default()
+                if settings is not None:
+                    settings.set_property("gtk-icon-theme-name", "RiceHub-Frutiger-Icons")
             for name in ("toggle-menu", "toggle-control"):
                 action = Gio.SimpleAction.new(name, None)
                 action.connect("activate", self._on_fast_action, name)

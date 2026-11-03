@@ -40,7 +40,7 @@ this visual change. Original art only; do not bundle third-party assets.
    XFWM title/buttons and GTK/Thunar controls. Keep the art generator scoped and
    deterministic, with old managed assets upgradeable and custom user files
    protected by RiceBowl's asset conflict checks.
-6. **[ ] Audit accessibility, performance and safety.** Keyboard focus,
+6. **[x] Audit accessibility, performance and safety.** Keyboard focus,
    disabled tools, readable contrast, click targets, no clipped menu, no
    startup/background process regression, no cross-rice style leakage, safe
    restore and narrowly scoped changes.
