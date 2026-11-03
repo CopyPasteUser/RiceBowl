@@ -32,3 +32,16 @@ tooltip { background: #d1e6fd; color: #123c79; border: 1px solid #85a8da; }
 window.thunar toolbar { background-image: linear-gradient(#fff, #c0dbf9 60%, #94bbe9); border-bottom: 2px solid #679bd5; }
 window.thunar .path-bar button { background-image: linear-gradient(#fff, #d5e9ff); border: 1px solid #8bb0d9; border-radius: 5px; }
 window.thunar .sidebar { background-image: linear-gradient(to right, #bdd4f5, #e4f0ff); }
+
+/* RiceBowl 0.9: high-fidelity, Thunar-only era chrome. */
+/* Luna file manager: warm command bar, glossy blue chrome and blue task pane. */
+window.thunar menubar { background-image: linear-gradient(#fff8e8, #e8e0c8); border-bottom: 1px solid #b8b092; color: #202020; padding: 3px 6px; }
+window.thunar toolbar, window.thunar .location-bar { background-image: linear-gradient(to bottom, #fcffff, #d8ebff 45%, #afceef); border-bottom: 2px solid #77a7da; padding: 4px 7px; }
+window.thunar toolbar button { background-image: linear-gradient(#fff, #d4e8fe); color: #17478c; border: 1px solid #a4bfe0; border-radius: 5px; padding: 6px; }
+window.thunar toolbar button:hover { background-image: linear-gradient(#fff, #b7d6ff); border-color: #4b90db; }
+window.thunar .sidebar, window.thunar .shortcuts-pane { background-image: linear-gradient(to right, #b0cafa, #dfedff); color: #163c79; border-right: 1px solid #91b0d8; }
+window.thunar .sidebar .view, window.thunar .shortcuts-pane .view { background: transparent; color: #143e7a; }
+window.thunar .sidebar .view:selected, window.thunar treeview.view:selected { background: #2767cb; color: white; }
+window.thunar .path-bar button, window.thunar .location-bar button { background-image: linear-gradient(#fff, #cce5fb); border: 1px solid #9cbadd; border-radius: 4px; padding: 5px 9px; color: #164481; }
+window.thunar .standard-view, window.thunar .view { background: #fff; }
+window.thunar statusbar { background-image: linear-gradient(#fff8e9, #eae3d1); color: #413a2e; border-top: 1px solid #c6bba1; padding: 3px 6px; }
