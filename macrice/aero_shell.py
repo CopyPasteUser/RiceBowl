@@ -237,6 +237,31 @@ CSS = b"""
   padding: 7px 14px; font-weight: bold; box-shadow: inset 0 1px rgba(255,255,255,.43); }
 .win7-power:hover { background-image: linear-gradient(to bottom, #d4f7a1, #76aa4e 48%, #447d28 52%, #80b652); }
 .win7-power:disabled { background: #6c8290; color: #dfebf2; }
+/* White Windows 7 Control Panel interior with a thin Aero-glass frame. */
+.aero-control-root.win7-control-root {
+  background-image: linear-gradient(to bottom, #ffffff, #eff7fc 17%, #e3f0f9);
+  border: 1px solid #669dc7;
+  border-radius: 5px;
+  box-shadow: inset 0 2px #ffffff;
+  padding: 13px;
+}
+.win7-control-root .aero-menu-heading { color: #205786; font-size: 18px; font-weight: normal; }
+.win7-control-root .aero-menu-sub { color: #426e8e; }
+.aero-control-quick.win7-control-tool {
+  background-image: linear-gradient(to bottom, #fefefe, #e1f0fa);
+  border: 1px solid #a2c3da;
+  border-radius: 3px;
+  box-shadow: inset 0 1px rgba(255,255,255,.96);
+  color: #21557f;
+  padding: 8px 5px;
+}
+.aero-control-quick.win7-control-tool:hover, .aero-control-quick.win7-control-tool:focus {
+  background-image: linear-gradient(to bottom, #fff, #c8e8fb);
+  border-color: #4a9ad3;
+}
+.win7-hardware { background: rgba(244,250,254,.94); border: 1px solid #c1d9ea;
+  border-radius: 3px; padding: 8px; }
+.win7-hardware .rice-control-detail { color: #2b526d; }
 """
 
 
@@ -2018,6 +2043,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             actions.set_keep_above(True)
             root = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10),
                                "ten-action-root" if tiles else "aero-control-root")
+            if profile == "aero":
+                root.get_style_context().add_class("win7-control-root")
             root.set_size_request(300, 265)
 
             title = self._class(Gtk.Label(label=heading, xalign=0), "aero-menu-heading")
@@ -2081,6 +2108,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 grid = Gtk.Grid(row_spacing=5, column_spacing=5)
                 for index, (label, icon_name, command) in enumerate(entries):
                     button = self._class(Gtk.Button(), "ten-quick" if tiles else "aero-control-quick")
+                    if profile == "aero":
+                        button.get_style_context().add_class("win7-control-tool")
                     contents = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
                     contents.pack_start(self._icon(icon_name, Gtk.IconSize.MENU), False, False, 0)
                     caption = Gtk.Label(label=label, xalign=0)
@@ -2106,6 +2135,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             hardware = self._class(
                 Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=7),
                 "rice-hardware-panel")
+            if profile == "aero":
+                hardware.get_style_context().add_class("win7-hardware")
             hardware.pack_start(self._class(
                 Gtk.Label(label="Device status", xalign=0), "aero-menu-sub"),
                 False, False, 0)
@@ -2393,7 +2424,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             rect = self._desktop_rect()
             self._menu_focused = False
             self._menu_opened_at = GLib.get_monotonic_time()
+            if profile == "aero":
+                self._win7_all_programs = False
             self.search.set_text("")
+            if profile == "aero":
+                self._populate("")
             preferred_sizes = {
                 "winxp": (480, 540),
                 "winclassic": (285, 430),
@@ -2427,10 +2462,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     first_app.grab_focus()
             elif profile == "aero":
                 GLib.idle_add(self._reanchor_luna_menu)
-                first_app = next((widget for widget in self.results.get_children()
-                                  if isinstance(widget, Gtk.Button)), None)
-                if first_app:
-                    first_app.grab_focus()
+                # Win+typing is a core Windows 7 behavior: let keyboard input
+                # enter search even when the recent-app list is visible.
+                self.search.grab_focus()
             else:
                 self.search.grab_focus()
 
