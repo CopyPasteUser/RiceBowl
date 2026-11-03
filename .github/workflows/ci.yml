@@ -40,3 +40,30 @@ jobs:
           name: ricehub-0.6-new-rice-captures
           path: screenshots/ricehub-*-0.6.0.png
           if-no-files-found: ignore
+
+  publish-ricebowl:
+    name: Publish RiceBowl 0.7 after green CI
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'RiceBowl 0.7.0 release')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify release source and package
+        run: |
+          test -f RICEBOWL.md
+          test -f RELEASE_NOTES.md
+          test -f assets/ricebowl-symbolic.svg
+          mkdir -p dist
+          git archive --format=zip --output=dist/RiceBowl-v0.7.0-source.zip HEAD
+          sha256sum dist/RiceBowl-v0.7.0-source.zip | tee dist/SHA256SUMS
+      - name: Create release if absent
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view v0.7.0 >/dev/null 2>&1; then
+            echo 'RiceBowl v0.7.0 release already exists'
+            exit 0
+          fi
+          gh release create v0.7.0 dist/RiceBowl-v0.7.0-source.zip dist/SHA256SUMS --target "$GITHUB_SHA" --title 'RiceBowl v0.7.0' --notes-file RELEASE_NOTES.md --prerelease
