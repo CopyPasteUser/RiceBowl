@@ -54,6 +54,12 @@ CSS = b"""
 .ten-quick:hover, .ten-quick:focus { background: @ten-blue; border-color: #7acbff; }
 .ten-muted { color: #b6c5d6; font-size: 11px; }
 button:focus { outline: 2px solid #6ec4fb; outline-offset: -2px; }
+
+/* Windows 10: flat system tray with rectangular hover targets. */
+.rice-status { background: transparent; border: 1px solid transparent; border-radius: 0; color: #f5f8fc; box-shadow: none; padding: 5px 4px; }
+.rice-status:hover, .rice-status:focus { background: #344352; border: 1px solid #5b7188; }
+.rice-status label { font-size: 11px; color: #f5f8fc; }
+.rice-status-summary { color: #d2deed; font-size: 11px; }
 """
 
 
