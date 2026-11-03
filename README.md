@@ -18,21 +18,25 @@ RiceBowl transforms an XFCE desktop using original GTK3, XFWM4, icon, wallpaper,
 
 **Current source:** Windows 7 Aero has its own 42px Superbar, grouped running windows,
 native X11 window previews (with safe icon fallback), app Jump Lists, desktop Peek
-and a two-column Start menu. XP Luna has a separately refined 2001-era Start,
-window chrome and 40px taskbar. **Windows 98 / 2000 Classic** now has the
+and a two-column Start menu, plus searchable Control Panel categories.
+XP Luna has a separately refined 2001-era Start, window chrome, 40px taskbar
+and a complete, scroll-safe device panel. **Windows 98 / 2000 Classic** now has the
 authentic teal desktop, a compact 34px beveled taskbar, real cascading Start
-hierarchies and original square window chrome. **Frutiger Aero / Aqua World** has a distinct
+hierarchies, a three-column icon-view Control Panel and square window chrome.
+**Frutiger Aero / Aqua World** has a distinct
 water-and-nature identity with pearl-glass taskbar, live Apps / Places / Settings
 launcher, original refractive XFWM artwork and matching GTK/Thunar controls.
 **Windows 10** now has a three-zone Start with genuine pinned app tiles and
-an XFCE-backed right-side Action Center, against original cobalt four-pane
+an XFCE-backed right-side Action Center and a compact taskbar search button,
+against original cobalt four-pane
 Linux artwork and flat dark/light window and file-manager themes.
 **ChromeOS / Material You** now has a distinct lavender 56px shelf, compact
 bottom-left app launcher with pinned applications and a real searchable Gio
 grid, and a bottom-right Quick Settings popup with verified volume/mute,
 network/battery state and direct XFCE settings links. Its original pastel
 abstract wallpaper, rounded window art and GTK/Thunar theme are independent
-of every Windows desktop. All of these operate on actual Linux applications and X11
+of every Windows desktop; navigation chevrons distinguish settings links from
+real state controls. All of these operate on actual Linux applications and X11
 windows; they do not emulate Windows or ship proprietary Microsoft assets.
 
 The tagged **v0.9.1** package predates these fidelity improvements. For the
@@ -61,10 +65,10 @@ All seven families are installable and reversible. The non-macOS menus launch **
 
 ### Latest screenshots from `main`
 
-These images show the actual Python/GTK3 shells captured under virtual X11
-after the latest changes. They are not design mockups or proof of a physical
-Mint installation. Every screenshot in this gallery reflects the same source
-revision; superseded release galleries are intentionally excluded.
+These images show actual GTK3 shells captured under virtual X11, not design
+mockups or proof of a physical Mint installation. The gallery also includes
+real Thunar windows running under each rice's XFWM4, GTK and icon themes.
+Superseded screenshots are excluded.
 
 | Windows 7 Aero | Windows 10 |
 | --- | --- |
@@ -78,7 +82,11 @@ revision; superseded release galleries are intentionally excluded.
 | --- | --- |
 | ![ChromeOS Material You search and app launcher](screenshots/current/chromeos-start.webp) | ![Frutiger Aero apps and places dashboard](screenshots/current/frutiger-start.webp) |
 
-[Latest Control Panel gallery](screenshots/current/) · [CI tests and full-resolution screenshots](https://github.com/CopyPasteUser/RiceBowl/actions/workflows/ci.yml)
+[Current Control Panels and six actual file-manager workspaces](screenshots/current/) · [CI full-resolution captures](https://github.com/CopyPasteUser/RiceBowl/actions/workflows/ci.yml)
+
+| Windows 7: actual Thunar + XFWM4 | ChromeOS: actual Thunar + XFWM4 |
+| --- | --- |
+| ![Windows 7 real Thunar file manager](screenshots/current/aero-workspace.webp) | ![ChromeOS real Thunar file manager](screenshots/current/chromeos-workspace.webp) |
 
 **File-manager scope:** the installed Thunar remains a functional GTK3 file manager; RiceBowl themes its window chrome, sidebar, toolbar, selected rows and path navigation. The conceptual "Recent + Downloads" dashboard in the reference images is **not** presented as an implemented Thunar feature.
 
@@ -163,7 +171,8 @@ The **battery** reads Linux power_supply capacity and charging status (including
 
 The [GitHub Actions workflow](https://github.com/CopyPasteUser/RiceBowl/actions/workflows/ci.yml)
 checks the Python suite, all six native non-macOS GTK shells, window lifecycle,
-small-screen clipping and real virtual-X11 screenshots. The checked-in
+small-screen clipping, Thunar's legacy CSS migration and real virtual-X11
+screenshots with actual XFWM4-managed application windows. The checked-in
 [`screenshots/current/`](screenshots/current/) gallery is refreshed from the
 latest successful run; obsolete historical image files have been removed.
 

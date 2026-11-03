@@ -97,11 +97,24 @@ DETAIL_CSS = {
 }
 
 
-def _block(style: str) -> str:
+def _pre_spacing_block(style: str) -> str:
+    """The exact 0.9.1 block, retained for safe migration of installed CSS."""
     original = _v080_block(style)
     if style not in DETAIL_CSS:
         return original
     return original.replace(END + "\n", DETAIL_CSS[style] + END + "\n")
+
+
+def _block(style: str) -> str:
+    original = _pre_spacing_block(style)
+    if style not in ("aero", "winxp", "chromeos", "frutiger"):
+        return original
+    # Several original GTK themes give top-level GtkMenuItems zero horizontal
+    # spacing. Thunar consequently displays "FileEditViewGoBookmarksHelp".
+    # Keep the fix scoped to Thunar; other apps and user CSS remain untouched.
+    return original.replace(
+        END + "\n",
+        "window.thunar menubar > menuitem { padding: 3px 10px; }\n" + END + "\n")
 
 
 def _read_css(path: Path) -> str | None:
@@ -127,7 +140,10 @@ def plan_css(style: str, config_root: Path) -> dict[str, str | None]:
         left, tail = content.split(START, 1)
         inner, right = tail.split(END, 1)
         current_block = START + inner + END + "\n"
-        if current_block not in ({_block(name) for name in PALETTES} | {_v080_block(name) for name in PALETTES} | {_legacy_block(name) for name in PALETTES}):
+        if current_block not in ({_block(name) for name in PALETTES} |
+                                 {_pre_spacing_block(name) for name in PALETTES} |
+                                 {_v080_block(name) for name in PALETTES} |
+                                 {_legacy_block(name) for name in PALETTES}):
             raise ValueError("MacRice Thunar styling was customized; refusing to replace it")
         # The existing block owns exactly one newline after END.
         if right.startswith("\n"):

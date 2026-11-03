@@ -72,6 +72,11 @@ class Windows10FidelityTests(unittest.TestCase):
                          b".ten-mute:checked", b"@define-color ten-blue #0078d7"):
             self.assertIn(selector, CSS)
         shell = (ROOT / "macrice/aero_shell.py").read_text(encoding="utf-8")
+        self.assertIn('Gtk.Button(), "ten-search"', shell)
+        self.assertIn('self._icon("edit-find-symbolic", Gtk.IconSize.BUTTON)', shell)
+        self.assertIn(b"min-width: 36px", CSS)
+        self.assertNotIn(b"min-width: 180px", CSS)
+        self.assertNotIn("Type here to search", shell)
         self.assertIn('"windows10": (690, 560)', shell)
         self.assertIn('self._populate_windows10(query)', shell)
         self.assertIn('self._render_ten_tiles()', shell)

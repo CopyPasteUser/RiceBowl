@@ -234,7 +234,7 @@ DETAIL_CSS = {
 }
 .luna-place:hover, .luna-place:focus { background: #316ac5; color: #fff;
   border-color: #316ac5; }
-.luna-place:disabled { color: #8198b7; }
+.luna-place:disabled { color: #4d6b91; }
 .luna-places separator { background: #9dbce6; min-height: 1px; }
 .luna-footer {
   background-image: linear-gradient(#4186e2, #1254bf 44%, #1645a8);
@@ -332,6 +332,16 @@ menu menuitem:hover { background: #000080; color: #fff; }
 .aero-control-quick { font: 11px Sans; border: 2px outset #ffffff; }
 .aero-control-quick:active { border-style: inset; background: #b6b6b6; }
 .aero-control-quick:focus { outline: 1px dotted #000080; outline-offset: -4px; }
+.classic-control-grid { background: #ffffff; border: 2px inset #ffffff;
+  padding: 6px; }
+.classic-control-grid .aero-control-quick { background: #ffffff; border: 1px solid transparent;
+  padding: 7px 3px; min-height: 66px; min-width: 82px; }
+.classic-control-grid .aero-control-quick label { color: #111111; font-size: 10px; }
+.classic-control-grid .aero-control-quick:hover,
+.classic-control-grid .aero-control-quick:focus { background: #000080; color: #ffffff;
+  border: 1px dotted #ffffff; }
+.classic-control-grid .aero-control-quick:hover label,
+.classic-control-grid .aero-control-quick:focus label { color: #ffffff; }
 """,
     "chromeos": b"""
 /* Modern ChromeOS: separated launcher, centered app shelf and status capsule. */

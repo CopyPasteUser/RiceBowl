@@ -1,20 +1,22 @@
 # Current RiceBowl screenshot gallery
 
 Only the latest **actual** virtual-X11 captures are retained in this directory.
-Each `*-start.webp` and `*-controls.webp` image was captured from the same
-successful GitHub Actions Linux/Xvfb CI run of the `feature/chromeos-material-you-fidelity`
-branch on 3 November 2026 (workflow run `41633490775`, source `206c2b593a587aeeec4387fb27ee7bc1ba035abc`).
-Images were lossily optimized to WebP at their original **1600×900** resolution
-for a smaller checkout and a fast README preview. The original uncompressed PNG
-captures are available in that CI run's screenshot artifact.
+Each `*-start.webp`, `*-controls.webp` and `*-workspace.webp` image was captured
+from one successful Linux/Xvfb GitHub Actions run of the
+`review/cross-rice-fidelity-20261103` branch on 3 November 2026
+(workflow run `41666644729`, source `c3406bc572f6f314d3acacb1f5572c6b08c5508d`).
+Images are WebP-optimized from the **1600×900** screenshots; the original
+uncompressed PNGs remain in that CI run's screenshot artifact.
 
-These are real GTK3 screenshots from Xvfb, not edited mockups or evidence of
-physical Linux Mint hardware acceptance. The `macOS` rice is intentionally absent
-from this gallery because no new matching macOS screenshot was generated in the
-same CI run; a stale image would misrepresent the current state. Historical
-screenshots remain recoverable from Git history, not in the live gallery.
+The `workspace` images display a real Thunar process under a real XFWM4 window
+manager, using the same GTK/icon theme and Thunar view preferences that RiceBowl
+applies. It opens a disposable folder with five sample directories and a text
+file; no user's files or desktop settings are read or changed for capture.
+These images are neither mockups nor proof of physical Linux Mint hardware
+acceptance. The `macOS` rice is intentionally absent: its MacBar/Plank composite
+has not yet been freshly captured under an equivalent test. Stale images remain
+recoverable from Git history, not in the current gallery.
 
-The branch also exercises 1024×768 captures of XP Luna, Windows 7 Aero,
-Frutiger Aqua World, Windows 98 Classic, Windows 10 **and ChromeOS**,
-but those compact-resolution test images are CI artifacts rather than gallery
-duplicates.
+CI also verifies **1024×768** Start and settings capture for XP Luna, Windows 7,
+Frutiger Aero, Classic 98, Windows 10 and ChromeOS; the compact test screenshots
+remain CI artifacts rather than duplicates in this gallery.
