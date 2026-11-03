@@ -1,5 +1,27 @@
 # RiceBowl changelog
 
+## Unreleased — Frutiger Aero Pearl Glass polish (3 November 2026)
+
+- Rebalanced the real Aqua World launcher around pearl-white glass, calmer
+  mint app tiles, a clearer Discover section and distinct lime selected tabs.
+  The home grid prioritizes saved pinned apps and familiar installed desktop
+  programs, while search still covers the complete application catalog.
+- Quick Home/Documents/Music links and the Places page now resolve XDG user
+  directories correctly; missing directories can be created only after an
+  explicit confirmation. The launcher returns to Apps when reopened.
+- Improved the actual right-side GTK Control Panel with a dedicated Aqua
+  header, more readable captions and better differentiated device-status
+  surfaces; verified Linux volume, mute and real settings links are retained.
+- Refined native Thunar into an Aqua file manager: one pearl breadcrumb field,
+  compact functional navigation buttons, pastel-green sidebar, clean content
+  and a restrained lime selection state instead of a wall of turquoise pills.
+  A separate CSS overlay migrates exact previous versions but preserves custom
+  user styling; the prior native GTK theme hash is whitelisted for backup-safe
+  installation upgrades.
+- Added 1024×768 actual XFWM4/Thunar screenshot checks in CI, as well as app
+  ordering and managed CSS migration regression tests. Physical Mint XFCE
+  acceptance remains pending; the v0.9.1 tag is unchanged.
+
 ## Unreleased — Windows XP Luna Explorer and Control Panel fidelity (3 November 2026)
 
 - Replaced XP's narrow right-edge settings popup with a centered 2001-style

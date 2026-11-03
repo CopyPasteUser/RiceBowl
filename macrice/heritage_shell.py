@@ -435,18 +435,17 @@ menu menuitem:hover { background: #000080; color: #fff; }
 .frutiger-tray .rice-status:hover, .frutiger-tray .aero-quick:hover,
 .frutiger-tray .aero-desktop:hover { background: #dbfff1; border-color: #6ccfc5; }
 .aqua-dashboard {
-  background-image: linear-gradient(to bottom, rgba(251,255,255,.98) 0%,
-    rgba(221,255,240,.98) 15%, rgba(171,249,230,.98) 46%,
-    rgba(134,225,226,.99) 100%);
-  border: 3px solid #e6ffff; border-radius: 27px;
-  box-shadow: inset 0 2px #fff, inset 0 -2px #51c6d2,
+  background-image: linear-gradient(to bottom, #fbffff 0%,
+    #e9fff9 27%, #d5fcf3 49%, #a4e4e9 100%);
+  border: 3px solid #f4ffff; border-radius: 27px;
+  box-shadow: inset 0 2px #fff, inset 0 -2px #54b6cd,
     0 6px 18px rgba(5,86,112,.38);
-  color: #08506c; padding: 11px;
+  color: #08506c; padding: 10px;
 }
-.aqua-window { background: #b6efe9; }
+.aqua-window { background: #b9f0eb; }
 .aqua-hero {
-  background-image: linear-gradient(to bottom, #faffff, #d4fff1 44%, #9fe7e9);
-  border: 1px solid #85d6d8; border-radius: 21px;
+  background-image: linear-gradient(to bottom, #ffffff, #e4fff9 45%, #b7efef 46%, #d2fff5);
+  border: 1px solid #8bcedc; border-bottom-color: #56b7cf; border-radius: 21px;
   box-shadow: inset 0 2px #fff; padding: 7px 10px;
 }
 .aqua-hero-orb { background: #e8fff7; border: 1px solid #fcffff;
@@ -461,13 +460,15 @@ menu menuitem:hover { background: #000080; color: #fff; }
 }
 .aqua-dashboard .aero-menu-search:focus { border-color: #1a8fc3;
   box-shadow: 0 0 4px rgba(23,155,202,.45); }
-.aqua-shortcuts { background: rgba(243,255,250,.35); border-radius: 19px;
-  padding: 3px; }
+.aqua-shortcuts { background-image: linear-gradient(rgba(255,255,255,.89),
+    rgba(207,251,235,.64)); border: 1px solid rgba(138,211,208,.62);
+  border-radius: 19px; padding: 4px; }
 .aqua-shortcut { background-image: linear-gradient(#fff 0%, #eefff9 30%,
   #bdf7ed 45%, #75dcd7 100%); border: 1px solid #83d8db;
-  border-radius: 17px; color: #075779; min-height: 72px;
-  padding: 5px 9px; box-shadow: inset 0 2px #fff, 0 1px 3px rgba(13,111,136,.20); }
-.aqua-shortcut label { color: #075779; font-size: 11px; font-weight: bold; }
+  border-bottom-color: #42acc5; border-radius: 16px; color: #075779;
+  min-height: 64px; padding: 3px 9px;
+  box-shadow: inset 0 2px #fff, 0 1px 3px rgba(13,111,136,.20); }
+.aqua-shortcut label { color: #075779; font-size: 12px; font-weight: bold; }
 .aqua-shortcut:hover, .aqua-shortcut:focus {
   background-image: linear-gradient(#fff, #e8ffec 35%, #9ff2b4 53%, #56d2c3);
   border-color: #1b9cad; box-shadow: inset 0 1px #fff, 0 0 5px #cbfff1;
@@ -481,17 +482,29 @@ menu menuitem:hover { background: #000080; color: #fff; }
   #91e44a 51%, #65c936); color: #19506c; border-color: #75c449;
   box-shadow: inset 0 1px #ffffeb; }
 .aqua-tab:hover, .aqua-tab:focus { border-color: #259ebd; }
+.aqua-section {
+  background-image: linear-gradient(to right, rgba(255,255,255,.86),
+    rgba(219,255,244,.57)); border-top: 1px solid #faffff;
+  border-bottom: 1px solid #86ccd5; border-radius: 6px;
+  padding: 4px 9px;
+}
+.aqua-section-title { color: #08627f; font-size: 11px; font-weight: bold;
+  letter-spacing: .5px; }
+.aqua-section-hint { color: #417c87; font-size: 10px; }
 .aqua-dashboard scrolledwindow, .aqua-dashboard viewport,
 .aqua-dashboard flowbox, .aqua-dashboard flowboxchild { background: transparent; }
 .aqua-app-grid { padding: 1px 3px 6px; }
-.aqua-app-tile { background-image: linear-gradient(#ffffff, #e5fff9 39%,
-  #bcf4ec 52%, #91e0e3); border: 1px solid #91d7dc; border-radius: 16px;
+.aqua-app-tile { background-image: linear-gradient(#ffffff, #f9ffff 39%,
+  #e0fcf5 52%, #b1e8e9); border: 1px solid #88d0d8; border-radius: 15px;
   box-shadow: inset 0 1px #fff, 0 1px 3px rgba(8,96,130,.17);
-  min-width: 125px; min-height: 91px; padding: 7px 5px; color: #075778; }
-.aqua-app-tile label { color: #085773; font-weight: bold; font-size: 11px; }
+  min-width: 125px; min-height: 84px; padding: 6px 5px; color: #075778; }
+.aqua-app-tile label { color: #064b66; font-weight: bold; font-size: 12px; }
 .aqua-app-tile:hover, .aqua-app-tile:focus {
   background-image: linear-gradient(#fff, #f0ffdf 40%, #bbf0ac 54%, #79d8be);
   border-color: #38acaf; box-shadow: inset 0 2px #fff, 0 0 6px #dcfff4; }
+.aqua-app-tile:active { background-image: linear-gradient(#defdd2, #91df99);
+  border-color: #429b83; }
+.aqua-app-tile:disabled { opacity: .55; }
 .aqua-empty { color: #11677b; padding: 16px; font-weight: bold; }
 .aqua-place { background-image: linear-gradient(#fff, #d7fff4 42%, #a5e9e5);
   border: 1px solid #8bd5d8; border-radius: 15px; color: #075779;
@@ -511,14 +524,18 @@ menu menuitem:hover { background: #000080; color: #fff; }
   border-color: #34a6b7; }
 .aqua-footer-action:disabled, .aqua-place:disabled { color: #4f848c; opacity: .72; }
 .aero-control-root.aqua-control-root {
-  background-image: linear-gradient(#fbffff 0%, #d7fff0 45%, #a0e8e7);
-  border: 2px solid #91d9df; border-radius: 23px; padding: 15px;
+  background-image: linear-gradient(#fbffff 0%, #ecfff7 39%, #c4f7ed 67%, #a6e8e7);
+  border: 2px solid #b4eef0; border-radius: 23px; padding: 12px;
   box-shadow: inset 0 2px #fff, 0 4px 12px rgba(7,97,122,.3);
   color: #07536e;
 }
-.aqua-control-root .aero-menu-heading { color: #087293; font-size: 24px;
+.aqua-control-hero { background-image: linear-gradient(#ffffff, #d9fff4 54%, #9bdfeb);
+  border: 1px solid #83ced8; border-radius: 18px; padding: 7px 10px;
+  box-shadow: inset 0 1px #fff, 0 1px 3px rgba(6,95,132,.13); }
+.aqua-control-root .aero-menu-heading { color: #08617e; font-size: 22px;
   font-weight: bold; text-shadow: 0 1px #fff; }
-.aqua-control-root .aero-menu-sub { color: #227f8d; font-weight: bold; }
+.aqua-control-root .aero-menu-sub { color: #1c697c; font-weight: bold;
+  font-size: 12px; }
 .aqua-control-root .aero-control-quick {
   background-image: linear-gradient(#fff, #d8fff5 43%, #8adfe4);
   border: 1px solid #84ccda; border-radius: 13px; padding: 9px 11px;
@@ -530,10 +547,12 @@ menu menuitem:hover { background: #000080; color: #fff; }
   border-color: #239bb8;
 }
 .aqua-control-root .rice-hardware-panel {
-  background-image: linear-gradient(rgba(255,255,255,.9), rgba(189,251,228,.85));
-  border: 1px solid #8bd3d6; border-radius: 16px; padding: 11px;
+  background-image: linear-gradient(#ffffff, #eafff8 34%, #d0fbf2);
+  border: 1px solid #81c9d1; border-radius: 16px; padding: 10px;
   box-shadow: inset 0 1px #fff;
 }
+.aqua-control-root .rice-status-summary { color: #0c5d76; font-size: 12px;
+  font-weight: bold; }
 .aqua-control-root .rice-hardware-panel scale trough {
   background: #c1eeec; border: 1px solid #82cbd3; border-radius: 9px;
 }

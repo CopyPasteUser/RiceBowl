@@ -536,6 +536,40 @@ window.thunar .sidebar .view:selected, window.thunar treeview.view:selected {
   background: #a1ed43; color: #174960; }
 window.thunar statusbar { background-image: linear-gradient(#effff5, #a5ecdf);
   color: #075f7d; border-top: 1px solid #83cfd0; }
+/* Aqua World polish: the pane stays calm; pearl chrome carries the gloss.
+   These are actual Thunar widgets, not an overlaid Explorer imitation. */
+window.thunar menubar { background-image: linear-gradient(#fff, #e4fbf5);
+  border-bottom: 1px solid #8dcbd2; padding: 2px 6px; }
+window.thunar toolbar, window.thunar .location-bar {
+  background-image: linear-gradient(#fff 0%, #eafffa 43%, #b7e8eb 46%, #c8f5f1);
+  border-bottom: 1px solid #80c0d1; padding: 3px 6px; }
+window.thunar toolbar button { background: transparent; border: 1px solid transparent;
+  border-radius: 7px; box-shadow: none; padding: 4px 6px; }
+window.thunar toolbar button:hover, window.thunar toolbar button:focus {
+  background-image: linear-gradient(#fff, #b0efdd 48%, #7bdacb);
+  border-color: #62bed0; }
+window.thunar .path-bar { background-image: linear-gradient(#fff, #eafff9);
+  border: 1px solid #83becb; border-radius: 10px; padding: 1px 3px; }
+window.thunar .path-bar button, window.thunar .location-bar button {
+  background: transparent; border: 1px solid transparent;
+  border-radius: 7px; box-shadow: none; padding: 3px 7px; }
+window.thunar .path-bar button:hover, window.thunar .location-bar button:hover {
+  background-image: linear-gradient(#fff, #b5f0e1); border-color: #70bac8; }
+window.thunar .sidebar, window.thunar .shortcuts-pane {
+  background-image: linear-gradient(to right, #f4fff5, #e3faf3 68%, #c8f0e8);
+  border-right: 1px solid #9eced0; }
+window.thunar .sidebar .view, window.thunar .shortcuts-pane .view {
+  background: transparent; color: #17586a; }
+window.thunar .sidebar .view:selected, window.thunar .shortcuts-pane .view:selected {
+  background-image: linear-gradient(#efffcf, #b5ea86); color: #205447; }
+window.thunar .standard-view, window.thunar .standard-view .view,
+window.thunar treeview.view, window.thunar iconview {
+  background: #fbfffd; color: #204453; }
+window.thunar .standard-view .view:selected, window.thunar treeview.view:selected {
+  background: #b7ed88; color: #204d43; }
+window.thunar statusbar {
+  background-image: linear-gradient(#faffff, #dcf8ee 55%, #b8e9e4);
+  color: #245c68; border-top: 1px solid #8dcad0; padding: 4px 8px; }
 """, encoding="utf-8")
 
 

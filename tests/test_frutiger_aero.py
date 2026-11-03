@@ -2,10 +2,11 @@
 from __future__ import annotations
 
 import unittest
+from types import SimpleNamespace
 
 from PIL import Image
 
-from macrice.aero_shell import frutiger_status_summary
+from macrice.aero_shell import frutiger_apps, frutiger_status_summary
 from macrice.asset_upgrade import trusted_assets
 from macrice.hardware_status import BatteryState, DesktopStatus, SoundState
 from macrice.heritage_shell import CSS
@@ -17,6 +18,25 @@ FRUTIGER_THEME = ROOT / "assets/themes/RiceHub-Frutiger"
 
 
 class FrutigerAeroContractTests(unittest.TestCase):
+    def test_home_grid_prioritizes_real_pins_but_searches_every_app(self):
+        def app(name, identifier, categories=""):
+            return SimpleNamespace(get_display_name=lambda: name, get_name=lambda: name,
+                                   get_id=lambda: identifier,
+                                   get_categories=lambda: categories)
+
+        apps = (app("Bulk Rename", "rename.desktop"),
+                app("Code Editor", "editor.desktop"),
+                app("File Manager", "files.desktop", "FileManager;"),
+                app("Firefox", "browser.desktop", "WebBrowser;"),
+                app("Terminal", "term.desktop", "TerminalEmulator;"))
+        result = frutiger_apps(apps, ("editor.desktop", "browser.desktop"), "")
+        self.assertEqual([entry.get_id() for entry in result],
+                         ["editor.desktop", "browser.desktop", "files.desktop",
+                          "term.desktop", "rename.desktop"])
+        self.assertEqual(frutiger_apps(apps, (), "rename"), (apps[0],))
+        self.assertEqual(frutiger_apps(apps, (), "BROWSER"), ())
+        self.assertEqual(len(set(map(id, result))), len(apps))
+
     def test_live_header_honestly_represents_devices(self):
         self.assertIn("Checking", frutiger_status_summary(None))
         connected = DesktopStatus(
@@ -42,7 +62,8 @@ class FrutigerAeroContractTests(unittest.TestCase):
                 self.assertIn(key, aqua)
         grid = source[source.index("def _populate_frutiger(self, query):"):
                       source.index("def _populate_win7(self, query):")]
-        self.assertIn("matching_apps(self.apps, query)", grid)
+        self.assertIn("frutiger_apps(self.apps, self._pinned_ids, query)", grid)
+        self.assertIn("matching_apps(apps, query)", source)
         self.assertIn("Gtk.Image.new_from_gicon", grid)
         self.assertIn("self._launch(selected)", grid)
         self.assertIn("self._pin_context", grid)
@@ -59,6 +80,19 @@ class FrutigerAeroContractTests(unittest.TestCase):
         for other in ("winxp", "winclassic", "chromeos"):
             self.assertNotIn(b"aqua-dashboard", CSS[other], msg=other)
         self.assertIn(b"aqua-control-root", css)
+        for selector in (b".aqua-section-title", b".aqua-control-hero",
+                         b".aqua-app-tile:active"):
+            self.assertIn(selector, css)
+
+    def test_places_use_actual_xdg_paths_and_confirm_missing_directories(self):
+        source = (ROOT / "macrice/aero_shell.py").read_text(encoding="utf-8")
+        frutiger = source[source.index("def _create_frutiger_menu(self):"):
+                          source.index("def _create_ten_menu(self):")]
+        for target in ("DIRECTORY_DOCUMENTS", "DIRECTORY_DOWNLOAD", "DIRECTORY_MUSIC",
+                       "DIRECTORY_PICTURES", "DIRECTORY_VIDEOS"):
+            self.assertIn(target, frutiger)
+        self.assertIn("offer_create=True", frutiger)
+        self.assertIn("self._open_luna_user_folder(folder)", frutiger)
 
     def test_native_gtk_gloss_and_window_frame_assets(self):
         css = (FRUTIGER_THEME / "gtk-3.0/gtk.css").read_text(encoding="utf-8")
@@ -80,6 +114,7 @@ class FrutigerAeroContractTests(unittest.TestCase):
         manifest = trusted_assets()
         key = "assets/themes/RiceHub-Frutiger/gtk-3.0/gtk.css"
         self.assertIn("d6eb5885a551baf36e8f8048b22dbac8f6cf2efb", manifest[key])
+        self.assertIn("bb76b91cd14948884fab6c10ba5c26f0282f2a1b", manifest[key])
         for name in ("close-active.png", "maximize-prelight.png", "title-1-active.png"):
             self.assertTrue(manifest[f"assets/themes/RiceHub-Frutiger/xfwm4/{name}"])
 
