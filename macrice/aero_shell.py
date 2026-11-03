@@ -1342,13 +1342,20 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
             def search_changed(*_args):
                 self._app_page_size = 24
-                self._populate(search.get_text())
+                needle = search.get_text().strip()
+                # Search results replace the grid; don't show two competing app lists.
+                self.tile_grid.set_visible(not bool(needle))
+                pinned_label.set_visible(not bool(needle))
+                scroller.set_visible(bool(needle))
+                self._populate(needle)
             search.connect("search-changed", search_changed)
             search.connect("key-press-event", lambda _widget, event: self._search_key(event))
             menu.connect("key-press-event", lambda _widget, event: self._search_key(event))
             self.menu, self.search = menu, search
             self._render_ten_tiles()
             self._populate("")
+            scroller.set_no_show_all(True)
+            scroller.hide()
 
         def _create_chrome_launcher(self):
             """ChromeOS-inspired centered search and app grid, not a Windows tile menu."""
@@ -1389,9 +1396,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             search.get_accessible().set_name("Search all installed applications")
             root.pack_start(search, False, False, 0)
 
-            root.pack_start(self._class(
-                Gtk.Label(label="Pinned apps", xalign=0), "aero-menu-sub"),
-                False, False, 0)
+            pinned_label = self._class(
+                Gtk.Label(label="Your apps", xalign=0), "aero-menu-sub")
+            root.pack_start(pinned_label, False, False, 0)
             self.tile_grid = Gtk.Grid(row_spacing=7, column_spacing=8)
             self.tile_grid.set_halign(Gtk.Align.CENTER)
             root.pack_start(self.tile_grid, False, False, 0)
@@ -1423,7 +1430,19 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             for child in self.tile_grid.get_children():
                 self.tile_grid.remove(child)
             lookup = {app.get_id(): app for app in self.apps if app.get_id()}
-            pinned = [lookup[identifier] for identifier in self._pinned_ids if identifier in lookup][:6]
+            pinned = [lookup[identifier] for identifier in self._pinned_ids
+                      if identifier in lookup][:12 if profile == "chromeos" else 6]
+            if profile == "chromeos":
+                # A Chromebook launcher must work without manually pinning apps.
+                # Fill the grid with REAL installed apps, never mocked tiles.
+                pinned_ids = {app.get_id() for app in pinned}
+                for app in self.apps:
+                    identifier = app.get_id()
+                    if identifier and identifier not in pinned_ids:
+                        pinned.append(app)
+                        pinned_ids.add(identifier)
+                    if len(pinned) >= 12:
+                        break
             if not pinned:
                 self.tile_grid.attach(self._class(Gtk.Label(label="Pin an app from the list", xalign=0),
                                                   "ten-muted"), 0, 0, 2, 1)
