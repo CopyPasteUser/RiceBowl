@@ -138,15 +138,8 @@ def build(shell, Gtk, Gdk, GLib):
     hardware.pack_start(shell.control_battery_label, False, False, 0)
     hardware.pack_start(shell.control_battery_level, False, False, 0)
     root.pack_start(hardware, False, False, 0)
-    shell.status_summary = shell._class(
-        Gtk.Label(label="Reading system status…", xalign=0), "chrome-quick-detail")
-    shell.status_summary.set_line_wrap(True)
-    root.pack_start(shell.status_summary, False, False, 0)
-    hint = shell._class(
-        Gtk.Label(label="System notifications are handled by XFCE.", xalign=0),
-        "chrome-quick-detail")
-    hint.set_line_wrap(True)
-    root.pack_start(hint, False, False, 0)
+    # The real network/battery/sound states already appear directly above;
+    # avoid a duplicated footer that gets clipped on 1024x768 laptops.
     scroll.add(root)
     actions.add(scroll)
 

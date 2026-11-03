@@ -42,6 +42,21 @@ def main() -> None:
             raise SystemExit(
                 f"{name}: the settings window is hidden/clipped or failed "
                 f"to render ({changed} changed pixels)")
+    # Without python3-cairo a rounded GTK child still leaves the rectangular
+    # opaque native X11 backing visible at the corner. Both captures share
+    # precisely the same wallpaper, so the corner pixel must match the other
+    # capture's unobstructed background at that point.
+    with (Image.open(folder / f"ricebowl-chromeos-start-{GALLERY_VERSION}.png") as start_file,
+          Image.open(folder / f"ricebowl-chromeos-controls-{GALLERY_VERSION}.png") as controls_file):
+        start = start_file.convert("RGB")
+        controls = controls_file.convert("RGB")
+        for x, y in ((16, 208), (1194, 226)):
+            delta = max(abs(a - b) for a, b in
+                        zip(start.getpixel((x, y)), controls.getpixel((x, y))))
+            if delta > 28:
+                raise SystemExit(
+                    f"ChromeOS popup has an opaque rectangular backing at {x},{y} "
+                    f"(color delta {delta}); check X11 rounded window shaping")
     print("Six native GTK settings popups passed visible-area validation")
 
 

@@ -6,7 +6,6 @@ Development-only Pillow dependency. No Google artwork or external assets.
 
 from __future__ import annotations
 
-import math
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter
