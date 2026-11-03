@@ -64,11 +64,14 @@ class Win98FidelityTests(unittest.TestCase):
         self.assertIn('"winclassic") and os.environ.get("RICEBOWL_CAPTURE_SIZE")', shell)
         self.assertIn("xfce4-appfinder", shell)
         self.assertIn("xfce4-keyboard-settings", shell)
+        self.assertIn("classic-control-caption", shell)
+        self.assertIn("Close Control Panel", shell)
         self.assertEqual(PROFILES["winclassic"].wallpaper, "classic-teal.jpg")
 
     def test_gtk_and_live_shell_use_90s_widget_grammar(self):
         css = CSS["winclassic"]
         for token in (b".classic-chevron", b".classic-menu-list", b".classic-brand-label",
+                      b".classic-control-caption", b".classic-control-close",
                       b".classic-menu-item:focus", b"min-height: 34px", b"#000080"):
             self.assertIn(token, css)
         self.assertNotIn(b".classic-chevron", CSS["winxp"])

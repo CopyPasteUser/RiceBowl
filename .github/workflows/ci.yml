@@ -31,7 +31,10 @@ jobs:
             RICEHUB_PROFILE="$profile" timeout 24s dbus-run-session -- xvfb-run -a -s '-screen 0 1600x900x24' /usr/bin/python3 -c 'import os; from macrice.aero_shell import run; p=os.environ["RICEHUB_PROFILE"]; raise SystemExit(run([f"ricebowl-{p}-shell", "--capture-gallery"], profile=p))'
           done
           # Fail the release if any gallery screen silently failed to capture.
-          /usr/bin/python3 -c 'from pathlib import Path; import hashlib, struct; fs=sorted(Path("screenshots").glob("ricebowl-*-0.9.1.png")); assert len(fs)==12, f"Expected 12 GTK captures, found {len(fs)}"; data=[p.read_bytes() for p in fs]; assert all(len(b)>50000 and b[:8]==bytes.fromhex("89504e470d0a1a0a") and struct.unpack(">II", b[16:24])==(1600,900) for b in data), "Invalid or incomplete screenshot"; assert len({hashlib.sha256(b).digest() for b in data})==12, "Duplicate screenshot detected"'
+          # Flat Windows 98 teal compresses to ~28 KiB as a valid 1600x900 PNG;
+          # size alone must not reject a real capture. The area-diff validation below
+          # independently proves that the functional control panel rendered.
+          /usr/bin/python3 -c 'from pathlib import Path; import hashlib, struct; fs=sorted(Path("screenshots").glob("ricebowl-*-0.9.1.png")); assert len(fs)==12, f"Expected 12 GTK captures, found {len(fs)}"; data=[p.read_bytes() for p in fs]; assert all(len(b)>15000 and b[:8]==bytes.fromhex("89504e470d0a1a0a") and struct.unpack(">II", b[16:24])==(1600,900) for b in data), "Invalid or incomplete screenshot"; assert len({hashlib.sha256(b).digest() for b in data})==12, "Duplicate screenshot detected"'
           /usr/bin/python3 screenshots/validate_gallery.py
           # XP 2001 layout must fit a real 1024x768 GTK/XFWM workarea as well.
           RICEBOWL_CAPTURE_SIZE=1024 timeout 24s dbus-run-session -- xvfb-run -a -s '-screen 0 1024x768x24' /usr/bin/python3 -c 'from macrice.aero_shell import run; raise SystemExit(run(["ricebowl-winxp-shell", "--capture-gallery"], profile="winxp"))'

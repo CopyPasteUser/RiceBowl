@@ -2528,8 +2528,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             # A non-resizable utility window collapses to its first header,
             # making the controls look like a clipped title strip.
             actions.set_resizable(True)
-            actions.set_default_size(362 if profile == "frutiger" else 330,
-                                     560 if profile == "frutiger" else 430)
+            actions.set_default_size(382 if profile == "winclassic" else 362 if profile == "frutiger" else 330,
+                                     488 if profile == "winclassic" else 560 if profile == "frutiger" else 430)
             actions.set_skip_taskbar_hint(True)
             actions.set_skip_pager_hint(True)
             actions.set_type_hint(Gdk.WindowTypeHint.UTILITY)
@@ -2543,11 +2543,25 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 root.get_style_context().add_class("aqua-control-root")
             root.set_size_request(300, 265)
 
-            title = self._class(Gtk.Label(label=heading, xalign=0), "aero-menu-heading")
-            root.pack_start(title, False, False, 0)
+            if profile == "winclassic":
+                # Controls remain a real resizable GTK popup, with an original
+                # Win98-style caption instead of a modern card heading.
+                caption = self._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,
+                                               spacing=6), "classic-control-caption")
+                caption.pack_start(self._icon("classic-control-panel", Gtk.IconSize.MENU),
+                                   False, False, 2)
+                caption.pack_start(Gtk.Label(label=heading, xalign=0), True, True, 0)
+                close = self._class(Gtk.Button(label="×"), "classic-control-close")
+                close.get_accessible().set_name("Close Control Panel")
+                close.connect("clicked", lambda _button: self._hide_actions())
+                caption.pack_end(close, False, False, 0)
+                root.pack_start(caption, False, False, 0)
+            else:
+                title = self._class(Gtk.Label(label=heading, xalign=0), "aero-menu-heading")
+                root.pack_start(title, False, False, 0)
             descriptions = {
                 "winxp": "Pick a category to configure your computer",
-                "winclassic": "Settings  •  Control Panel",
+                "winclassic": "Configure Linux desktop settings",
                 "chromeos": "Device controls and preferences",
                 "frutiger": "Your connected desktop",
                 "aero": "Adjust your computer's settings",

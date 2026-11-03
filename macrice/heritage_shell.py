@@ -319,6 +319,14 @@ menu menuitem:hover { background: #000080; color: #fff; }
 .classic-menu menuitem, menu menuitem { min-height: 23px; padding: 3px 8px; }
 .classic-menu menuitem:focus, menu menuitem:focus { background: #000080; color: #fff; }
 .aero-control-root { padding: 8px; border: 2px outset #ffffff; }
+.classic-control-caption { background: #000080; color: #ffffff;
+  min-height: 26px; padding: 2px 3px; font: bold 12px Sans; }
+.classic-control-caption label { color: #ffffff; font-weight: bold; }
+.classic-control-close { min-width: 20px; min-height: 20px; padding: 0 3px;
+  background: #c0c0c0; color: #000; border: 2px outset #fff;
+  border-radius: 0; font-weight: bold; box-shadow: none; }
+.classic-control-close:active { border-style: inset; }
+.classic-control-close label { color: #000; }
 .aero-control-root .aero-menu-heading { color: #000; font: bold 14px Sans; }
 .aero-control-root .aero-menu-sub { color: #333; font: 11px Sans; }
 .aero-control-quick { font: 11px Sans; border: 2px outset #ffffff; }
