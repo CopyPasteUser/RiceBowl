@@ -13,6 +13,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw, ImageFilter
 
 from build_ten_assets import ART, chrome, gtk
+from ricebowl_artwork import write_generated_icon
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -122,11 +123,20 @@ def _icons(name, palette):
         target = base / "scalable" / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         artwork = artwork.replace("#0078d7", palette["accent"]).replace("#267bc3", palette["accent"])
-        target.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
-                          + artwork + '</svg>\n', encoding="utf-8")
-    logo = (ROOT / "assets" / ("ten-start.svg" if name in ("Classic", "Chrome")
-                             else "aero-penguin.svg")).read_text(encoding="utf-8")
-    for filename in ("start-here", "xfce4-menu", "ricehub-start"):
+        write_generated_icon(
+            target, relative,
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
+            + artwork + '</svg>\n',
+        )
+    # Each historical desktop carries its own design-reviewed Start symbol.
+    icon_names = {
+        "Luna": "ricebowl-xp-start.svg",
+        "Classic": "ricebowl-classic-start.svg",
+        "Chrome": "ricebowl-chrome-start.svg",
+        "Frutiger": "ricebowl-frutiger-start.svg",
+    }
+    logo = (ROOT / "assets" / icon_names[name]).read_text(encoding="utf-8")
+    for filename in ("start-here", "xfce4-menu", "ricehub-start", "ricebowl-start"):
         (base / "scalable/apps" / f"{filename}.svg").write_text(logo, encoding="utf-8")
 
 
