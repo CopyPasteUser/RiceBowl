@@ -501,6 +501,12 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 assert self.actions.get_visible()
                 self._toggle_actions()
                 assert not self.actions.get_visible()
+                if profile == "winxp":
+                    assert self.luna_control_stack.get_visible_child_name() == "categories"
+                    self.luna_control_switch.clicked()
+                    assert self.luna_control_stack.get_visible_child_name() == "classic"
+                    self.luna_control_switch.clicked()
+                    assert self.luna_control_stack.get_visible_child_name() == "categories"
                 if profile == "aero":
                     assert len(self.win7_panel_rows) == 8
                     self.win7_panel_search.set_text("power")
@@ -2090,13 +2096,21 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _luna_recent_documents(self):
             """Real XDG recent files, only when GTK knows about them."""
-            button = self._class(Gtk.MenuButton(label="My Recent Documents   ▸"), "luna-place")
+            button = self._class(Gtk.MenuButton(), "luna-place")
             button.get_accessible().set_name("Recent documents")
+            content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=9)
+            content.pack_start(self._icon("document-open-recent", Gtk.IconSize.LARGE_TOOLBAR),
+                               False, False, 0)
+            content.pack_start(Gtk.Label(label="My Recent Documents", xalign=0),
+                               True, True, 0)
+            content.pack_end(Gtk.Label(label="▸"), False, False, 0)
+            button.add(content)
             menu = Gtk.Menu()
             try:
                 items = (item for item in Gtk.RecentManager.get_default().get_items()
                          if item.exists() and item.get_uri().startswith("file:"))
-                for item in list(items)[:10]:
+                for item in sorted(items, key=lambda entry: entry.get_modified(),
+                                   reverse=True)[:10]:
                     entry = Gtk.MenuItem(label=item.get_display_name())
                     entry.connect("activate", lambda _entry, uri=item.get_uri():
                                   self._open_uri(uri))

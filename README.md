@@ -20,8 +20,11 @@ RiceBowl transforms an XFCE desktop using original GTK3, XFWM4, icon, wallpaper,
 native X11 window previews (with safe icon fallback), app Jump Lists, desktop Peek
 and a two-column Start menu, plus a real eight-category Control Panel window
 with working task navigation and links to installed Linux settings utilities.
-XP Luna has a separately refined 2001-era Start, window chrome, 40px taskbar
-and a complete, scroll-safe device panel. **Windows 98 / 2000 Classic** now has the
+XP Luna has a refined 2001-era Start with XDG-aware folder shortcuts, original
+window chrome, a 40px taskbar, an XP-style category Control Panel with a
+functional Classic View switch, and warm/beige Explorer-like Thunar controls.
+The Control Panel keeps truthful network, battery and audio controls in its
+blue side pane. **Windows 98 / 2000 Classic** now has the
 authentic teal desktop, a compact 34px beveled taskbar, real cascading Start
 hierarchies, a three-column icon-view Control Panel and square window chrome.
 **Frutiger Aero / Aqua World** has a distinct
@@ -57,7 +60,7 @@ recoverable desktop settings backups.
 | **macOS · Aurora** | MacBar, MacMenu, Control Center, optional Plank dock, three palettes |
 | **Windows 7 · Aero** | Cobalt-blue Linux-penguin wallpaper, golden folders, Explorer-style Thunar with original file icons, 48px glass Superbar, previews, Jump Lists, Peek, two-column Start and eight-category Control Panel |
 | **Windows 10 · Ten** | 40px charcoal bar, blue four-pane Linux wallpaper, real three-zone Start with alphabetical apps/grouped tiles, compact running windows, tall functional Action Center, Explorer-like dark/light chrome |
-| **Windows XP · Luna** | Blue/green taskbar, XP-inspired Start, categorized control panel |
+| **Windows XP · Luna** | Molded blue/green 40px taskbar, two-column 2001 Start, XDG folders, original XFWM4 chrome, XP-style Thunar and centered category/Classic Control Panel with live system status |
 | **Windows 98 / 2000 · Classic** | Flat teal wallpaper, 34px embossed taskbar, Linux-penguin Start badge, keyboard-operable classic Programs / Favorites / Documents / Settings cascades, original navy XFWM windows and coordinated GTK/Thunar 3D controls |
 | **ChromeOS · Material You** | 56px pastel shelf, original flowing lavender wallpaper, real pinned Gio apps, searchable left-side Launcher, rounded Quick Settings with verified output volume/mute, truthful network/battery and XFCE device settings; matching GTK/Thunar and XFWM4 art |
 | **Y2K · Frutiger Aero / Aqua World** | Sky/water/grass wallpaper, glossy cyan-and-lime live taskbar, original pearl-window chrome, large Gio app tiles, Apps / Places / Settings launcher and coordinated GTK/Thunar controls |
@@ -85,9 +88,10 @@ Superseded screenshots are excluded.
 
 [Current Control Panels and six actual file-manager workspaces](screenshots/current/) · [CI full-resolution captures](https://github.com/CopyPasteUser/RiceBowl/actions/workflows/ci.yml)
 
-The Aero Thunar screenshot now comes from the passing **Explorer-refinement**
-X11 capture; Start and Control Panel remain from the verified previous
-fidelity pass. Other rice images retain their last verified run; see
+The Aero Thunar screenshot comes from the passing **Explorer-refinement**
+X11 capture; its Start and Control Panel remain from the verified previous
+fidelity pass. The XP captures show its own later fidelity pass; other rice
+images retain their last verified run; see
 [capture provenance](screenshots/current/README.md).
 
 | Windows 7: actual Thunar + XFWM4 | ChromeOS: actual Thunar + XFWM4 |

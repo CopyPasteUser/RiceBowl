@@ -141,6 +141,8 @@ def build(shell, Gtk, Gdk):
 
     toggle.connect("clicked", switch_view)
     nav_group.pack_start(toggle, False, False, 0)
+    shell.luna_control_stack = stack
+    shell.luna_control_switch = toggle
 
     hardware = shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5),
                             "luna-control-side-group")
