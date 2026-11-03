@@ -168,3 +168,36 @@ def read_sound() -> SoundState:
 
 def read_status() -> DesktopStatus:
     return DesktopStatus(read_battery(), read_network(), read_sound())
+
+
+def set_sound_volume(percent: int) -> SoundState:
+    """Set the default sink to a bounded value and verify the actual backend.
+
+    Never report success based only on an exit code; a mismatch or unavailable
+    backend is an explicit error so the UI can offer recovery.
+    """
+    if isinstance(percent, bool) or not isinstance(percent, int) or not 0 <= percent <= 100:
+        raise ValueError("Audio volume must be an integer from 0 to 100")
+    candidates = (
+        ["wpctl", "set-volume", "@DEFAULT_AUDIO_SINK@", f"{percent / 100:.2f}"],
+        ["pactl", "set-sink-volume", "@DEFAULT_SINK@", f"{percent}%"],
+    )
+    errors = []
+    for args in candidates:
+        if not shutil.which(args[0]):
+            continue
+        try:
+            result = subprocess.run(
+                args, capture_output=True, text=True, timeout=2.0, check=False)
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            errors.append(f"{args[0]}: {type(exc).__name__}")
+            continue
+        if result.returncode:
+            errors.append(f"{args[0]}: exit {result.returncode}")
+            continue
+        state = read_sound()
+        if state.percent is not None and abs(state.percent - percent) <= 2:
+            return state
+        errors.append(f"{args[0]}: read-back mismatch")
+    raise RuntimeError("Unable to set verified audio volume" +
+                       (": " + "; ".join(errors) if errors else " (no backend available)"))
