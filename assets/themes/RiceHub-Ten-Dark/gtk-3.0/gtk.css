@@ -1,4 +1,4 @@
-/* RiceBowl 0.7: RiceHub-Ten-Dark GTK3 theme, original artwork. */
+/* RiceBowl Ten: compact flat GTK3 theme, original artwork. */
 @define-color theme_bg_color #202020;
 @define-color theme_fg_color #f5f5f5;
 @define-color theme_base_color #181818;
@@ -12,23 +12,30 @@ entry, textview text, treeview.view, .view, spinbutton { color: #f5f5f5; backgro
 entry, spinbutton, combobox box.linked { border: 1px solid #484848; border-radius: 0; padding: 5px; }
 entry:focus { border: 1px solid #0078d7; }
 selection, :selected, row:selected { background: #0078d7; color: #ffffff; }
+treeview.view { border: none; }
+treeview.view:selected, treeview.view row:selected { background: #0078d7; color: #ffffff; }
+treeview.view:hover { background: #3d3d40; }
+.sidebar, placessidebar { background: #2d2d30; color: #f5f5f5; border-right: 1px solid #484848; }
+.sidebar row, placessidebar row { padding: 4px 7px; border-radius: 0; }
+.sidebar row:hover, placessidebar row:hover { background: #3d3d40; }
+.sidebar row:selected, placessidebar row:selected { background: #0078d7; color: #ffffff; }
 button { border: 1px solid #484848; border-radius: 0; padding: 5px 12px; background-image: none; background-color: #2d2d30; color: #f5f5f5; box-shadow: none; }
 button:hover { background-color: #3d3d40; border-color: #0078d7; }
 button:active, button:checked { background-color: #0078d7; color: #ffffff; }
 button:disabled { color: #aeb2ba; opacity: .62; }
+button:focus { outline: 1px solid #0078d7; outline-offset: -1px; }
 headerbar, .titlebar, toolbar { background-image: none; background-color: #2d2d30; color: #f5f5f5; border-bottom: 1px solid #484848; box-shadow: none; }
 headerbar button { border: 0; padding: 4px 8px; }
 menubar, menu, popover, .menu, .popup { background: #2d2d30; color: #f5f5f5; border: 1px solid #484848; }
 menuitem:hover, modelbutton:hover { background: #0078d7; color: #ffffff; }
+menuitem { padding: 4px 10px; }
 notebook header { background: #202020; border-bottom: 1px solid #484848; }
 notebook tab { padding: 7px 12px; border-radius: 0; }
 notebook tab:checked { background: #2d2d30; border-bottom: 2px solid #0078d7; }
 scrollbar slider { background: #484848; border-radius: 0; min-height: 7px; min-width: 7px; }
 scrollbar slider:hover { background: #aeb2ba; }
 progressbar progress, scale highlight, switch:checked { background: #0078d7; border-radius: 0; }
+checkbutton check, radiobutton radio { border: 1px solid #484848; border-radius: 0; background: #181818; }
+checkbutton check:checked, radiobutton radio:checked { background: #0078d7; color: #ffffff; }
+paned separator { background: #484848; min-width: 1px; }
 tooltip { background: #2d2d30; color: #f5f5f5; border: 1px solid #484848; }
-
-/* RiceBowl 0.7 Thunar treatment: scoped to the file manager only. */
-window.thunar toolbar { background: #242426; border-bottom: 1px solid #444; }
-window.thunar .path-bar button { border-radius: 0; border: 1px solid #474747; background: #343438; color: #f6f6f6; }
-window.thunar .sidebar { background: #202023; }

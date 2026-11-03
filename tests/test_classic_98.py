@@ -59,9 +59,10 @@ class Win98FidelityTests(unittest.TestCase):
                      "_programs_cascade", "_open_tool", "folder_menu", "_reanchor_luna_menu"):
             with self.subTest(name=name):
                 self.assertIn(name, classic)
-        self.assertIn('panel_height = 34 if profile == "winclassic"', shell)
+        self.assertIn('34 if profile == "winclassic"', shell)
         self.assertIn('"winclassic": (262, 332)', shell)
-        self.assertIn('"winclassic") and os.environ.get("RICEBOWL_CAPTURE_SIZE")', shell)
+        self.assertIn('"winclassic", "windows10")', shell)
+        self.assertIn('and os.environ.get("RICEBOWL_CAPTURE_SIZE") == "1024"', shell)
         self.assertIn("xfce4-appfinder", shell)
         self.assertIn("xfce4-keyboard-settings", shell)
         self.assertIn("classic-control-caption", shell)

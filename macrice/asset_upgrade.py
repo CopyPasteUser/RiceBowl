@@ -31,7 +31,8 @@ def trusted_assets() -> dict[str, frozenset[str]]:
                  "trusted-ricebowl-aero-before-redesign.json",
                  "trusted-ricebowl-aero-seven-icons.json",
                  "trusted-ricebowl-frutiger-before-aqua.json",
-                 "trusted-ricebowl-classic-before-fidelity.json"):
+                 "trusted-ricebowl-classic-before-fidelity.json",
+                 "trusted-ricebowl-ten-before-fidelity.json"):
         raw = json.loads((root / name).read_text(encoding="utf-8"))
         if raw.get("schema") != 1 or not isinstance(raw.get("files"), dict):
             raise AssetConflict("Unsupported trusted asset manifest")

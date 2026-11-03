@@ -302,7 +302,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
     ten = profile == "windows10"
     heritage = PROFILES.get(profile)
     tiles = ten or profile == "chromeos"
-    panel_height = 34 if profile == "winclassic" else 40 if profile == "winxp" else 42 if profile == "aero" else PANEL_HEIGHT
+    panel_height = (34 if profile == "winclassic" else
+                    40 if profile in ("winxp", "windows10") else
+                    42 if profile == "aero" else PANEL_HEIGHT)
     if ten:
         from .ten_shell import APP_ID as TEN_APP_ID, CSS as TEN_CSS
     if heritage:
@@ -403,7 +405,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._smoke = "--smoke-test" in args
             self._capture_gallery = "--capture-gallery" in args
             self._capture_variant = "-1024" if (
-                profile in ("winxp", "aero", "frutiger", "winclassic") and os.environ.get("RICEBOWL_CAPTURE_SIZE") == "1024") else ""
+                profile in ("winxp", "aero", "frutiger", "winclassic", "windows10")
+                and os.environ.get("RICEBOWL_CAPTURE_SIZE") == "1024") else ""
             self.activate()
             if self._smoke:
                 GLib.timeout_add(850, self._smoke_check)
@@ -768,7 +771,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                        "blueman-manager", "xfce4-appearance-settings",
                        "xfce4-power-manager-settings", "system-config-printer",
                        "xfce4-appfinder", "xfce4-about", "yelp",
-                       "xfce4-mouse-settings", "xfce4-keyboard-settings")
+                       "xfce4-mouse-settings", "xfce4-keyboard-settings",
+                       "xfce4-notifyd-config")
             if command not in allowed:
                 return
             executable = shutil.which(command)
@@ -779,6 +783,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 subprocess.Popen([executable], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                                  stderr=subprocess.DEVNULL, close_fds=True, start_new_session=True)
                 self._hide_menu()
+                if ten:
+                    self._hide_actions()
             except OSError as exc:
                 self._error(str(exc))
 
@@ -1107,7 +1113,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             win.move(rect.x, rect.y + rect.height - panel_height)
 
             row = self._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,
-                                      spacing=3 if profile == "winclassic" else
+                                      spacing=3 if profile in ("winclassic", "windows10") else
                                       4 if profile in ("winxp", "aero") else 8), "aero-taskbar")
             if profile == "aero":
                 row.get_style_context().add_class("win7-taskbar")
@@ -1125,8 +1131,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                                      "assets/" + heritage.logo if heritage else "assets/aero-penguin.svg")
             try:
                 img = Gtk.Image.new_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_scale(
-                    str(logo), 19 if profile == "winclassic" else 26 if ten or profile == "winxp" else 36,
-                    19 if profile == "winclassic" else 26 if ten or profile == "winxp" else 36, True))
+                    str(logo), 19 if profile == "winclassic" else 19 if ten else 26 if profile == "winxp" else 36,
+                    19 if profile == "winclassic" else 19 if ten else 26 if profile == "winxp" else 36, True))
             except (GLib.Error, OSError):
                 img = self._icon("start-here", Gtk.IconSize.LARGE_TOOLBAR)
             contents.pack_start(img, False, False, 0)
@@ -1137,7 +1143,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 "Windows 10" if ten else "Aero") + " application menu")
             start.connect("clicked", lambda _button: self._toggle_menu())
             start.set_tooltip_text("Start")
-            row.pack_start(start, False, False, 0 if profile in ("winxp", "aero", "winclassic") else 4)
+            row.pack_start(start, False, False, 0 if profile in ("winxp", "aero", "winclassic", "windows10") else 4)
             if profile == "chromeos":
                 # Three independent visual zones: launcher, centered shelf,
                 # and the device-status pill at the far right.
@@ -1153,7 +1159,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 search_button = self._class(Gtk.Button(label="⌕  Type here to search"), "ten-search")
                 search_button.get_accessible().set_name("Search installed applications")
                 search_button.connect("clicked", lambda _button: self._open_search())
-                if rect.width < 940:
+                if rect.width < 1000:
                     search_button.set_label("⌕")
                 row.pack_start(search_button, False, False, 0)
             self.pinned_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
@@ -1254,14 +1260,14 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                         if profile == "aero":
                             button.get_style_context().add_class("win7-task")
                         button.set_size_request(44 if profile == "aero" else
-                                                42 if profile == "chromeos" else 135,
+                                                42 if profile in ("chromeos", "windows10") else 135,
                                                 37 if profile == "aero" else 35)
                         content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
                         icon = Gtk.Image.new_from_icon_name("application-x-executable", Gtk.IconSize.MENU)
                         label = Gtk.Label(xalign=0)
                         label.set_max_width_chars(12)
                         label.set_ellipsize(Pango.EllipsizeMode.END)
-                        if profile in ("chromeos", "aero"):
+                        if profile in ("chromeos", "aero", "windows10"):
                             label.set_no_show_all(True)
                             label.hide()
                         content.pack_start(icon, False, False, 0)
@@ -2317,14 +2323,14 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._populate("")
 
         def _create_ten_menu(self):
-            """Real application list and pinned app tiles, with shared search/launch logic."""
+            """Windows 10 Start: navigation rail, alphabetical apps, grouped live tiles."""
             if profile == "chromeos":
                 self._create_chrome_launcher()
                 return
             menu = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
-            menu.set_title("RiceBowl " + (heritage.name if heritage else "Windows 10") + " Launcher")
+            menu.set_title("RiceBowl Windows 10 Start")
             menu.set_decorated(False)
-            menu.set_resizable(False)
+            menu.set_resizable(True)
             menu.set_skip_taskbar_hint(True)
             menu.set_skip_pager_hint(True)
             menu.set_type_hint(Gdk.WindowTypeHint.UTILITY)
@@ -2332,55 +2338,102 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             menu.set_keep_above(True)
             rect = self._desktop_rect()
             _, _, menu_w, menu_h = menu_geometry(rect.x, rect.y, rect.width, rect.height,
-                                                 preferred_width=690 if profile == "chromeos" else 735,
-                                                 preferred_height=540 if profile == "chromeos" else 565)
+                                                 preferred_width=690, preferred_height=560,
+                                                 panel_height=panel_height)
             menu.set_default_size(menu_w, menu_h)
+            def user_directory(kind, fallback):
+                location = GLib.get_user_special_dir(kind)
+                return Path(location) if location else Path.home() / fallback
+
+            home = Path.home()
+            documents = user_directory(GLib.UserDirectory.DIRECTORY_DOCUMENTS, "Documents")
+            downloads = user_directory(GLib.UserDirectory.DIRECTORY_DOWNLOAD, "Downloads")
+            pictures = user_directory(GLib.UserDirectory.DIRECTORY_PICTURES, "Pictures")
             root = self._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL), "aero-menu-root")
-            rail = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=11), "ten-rail")
-            rail.set_size_request(58, -1)
-            rail.pack_start(self._class(Gtk.Label(label="≡"), "aero-menu-heading"), False, False, 6)
+            rail = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2), "ten-rail")
+            rail.set_size_request(49, -1)
+
+            navigation = self._class(Gtk.MenuButton(label="☰"), "ten-rail-button")
+            navigation.get_accessible().set_name("Open Start navigation")
+            navigation.set_tooltip_text("Start navigation")
+            navigation_menu = Gtk.Menu()
+            for label, uri, commands in (
+                ("Home", home.as_uri(), ()),
+                ("Documents", documents.as_uri(), ()),
+                ("Downloads", downloads.as_uri(), ()),
+                ("Settings", "", ("xfce4-settings-manager",)),
+                ("Sign out / Power", "", ("xfce4-session-logout",)),
+            ):
+                item = Gtk.MenuItem(label=label)
+                if uri:
+                    item.set_sensitive(Gio.File.new_for_uri(uri).query_exists(None))
+                    item.connect("activate", lambda _item, location=uri: self._open_uri(location))
+                else:
+                    command = next((cmd for cmd in commands if shutil.which(cmd)), None)
+                    item.set_sensitive(command is not None)
+                    if command:
+                        item.connect("activate", lambda _item, cmd=command: self._open_tool(cmd))
+                navigation_menu.append(item)
+            navigation_menu.show_all()
+            navigation.set_popup(navigation_menu)
+            rail.pack_start(navigation, False, False, 0)
             rail.pack_start(Gtk.Box(), True, True, 0)
-            for text, icon, command in (("Settings", "preferences-system", "xfce4-settings-manager"),
-                                        ("Power", "system-shutdown", "xfce4-session-logout")):
-                button = self._class(Gtk.Button(), "aero-menu-app")
-                button.set_image(self._icon(icon, Gtk.IconSize.MENU))
+            for text, icon, uri, command in (
+                ("Your files", "user-home", home.as_uri(), ""),
+                ("Documents", "folder-documents", documents.as_uri(), ""),
+                ("Pictures", "folder-pictures", pictures.as_uri(), ""),
+                ("Settings", "preferences-system", "", "xfce4-settings-manager"),
+                ("Power", "system-shutdown", "", "xfce4-session-logout"),
+            ):
+                button = self._class(Gtk.Button(), "ten-rail-button")
+                button.set_image(self._icon(icon, Gtk.IconSize.LARGE_TOOLBAR))
                 button.set_tooltip_text(text)
-                button.get_accessible().set_name(text + " (opens XFCE dialog)")
-                button.connect("clicked", lambda _button, cmd=command: self._open_tool(cmd))
+                button.get_accessible().set_name(text)
+                if command:
+                    button.set_sensitive(shutil.which(command) is not None)
+                    button.connect("clicked", lambda _button, cmd=command: self._open_tool(cmd))
+                else:
+                    button.set_sensitive(Gio.File.new_for_uri(uri).query_exists(None))
+                    button.connect("clicked", lambda _button, location=uri: self._open_uri(location))
                 rail.pack_start(button, False, False, 0)
             root.pack_start(rail, False, False, 0)
 
-            main = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-            for side in ("start", "end"):
-                getattr(main, "set_margin_" + side)(14)
-            main.set_margin_top(15)
-            main.set_margin_bottom(14)
-            main.pack_start(self._class(Gtk.Label(label=heritage.menu_heading if heritage else "Start", xalign=0), "aero-menu-heading"), False, False, 0)
+            main = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10), "ten-menu-main")
+            main.pack_start(self._class(Gtk.Label(label="Start", xalign=0),
+                                        "aero-menu-heading"), False, False, 0)
             search = self._class(Gtk.SearchEntry(), "aero-menu-search")
-            search.set_placeholder_text("Search apps")
+            search.set_placeholder_text("Search installed apps")
             search.get_accessible().set_name("Search installed applications")
             main.pack_start(search, False, False, 0)
 
-            columns = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+            columns = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=9)
             main.pack_start(columns, True, True, 0)
-            apps_column = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=7)
-            apps_column.set_size_request(max(175, min(250, menu_w - 320)), -1)
-            apps_column.pack_start(self._class(Gtk.Label(label="All apps", xalign=0), "aero-menu-sub"),
+            apps_column = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+            apps_column.set_size_request(238, -1)
+            apps_column.pack_start(self._class(Gtk.Label(label="All apps", xalign=0),
+                                               "ten-section-heading"),
                                    False, False, 0)
             scroller = Gtk.ScrolledWindow()
             scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-            self.results = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+            self.results = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1),
+                                       "ten-app-list")
             scroller.add(self.results)
             apps_column.pack_start(scroller, True, True, 0)
             columns.pack_start(apps_column, True, True, 0)
 
-            tile_column = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-            tile_column.pack_start(self._class(Gtk.Label(label="Pinned", xalign=0), "aero-menu-sub"),
-                                   False, False, 0)
+            self.ten_tiles_panel = self._class(
+                Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10), "ten-tiles-panel")
+            self.ten_tiles_panel.pack_start(
+                self._class(Gtk.Label(label="Productivity", xalign=0), "ten-section-heading"),
+                False, False, 0)
             self.tile_grid = Gtk.Grid(row_spacing=5, column_spacing=5)
-            tile_column.pack_start(self.tile_grid, False, False, 0)
-            if menu_w > 510:
-                columns.pack_start(tile_column, False, False, 0)
+            self.ten_tiles_panel.pack_start(self.tile_grid, False, False, 0)
+            self.ten_tiles_panel.pack_start(
+                self._class(Gtk.Label(label="Explore", xalign=0), "ten-section-heading"),
+                False, False, 3)
+            self.explore_grid = Gtk.Grid(row_spacing=5, column_spacing=5)
+            self.ten_tiles_panel.pack_start(self.explore_grid, False, False, 0)
+            columns.pack_start(self.ten_tiles_panel, False, False, 0)
             root.pack_start(main, True, True, 0)
 
             menu.add(root)
@@ -2389,7 +2442,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
             def search_changed(*_args):
                 self._app_page_size = 24
-                self._populate(search.get_text())
+                query = search.get_text()
+                self.ten_tiles_panel.set_visible(not bool(query.strip()))
+                self._populate(query)
             search.connect("search-changed", search_changed)
             search.connect("key-press-event", lambda _widget, event: self._search_key(event))
             menu.connect("key-press-event", lambda _widget, event: self._search_key(event))
@@ -2476,6 +2531,49 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
         def _render_ten_tiles(self):
             if not hasattr(self, "tile_grid"):
                 return
+            if profile == "windows10":
+                from .ten_shell import start_tiles
+
+                for grid in (self.tile_grid, self.explore_grid):
+                    for child in grid.get_children():
+                        grid.remove(child)
+                apps = start_tiles(self.apps, self._pinned_ids)
+                for index, app in enumerate(apps):
+                    grid = self.tile_grid if index < 4 else self.explore_grid
+                    tile_index = index if index < 4 else index - 4
+                    button = self._class(Gtk.Button(), "ten-tile")
+                    if index in (1, 4):
+                        button.get_style_context().add_class("ten-tile-alt")
+                    if index == 0:
+                        button.get_style_context().add_class("ten-tile-wide")
+                    button.set_size_request(136, 95 if index == 0 else 81)
+                    name = app.get_display_name() or app.get_name() or "Application"
+                    content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+                    icon = app.get_icon()
+                    picture = (Gtk.Image.new_from_gicon(icon, Gtk.IconSize.DIALOG) if icon else
+                               self._icon("applications-other", Gtk.IconSize.DIALOG))
+                    picture.set_halign(Gtk.Align.CENTER)
+                    content.pack_start(picture, True, True, 0)
+                    caption = self._class(Gtk.Label(label=name, xalign=0), "ten-tile-label")
+                    caption.set_max_width_chars(16)
+                    caption.set_ellipsize(Pango.EllipsizeMode.END)
+                    content.pack_end(caption, False, False, 0)
+                    button.add(content)
+                    button.get_accessible().set_name("Launch " + name)
+                    button.set_tooltip_text(name + " · Right-click to pin or unpin")
+                    button.connect("clicked", lambda _button, selected=app: self._launch(selected))
+                    button.connect("button-press-event", lambda widget, event, selected=app:
+                                   self._pin_context(widget, selected, event))
+                    button.connect("popup-menu", lambda widget, selected=app:
+                                   self._pin_context(widget, selected))
+                    grid.attach(button, tile_index % 2, tile_index // 2, 1, 1)
+                if not apps:
+                    self.tile_grid.attach(self._class(
+                        Gtk.Label(label="No desktop applications installed", xalign=0),
+                        "ten-muted"), 0, 0, 2, 1)
+                self.tile_grid.show_all()
+                self.explore_grid.show_all()
+                return
             for child in self.tile_grid.get_children():
                 self.tile_grid.remove(child)
             lookup = {app.get_id(): app for app in self.apps if app.get_id()}
@@ -2520,6 +2618,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _create_actions(self):
             """Profile-aware controls; never simulate state-changing toggles."""
+            if ten:
+                from .ten_action_center import build
+
+                self.actions = build(self, Gtk, Gdk)
+                return
             actions = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
             heading = heritage.control_heading if heritage else ("Action Center" if ten else "Control Panel")
             actions.set_title("RiceBowl " + heading)
@@ -2743,17 +2846,17 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 return
             self._hide_menu()
             rect = self._desktop_rect()
-            width = min(382 if profile == "winclassic" else 362 if profile == "frutiger" else 330,
+            width = min(362 if ten else 382 if profile == "winclassic" else 362 if profile == "frutiger" else 330,
                         max(0, rect.width - 16))
-            height = min(488 if profile == "winclassic" else 560 if profile == "frutiger" else 430,
+            height = min(680 if ten else 488 if profile == "winclassic" else 560 if profile == "frutiger" else 430,
                          max(0, rect.height - panel_height - 16))
             if width < 235 or height < 250:
                 self._error("The display is too small for " + ("Action Center." if ten else "Control Panel."))
                 return
             self.actions.show_all()
             self.actions.resize(width, height)
-            self.actions.move(rect.x + rect.width - width - 8,
-                              rect.y + rect.height - panel_height - height - 8)
+            self.actions.move(rect.x + rect.width - width - (0 if ten else 8),
+                              rect.y + rect.height - panel_height - height - (0 if ten else 8))
             self.actions.present()
 
         def _open_search(self):
@@ -2770,6 +2873,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
         def _populate(self, query):
             for child in self.results.get_children():
                 self.results.remove(child)
+            if ten:
+                self._populate_windows10(query)
+                return
             if profile == "frutiger":
                 self._populate_frutiger(query)
                 return
@@ -2804,6 +2910,51 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     self._populate(self.search.get_text())
                 more.connect("clicked", expand)
                 self.results.pack_start(more, False, False, 0)
+            self.results.show_all()
+
+        def _populate_windows10(self, query):
+            """Compact Windows 10 alphabetical app rail with real Gio launchers."""
+            matches = matching_apps(self.apps, query)
+            if not matches:
+                self.results.pack_start(self._class(Gtk.Label(
+                    label="No matching applications", xalign=0), "ten-muted"),
+                    False, False, 12)
+            previous_letter = None
+            for app in matches[:self._app_page_size]:
+                title = app.get_display_name() or app.get_name() or "Application"
+                letter = title[0].upper() if title[0].isalpha() else "#"
+                if not query.strip() and letter != previous_letter:
+                    self.results.pack_start(self._class(
+                        Gtk.Label(label=letter, xalign=0), "ten-letter"), False, False, 3)
+                    previous_letter = letter
+                button = self._class(Gtk.Button(), "aero-menu-app")
+                content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+                icon = app.get_icon()
+                content.pack_start(
+                    Gtk.Image.new_from_gicon(icon, Gtk.IconSize.MENU) if icon else
+                    self._icon("applications-other", Gtk.IconSize.MENU),
+                    False, False, 0)
+                label = self._class(Gtk.Label(label=title, xalign=0), "ten-app-label")
+                label.set_ellipsize(Pango.EllipsizeMode.END)
+                label.set_max_width_chars(23)
+                content.pack_start(label, True, True, 0)
+                button.add(content)
+                button.set_tooltip_text(title + " · Right-click to pin or unpin")
+                button.get_accessible().set_name("Launch " + title)
+                button.connect("clicked", lambda _button, selected=app: self._launch(selected))
+                button.connect("button-press-event", lambda widget, event, selected=app:
+                               self._pin_context(widget, selected, event))
+                button.connect("popup-menu", lambda widget, selected=app:
+                               self._pin_context(widget, selected))
+                self.results.pack_start(button, False, False, 0)
+            if len(matches) > self._app_page_size:
+                more = self._class(Gtk.Button(label="Show more apps"), "aero-menu-app")
+                more.get_accessible().set_name("Show more installed applications")
+                def expand(_button):
+                    self._app_page_size += 24
+                    self._populate(self.search.get_text())
+                more.connect("clicked", expand)
+                self.results.pack_start(more, False, False, 4)
             self.results.show_all()
 
         def _populate_frutiger(self, query):
@@ -2998,7 +3149,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 "winclassic": (262, 332),
                 "chromeos": (650, 548),
                 "frutiger": (600, 600),
-                "windows10": (735, 565),
+                "windows10": (690, 560),
                 "aero": (525, 535),
             }
             preferred_width, preferred_height = preferred_sizes.get(profile, (490, 505))

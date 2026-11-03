@@ -1,5 +1,25 @@
 # RiceBowl changelog
 
+## Unreleased — Windows 10 native fidelity (3 November 2026)
+
+- Replaced the oversized penguin wallpaper with an original deep-blue
+  four-pane light composition, retaining a discreet Linux mascot signature;
+  both Blue and Midnight retain the recognizable Windows 10 silhouette.
+- Rebuilt the actual GTK Start menu into functional navigation, alphabetically
+  grouped genuine Gio applications with search and Productivity/Explore tiles
+  drawn only from installed applications and saved pins.
+- Refined the 40px flat charcoal taskbar with a compact four-pane Linux Start
+  badge, live search launcher, icon-only running windows and underline states.
+- Built a right-edge Action Center with real settings launchers, honest
+  notification scope, battery/network/audio details, verified output volume
+  and mute, and disabled states for missing XFCE utilities.
+- Updated dark/light GTK3, Thunar and sharp XFWM4 chrome, hover/focus states,
+  and original sprite art. The other desktop families stay independent.
+- Included exact historical Ten theme/icon hashes for safe backup-backed
+  upgrades that never silently overwrite user customization.
+- Added Windows 10 native 1024x768 screenshot checks and focused fidelity tests.
+- The source-only work does not move the existing v0.9.1 release tag.
+
 ## Unreleased — Windows 98 / 2000 Classic fidelity (3 November 2026)
 
 - Replaced the inaccurate ocean-style desktop with original solid Windows-98-era

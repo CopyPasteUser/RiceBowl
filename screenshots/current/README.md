@@ -2,8 +2,8 @@
 
 Only the latest **actual** virtual-X11 captures are retained in this directory.
 Each `*-start.webp` and `*-controls.webp` image was captured from the same
-successful GitHub Actions Linux/Xvfb CI run of the `feature/classic-98-native-fidelity`
-branch on 3 November 2026 (workflow run `41622039625`, source `aca684f4bc9bc229af8ff038859a949cb2830e27`).
+successful GitHub Actions Linux/Xvfb CI run of the `feature/windows10-native-fidelity`
+branch on 3 November 2026 (workflow run `41626102066`, source `4ec7254b7c24514a3eacd8f278a9fdaf29dc0224`).
 Images were lossily optimized to WebP at their original **1600×900** resolution
 for a smaller checkout and a fast README preview. The original uncompressed PNG
 captures are available in that CI run's screenshot artifact.
@@ -15,6 +15,6 @@ same CI run; a stale image would misrepresent the current state. Historical
 screenshots remain recoverable from Git history, not in the live gallery.
 
 The branch also exercises 1024×768 captures of XP Luna, Windows 7 Aero,
-Frutiger Aqua World and Windows 98 Classic,
+Frutiger Aqua World, Windows 98 Classic **and Windows 10**,
 but those compact-resolution test images are CI artifacts rather than gallery
 duplicates.
