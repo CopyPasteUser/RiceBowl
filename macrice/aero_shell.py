@@ -2926,6 +2926,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 from .chrome_shell import apply_rounded_window_shape
 
                 GLib.idle_add(apply_rounded_window_shape, self.actions, 26)
+                # Some X11 window managers reset the shape during the first
+                # utility resize; reapply after that configure settles.
+                GLib.timeout_add(150, apply_rounded_window_shape, self.actions, 26)
 
         def _open_search(self):
             if not self.menu.get_visible():
