@@ -2,8 +2,8 @@
 
 Only the latest **actual** virtual-X11 captures are retained in this directory.
 Each `*-start.webp` and `*-controls.webp` image was captured from the same
-successful GitHub Actions Linux/Xvfb CI run of the `feature/win7-superbar-and-current-gallery`
-branch on 3 November 2026 (workflow run `41608070327`, source `76cfb6cdc2c5b9ddc3a21f302035bd53692686bd`).
+successful GitHub Actions Linux/Xvfb CI run of the `feature/aero-seven-linux-identity`
+branch on 3 November 2026 (workflow run `41611087985`, source `472f7ce6c5d41eca5431dbe4921b20e8e3de43c4`).
 Images were lossily optimized to WebP at their original **1600×900** resolution
 for a smaller checkout and a fast README preview. The original uncompressed PNG
 captures are available in that CI run's screenshot artifact.
