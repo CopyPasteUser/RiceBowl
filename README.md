@@ -24,14 +24,18 @@ authentic teal desktop, a compact 34px beveled taskbar, real cascading Start
 hierarchies and original square window chrome. **Frutiger Aero / Aqua World** has a distinct
 water-and-nature identity with pearl-glass taskbar, live Apps / Places / Settings
 launcher, original refractive XFWM artwork and matching GTK/Thunar controls.
-The other three families retain their distinct designs. All of these operate on actual Linux applications and X11
+**Windows 10** now has a three-zone Start with genuine pinned app tiles and
+an XFCE-backed right-side Action Center, against original cobalt four-pane
+Linux artwork and flat dark/light window and file-manager themes. The other
+two families retain their distinct designs. All of these operate on actual Linux applications and X11
 windows; they do not emulate Windows or ship proprietary Microsoft assets.
 
 The tagged **v0.9.1** package predates these fidelity improvements. For the
 latest source use `main`; see [Windows 7 engineering notes](WIN7_AERO_ROADMAP.md),
 [XP Luna engineering notes](XP_LUNA_ROADMAP.md) and
 [Frutiger Aero implementation roadmap](FRUTIGER_AERO_ROADMAP.md) and
-[Windows 98 implementation roadmap](CLASSIC_98_ROADMAP.md). RiceBowl verifies a
+[Windows 98 implementation roadmap](CLASSIC_98_ROADMAP.md) and
+[Windows 10 implementation roadmap](WINDOWS10_ROADMAP.md). RiceBowl verifies a
 replacement taskbar is mapped before handing off from XFCE Panel and keeps
 recoverable desktop settings backups.
 
@@ -41,7 +45,7 @@ recoverable desktop settings backups.
 | --- | --- |
 | **macOS · Aurora** | MacBar, MacMenu, Control Center, optional Plank dock, three palettes |
 | **Windows 7 · Aero** | Classic cobalt-blue Linux-penguin wallpaper, golden folders, smoke-blue glass Superbar, previews, Jump Lists, Peek, two-column Start and Aero chrome |
-| **Windows 10 · Ten** | Dark/light styles, Start tiles, running apps, Action Center |
+| **Windows 10 · Ten** | 40px charcoal bar, blue four-pane Linux wallpaper, real three-zone Start with alphabetical apps/grouped tiles, compact running windows, tall functional Action Center, Explorer-like dark/light chrome |
 | **Windows XP · Luna** | Blue/green taskbar, XP-inspired Start, categorized control panel |
 | **Windows 98 / 2000 · Classic** | Flat teal wallpaper, 34px embossed taskbar, Linux-penguin Start badge, keyboard-operable classic Programs / Favorites / Documents / Settings cascades, original navy XFWM windows and coordinated GTK/Thunar 3D controls |
 | **ChromeOS · Pastel Shelf** | Centered app launcher, rounded shelf and device settings |

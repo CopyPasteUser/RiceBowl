@@ -1,0 +1,93 @@
+{
+  "schema": 1,
+  "comment": "Exact unmodified Ten GTK/XFWM/icons shipped before Windows 10 fidelity refresh. Do not trust arbitrary user edits.",
+  "files": {
+    "assets/icons/RiceHub-Ten-Penguin/scalable/apps/ricehub-ten.svg": [
+      "6e925ee0df64203d6388fa990c714c98e4068234"
+    ],
+    "assets/icons/RiceHub-Ten-Penguin/scalable/apps/start-here.svg": [
+      "6e925ee0df64203d6388fa990c714c98e4068234"
+    ],
+    "assets/icons/RiceHub-Ten-Penguin/scalable/apps/xfce4-menu.svg": [
+      "6e925ee0df64203d6388fa990c714c98e4068234"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/gtk-3.0/gtk.css": [
+      "63aa210dfef8aec16a9f77ddf94afd92f4020af5"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/close-active.png": [
+      "c793b59e0b4c8f21979b75f9354710ac00dd88db"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/close-inactive.png": [
+      "781053490d888d727a47d1a9a781407484c17afb"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/close-prelight.png": [
+      "4dc4ab6b5c99df2772c705dc5fc303c92cf1a32e"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/close-pressed.png": [
+      "4dc4ab6b5c99df2772c705dc5fc303c92cf1a32e"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/hide-active.png": [
+      "0ff868c0922e229eafcca4bc7d8c274e79a1bd3b"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/hide-inactive.png": [
+      "f6d81addb15b3cbb059e647d2b2e0595ae451c98"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/hide-prelight.png": [
+      "9082ea996f55bc0ee84e0292dbbd801c5bf78f07"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/hide-pressed.png": [
+      "9082ea996f55bc0ee84e0292dbbd801c5bf78f07"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/maximize-active.png": [
+      "7b9b9dbdf18b74775c16ab417ee4cb962a03f614"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/maximize-inactive.png": [
+      "feabbd97c2b16a33cc73ee6c04139ae1402fb791"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/maximize-prelight.png": [
+      "cbfe6b910bb0310a6364edb133f46fd21f3b5b7d"
+    ],
+    "assets/themes/RiceHub-Ten-Dark/xfwm4/maximize-pressed.png": [
+      "cbfe6b910bb0310a6364edb133f46fd21f3b5b7d"
+    ],
+    "assets/themes/RiceHub-Ten-Light/gtk-3.0/gtk.css": [
+      "d8523ed754c18b3fa000ed19766f5a56870804f9"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/close-active.png": [
+      "c2e2cabb23e0d53c18f973541904664fc8f625c0"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/close-inactive.png": [
+      "7740c4305ebac41fbd960348d1eefaffad087cd9"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/close-prelight.png": [
+      "4dc4ab6b5c99df2772c705dc5fc303c92cf1a32e"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/close-pressed.png": [
+      "4dc4ab6b5c99df2772c705dc5fc303c92cf1a32e"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/hide-active.png": [
+      "65741f0802f1ad42b0424e95d14f268e690f7a8d"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/hide-inactive.png": [
+      "d42d82d94651f10a900b54ff20a30b56d49bb40a"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/hide-prelight.png": [
+      "9082ea996f55bc0ee84e0292dbbd801c5bf78f07"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/hide-pressed.png": [
+      "9082ea996f55bc0ee84e0292dbbd801c5bf78f07"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/maximize-active.png": [
+      "2f424c9632e33071e2c69d18a80c0d23946a0b37"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/maximize-inactive.png": [
+      "370f46715e4f33f269a4ffdcefcbefbda049f7b1"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/maximize-prelight.png": [
+      "cbfe6b910bb0310a6364edb133f46fd21f3b5b7d"
+    ],
+    "assets/themes/RiceHub-Ten-Light/xfwm4/maximize-pressed.png": [
+      "cbfe6b910bb0310a6364edb133f46fd21f3b5b7d"
+    ]
+  }
+}

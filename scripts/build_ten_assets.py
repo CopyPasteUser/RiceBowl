@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFilter
 from ricebowl_artwork import write_generated_icon
 
 
@@ -56,12 +56,12 @@ def chrome(destination: Path, palette: dict) -> None:
             draw = ImageDraw.Draw(image)
             ink = (255, 255, 255, 255) if state in ("prelight", "pressed") or palette["ink"] == "#f5f5f5" else (35, 35, 35, 255)
             if button == "close":
-                draw.line((20, 12, 26, 18), ink, 1)
-                draw.line((26, 12, 20, 18), ink, 1)
+                draw.line((19, 10, 28, 19), ink, 1)
+                draw.line((28, 10, 19, 19), ink, 1)
             elif button == "maximize":
-                draw.rectangle((19, 11, 27, 19), outline=ink, width=1)
+                draw.rectangle((18, 10, 28, 20), outline=ink, width=1)
             elif button == "hide":
-                draw.line((19, 19, 27, 19), ink, 1)
+                draw.line((18, 19, 28, 19), ink, 1)
             elif button == "menu":
                 draw.rectangle((20, 11, 26, 18), outline=ink)
             elif button == "shade":
@@ -88,20 +88,32 @@ entry, textview text, treeview.view, .view, spinbutton { color: INK; background-
 entry, spinbutton, combobox box.linked { border: 1px solid EDGE; border-radius: 0; padding: 5px; }
 entry:focus { border: 1px solid ACCENT; }
 selection, :selected, row:selected { background: ACCENT; color: #ffffff; }
+treeview.view { border: none; }
+treeview.view:selected, treeview.view row:selected { background: ACCENT; color: #ffffff; }
+treeview.view:hover { background: HOVER; }
+.sidebar, placessidebar { background: SURFACE; color: INK; border-right: 1px solid EDGE; }
+.sidebar row, placessidebar row { padding: 4px 7px; border-radius: 0; }
+.sidebar row:hover, placessidebar row:hover { background: HOVER; }
+.sidebar row:selected, placessidebar row:selected { background: ACCENT; color: #ffffff; }
 button { border: 1px solid EDGE; border-radius: 0; padding: 5px 12px; background-image: none; background-color: SURFACE; color: INK; box-shadow: none; }
 button:hover { background-color: HOVER; border-color: ACCENT; }
 button:active, button:checked { background-color: ACCENT; color: #ffffff; }
 button:disabled { color: MUTED; opacity: .62; }
+button:focus { outline: 1px solid ACCENT; outline-offset: -1px; }
 headerbar, .titlebar, toolbar { background-image: none; background-color: SURFACE; color: INK; border-bottom: 1px solid EDGE; box-shadow: none; }
 headerbar button { border: 0; padding: 4px 8px; }
 menubar, menu, popover, .menu, .popup { background: SURFACE; color: INK; border: 1px solid EDGE; }
 menuitem:hover, modelbutton:hover { background: ACCENT; color: #ffffff; }
+menuitem { padding: 4px 10px; }
 notebook header { background: BG; border-bottom: 1px solid EDGE; }
 notebook tab { padding: 7px 12px; border-radius: 0; }
 notebook tab:checked { background: SURFACE; border-bottom: 2px solid ACCENT; }
 scrollbar slider { background: EDGE; border-radius: 0; min-height: 7px; min-width: 7px; }
 scrollbar slider:hover { background: MUTED; }
 progressbar progress, scale highlight, switch:checked { background: ACCENT; border-radius: 0; }
+checkbutton check, radiobutton radio { border: 1px solid EDGE; border-radius: 0; background: FIELD; }
+checkbutton check:checked, radiobutton radio:checked { background: ACCENT; color: #ffffff; }
+paned separator { background: EDGE; min-width: 1px; }
 tooltip { background: SURFACE; color: INK; border: 1px solid EDGE; }
 """
     replaces = {"BG": palette["background"], "INK": palette["ink"], "FIELD": palette["field"],
@@ -154,33 +166,59 @@ def icons() -> None:
 def wallpapers() -> None:
     root = ROOT / "assets/wallpapers"
     width, height = 1920, 1080
-    for name, base, glow in (("ten-blue.jpg", (5, 36, 90), (0, 122, 215)),
-                             ("ten-midnight.jpg", (10, 17, 40), (13, 89, 169))):
-        image = Image.new("RGB", (width, height), base)
-        pix = image.load()
+    for name, upper, lower, strength in (
+        ("ten-blue.jpg", (2, 21, 64), (4, 63, 126), 1.0),
+        ("ten-midnight.jpg", (2, 11, 34), (8, 28, 71), 0.67),
+    ):
+        # A ten-era four-pane light source in deep cobalt: independently drawn,
+        # perspective-shifted geometry, not the Windows wallpaper binary.
+        image = Image.new("RGB", (width, height), upper)
+        draw = ImageDraw.Draw(image)
         for y in range(height):
-            for x in range(width):
-                factor = max(0, 1 - abs(x - 1280) / 1020) * max(0, 1 - abs(y - 520) / 880)
-                pix[x, y] = tuple(min(255, int(base[i] + (glow[i] - base[i]) * factor)) for i in range(3))
-        draw = ImageDraw.Draw(image, "RGBA")
-        # The same flat penguin geometry as the taskbar, scaled into a soft
-        # spotlight. No Microsoft/Windows mark is included in the artwork.
-        draw.polygon([(1300, 470), (100, 120), (180, 0), (1390, 415)], fill=(21, 128, 212, 45))
-        draw.polygon([(1300, 540), (110, 1040), (0, 870), (1390, 520)], fill=(16, 142, 229, 37))
-        def position(x, y):
-            return 800 + x * 11, 125 + y * 11
-        def polygon(points, rgba):
-            draw.polygon([position(x, y) for x, y in points], fill=rgba)
-        polygon([(17, 26), (6, 43), (9, 51), (22, 41)], (20, 153, 227, 195))
-        polygon([(47, 26), (58, 43), (55, 51), (42, 41)], (20, 153, 227, 195))
-        draw.ellipse((*position(16, 5), *position(48, 59)), fill=(164, 226, 255, 225))
-        draw.ellipse((*position(23, 21), *position(41, 57)), fill=(53, 162, 234, 210))
-        draw.rectangle((*position(24, 20), *position(29, 25)), fill=(24, 77, 130, 255))
-        draw.rectangle((*position(35, 20), *position(40, 25)), fill=(24, 77, 130, 255))
-        polygon([(26, 29), (32, 25), (38, 29), (32, 34)], (255, 192, 108, 245))
-        polygon([(24, 56), (17, 60), (32, 60), (30, 54)], (255, 192, 108, 220))
-        polygon([(40, 56), (47, 60), (32, 60), (34, 54)], (255, 192, 108, 220))
-        image.save(root / name, "JPEG", quality=91, optimize=True)
+            fraction = y / height
+            color = tuple(int(upper[i] * (1 - fraction) + lower[i] * fraction)
+                          for i in range(3))
+            draw.line((0, y, width, y), fill=color)
+        beam = Image.new("RGBA", (width, height))
+        bd = ImageDraw.Draw(beam)
+        origin = (1420, 536)
+        for index, edge in enumerate((
+            [(0, 0), (650, 0)], [(0, 1080), (550, 1080)],
+            [(0, 200), (0, 740)], [(0, 890), (900, 1080)],
+        )):
+            bd.polygon([origin, *edge], fill=(32, 150, 250, int((30 + 13 * index) * strength)))
+        image = Image.alpha_composite(image.convert("RGBA"),
+                                      beam.filter(ImageFilter.GaussianBlur(42)))
+        flare = Image.new("RGBA", (width, height))
+        fd = ImageDraw.Draw(flare)
+        fd.ellipse((940, 130, 1780, 975), fill=(28, 145, 239, int(85 * strength)))
+        fd.ellipse((1165, 280, 1625, 795), fill=(113, 214, 255, int(84 * strength)))
+        image = Image.alpha_composite(image, flare.filter(ImageFilter.GaussianBlur(118)))
+        panes = Image.new("RGBA", (width, height))
+        pane = ImageDraw.Draw(panes)
+        # One vertical and one horizontal separation are enough to suggest the
+        # iconic window proportions without copying its exact glyph.
+        shapes = (
+            [(1143, 314), (1368, 283), (1368, 524), (1143, 524)],
+            [(1390, 281), (1636, 246), (1636, 524), (1390, 524)],
+            [(1143, 545), (1368, 545), (1368, 788), (1143, 753)],
+            [(1390, 545), (1636, 545), (1636, 820), (1390, 790)],
+        )
+        for index, points in enumerate(shapes):
+            pane.polygon(points, fill=(101, 209, 255, int((105 + 12 * index) * strength)))
+        glow = panes.filter(ImageFilter.GaussianBlur(34))
+        image = Image.alpha_composite(image, glow)
+        image = Image.alpha_composite(image, panes)
+        # A small, subtle Linux-penguin silhouette replaces any Windows badge.
+        # It is a detail in the lower-right pane, not an oversized mascot.
+        penguin = ImageDraw.Draw(image, "RGBA")
+        penguin.ellipse((1503, 694, 1544, 767), fill=(4, 54, 111, 112))
+        penguin.ellipse((1513, 720, 1534, 759), fill=(196, 243, 255, 130))
+        penguin.ellipse((1515, 717, 1520, 721), fill=(3, 30, 72, 160))
+        penguin.ellipse((1528, 717, 1533, 721), fill=(3, 30, 72, 160))
+        penguin.polygon([(1521, 727), (1524, 724), (1528, 727), (1524, 730)],
+                        fill=(255, 196, 99, 170))
+        image.convert("RGB").save(root / name, "JPEG", quality=92, optimize=True)
 
 
 if __name__ == "__main__":

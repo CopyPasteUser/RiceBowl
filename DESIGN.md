@@ -38,7 +38,22 @@ original Linux artwork. Windows 11 and Liquid Glass are out of scope.
   backup compatibility; their visible names are **Aero Seven Blue / Night**.
   Runtime colors are owned by the `win7-*` CSS in `aero_shell.py` and mirrored
   here as design intent. XP, Classic, Frutiger and Ten stay untouched.
-- **Windows 10:** flat neutral panels and blue highlights with an original blue penguin.
+- **Windows 10:** native 22H2-era flat charcoal (#101014) 40px taskbar,
+  compact four-pane/penguin Start mark, bright-but-square search, icon-first
+  running-app buttons with active bottom underline, real network/audio/battery
+  status and a two-line clock. The ten-shell GTK CSS in macrice/ten_shell.py
+  owns the runtime #0078d7 accent and rectangular hover/focus treatments.
+  aero_shell._create_ten_menu() owns a three-zone nav rail / alphabetical Gio
+  application list / genuine-app pinned tile groups (saved pins/context menus).
+  The dark 362px Action Center is built by macrice/ten_action_center.py: a
+  truthful RiceBowl notifications area, real Linux settings launchers and
+  shared verified output volume, mute, network and battery readers, not fake
+  connectivity switches. scripts/build_ten_assets.py owns the original deep
+  cobalt four-pane beam/penguin wallpapers, crisp flat dark/light GTK3/Thunar
+  controls and sharp 31px XFWM4 buttons. Exact historical original hashes in
+  assets/trusted-ricebowl-ten-before-fidelity.json allow safe backup-backed
+  upgrades while preserving custom theme edits. No blur, Win7 glass, XP gloss
+  or Windows 11 centered widgets belong in Ten.
 - **XP Luna:** 40px cobalt/green molded taskbar, contiguous bright-cyan notification
   tray, user-account Start header, ivory programs and pastel-blue system-links
   columns, separate log-off/power affordances, and a warm meadow wallpaper.
