@@ -44,7 +44,7 @@ jobs:
   publish-ricebowl:
     name: Publish RiceBowl 0.7 after green CI
     needs: test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'RiceBowl 0.7.0 release')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'RiceBowl 0.7.1 release')
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -56,14 +56,14 @@ jobs:
           test -f RELEASE_NOTES.md
           test -f assets/ricebowl-symbolic.svg
           mkdir -p dist
-          git archive --format=zip --output=dist/RiceBowl-v0.7.0-source.zip HEAD
-          (cd dist && sha256sum RiceBowl-v0.7.0-source.zip | tee SHA256SUMS)
+          git archive --format=zip --output=dist/RiceBowl-v0.7.1-source.zip HEAD
+          (cd dist && sha256sum RiceBowl-v0.7.1-source.zip | tee SHA256SUMS)
       - name: Create release if absent
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh release view v0.7.0 >/dev/null 2>&1; then
-            echo 'RiceBowl v0.7.0 release already exists'
+          if gh release view v0.7.1 >/dev/null 2>&1; then
+            echo 'RiceBowl v0.7.1 release already exists'
             exit 0
           fi
-          gh release create v0.7.0 dist/RiceBowl-v0.7.0-source.zip dist/SHA256SUMS --target "$GITHUB_SHA" --title 'RiceBowl v0.7.0' --notes-file RELEASE_NOTES.md --prerelease
+          gh release create v0.7.1 dist/RiceBowl-v0.7.1-source.zip dist/SHA256SUMS --target "$GITHUB_SHA" --title 'RiceBowl v0.7.1' --notes-file RELEASE_NOTES.md --prerelease
