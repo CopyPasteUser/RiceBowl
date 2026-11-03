@@ -39,6 +39,29 @@ def _relative_source_key(source: Path, relative: Path) -> str:
     return (Path("assets") / source.parent.name / source.name / relative).as_posix()
 
 
+def _validate_source(source: Path) -> None:
+    """Reject crafted, symlinked or incomplete source asset trees.
+
+    A repair operation must enforce the same source checks as a normal
+    theme installation, even though it deliberately bypasses destination
+    content hashes.
+    """
+    if source.is_symlink() or not source.is_dir():
+        raise AssetConflict(f"Missing or symlinked RiceBowl source assets: {source}")
+    files = 0
+    for entry in source.rglob("*"):
+        if entry.is_symlink():
+            raise AssetConflict(f"Refusing symlinked RiceBowl source asset: {entry}")
+        if entry.is_file():
+            files += 1
+            if entry.stat().st_size > 2 * 1024 * 1024:
+                raise AssetConflict(f"Unexpectedly large RiceBowl source asset: {entry}")
+        elif not entry.is_dir():
+            raise AssetConflict(f"Unsupported RiceBowl source entry: {entry}")
+    if not files:
+        raise AssetConflict(f"Empty RiceBowl source asset bundle: {source}")
+
+
 def _validate_destination(target: Path) -> None:
     if any(p.is_symlink() for p in (target, *target.parents)):
         raise AssetConflict(f"Refusing a symlink in RiceBowl asset destination: {target}")
@@ -53,7 +76,8 @@ def _validate_destination(target: Path) -> None:
 
 
 def inspect_bundle(source: Path, target: Path) -> None:
-    """Verify a prior bundle without writing. Caller verifies source shape."""
+    """Verify a prior bundle without writing."""
+    _validate_source(source)
     _validate_destination(target)
     if not target.exists():
         return
@@ -112,6 +136,7 @@ def install_bundle(source: Path, target: Path, *, repair: bool = False) -> Path 
     Repair bypasses the historical hash comparison ONLY by explicit user action.
     It still refuses symlinked, unmanaged or non-user-owned targets.
     """
+    _validate_source(source)
     _validate_destination(target)
     if not repair:
         inspect_bundle(source, target)
