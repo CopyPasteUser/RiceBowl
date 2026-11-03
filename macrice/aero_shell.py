@@ -1609,7 +1609,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             heading = heritage.control_heading if heritage else ("Action Center" if ten else "Aero Control Panel")
             actions.set_title("RiceBowl " + heading)
             actions.set_decorated(False)
-            actions.set_resizable(False)
+            # GtkScrolledWindow has no useful implicit minimum height.
+            # A non-resizable utility window collapses to its first header,
+            # making the controls look like a clipped title strip.
+            actions.set_resizable(True)
+            actions.set_default_size(330, 430)
             actions.set_skip_taskbar_hint(True)
             actions.set_skip_pager_hint(True)
             actions.set_type_hint(Gdk.WindowTypeHint.UTILITY)
@@ -1749,6 +1753,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             root.pack_end(self.status_summary, False, False, 2)
             actions_scroll = Gtk.ScrolledWindow()
             actions_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+            actions_scroll.set_min_content_width(300)
+            actions_scroll.set_min_content_height(260)
             actions_scroll.add(root)
             actions.add(actions_scroll)
             actions.connect("focus-out-event", lambda *_args: self._schedule_popup_hide("control"))
