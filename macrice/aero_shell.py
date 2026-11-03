@@ -377,10 +377,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _assert_luna_run_link_visible(self):
             """The final XP system action must not disappear beneath the footer."""
-            mapped, _x, link_y = self.luna_run_link.translate_coordinates(self.menu, 0, 0)
-            footer_mapped, _x, footer_y = self.luna_footer.translate_coordinates(self.menu, 0, 0)
-            if not mapped or not footer_mapped or link_y < 0 or (
-                    link_y + self.luna_run_link.get_allocated_height() > footer_y):
+            link = self.luna_run_link.translate_coordinates(self.menu, 0, 0)
+            footer = self.luna_footer.translate_coordinates(self.menu, 0, 0)
+            if link is None or footer is None or link[1] < 0 or (
+                    link[1] + self.luna_run_link.get_allocated_height() > footer[1]):
                 raise AssertionError("XP Luna Run action is clipped by its footer")
 
         def _shutdown(self, *_args):
