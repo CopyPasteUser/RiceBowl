@@ -1832,11 +1832,18 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._menu_focused = False
             self._menu_opened_at = GLib.get_monotonic_time()
             self.search.set_text("")
-            x, y, w, h = menu_geometry(rect.x, rect.y, rect.width, rect.height,
-                                     preferred_width=(690 if profile == "chromeos" else 735) if tiles else
-                                     (355 if profile == "winclassic" else 490),
-                                     preferred_height=(540 if profile == "chromeos" else 565) if tiles else
-                                     (465 if profile == "winclassic" else 505))
+            preferred_sizes = {
+                "winxp": (480, 560),
+                "winclassic": (285, 430),
+                "chromeos": (650, 548),
+                "frutiger": (535, 540),
+                "windows10": (735, 565),
+                "aero": (490, 505),
+            }
+            preferred_width, preferred_height = preferred_sizes.get(profile, (490, 505))
+            x, y, w, h = menu_geometry(
+                rect.x, rect.y, rect.width, rect.height,
+                preferred_width=preferred_width, preferred_height=preferred_height)
             if w < 180 or h < 180:
                 self._error("The display is too small for the Start menu.")
                 return
