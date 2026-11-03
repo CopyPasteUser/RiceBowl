@@ -1,5 +1,12 @@
 # RiceBowl changelog
 
+## Branding follow-up — 3 November 2026 (main branch, after v0.7.0 tag)
+
+- Standardized RiceBowl names across GTK window titles, sidebar icon, desktop entries, system tools, documentation and the package metadata (which previously reported 0.5.0rc2).
+- Updated visible GTK/icon theme names and the accessible labels in original SVG artwork; retained the existing RiceHub-prefixed theme directories as compatibility identifiers.
+- Safely recognize exact old theme metadata and managed autostart entries. Back up original theme indices and SVG metadata before an atomic label-only migration; customized artwork and entries are not overwritten.
+- Updated the source asset generators and added migration regression tests. This section describes commits made **after** the immutable v0.7.0 release tag; no new release tag is implied.
+
 ## 0.7.0 — RiceBowl identity and themed controls (3 November 2026)
 
 ### Desktop experience
