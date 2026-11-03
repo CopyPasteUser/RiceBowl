@@ -127,6 +127,7 @@ def _icons(name, palette):
             target, relative,
             '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
             + artwork + '</svg>\n',
+            heritage=True,
         )
     # Each historical desktop carries its own design-reviewed Start symbol.
     icon_names = {
