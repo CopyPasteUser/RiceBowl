@@ -46,6 +46,8 @@ class FrutigerAeroContractTests(unittest.TestCase):
         self.assertIn("Gtk.Image.new_from_gicon", grid)
         self.assertIn("self._launch(selected)", grid)
         self.assertIn("self._pin_context", grid)
+        self.assertIn("picture.set_pixel_size(48)", grid)
+        self.assertIn('profile in ("winxp", "aero", "frutiger")', source)
 
     def test_aqua_glass_css_is_profile_scoped(self):
         css = CSS["frutiger"]
@@ -56,6 +58,7 @@ class FrutigerAeroContractTests(unittest.TestCase):
                 self.assertIn(selector, css)
         for other in ("winxp", "winclassic", "chromeos"):
             self.assertNotIn(b"aqua-dashboard", CSS[other], msg=other)
+        self.assertIn(b"aqua-control-root", css)
 
     def test_native_gtk_gloss_and_window_frame_assets(self):
         css = (FRUTIGER_THEME / "gtk-3.0/gtk.css").read_text(encoding="utf-8")

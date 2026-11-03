@@ -316,6 +316,16 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
     from .aero_windows import WindowSnapshot, create_window_tracker, toggle_window_id
     from .installer import project_root
 
+    if profile == "frutiger":
+        # Use original Aqua icons in temporary previews/Xvfb as well as in an
+        # installed session; the GTK setting is local to this shell process.
+        icon_theme = Gtk.IconTheme.get_default()
+        if icon_theme is not None:
+            icon_theme.append_search_path(str(project_root() / "assets/icons"))
+        settings = Gtk.Settings.get_default()
+        if settings is not None:
+            settings.set_property("gtk-icon-theme-name", "RiceHub-Frutiger-Icons")
+
     class AeroShell(Gtk.Application):
         def __init__(self):
             app_id = (TEN_APP_ID if ten else
@@ -390,7 +400,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._smoke = "--smoke-test" in args
             self._capture_gallery = "--capture-gallery" in args
             self._capture_variant = "-1024" if (
-                profile in ("winxp", "aero") and os.environ.get("RICEBOWL_CAPTURE_SIZE") == "1024") else ""
+                profile in ("winxp", "aero", "frutiger") and os.environ.get("RICEBOWL_CAPTURE_SIZE") == "1024") else ""
             self.activate()
             if self._smoke:
                 GLib.timeout_add(850, self._smoke_check)
@@ -2073,6 +2083,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             menu.set_type_hint(Gdk.WindowTypeHint.UTILITY)
             menu.set_transient_for(self.bar)
             menu.set_keep_above(True)
+            menu.get_style_context().add_class("aqua-window")
             rect = self._desktop_rect()
             _x, _y, width, height = menu_geometry(
                 rect.x, rect.y, rect.width, rect.height,
@@ -2081,7 +2092,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             root = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8),
                                "aqua-dashboard")
             root.get_style_context().add_class("aero-menu-root")
-            root.set_border_width(11)
+            # CSS padding is painted. GTK border-width exposes an ugly opaque
+            # rectangular margin around rounded Aqua surfaces.
+            root.set_border_width(0)
             heading = self._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=11),
                                   "aqua-hero")
             logo = project_root() / "assets/ricebowl-frutiger-start.svg"
@@ -2460,7 +2473,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             # A non-resizable utility window collapses to its first header,
             # making the controls look like a clipped title strip.
             actions.set_resizable(True)
-            actions.set_default_size(330, 430)
+            actions.set_default_size(362 if profile == "frutiger" else 330,
+                                     560 if profile == "frutiger" else 430)
             actions.set_skip_taskbar_hint(True)
             actions.set_skip_pager_hint(True)
             actions.set_type_hint(Gdk.WindowTypeHint.UTILITY)
@@ -2470,6 +2484,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                                "ten-action-root" if tiles else "aero-control-root")
             if profile == "aero":
                 root.get_style_context().add_class("win7-control-root")
+            elif profile == "frutiger":
+                root.get_style_context().add_class("aqua-control-root")
             root.set_size_request(300, 265)
 
             title = self._class(Gtk.Label(label=heading, xalign=0), "aero-menu-heading")
@@ -2654,8 +2670,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 return
             self._hide_menu()
             rect = self._desktop_rect()
-            width = min(330, max(0, rect.width - 16))
-            height = min(430, max(0, rect.height - panel_height - 16))
+            width = min(362 if profile == "frutiger" else 330, max(0, rect.width - 16))
+            height = min(560 if profile == "frutiger" else 430,
+                         max(0, rect.height - panel_height - 16))
             if width < 235 or height < 250:
                 self._error("The display is too small for " + ("Action Center." if ten else "Control Panel."))
                 return
@@ -2723,10 +2740,12 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 button = self._class(Gtk.Button(), "aqua-app-tile")
                 content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
                 icon = app.get_icon()
-                content.pack_start(
-                    Gtk.Image.new_from_gicon(icon, Gtk.IconSize.DIALOG) if icon else
-                    self._icon("applications-other", Gtk.IconSize.DIALOG),
-                    False, False, 0)
+                # Custom Gio SVG/GFileIcon providers can report a very large
+                # intrinsic size. Keep the entire icon grid at real 48px.
+                picture = (Gtk.Image.new_from_gicon(icon, Gtk.IconSize.DIALOG) if icon
+                           else self._icon("applications-other", Gtk.IconSize.DIALOG))
+                picture.set_pixel_size(48)
+                content.pack_start(picture, False, False, 0)
                 label = Gtk.Label(label=title)
                 label.set_max_width_chars(16)
                 label.set_ellipsize(Pango.EllipsizeMode.END)

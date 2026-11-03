@@ -382,8 +382,9 @@ menu menuitem:hover { background: #000080; color: #fff; }
   border: 3px solid #e6ffff; border-radius: 27px;
   box-shadow: inset 0 2px #fff, inset 0 -2px #51c6d2,
     0 6px 18px rgba(5,86,112,.38);
-  color: #08506c;
+  color: #08506c; padding: 11px;
 }
+.aqua-window { background: #b6efe9; }
 .aqua-hero {
   background-image: linear-gradient(to bottom, #faffff, #d4fff1 44%, #9fe7e9);
   border: 1px solid #85d6d8; border-radius: 21px;
@@ -450,6 +451,37 @@ menu menuitem:hover { background: #000080; color: #fff; }
   background-image: linear-gradient(#fff, #d0ffe8 42%, #7ae7c8);
   border-color: #34a6b7; }
 .aqua-footer-action:disabled, .aqua-place:disabled { color: #4f848c; opacity: .72; }
+.aero-control-root.aqua-control-root {
+  background-image: linear-gradient(#fbffff 0%, #d7fff0 45%, #a0e8e7);
+  border: 2px solid #91d9df; border-radius: 23px; padding: 15px;
+  box-shadow: inset 0 2px #fff, 0 4px 12px rgba(7,97,122,.3);
+  color: #07536e;
+}
+.aqua-control-root .aero-menu-heading { color: #087293; font-size: 24px;
+  font-weight: bold; text-shadow: 0 1px #fff; }
+.aqua-control-root .aero-menu-sub { color: #227f8d; font-weight: bold; }
+.aqua-control-root .aero-control-quick {
+  background-image: linear-gradient(#fff, #d8fff5 43%, #8adfe4);
+  border: 1px solid #84ccda; border-radius: 13px; padding: 9px 11px;
+  color: #075775; box-shadow: inset 0 1px #fff;
+}
+.aqua-control-root .aero-control-quick:hover,
+.aqua-control-root .aero-control-quick:focus {
+  background-image: linear-gradient(#fff, #dfffdf 45%, #83e2c0);
+  border-color: #239bb8;
+}
+.aqua-control-root .rice-hardware-panel {
+  background-image: linear-gradient(rgba(255,255,255,.9), rgba(189,251,228,.85));
+  border: 1px solid #8bd3d6; border-radius: 16px; padding: 11px;
+  box-shadow: inset 0 1px #fff;
+}
+.aqua-control-root .rice-hardware-panel scale trough {
+  background: #c1eeec; border: 1px solid #82cbd3; border-radius: 9px;
+}
+.aqua-control-root .rice-hardware-panel scale highlight,
+.aqua-control-root .rice-hardware-panel levelbar block.filled {
+  background-image: linear-gradient(#f7ffbb, #8cdd47); border-radius: 7px;
+}
 """,
 }
 
