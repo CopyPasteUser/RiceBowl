@@ -143,5 +143,35 @@ class AssetUpgradeTests(unittest.TestCase):
                 install_bundle(src, dst, repair=True)
 
 
+class ScopedRepairTests(unittest.TestCase):
+    def test_repair_ten_dark_leaves_custom_ten_light_untouched(self):
+        from macrice.rice import repair_assets
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "source"
+            data = root / "data"
+            dark = "RiceHub-Ten-Dark"
+            light = "RiceHub-Ten-Light"
+            icons = "RiceHub-Ten-Penguin"
+            for name in (dark, light):
+                path = source / "assets/themes" / name
+                path.mkdir(parents=True)
+                (path / "gtk.css").write_text("fresh:" + name)
+                target = data / "themes" / name
+                target.mkdir(parents=True)
+                (target / "gtk.css").write_text("modified:" + name)
+            icon_dir = source / "assets/icons" / icons
+            icon_dir.mkdir(parents=True)
+            (icon_dir / "index.theme").write_text("[Icon Theme]\\nName=RiceBowl\\n")
+            with mock.patch("macrice.rice.os.geteuid", return_value=1000):
+                archives = repair_assets("ten-dark", data_root=data, source_root=source)
+            self.assertEqual(len(archives), 1)
+            self.assertEqual((data / "themes" / dark / "gtk.css").read_text(), "fresh:" + dark)
+            self.assertEqual((data / "themes" / light / "gtk.css").read_text(), "modified:" + light)
+            self.assertEqual((archives[0] / "gtk.css").read_text(), "modified:" + dark)
+            self.assertTrue((data / "icons" / icons / "index.theme").is_file())
+
+
 if __name__ == "__main__":
     unittest.main()
