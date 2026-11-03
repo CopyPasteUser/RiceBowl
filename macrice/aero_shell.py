@@ -666,7 +666,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 return
             classic = profile == "winclassic"
             menu = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
-            menu.set_title("RiceHub " + (heritage.name if heritage else "Aero") + " Start")
+            menu.set_title("RiceBowl " + (heritage.name if heritage else "Aero") + " Start")
             menu.set_decorated(False)
             menu.set_resizable(False)
             menu.set_skip_taskbar_hint(True)
@@ -685,7 +685,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 # a narrow program list with a vertical branded side rail.
                 badge = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL), "classic-brand")
                 badge.set_size_request(38, -1)
-                brand = self._class(Gtk.Label(label="RiceHub   98 / 2000"), "classic-brand-label")
+                brand = self._class(Gtk.Label(label="RiceBowl   98 / 2000"), "classic-brand-label")
                 brand.set_angle(90)
                 badge.pack_end(brand, False, False, 18)
                 body.pack_start(badge, False, False, 0)
@@ -755,7 +755,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
         def _create_ten_menu(self):
             """Real application list and pinned app tiles, with shared search/launch logic."""
             menu = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
-            menu.set_title("RiceHub " + (heritage.name if heritage else "Windows 10") + " Launcher")
+            menu.set_title("RiceBowl " + (heritage.name if heritage else "Windows 10") + " Launcher")
             menu.set_decorated(False)
             menu.set_resizable(False)
             menu.set_skip_taskbar_hint(True)
@@ -862,7 +862,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             """Profile-aware controls; never simulate state-changing toggles."""
             actions = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
             heading = heritage.control_heading if heritage else ("Action Center" if ten else "Aero Control Panel")
-            actions.set_title("RiceHub " + heading)
+            actions.set_title("RiceBowl " + heading)
             actions.set_decorated(False)
             actions.set_resizable(False)
             actions.set_skip_taskbar_hint(True)
