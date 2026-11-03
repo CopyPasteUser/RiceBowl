@@ -134,5 +134,27 @@ class HardwareControlTests(unittest.TestCase):
                 set_sound_mute(True)
 
 
+class LauncherSeparationTests(unittest.TestCase):
+    def test_windows10_start_does_not_call_chromeos_only_widgets(self):
+        source = (project_root() / "macrice/aero_shell.py").read_text()
+        beginning = source.index("def _create_ten_menu(self):")
+        ending = source.index("def _create_chrome_launcher(self):")
+        ten = source[beginning:ending]
+        self.assertNotIn("pinned_label", ten)
+        self.assertNotIn("scroller.set_no_show_all(True)", ten)
+        chrome = source[ending:source.index("def _render_ten_tiles(self):")]
+        self.assertIn("pinned_label", chrome)
+        self.assertIn("self.tile_grid.set_visible", chrome)
+
+    def test_control_panel_is_scrollable_and_resizable(self):
+        source = (project_root() / "macrice/aero_shell.py").read_text()
+        start = source.index("def _create_actions(self):")
+        end = source.index("def _action_key(self,", start)
+        settings = source[start:end]
+        self.assertIn("actions.set_resizable(True)", settings)
+        self.assertIn("actions_scroll.set_min_content_height(260)", settings)
+        self.assertIn("Gtk.ScrolledWindow()", settings)
+
+
 if __name__ == "__main__":
     unittest.main()
