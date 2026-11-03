@@ -53,6 +53,9 @@ jobs:
           # framed Control Panel, both fitting a 1024x768 XFWM4 desktop.
           RICEBOWL_CAPTURE_SIZE=1024 timeout 35s dbus-run-session -- xvfb-run -a -s '-screen 0 1024x768x24' /usr/bin/python3 screenshots/capture_win7_panel.py
           /usr/bin/python3 -c 'from pathlib import Path; import struct; fs=sorted(Path("screenshots").glob("ricebowl-aero-*-0.9.1-1024.png")); assert len(fs)==2, "Aero small-screen captures missing"; assert all(struct.unpack(">II", p.read_bytes()[16:24])==(1024,768) for p in fs), "Aero 1024x768 capture invalid"'
+          # The actual Thunar Explorer window must fit the same compact screen.
+          RICEBOWL_CAPTURE_SIZE=1024 timeout 35s dbus-run-session -- xvfb-run -a -s '-screen 0 1024x768x24' /usr/bin/python3 screenshots/capture_native_workspace.py aero
+          /usr/bin/python3 -c 'from pathlib import Path; import struct; p=Path("screenshots/ricebowl-aero-workspace-0.9.1-1024.png"); b=p.read_bytes(); assert len(b)>30000 and struct.unpack(">II", b[16:24])==(1024,768), "Aero 1024x768 Thunar window invalid"'
           # Aqua World must also fit on older 1024x768 laptops while preserving tab/search controls.
           RICEBOWL_CAPTURE_SIZE=1024 timeout 24s dbus-run-session -- xvfb-run -a -s '-screen 0 1024x768x24' /usr/bin/python3 -c 'from macrice.aero_shell import run; raise SystemExit(run(["ricebowl-frutiger-shell", "--capture-gallery"], profile="frutiger"))'
           /usr/bin/python3 -c 'from pathlib import Path; import struct; fs=sorted(Path("screenshots").glob("ricebowl-frutiger-*-0.9.1-1024.png")); assert len(fs)==2, "Frutiger small-screen captures missing"; assert all(struct.unpack(">II", p.read_bytes()[16:24])==(1024,768) for p in fs), "Frutiger 1024x768 capture invalid"'

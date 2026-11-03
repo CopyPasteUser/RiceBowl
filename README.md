@@ -85,11 +85,10 @@ Superseded screenshots are excluded.
 
 [Current Control Panels and six actual file-manager workspaces](screenshots/current/) · [CI full-resolution captures](https://github.com/CopyPasteUser/RiceBowl/actions/workflows/ci.yml)
 
-The Aero Start, Control Panel and Thunar screenshots come from the verified
-second-pass XFWM4 capture. Other rice images retain their last verified run;
-see [capture provenance](screenshots/current/README.md).
-The latest Explorer-specific Thunar CSS and file icons are **not yet represented**
-by the Aero workspace image: it remains the previous verified X11 capture.
+The Aero Thunar screenshot now comes from the passing **Explorer-refinement**
+X11 capture; Start and Control Panel remain from the verified previous
+fidelity pass. Other rice images retain their last verified run; see
+[capture provenance](screenshots/current/README.md).
 
 | Windows 7: actual Thunar + XFWM4 | ChromeOS: actual Thunar + XFWM4 |
 | --- | --- |

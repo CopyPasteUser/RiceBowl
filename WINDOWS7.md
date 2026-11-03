@@ -5,13 +5,12 @@ original RiceBowl Linux artwork, not Microsoft binaries, icons or wallpaper.
 
 ## Screenshots & coverage
 
-These are real XFWM4/GTK3 desktop captures from the passing virtual-X11 CI run
-[`41678284256`](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41678284256).
-They include the second Control Panel/Superbar fidelity pass. The same pipeline
-also checks **1024×768** placement. Owner Mint hardware verification is separate.
-The newer Seven-specific Explorer/Thunar styling is implemented in the source
-but is **not yet shown** in these earlier verified captures. It requires a new
-real X11 capture before the gallery can be replaced.
+These are real XFWM4/GTK3 desktop captures. Start and Control Panel come from
+passing CI run [`41678284256`](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41678284256);
+the **new Explorer-style Thunar workspace** comes from passing native CI run
+[`41685514010`](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41685514010).
+The pipeline also checks **1024×768** Start/Control Panel placement. Owner Mint
+hardware verification is separate.
 
 ### Desktop and taskbar
 
@@ -96,6 +95,8 @@ macrice rice restore             # Restore previous rice snapshot
 Use `macrice aero-shell` to open/toggle Start and `macrice aero-shell --quit` to stop the resident shell. The ordinary installer does **not** activate Aero, replace XFCE Panel or alter your wallpaper.
 
 ### Thunar / Explorer refinement
+
+![Verified Seven-style Thunar window under XFWM4](screenshots/current/aero-workspace.webp)
 
 Seven hides the native Thunar menu bar, while other rice families restore its
 visibility. The genuine pathbar, native navigation buttons, search, shortcuts

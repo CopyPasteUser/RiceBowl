@@ -43,7 +43,7 @@ class NativeWorkspaceGalleryTests(unittest.TestCase):
         for needle in ("--capture-workspace", '"thunar", fixture',
                        '"xdotool", "search", "--onlyvisible", "--name", "RiceBowl-Preview"',
                        '"thunar" in (window.get_class_group().get_id() or "").casefold()',
-                       "self._capture_screen(f\"ricebowl-{profile}-workspace-0.9.1.png\")"):
+                       "self._capture_screen(f\"ricebowl-{profile}-workspace-0.9.1{compact}.png\")"):
             self.assertIn(needle, source)
 
 

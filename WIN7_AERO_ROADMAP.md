@@ -7,7 +7,7 @@ native Xvfb CI in pull request #15. Physical Mint/XFCE acceptance remains open. 
 native Xvfb/GTK/XFWM4 CI matrix in PR #22 and received fresh gallery images;
 physical Linux Mint acceptance remains open.
 
-## Explorer fidelity refinement (implemented locally; native visual QA pending)
+## Explorer fidelity refinement (implemented; native XFWM4 CI green)
 
 - [x] Check original Microsoft Windows 7 Explorer behavior and Xfce's documented
   Thunar layout, toolbar, breadcrumb and configuration capabilities.
@@ -22,13 +22,17 @@ physical Linux Mint acceptance remains open.
 - [x] Migrate the 0.9.1 scoped Thunar CSS block without changing unrelated
   GTK CSS or overwriting personalized managed rules.
 - [x] Add unit/integration checks, icon XML and GdkPixbuf decoding validation.
-- [ ] Inspect real XFWM4/Thunar captures at 1600×900 and 1024×768; replace
-  earlier gallery screenshots only after genuine X11 capture verification.
+- [x] Inspect the real 1600×900 XFWM4/Thunar capture from green
+  [CI run 41685514010](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41685514010)
+  and replace only the verified Aero workspace image in the current gallery.
+- [ ] Inspect a separate real 1024×768 Thunar workspace capture. The CI run
+  already verified 1024×768 Start/Control Panel but captures Thunar at 1600×900.
 - [ ] Confirm on the owner's Mint XFCE desktop that the toolbar's native menu
   or Ctrl+M/F10 still opens the hidden menu.
 
-The current development runner cannot bind an X11 socket, so native visual QA
-must use an authorized external CI run or the owner's laptop. CSS cannot add
+The current development runner cannot bind an X11 socket; the external native
+CI supplied the verified workspace capture. Physical laptop QA remains open.
+CSS cannot add
 the original Explorer Libraries, bottom details/preview pane, or contextual
 Organize/New folder toolbar to Thunar. No nonfunctional imitation buttons
 are inserted.
