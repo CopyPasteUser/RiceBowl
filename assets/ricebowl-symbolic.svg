@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+<title>RiceBowl</title>
+<defs><linearGradient id="b" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#64b0ff"/><stop offset="1" stop-color="#2659ba"/></linearGradient><linearGradient id="r" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff"/><stop offset="1" stop-color="#d9e8ff"/></linearGradient></defs>
+<path d="M49 16c-8 12 8 15 0 25m21-27c-9 13 8 16 0 28" fill="none" stroke="#97b4d4" stroke-width="5" stroke-linecap="round"/>
+<path d="M24 62c1-23 16-32 40-32s39 9 40 32" fill="url(#r)" stroke="#42658a" stroke-width="3"/>
+<path d="M20 62h88c-2 31-18 47-44 47S22 93 20 62Z" fill="url(#b)" stroke="#193663" stroke-width="5" stroke-linejoin="round"/>
+<path d="M29 76q9-9 18 0t18 0t18 0t16 0M34 93q9-9 18 0t18 0t19 0" fill="none" stroke="#cde8ff" stroke-width="5" opacity=".85"/>
+<path d="M48 112h32" stroke="#193663" stroke-width="6" stroke-linecap="round"/>
+</svg>
