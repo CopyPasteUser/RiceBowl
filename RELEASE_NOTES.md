@@ -20,6 +20,7 @@ RiceBowl 0.8.0 is an XFCE/X11 pre-release centered on **six genuinely different 
 - The prior `Existing customized theme conflicts with RiceBowl` bug caused by routine official asset updates is addressed with a **version-aware migration**. Exact official 0.6, 0.7.0 and 0.7.1 assets are verified against bundled known Git hashes and upgraded with a dated full backup.
 - Unknown modifications still cannot be silently overwritten. The Hub's **Repair local theme assets…** action or `macrice rice repair-assets ten-dark` deliberately backs up and replaces only that Rice's themes/icons. No current desktop setting is switched by repair.
 - Reject symlinks and unmanaged asset paths; existing D-Bus IDs, theme directory names, old `ricehub` and `macrice` commands remain compatible.
+- Explicit repair of Windows 10 Dark or Light affects **only the selected variant plus its shared icon pack**; edits to the other variant remain untouched.
 
 ## Verification and remaining gates
 
