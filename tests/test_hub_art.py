@@ -1,8 +1,9 @@
-"""Pixels used in the native gallery can be sized without cairo.Context."""
+"""Current desktop previews fit without cairo.Context or WebP loaders."""
 
 import unittest
+from pathlib import Path
 
-from macrice.hub_art import aspect_fill
+from macrice.hub_art import PREVIEW_FILES, aspect_contain, aspect_fill
 
 
 class PreviewArtTests(unittest.TestCase):
@@ -21,6 +22,33 @@ class PreviewArtTests(unittest.TestCase):
         for size in ((0, 10), (40, -1)):
             with self.assertRaises(ValueError):
                 aspect_fill(original, *size, GdkPixbuf.InterpType.BILINEAR)
+
+    def test_captured_desktops_are_shipped_in_gtk_compatible_format(self):
+        root = Path(__file__).resolve().parents[1]
+        self.assertEqual(len(PREVIEW_FILES), 6)
+        for name in PREVIEW_FILES.values():
+            path = root / "assets/hub-previews" / name
+            self.assertTrue(path.is_file(), name)
+            self.assertGreater(path.stat().st_size, 10_000)
+            self.assertEqual(path.suffix, ".jpg")
+
+    def test_aspect_contain_does_not_crop_desktop_controls(self):
+        try:
+            import gi
+            gi.require_version("GdkPixbuf", "2.0")
+            from gi.repository import GdkPixbuf
+        except (ImportError, ValueError):
+            self.skipTest("PyGObject not installed")
+        source = Path(__file__).resolve().parents[1] / "assets/hub-previews/frutiger.jpg"
+        image = GdkPixbuf.Pixbuf.new_from_file(str(source))
+        for width, height in ((640, 245), (310, 245), (940, 470)):
+            fitted = aspect_contain(image, width, height, GdkPixbuf.InterpType.BILINEAR)
+            self.assertLessEqual(fitted.get_width(), width)
+            self.assertLessEqual(fitted.get_height(), height)
+            self.assertAlmostEqual(fitted.get_width() / fitted.get_height(),
+                                   image.get_width() / image.get_height(), delta=0.015)
+        with self.assertRaises(ValueError):
+            aspect_contain(image, 0, 500, GdkPixbuf.InterpType.BILINEAR)
 
 
 if __name__ == "__main__":

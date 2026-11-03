@@ -1,8 +1,7 @@
-"""RiceBowl: a native, on-demand XFCE rice gallery and recovery workbench.
+"""RiceBowl's compact GTK3 rice selector and recovery workbench.
 
-No extra daemon, browser, compositor, root privileges or hidden profile writes.
-The working macOS implementation is shared with MacRice. Windows 7 and
-Windows 10 also offer real, user-local XFCE/X11 appearance profiles.
+The catalog previews actual virtual-X11 captures of installable desktop styles.
+No extra daemon, browser, compositor or root privileges are required.
 """
 
 from __future__ import annotations
@@ -12,52 +11,52 @@ import threading
 import traceback
 from pathlib import Path
 
-from .hub_art import aspect_fill
+from .hub_art import FAMILY_ICONS, PREVIEW_FILES, aspect_contain, aspect_fill
 from .hub_catalog import FAMILIES, FAMILY_BY_KEY, recent_backups, search_families
 
 
-HUB_VERSION = "0.9.1"
-
-# A restrained native palette. All GTK CSS colors and font choices live here.
+# The hub has no independent release number: the package tag can lag main.
+# These are the canonical hub-only runtime visual tokens.
 TOKENS = {
-    "window": "#141b25", "sidebar": "#101721", "surface": "#1c2734",
-    "surface_alt": "#233142", "hover": "#293c51", "active": "#304a64",
-    "border": "#344658", "text": "#f3f7fc", "muted": "#a7b8ca",
-    "quiet": "#7f95ad", "accent": "#9bcafa", "accent_ink": "#17283a",
+    "window": "#121b26", "sidebar": "#0e1520", "surface": "#1b2837",
+    "surface_alt": "#223449", "hover": "#2a4057", "active": "#25425f",
+    "border": "#31485e", "text": "#f4f8fc", "muted": "#bdcad8",
+    "quiet": "#91a9bf", "accent": "#9ad3ff", "accent_ink": "#102437",
     "success": "#a2d7bf", "warning": "#eec691", "error": "#ffaaa5",
-    "preview_veil": "rgba(16,23,33,.91)", "font": "Inter, sans-serif",
+    "preview_veil": "#1b293a", "font": "Cantarell, Inter, sans-serif",
 }
 
 CSS = """/* RiceBowl native GTK3 app screen — measured, accessible, low-motion. */
 #ricebowl-window {{ background: {window}; color: {text}; }}
 #ricebowl-sidebar {{ background: {sidebar}; border-right: 1px solid {border}; }}
 #ricebowl-content {{ background: {window}; }}
-.hub-brand {{ color: {text}; font-family: {font}; font-size: 20px; font-weight: 700; }}
+.hub-brand {{ color: {text}; font-family: {font}; font-size: 21px; font-weight: 700; }}
 .hub-overline {{ color: {quiet}; font-size: 11px; }}
-.hub-header {{ color: {text}; font-family: {font}; font-size: 25px; font-weight: 700; }}
+.hub-header {{ color: {text}; font-family: {font}; font-size: 24px; font-weight: 700; }}
 .hub-section {{ color: {text}; font-family: {font}; font-size: 16px; font-weight: 700; }}
-.hub-title {{ color: {text}; font-family: {font}; font-size: 14px; font-weight: bold; }}
-.hub-body {{ color: {muted}; font-family: {font}; font-size: 12px; }}
-.hub-hint {{ color: {quiet}; font-family: {font}; font-size: 11px; }}
+.hub-title {{ color: {text}; font-family: {font}; font-size: 13px; font-weight: 700; }}
+.hub-body {{ color: {muted}; font-family: {font}; font-size: 13px; }}
+.hub-hint {{ color: {quiet}; font-family: {font}; font-size: 12px; }}
 .hub-good {{ color: {success}; font-size: 11px; font-weight: bold; }}
 .hub-soon {{ color: {warning}; font-size: 11px; font-weight: bold; }}
 .hub-error {{ color: {error}; font-size: 12px; }}
 .hub-metric {{ color: {text}; font-family: {font}; font-size: 12px; }}
 .hub-status {{ color: {muted}; font-size: 11px; }}
-.hub-card {{ background: {surface}; border: 1px solid {border}; border-radius: 13px; padding: 13px; }}
-.hub-info {{ background: {surface_alt}; border: 1px solid {border}; border-radius: 11px; padding: 13px; }}
-.hub-preview-footer {{ background: {preview_veil}; padding: 14px 17px; }}
-.hub-preview-frame {{ background: {surface_alt}; border: 1px solid {border}; border-radius: 14px; }}
+.hub-card {{ background: {surface}; border: 1px solid {border}; border-radius: 11px; padding: 12px; }}
+.hub-info {{ background: {surface_alt}; border: 1px solid {border}; border-radius: 10px; padding: 11px; }}
+.hub-preview-footer {{ background: {preview_veil}; padding: 12px 15px; }}
+.hub-preview-frame {{ background: {sidebar}; border: 1px solid {border}; border-radius: 11px; }}
 .hub-placeholder {{ color: {muted}; font-family: {font}; font-size: 14px; }}
 button.hub-nav, button.hub-card-button, button.hub-action, button.hub-primary {{
   background-image: none; box-shadow: none; border-radius: 9px; color: {text};
-  border: 1px solid transparent; padding: 9px 12px; min-height: 34px;
+  border: 1px solid transparent; padding: 8px 11px; min-height: 32px;
 }}
 button.hub-nav {{ background-color: transparent; }}
 button.hub-nav:hover, button.hub-card-button:hover {{ background: {hover}; }}
-button.hub-nav.hub-selected {{ background: {active}; color: {text}; }}
-button.hub-card-button {{ background: {surface}; border-color: {border}; padding: 14px; }}
-button.hub-card-button.hub-selected {{ border-color: {accent}; background: {surface_alt}; }}
+button.hub-nav.hub-selected {{ background: {active}; color: {text}; border-left: 3px solid {accent}; }}
+button.hub-card-button {{ background: {surface}; border-color: {border}; padding: 9px 10px; border-radius: 9px; }}
+button.hub-card-button.hub-selected {{ border-color: {accent}; background: {active}; }}
+button.hub-card-button:active, button.hub-nav:active {{ background: {active}; }}
 button.hub-action {{ background: {surface_alt}; border-color: {border}; }}
 button.hub-action:hover {{ background: {hover}; }}
 button.hub-primary {{ background: {accent}; color: {accent_ink}; font-weight: bold; }}
@@ -111,7 +110,8 @@ def run() -> int:
         gi.require_version("Gtk", "3.0")
         gi.require_version("Gdk", "3.0")
         gi.require_version("GdkPixbuf", "2.0")
-        from gi.repository import Gdk, GdkPixbuf, Gio, GLib, Gtk
+        gi.require_version("Pango", "1.0")
+        from gi.repository import Gdk, GdkPixbuf, Gio, GLib, Gtk, Pango
     except (ImportError, ValueError) as exc:
         print(f"RiceBowl needs GTK3/PyGObject: {exc}", file=__import__("sys").stderr)
         return 1
@@ -121,9 +121,6 @@ def run() -> int:
     from .installer import InstallOptions, install, project_root
     from .performance import PROFILES as PERFORMANCE_PROFILES, apply_profile, measure_processes
     from .rice import STYLES, apply, plan, restore
-    from .windows7_proto import install_css as install_windows7_css, teaser as windows7_teaser, show_dialog as show_windows7
-    from .windows10_proto import install_css as install_windows10_css, teaser as windows10_teaser, show_dialog as show_windows10
-    from .concept_rices import install_css as install_concepts_css, teaser as concept_teaser, show_dialog as show_concept
 
     def cls(widget, name):
         widget.get_style_context().add_class(name)
@@ -151,8 +148,8 @@ def run() -> int:
         def __init__(self, application):
             super().__init__(application=application, title="RiceBowl — XFCE Rices")
             self.set_name("ricebowl-window")
-            self.set_default_size(1060, 720)
-            self.set_size_request(760, 510)
+            self.set_default_size(1040, 680)
+            self.set_size_request(760, 500)
             self.set_position(Gtk.WindowPosition.CENTER)
             self._busy = False
             self._selected = "macos"
@@ -160,7 +157,7 @@ def run() -> int:
             self._nav_buttons = {}
             self._family_buttons = {}
             self._component_buttons = {}
-            self._wallpaper_cache = {}
+            self._image_cache = {}
             self._preview_style = "night"
             self._preview_rendered = None
             try:
@@ -182,7 +179,6 @@ def run() -> int:
             self._build_components()
             self._build_performance()
             self._build_backups()
-            self._build_roadmap()
 
             footer = cls(horizontal(9), "hub-info")
             footer.set_margin_start(20)
@@ -197,13 +193,13 @@ def run() -> int:
             self._refresh_system()
 
         def _build_sidebar(self, layout):
-            side = vertical(16)
+            side = vertical(15)
             side.set_name("ricebowl-sidebar")
-            side.set_size_request(206, -1)
-            side.set_margin_top(23)
-            side.set_margin_bottom(18)
-            side.set_margin_start(14)
-            side.set_margin_end(14)
+            side.set_size_request(180, -1)
+            side.set_margin_top(20)
+            side.set_margin_bottom(16)
+            side.set_margin_start(11)
+            side.set_margin_end(11)
             layout.pack_start(side, False, False, 0)
 
             brand = horizontal(11)
@@ -216,17 +212,16 @@ def run() -> int:
                     pass
             title = vertical(2)
             title.pack_start(label("RiceBowl", "hub-brand"), False, False, 0)
-            title.pack_start(label("XFCE desktop studio", "hub-hint"), False, False, 0)
+            title.pack_start(label("Desktop styles", "hub-hint"), False, False, 0)
             brand.pack_start(title, True, True, 0)
             side.pack_start(brand, False, False, 6)
 
             for key, name, symbol in (
-                ("discover", "Discover rices", "view-grid-symbolic"),
-                ("desktop", "My desktop", "video-display-symbolic"),
-                ("components", "Components", "applications-system-symbolic"),
+                ("discover", "Rices", "view-grid-symbolic"),
+                ("desktop", "Current desktop", "video-display-symbolic"),
+                ("components", "macOS tools", "applications-system-symbolic"),
                 ("performance", "Performance", "utilities-system-monitor-symbolic"),
-                ("backups", "Backups & restore", "document-revert-symbolic"),
-                ("roadmap", "What's next", "view-list-symbolic"),
+                ("backups", "Recovery", "document-revert-symbolic"),
             ):
                 button = cls(Gtk.Button(), "hub-nav")
                 contents = horizontal(11)
@@ -240,17 +235,17 @@ def run() -> int:
                 self._nav_buttons[key] = button
 
             side.pack_start(Gtk.Box(), True, True, 0)
-            side.pack_start(label(f"RiceBowl {HUB_VERSION}", "hub-hint"), False, False, 0)
-            side.pack_start(label("Locally managed. No telemetry.", "hub-hint"), False, False, 0)
+            side.pack_start(label("7 styles · XFCE/X11", "hub-hint"), False, False, 0)
+            side.pack_start(label("Local · Reversible", "hub-hint"), False, False, 0)
 
         def _page(self, key, title, intro):
             scroll = Gtk.ScrolledWindow()
             scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-            body = vertical(18)
+            body = vertical(14)
             for side in ("start", "end"):
-                getattr(body, "set_margin_" + side)(28)
-            body.set_margin_top(27)
-            body.set_margin_bottom(30)
+                getattr(body, "set_margin_" + side)(22)
+            body.set_margin_top(22)
+            body.set_margin_bottom(24)
             body.pack_start(label(title, "hub-header"), False, False, 0)
             body.pack_start(label(intro, "hub-body", True), False, False, 0)
             scroll.add(body)
@@ -258,52 +253,65 @@ def run() -> int:
             return body
 
         def _build_discover(self):
-            body = self._page("discover", "Choose your desktop", "One lightweight XFCE system, different familiar interfaces.")
+            body = self._page("discover", "Choose a rice", "Seven installable desktop styles. Your Linux apps stay yours.")
+            workspace = horizontal(14)
+            body.pack_start(workspace, False, False, 0)
+
+            browser = vertical(9)
+            browser.set_size_request(200, -1)
+            workspace.pack_start(browser, False, False, 0)
+            browser.pack_start(label("DESKTOP STYLES", "hub-overline"), False, False, 0)
+            finder = horizontal(5)
+            browser.pack_start(finder, False, False, 0)
+            self.search = Gtk.SearchEntry()
+            self.search.set_placeholder_text("Filter styles")
+            self.search.get_accessible().set_name("Filter desktop styles")
+            self.search.connect("search-changed", self._filter_families)
+            finder.pack_start(self.search, True, True, 0)
+            self.search_clear = cls(Gtk.Button.new_from_icon_name("edit-clear-symbolic", Gtk.IconSize.MENU), "hub-action")
+            self.search_clear.set_tooltip_text("Clear style filter")
+            self.search_clear.get_accessible().set_name("Clear style filter")
+            self.search_clear.connect("clicked", self._clear_filter)
+            self.search_clear.set_no_show_all(True)
+            finder.pack_start(self.search_clear, False, False, 0)
+
+            self.gallery = Gtk.FlowBox()
+            self.gallery.set_selection_mode(Gtk.SelectionMode.NONE)
+            self.gallery.set_min_children_per_line(1)
+            self.gallery.set_max_children_per_line(1)
+            self.gallery.set_row_spacing(6)
+            browser.pack_start(self.gallery, False, False, 0)
+            for family in FAMILIES:
+                self._family_card(family)
+            self.empty = label("No matching style. Clear the filter to see all seven.", "hub-hint", True)
+            self.empty.set_no_show_all(True)
+            browser.pack_start(self.empty, False, False, 0)
+
+            details = vertical(11)
+            workspace.pack_start(details, True, True, 0)
             self.preview = cls(vertical(0), "hub-preview-frame")
-            body.pack_start(self.preview, False, False, 0)
-            self.preview_stack = Gtk.Stack()
-            self.preview_stack.set_transition_type(Gtk.StackTransitionType.NONE)
+            details.pack_start(self.preview, False, False, 0)
             canvas = Gtk.DrawingArea()
-            canvas.set_size_request(-1, 190)
-            canvas.connect("size-allocate", self._resize_wallpaper)
+            canvas.set_size_request(-1, 245)
+            canvas.connect("size-allocate", self._resize_preview)
+            self.preview_canvas = canvas
             image_layer = Gtk.Overlay()
             image_layer.add(canvas)
             self.preview_image = Gtk.Image()
-            self.preview_image.set_halign(Gtk.Align.FILL)
-            self.preview_image.set_valign(Gtk.Align.FILL)
+            self.preview_image.set_halign(Gtk.Align.CENTER)
+            self.preview_image.set_valign(Gtk.Align.CENTER)
             image_layer.add_overlay(self.preview_image)
-            self.aero_preview_bar = cls(horizontal(8), "w7-taskbar")
-            self.aero_preview_bar.set_valign(Gtk.Align.END)
-            aero_icon = Gtk.Image.new_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_scale(
-                str(project_root() / "assets/aero-penguin.svg"), 25, 25, True))
-            self.aero_preview_bar.pack_start(aero_icon, False, False, 0)
-            self.aero_preview_bar.pack_start(label("Start    Files    Browser    Terminal", "w7-clock"), False, False, 0)
-            image_layer.add_overlay(self.aero_preview_bar)
-            self.preview_stack.add_named(image_layer, "macos")
-            install_windows7_css(Gtk, Gdk)
-            self.preview_stack.add_named(windows7_teaser(Gtk), "windows7")
-            install_windows10_css(Gtk, Gdk)
-            self.preview_stack.add_named(windows10_teaser(Gtk), "windows10")
-            install_concepts_css(Gtk, Gdk)
-            for concept_key in ("winxp", "winclassic", "chromeos", "frutiger"):
-                self.preview_stack.add_named(concept_teaser(Gtk, concept_key), concept_key)
-            placeholder = vertical(9)
-            placeholder.set_valign(Gtk.Align.CENTER)
-            placeholder.set_halign(Gtk.Align.CENTER)
-            placeholder.set_size_request(-1, 190)
-            placeholder.pack_start(label("Preview in development", "hub-section"), False, False, 0)
-            placeholder.pack_start(label("This Rice is not available for installation yet.", "hub-placeholder"), False, False, 0)
-            self.preview_stack.add_named(placeholder, "future")
-            self.preview.pack_start(self.preview_stack, False, False, 0)
-            summary = cls(vertical(4), "hub-preview-footer")
-            self.preview_title = label("Aurora collection", "hub-section")
+            self.preview.pack_start(image_layer, False, False, 0)
+            summary = cls(vertical(5), "hub-preview-footer")
+            self.preview_title = label("macOS · Aurora", "hub-section")
             self.preview_description = label("", "hub-body", True)
+            self.preview_caption = label("Wallpaper preview · macOS components", "hub-hint")
             summary.pack_start(self.preview_title, False, False, 0)
             summary.pack_start(self.preview_description, False, False, 0)
+            summary.pack_start(self.preview_caption, False, False, 0)
             self.preview.pack_start(summary, False, False, 0)
 
-            controls = horizontal(10)
-            body.pack_start(controls, False, False, 0)
+            details.pack_start(label("APPEARANCE", "hub-overline"), False, False, 0)
             self.style_picker = Gtk.ComboBoxText()
             self._rebuilding_picker = False
             for key in FAMILY_BY_KEY["macos"].styles:
@@ -312,65 +320,39 @@ def run() -> int:
             self.style_picker.set_active_id("night")
             self.style_picker.set_tooltip_text("Choose a complete desktop appearance")
             self.style_picker.connect("changed", self._on_style_changed)
-            controls.pack_start(self.style_picker, True, True, 0)
-            self.plan_button = action("Check requirements", lambda _: self._plan_selected())
-            controls.pack_start(self.plan_button, False, False, 0)
+            details.pack_start(self.style_picker, False, False, 0)
+            controls = horizontal(9)
+            details.pack_start(controls, False, False, 0)
+            self.plan_button = action("Check", lambda _: self._plan_selected())
+            self.plan_button.set_tooltip_text("Read-only requirements check before applying")
+            controls.pack_start(self.plan_button, True, True, 0)
             self.apply_button = action("Apply rice", lambda _: self._plan_selected(apply_after=True), True)
-            controls.pack_start(self.apply_button, False, False, 0)
-            self.prototype_button = action("Explore read-only preview", lambda _: self._show_prototype())
-            self.prototype_button.set_no_show_all(True)
-            controls.pack_start(self.prototype_button, False, False, 0)
-            repair_row = horizontal(9)
-            self.repair_button = action("Repair local theme assets…",
-                                        lambda _: self._repair_selected())
-            self.repair_button.set_tooltip_text(
-                "Back up and replace only the selected Rice's theme and icon files. "
-                "Your desktop settings are not changed.")
-            repair_row.pack_start(self.repair_button, False, False, 0)
-            repair_row.pack_start(label(
-                "Only needed when an older or customized theme blocks Apply.",
-                "hub-hint"), False, False, 0)
-            body.pack_start(repair_row, False, False, 0)
-            self.future_note = label("Concept preview only — no settings are changed.", "hub-soon")
-            self.future_note.set_no_show_all(True)
-            body.pack_start(self.future_note, False, False, 0)
-
-            finder = horizontal(10)
-            body.pack_start(finder, False, False, 0)
-            self.search = Gtk.SearchEntry()
-            self.search.set_placeholder_text("Find a desktop style")
-            self.search.get_accessible().set_name("Search desktop styles")
-            self.search.connect("search-changed", self._filter_families)
-            finder.pack_start(self.search, True, True, 0)
-
-            self.gallery = Gtk.FlowBox()
-            self.gallery.set_selection_mode(Gtk.SelectionMode.NONE)
-            self.gallery.set_min_children_per_line(1)
-            self.gallery.set_max_children_per_line(2)
-            self.gallery.set_column_spacing(11)
-            self.gallery.set_row_spacing(11)
-            body.pack_start(self.gallery, False, False, 0)
-            for family in FAMILIES:
-                self._family_card(family)
-            self.empty = label("Nothing matches. Try a different name or filter.", "hub-hint")
-            self.empty.set_no_show_all(True)
-            body.pack_start(self.empty, False, False, 0)
+            controls.pack_start(self.apply_button, True, True, 0)
+            details.pack_start(label("Applying a rice saves a restore point first.", "hub-hint", True), False, False, 0)
 
         def _family_card(self, family):
             button = cls(Gtk.Button(), "hub-card-button")
-            button.set_size_request(250, 95)
-            content = vertical(6)
-            header = horizontal(9)
-            header.pack_start(label(family.title, "hub-title"), True, True, 0)
-            header.pack_start(label("Available" if family.available else
-                                    "Interactive prototype" if family.prototype else "Coming soon",
-                                    "hub-good" if family.available else "hub-soon"), False, False, 0)
-            content.pack_start(header, False, False, 0)
-            content.pack_start(label(family.subtitle, "hub-body"), False, False, 0)
-            button.add(content)
-            button.get_accessible().set_name(
-                f"{family.title} — " + ("available" if family.available else
-                                       "interactive preview only" if family.prototype else "coming soon"))
+            button.set_size_request(196, 53)
+            contents = horizontal(9)
+            icon_path = project_root() / "assets" / FAMILY_ICONS[family.key]
+            try:
+                icon = GdkPixbuf.Pixbuf.new_from_file_at_scale(str(icon_path), 30, 30, True)
+                contents.pack_start(Gtk.Image.new_from_pixbuf(icon), False, False, 0)
+            except GLib.Error:
+                contents.pack_start(Gtk.Image.new_from_icon_name("preferences-desktop-theme-symbolic", Gtk.IconSize.MENU), False, False, 0)
+            text = vertical(2)
+            title = label(family.title, "hub-title")
+            subtitle = label(family.subtitle, "hub-hint")
+            # Names must not force the sidebar wider on older 1024px laptops.
+            for item in (title, subtitle):
+                item.set_ellipsize(Pango.EllipsizeMode.END)
+                item.set_max_width_chars(21)
+                item.set_tooltip_text(item.get_text())
+            text.pack_start(title, False, False, 0)
+            text.pack_start(subtitle, False, False, 0)
+            contents.pack_start(text, True, True, 0)
+            button.add(contents)
+            button.get_accessible().set_name(f"Select {family.title}")
             button.connect("clicked", lambda _: self._select_family(family.key))
             self.gallery.add(button)
             self._family_buttons[family.key] = button
@@ -399,7 +381,7 @@ def run() -> int:
             body.pack_start(tip, False, False, 0)
 
         def _build_components(self):
-            body = self._page("components", "Desktop components", "Start or toggle the tools already installed on your system.")
+            body = self._page("components", "macOS tools", "Individual Aurora components. Other rice shells are managed automatically.")
             section = cls(vertical(10), "hub-card")
             body.pack_start(section, False, False, 0)
             self.component_state = {}
@@ -431,7 +413,7 @@ def run() -> int:
                             False, False, 0)
 
         def _build_performance(self):
-            body = self._page("performance", "Light by design", "Choose the resource policy for Control Center. No new background service is installed.")
+            body = self._page("performance", "Performance", "Control Center resource policy and on-demand process measurements.")
             pane = cls(vertical(13), "hub-card")
             body.pack_start(pane, False, False, 0)
             pane.pack_start(label("Performance profile", "hub-section"), False, False, 0)
@@ -462,37 +444,26 @@ def run() -> int:
             measure.pack_start(self.measure_button, False, False, 0)
 
         def _build_backups(self):
-            body = self._page("backups", "Backups & recovery", "MacRice snapshots are private and kept outside the replaceable application bundle.")
+            body = self._page("backups", "Recovery", "Restore previous desktop settings without overwriting newer personal changes.")
             self.backup_list = cls(vertical(11), "hub-card")
             body.pack_start(self.backup_list, False, False, 0)
             buttons = horizontal(10)
             body.pack_start(buttons, False, False, 0)
-            buttons.pack_start(action("Refresh history", lambda _: self._refresh_backups()), False, False, 0)
+            buttons.pack_start(action("Refresh", lambda _: self._refresh_backups()), False, False, 0)
             self.restore_button = action("Restore previous desktop", lambda _: self._restore_confirmed(), True)
             buttons.pack_start(self.restore_button, False, False, 0)
             body.pack_start(label("Restore only reverts settings still controlled by RiceBowl. Later personal changes are preserved and reported.",
                                   "hub-hint", True), False, False, 0)
+            body.pack_start(label("THEME REPAIR", "hub-overline"), False, False, 0)
+            self.repair_button = action("Repair selected rice assets…", lambda _: self._repair_selected())
+            self.repair_button.set_tooltip_text(
+                "Back up and replace only the rice selected on the Rices page; does not switch your desktop.")
+            body.pack_start(self.repair_button, False, False, 0)
+            body.pack_start(label("Use only if Check reports conflicting theme files. Select a non-macOS rice on the Rices page first.",
+                                  "hub-hint", True), False, False, 0)
+            body.pack_start(label("Hardware acceptance: multi-monitor, login/resume and Plank autostart still need testing on Mint XFCE.",
+                                  "hub-hint", True), False, False, 0)
             self._refresh_backups()
-
-        def _build_roadmap(self):
-            body = self._page("roadmap", "Quality roadmap",
-                              "Seven installable rice families; Linux Mint hardware acceptance remains open.")
-            milestones = (
-                ("Cross-rice switching", "In validation", "Preserve the coordinated Plank, MacBar and Windows shell transitions and verify login reconciliation on Mint XFCE."),
-                ("Windows 10", "Release candidate", "Verify the flat penguin shell, window list, tray, panel coexistence and recovery on actual Mint XFCE hardware."),
-                ("Windows 7", "Release candidate", "Check Aero glass, compositor differences, SNI icons and keyboard navigation on real X11 systems."),
-                ("XP & Classic", "Installable candidate", "Original GTK/XFWM/icon themes, live shell, safe switching and restore; physical Mint check pending."),
-                ("ChromeOS & Y2K", "Installable candidate", "Shelf or glass taskbar, app search, desktop tools and reversible setup; screen-size checks pending."),
-                ("All rices", "Acceptance pending", "Validate multi-monitor layouts, HiDPI, restore after login, idle resource use and guided updates."),
-            )
-            for title, status, detail in milestones:
-                panel = cls(vertical(6), "hub-card")
-                row = horizontal(10)
-                row.pack_start(label(title, "hub-section"), True, True, 0)
-                row.pack_start(label(status, "hub-soon"), False, False, 0)
-                panel.pack_start(row, False, False, 0)
-                panel.pack_start(label(detail, "hub-body", True), False, False, 0)
-                body.pack_start(panel, False, False, 0)
 
         def _switch_page(self, key):
             self._active_page = key
@@ -513,29 +484,9 @@ def run() -> int:
                 context.remove_class("hub-selected")
                 if current == key:
                     context.add_class("hub-selected")
-            self.preview_title.set_text(family.title + " — " + family.subtitle)
+            self.preview_title.set_text(family.title)
             self.preview_description.set_text(family.description)
-            self.preview_stack.set_visible_child_name(
-                "windows7" if key == "windows7" else
-                "windows10" if key == "windows10" else
-                "macos" if key == "macos" else
-                key if family.prototype else "future")
-            self.aero_preview_bar.set_visible(key == "windows7")
-            self.style_picker.set_visible(family.available)
-            self.plan_button.set_visible(family.available)
-            self.apply_button.set_visible(family.available)
             self.repair_button.set_visible(family.available and key != "macos")
-            self.prototype_button.set_visible(family.prototype)
-            self.prototype_button.set_label(
-                "Explore Windows 10 preview" if key == "windows10" else
-                "Explore Aero Start preview" if key == "windows7" else "Explore desktop prototype")
-            self.prototype_button.get_accessible().set_name(self.prototype_button.get_label())
-            self.future_note.set_text(
-                "Aero is installable; its separate Start preview changes nothing."
-                if key == "windows7" else
-                "Windows 10 is installable; this separate concept preview changes nothing."
-                if key == "windows10" else "This concept preview changes nothing.")
-            self.future_note.set_visible(family.prototype or not family.available)
             if family.available:
                 self._rebuilding_picker = True
                 self.style_picker.remove_all()
@@ -545,14 +496,6 @@ def run() -> int:
                 self._rebuilding_picker = False
                 self._on_style_changed()
 
-        def _show_prototype(self):
-            if self._selected == "windows7":
-                show_windows7(self, Gtk, Gdk, GLib)
-            elif self._selected == "windows10":
-                show_windows10(self, Gtk, Gdk, GLib)
-            elif self._selected in ("winxp", "winclassic", "chromeos", "frutiger"):
-                show_concept(self, Gtk, Gdk, GLib, self._selected)
-
         def _on_style_changed(self, *_args):
             if self._rebuilding_picker:
                 return
@@ -560,43 +503,70 @@ def run() -> int:
             if style_id not in STYLES:
                 return
             self._preview_style = style_id
-            wallpaper = STYLES[style_id].wallpaper
-            if wallpaper not in self._wallpaper_cache:
-                path = project_root() / "assets/wallpapers" / wallpaper
+            if self._selected in PREVIEW_FILES:
+                asset = PREVIEW_FILES[self._selected]
+                key = "capture:" + asset
+                path = project_root() / "assets/hub-previews" / asset
+                self.preview_caption.set_text("Real X11 capture · example variant")
+            else:
+                asset = STYLES[style_id].wallpaper
+                key = "wallpaper:" + asset
+                path = project_root() / "assets/wallpapers" / asset
+                self.preview_caption.set_text("Wallpaper preview · macOS components")
+            if key not in self._image_cache:
                 try:
-                    self._wallpaper_cache[wallpaper] = GdkPixbuf.Pixbuf.new_from_file_at_scale(
-                        str(path), 1200, 500, True)
+                    self._image_cache[key] = GdkPixbuf.Pixbuf.new_from_file_at_scale(
+                        str(path), 1200, 675, True)
                 except GLib.Error:
-                    self._wallpaper_cache[wallpaper] = None
+                    self._image_cache[key] = None
+            if self._image_cache[key] is None and self._selected in PREVIEW_FILES:
+                wallpaper = STYLES[style_id].wallpaper
+                key = "wallpaper:" + wallpaper
+                if key not in self._image_cache:
+                    try:
+                        self._image_cache[key] = GdkPixbuf.Pixbuf.new_from_file_at_scale(
+                            str(project_root() / "assets/wallpapers" / wallpaper), 1200, 675, True)
+                    except GLib.Error:
+                        self._image_cache[key] = None
+                self.preview_caption.set_text("Wallpaper preview · screenshot unavailable")
+            self._preview_asset = key
             self._preview_rendered = None
-            allocation = self.preview_stack.get_allocation()
-            self._resize_wallpaper(None, allocation)
+            self._resize_preview(None, self.preview_canvas.get_allocation())
 
-        def _resize_wallpaper(self, _widget, allocation):
-            """Fit wallpaper without a Cairo draw callback or wide minimum size."""
+        def _resize_preview(self, _widget, allocation):
+            """Fit actual desktop captures; never crop their menus or taskbars."""
             width = allocation.width
             height = allocation.height
             if width <= 0 or height <= 0:
                 return
-            wallpaper = STYLES[self._preview_style].wallpaper
-            key = wallpaper, width, height
+            asset = getattr(self, "_preview_asset", None)
+            if asset is None:
+                return
+            key = asset, width, height
             if key == self._preview_rendered:
                 return
-            pixbuf = self._wallpaper_cache.get(wallpaper)
+            pixbuf = self._image_cache.get(asset)
             if pixbuf is not None:
                 self.preview_image.set_from_pixbuf(
-                    aspect_fill(pixbuf, width, height, GdkPixbuf.InterpType.BILINEAR))
+                    (aspect_contain if asset.startswith("capture:") else aspect_fill)(
+                        pixbuf, width, height, GdkPixbuf.InterpType.BILINEAR))
             else:
                 self.preview_image.clear()
             self._preview_rendered = key
 
         def _filter_families(self, *_args):
-            shown = {family.key for family in search_families(self.search.get_text())}
+            query = self.search.get_text()
+            shown = {family.key for family in search_families(query)}
             for key, button in self._family_buttons.items():
                 button.get_parent().set_visible(key in shown)
             self.empty.set_visible(not shown)
+            self.search_clear.set_visible(bool(query))
             if shown and self._selected not in shown:
                 self._select_family(next(family.key for family in FAMILIES if family.key in shown))
+
+        def _clear_filter(self, *_args):
+            self.search.set_text("")
+            self.search.grab_focus()
 
         def _key(self, _widget, event):
             if event.state & Gdk.ModifierType.CONTROL_MASK and event.keyval in (Gdk.KEY_f, Gdk.KEY_F):
@@ -614,7 +584,7 @@ def run() -> int:
 
         def _set_busy(self, busy):
             self._busy = busy
-            for name in ("apply_button", "plan_button", "repair_button", "prototype_button", "install_button", "restore_button",
+            for name in ("apply_button", "plan_button", "repair_button", "install_button", "restore_button",
                          "performance_button", "measure_button"):
                 button = getattr(self, name, None)
                 if button:
@@ -650,13 +620,14 @@ def run() -> int:
                 self._notify("Done.")
             return False
 
-        def _confirm(self, title, details, proceed):
+        def _confirm(self, title, details, proceed, confirm_label):
             dialog = Gtk.MessageDialog(
                 transient_for=self, modal=True, message_type=Gtk.MessageType.QUESTION,
                 buttons=Gtk.ButtonsType.NONE, text=title)
             dialog.format_secondary_text(details)
             dialog.add_button("Cancel", Gtk.ResponseType.CANCEL)
-            dialog.add_button("Continue", Gtk.ResponseType.OK)
+            dialog.add_button(confirm_label, Gtk.ResponseType.OK)
+            dialog.set_default_response(Gtk.ResponseType.CANCEL)
             accepted = dialog.run() == Gtk.ResponseType.OK
             dialog.destroy()
             if accepted:
@@ -680,6 +651,7 @@ def run() -> int:
                         (f"{len(backups)} backup(s) saved. " if backups else "") +
                         "Run Check requirements again."),
                 ),
+                "Repair assets",
             )
 
         def _plan_selected(self, apply_after=False):
@@ -702,6 +674,7 @@ def run() -> int:
                         lambda: self._work("Applying the complete desktop rice…",
                                            lambda: apply(selected),
                                            lambda backup: self._after_apply(backup, selected)),
+                        "Apply rice",
                     )
 
             self._work("Checking installed themes and desktop settings…", lambda: plan(selected), ready)
@@ -735,8 +708,9 @@ def run() -> int:
                 return
             self._confirm(
                 "Restore the previous desktop?",
-                "RiceBowl will restore the latest MacRice snapshot. Settings changed afterward are kept and reported.",
+                "RiceBowl will restore the latest saved snapshot. Settings changed afterward are kept and reported.",
                 lambda: self._work("Restoring your desktop…", restore, self._after_restore),
+                "Restore desktop",
             )
 
         def _after_restore(self, backup):
@@ -818,6 +792,7 @@ def run() -> int:
                 lambda: self._work("Installing bundled components…",
                                    lambda: install(InstallOptions(no_start=True)),
                                    lambda _: self._after_install()),
+                "Install / repair",
             )
 
         def _after_install(self):
@@ -834,7 +809,7 @@ def run() -> int:
         def _measure(self):
             def finished(processes):
                 if not processes:
-                    self.measure_label.set_text("No running MacRice components or Plank were detected.")
+                    self.measure_label.set_text("No running RiceBowl components or Plank were detected.")
                 else:
                     self.measure_label.set_text("\n".join(
                         f"{item['name']}: "
@@ -864,6 +839,33 @@ def run() -> int:
         nonlocal startup_failed
         if not _activate_hub_window(application, windows, HubWindow):
             startup_failed = True
+        elif os.environ.get("RICEBOWL_HUB_SMOKE") == "1":
+            # CI only: exercise every rice and navigation path under virtual X11
+            # without touching XFCE settings, then exit before any user action.
+            GLib.idle_add(smoke_test)
+
+    def smoke_test():
+        nonlocal startup_failed
+        try:
+            window = windows[0]
+            for family in FAMILIES:
+                window._select_family(family.key)
+                assert window._selected == family.key
+                assert window.style_picker.get_active_id() == family.styles[0]
+                assert window._image_cache.get(window._preview_asset) is not None, family.key
+            window.search.set_text("Windows XP")
+            assert window._selected == "winxp"
+            window._clear_filter()
+            assert window.search.get_text() == ""
+            for page in ("desktop", "components", "performance", "backups", "discover"):
+                window._switch_page(page)
+                assert window.pages.get_visible_child_name() == page
+        except Exception:
+            startup_failed = True
+            traceback.print_exc()
+        finally:
+            app.quit()
+        return False
 
     app.connect("activate", activate)
     status = app.run(["ricebowl"])

@@ -5,6 +5,23 @@ modern and compact; the *applied desktop shells* follow the visual language of
 their selected era. The app is not a pixel-accurate OS emulator, and all art is
 original Linux artwork. Windows 11 and Liquid Glass are out of scope.
 
+## Hub UI (GTK3)
+
+The manager is a compact desktop-style selector: choose a rice, inspect its
+current capture, then check and apply it with a restore point. Seven installable
+styles share one searchable list. Recovery, macOS tools and performance are
+secondary pages; prototypes and the release roadmap do not crowd the selector.
+
+- Runtime visual tokens: `macrice/hub.py` (`TOKENS`). Dark navy surfaces,
+  light text, distinct blue selection and explicit keyboard focus states.
+- Catalog copy and variants: `macrice/hub_catalog.py`.
+- Rice logos and preview manifest: `macrice/hub_art.py`.
+- Preview images: `assets/hub-previews/`, derived from actual X11 captures in
+  `screenshots/current/` by `bash scripts/refresh_hub_previews.sh`.
+  JPEG keeps the installed GTK app independent of WebP decoder availability.
+- The macOS selection currently previews its wallpaper rather than a full
+  desktop capture; the hub labels that distinction explicitly.
+
 ## Canonical owners
 
 | Concern | Source of truth |

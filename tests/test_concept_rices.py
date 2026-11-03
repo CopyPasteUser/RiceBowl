@@ -1,4 +1,4 @@
-"""Read-only concept dialogs remain optional previews beside live rices."""
+"""Legacy read-only concept dialogs remain separate from installable rices."""
 
 import unittest
 
@@ -14,7 +14,6 @@ class ConceptTests(unittest.TestCase):
             with self.subTest(key=key):
                 family = FAMILY_BY_KEY[key]
                 self.assertTrue(family.available)
-                self.assertTrue(family.prototype)
                 self.assertEqual(family.styles, (key,))
                 self.assertTrue(concept.applications)
                 self.assertIn(key, STYLES)

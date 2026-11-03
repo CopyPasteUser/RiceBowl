@@ -8,7 +8,8 @@ from pathlib import Path
 from unittest import mock
 
 from macrice.cli import main
-from macrice.hub import CSS, HUB_VERSION, _activate_hub_window, run
+from macrice.hub import CSS, _activate_hub_window, run
+from macrice.hub_art import FAMILY_ICONS, PREVIEW_FILES
 from macrice.hub_catalog import (
     AVAILABLE_STYLE_KEYS, FAMILIES, FAMILY_BY_KEY, recent_backups, search_families,
 )
@@ -28,10 +29,10 @@ class HubCatalogTests(unittest.TestCase):
         for family in FAMILIES:
             self.assertIs(FAMILY_BY_KEY[family.key], family)
             self.assertEqual(bool(family.styles), family.available)
-        self.assertTrue(FAMILY_BY_KEY["windows7"].prototype)
-        self.assertTrue(FAMILY_BY_KEY["windows10"].prototype)
-        self.assertTrue(FAMILY_BY_KEY["windows10"].available)
-        self.assertEqual({family.key for family in FAMILIES if family.prototype and not family.available}, set())
+        self.assertTrue(all(family.available for family in FAMILIES))
+        self.assertEqual(set(PREVIEW_FILES), {family.key for family in FAMILIES if family.key != "macos"})
+        self.assertEqual(set(FAMILY_ICONS), {family.key for family in FAMILIES})
+        self.assertFalse(any(hasattr(family, "prototype") for family in FAMILIES))
 
     def test_search_availability_and_case_insensitive_queries(self):
         self.assertEqual([item.key for item in search_families("windows", "soon")], [])
@@ -83,8 +84,8 @@ class HubStylingTests(unittest.TestCase):
             fake.assert_called_once_with()
 
     def test_styling_is_native_and_does_not_require_web_stack(self):
-        self.assertEqual(HUB_VERSION, "0.9.1")
         self.assertIn(b"hub-card", CSS)
+        self.assertIn(b"hub-preview-frame", CSS)
         self.assertNotIn(b"javascript", CSS.lower())
         try:
             import gi

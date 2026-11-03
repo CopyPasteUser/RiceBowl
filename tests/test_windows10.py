@@ -16,7 +16,6 @@ class Windows10PrototypeTests(unittest.TestCase):
 
     def test_profile_has_installable_styles_and_separate_preview(self):
         profile = FAMILY_BY_KEY["windows10"]
-        self.assertTrue(profile.prototype)
         self.assertTrue(profile.available)
         self.assertEqual(profile.styles, ("ten-dark", "ten-light"))
 

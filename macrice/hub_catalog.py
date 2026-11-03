@@ -1,7 +1,4 @@
-"""RiceBowl's read-only catalog and private restore history.
-
-The macOS, Windows 7 and Windows 10 palettes use the same reversible engine.
-"""
+"""RiceBowl's seven installable styles and private restore history."""
 
 from __future__ import annotations
 
@@ -22,47 +19,46 @@ class RiceFamily:
     available: bool
     styles: tuple[str, ...] = ()
     features: tuple[str, ...] = ()
-    prototype: bool = False
 
 
 FAMILIES: tuple[RiceFamily, ...] = (
     RiceFamily(
-        "macos", "macOS", "Aurora collection",
-        "A calm desktop with a native menu bar, application launcher, Control Center and Plank dock.",
+        "macos", "macOS · Aurora", "MacBar · Control Center",
+        "A macOS-inspired desktop with a native app menu, Control Center and optional Plank dock.",
         True, ("night", "day", "aqua"),
         ("Three complete themes", "MacMenu + Control Center", "MacBar + Plank", "Reversible GTK and Thunar styling"),
     ),
     RiceFamily(
-        "windows10", "Windows 10", "Classic productivity",
-        "An installable XFCE/X11 rice with flat window chrome, live taskbar, searchable apps and pinned Start tiles.",
+        "windows10", "Windows 10", "Flat · Midnight / Blue",
+        "A flat taskbar, live app list, pinned Start tiles and functional Action Center.",
         True, ("ten-dark", "ten-light"),
-        ("Live Start and taskbar", "Dark/light GTK & XFWM", "Persistent pins & Action Center", "Reversible installation"), True,
+        ("Live Start and taskbar", "Dark/light GTK & XFWM", "Persistent pins & Action Center", "Reversible installation"),
     ),
     RiceFamily(
-        "windows7", "Windows 7", "Classic Aero on Linux",
-        "Aero Seven Blue and Night: classic cobalt desktop glow, glass Linux penguin, golden folders, Start menu and Superbar.",
+        "windows7", "Windows 7 · Aero", "Glass · Blue / Night",
+        "A 48px glass Superbar, live window previews, Jump Lists and Explorer-style Thunar.",
         True, ("aero-meadow", "aero-cascade"),
-        ("Searchable Aero Start", "GTK/XFWM chrome", "Custom icons and wallpapers", "Glass taskbar"), True,
+        ("Searchable Aero Start", "GTK/XFWM chrome", "Custom icons and wallpapers", "Glass taskbar"),
     ),
     RiceFamily(
-        "winxp", "Windows XP Luna", "Luna desktop study",
-        "Blue taskbar, green Start and two-column launcher with real XFCE applications.",
-        True, ("winxp",), ("Luna taskbar", "Live Start and window list", "XFWM4 window theme", "Recoverable switching"), True,
+        "winxp", "Windows XP · Luna", "Classic 2001 interface",
+        "Blue/green taskbar, two-column Start and XP-style category Control Panel.",
+        True, ("winxp",), ("Luna taskbar", "Live Start and window list", "XFWM4 window theme", "Recoverable switching"),
     ),
     RiceFamily(
-        "winclassic", "Windows 98 / 2000", "Classic desktop study",
-        "Compact gray system controls, teal wallpaper and old-school application navigation.",
-        True, ("winclassic",), ("Classic Start", "Live taskbar", "Original classic window chrome", "Recoverable switching"), True,
+        "winclassic", "Windows 98 / 2000", "Classic · Teal",
+        "Beveled taskbar, cascading Start menus and authentic square window frames.",
+        True, ("winclassic",), ("Classic Start", "Live taskbar", "Original classic window chrome", "Recoverable switching"),
     ),
     RiceFamily(
-        "chromeos", "ChromeOS", "Lightweight shelf study",
-        "A modern, airy XFCE shell with a bottom shelf and searchable application drawer.",
-        True, ("chromeos",), ("Bottom shelf", "Searchable live apps", "Quick settings", "Recoverable switching"), True,
+        "chromeos", "ChromeOS", "Material · Pastel",
+        "Rounded shelf, searchable app launcher and Linux-backed Quick Settings.",
+        True, ("chromeos",), ("Bottom shelf", "Searchable live apps", "Quick settings", "Recoverable switching"),
     ),
     RiceFamily(
-        "frutiger", "Y2K / Frutiger Aero", "Aqua future study",
-        "An original eco-futurist Linux desktop with turquoise glass, greenery and a playful launcher.",
-        True, ("frutiger",), ("Aqua taskbar", "Bright original desktop", "Live launchers", "Recoverable switching"), True,
+        "frutiger", "Frutiger Aero", "Aqua · Nature",
+        "Pearl-glass taskbar, nature wallpaper and live Apps / Places / Settings launcher.",
+        True, ("frutiger",), ("Aqua taskbar", "Bright original desktop", "Live launchers", "Recoverable switching"),
     ),
 )
 
