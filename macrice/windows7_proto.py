@@ -1,4 +1,4 @@
-"""Interactive, read-only Windows 7-inspired concept for the RiceHub gallery.
+"""Interactive, read-only Windows 7-inspired concept for the RiceBowl gallery.
 
 This is not a rice installer. It never launches demo applications, changes the
 XFCE panel, installs system assets or writes configuration. The original GTK
@@ -115,7 +115,7 @@ def show_dialog(parent, Gtk, Gdk, GLib):
     from .installer import project_root
 
     install_css(Gtk, Gdk)
-    dialog = Gtk.Dialog(title="Windows 7 — RiceHub prototype", transient_for=parent,
+    dialog = Gtk.Dialog(title="Windows 7 — RiceBowl prototype", transient_for=parent,
                         flags=Gtk.DialogFlags.MODAL)
     _style(dialog, "w7-shell")
     dialog.set_default_size(920, 680)
