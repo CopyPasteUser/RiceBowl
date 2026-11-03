@@ -16,22 +16,25 @@ A lightweight, native GTK3 desktop-style manager for Linux Mint XFCE and other X
 
 RiceBowl transforms an XFCE desktop using original GTK3, XFWM4, icon, wallpaper, taskbar, launcher and file-manager themes. Select a desktop in the graphical hub, review its requirements and apply it with a restore snapshot. The application is written in Python/GTK3, without an Electron runtime, remote services or telemetry.
 
-**Version 0.9.1** fixes the XP Luna Start menu overlapping its taskbar by positioning the window from its actual GTK allocation. Desktop changes now verify that a replacement taskbar has mapped before retiring XFCE Panel; if startup fails, RiceBowl attempts to restore the stock panel and saved shortcuts. The hub keeps responding while the transition is checked.
+**On `main`:** Windows 7 Aero has its own 42px Superbar, grouped running windows,
+native X11 window previews (with safe icon fallback), app Jump Lists, desktop Peek
+and a two-column Start menu. XP Luna has a separately refined 2001-era Start,
+window chrome and 40px taskbar. The other five desktop families retain their
+distinct designs. All of these operate on actual Linux applications and X11
+windows; they do not emulate Windows or ship proprietary Microsoft assets.
 
-An in-development [XP Luna fidelity pass](XP_LUNA_ROADMAP.md) makes the live
-taskbar and Start menu substantially more period-accurate, adds original
-blue XFWM4 decorations and Luna-styled GTK/Thunar widgets, and preserves
-backed-up upgrades from official v0.9.1 assets. It is **not yet in v0.9.1**;
-review the development branch and its native-X11 checks before deployment.
-
-Version 0.9.0 introduced four detailed desktop-reference directions in real GTK3 code: XP Luna's blue/green two-column Start screen, Windows 98/2000's cascading Programs menus, ChromeOS's 12-app launcher and center shelf, and Frutiger Aero's Apps / Places / Settings dashboard. The styles include richer Thunar chrome, original icons and verified volume/mute controls. The macOS implementation remains unchanged.
+The tagged **v0.9.1** package predates these fidelity improvements. For the
+latest source use `main`; see [Windows 7 engineering notes](WIN7_AERO_ROADMAP.md)
+and [XP Luna engineering notes](XP_LUNA_ROADMAP.md). RiceBowl verifies a
+replacement taskbar is mapped before handing off from XFCE Panel and keeps
+recoverable desktop settings backups.
 
 ## Desktop families
 
 | Desktop | Included experience |
 | --- | --- |
 | **macOS · Aurora** | MacBar, MacMenu, Control Center, optional Plank dock, three palettes |
-| **Windows 7 · Aero** | Glass-inspired taskbar, live Start search, Aero window chrome, control panel |
+| **Windows 7 · Aero** | Grouped glass Superbar, previews, Jump Lists, Peek, two-column Start, Aero chrome, control panel |
 | **Windows 10 · Ten** | Dark/light styles, Start tiles, running apps, Action Center |
 | **Windows XP · Luna** | Blue/green taskbar, XP-inspired Start, categorized control panel |
 | **Windows 98 / 2000 · Classic** | Compact gray taskbar, classic Start, square dialogs and controls |
@@ -40,38 +43,31 @@ Version 0.9.0 introduced four detailed desktop-reference directions in real GTK3
 
 All seven families are installable and reversible. The non-macOS menus launch **real applications** from the desktop catalog, with Wnck-based window buttons when the relevant library is present. Control panels open installed system utilities; unavailable tools are disabled rather than simulated. No Microsoft, Google or Apple proprietary assets are bundled.
 
-### RiceBowl 0.9.1 — actual GTK/X11 screenshots
+### Latest screenshots from `main`
 
-Screenshots are captured by GitHub Actions directly from the **real running Python/GTK desktop shells**, not generated mockups. Preview rendering under virtual X11 is not a substitute for testing your Mint laptop.
-
-| XP Luna | Windows 98 / 2000 |
-| --- | --- |
-| ![XP Luna with working two-column launcher](https://github.com/CopyPasteUser/RiceBowl/releases/download/v0.9.1/ricebowl-winxp-start-0.9.1.png) | ![Classic cascaded programs menu](https://github.com/CopyPasteUser/RiceBowl/releases/download/v0.9.1/ricebowl-winclassic-start-0.9.1.png) |
-
-| ChromeOS | Frutiger Aero |
-| --- | --- |
-| ![ChromeOS app launcher and separated shelf](https://github.com/CopyPasteUser/RiceBowl/releases/download/v0.9.1/ricebowl-chromeos-start-0.9.1.png) | ![Frutiger Aero apps and places dashboard](https://github.com/CopyPasteUser/RiceBowl/releases/download/v0.9.1/ricebowl-frutiger-start-0.9.1.png) |
-
-[All 12 menu/control-panel screenshots](https://github.com/CopyPasteUser/RiceBowl/releases/tag/v0.9.1).
-
-**File-manager scope:** the installed Thunar remains a functional GTK3 file manager; RiceBowl themes its window chrome, sidebar, toolbar, selected rows and path navigation. The conceptual "Recent + Downloads" dashboard in the reference images is **not** presented as an implemented Thunar feature.
-
-### Historical gallery
+These images show the actual Python/GTK3 shells captured under virtual X11
+after the latest changes. They are not design mockups or proof of a physical
+Mint installation. Every screenshot in this gallery reflects the same source
+revision; superseded release galleries are intentionally excluded.
 
 | Windows 7 Aero | Windows 10 |
 | --- | --- |
-| ![Windows 7-inspired running XFCE desktop](screenshots/windows7-aero-desktop-0.3.0rc2.png) | ![Windows 10-inspired GTK3 Start menu](screenshots/windows10-live-start-0.5.0rc2.png) |
-| [Start menu](screenshots/windows7-aero-startmenu-0.3.0rc2.png) · [Thunar](screenshots/windows7-aero-files-0.3.0rc2.png) | [Action Center](screenshots/windows10-live-actions-0.5.0rc2.png) |
+| ![Windows 7 Aero Start and Superbar](screenshots/current/aero-start.webp) | ![Windows 10 Start](screenshots/current/windows10-start.webp) |
 
-| Windows XP Luna | Classic 98/2000 |
+| XP Luna | Windows 98 / 2000 |
 | --- | --- |
-| ![Windows XP Luna GTK3 launcher](screenshots/ricehub-winxp-start-0.6.0.png) | ![Classic 98/2000 GTK3 launcher](screenshots/ricehub-winclassic-start-0.6.0.png) |
+| ![Windows XP Luna desktop](screenshots/current/winxp-start.webp) | ![Windows Classic desktop](screenshots/current/winclassic-start.webp) |
 
 | ChromeOS | Frutiger Aero |
 | --- | --- |
-| ![ChromeOS-inspired running GTK3 launcher](screenshots/ricehub-chromeos-start-0.6.0.png) | ![Frutiger Aero GTK3 launcher](screenshots/ricehub-frutiger-start-0.6.0.png) |
+| ![ChromeOS app launcher and separated shelf](screenshots/current/chromeos-start.webp) | ![Frutiger Aero apps and places dashboard](screenshots/current/frutiger-start.webp) |
 
-**Screenshot provenance:** these are real virtual-X11 captures from earlier releases (0.3–0.6), retained as historical examples. They are **not** new 0.7 captures or evidence of physical Linux Mint acceptance. The macOS + Plank full-desktop image in the repository is an illustrative composition, not a live capture.
+[Latest Control Panel gallery](screenshots/current/) · [CI tests and full-resolution screenshots](https://github.com/CopyPasteUser/RiceBowl/actions/workflows/ci.yml)
+
+**File-manager scope:** the installed Thunar remains a functional GTK3 file manager; RiceBowl themes its window chrome, sidebar, toolbar, selected rows and path navigation. The conceptual "Recent + Downloads" dashboard in the reference images is **not** presented as an implemented Thunar feature.
+
+For macOS, use the live shell on an XFCE/X11 session; the historical
+composite mockups have been removed to avoid presenting them as current builds.
 
 ## Install
 
@@ -147,13 +143,22 @@ The **battery** reads Linux power_supply capacity and charging status (including
 
 **Upgrade compatibility:** RiceBowl retains some legacy `RiceHub-*` internal theme identifiers, D-Bus names, state paths, managed autostart filenames and the `macrice` command. These are intentional compatibility contracts for older installations and restore points, **not the public product name**. The old `ricehub` shortcut is hidden from the application menu but remains executable.
 
-## Validation and 0.7.1 screenshots
+## Validation and screenshots
 
-The [GitHub Actions test workflow](https://github.com/CopyPasteUser/RiceBowl/actions/workflows/ci.yml) runs the Python suite and native GTK/X11 checks. Its `ricebowl-0.7.1-native-x11-captures` artifact contains fresh virtual-display launcher/control screenshots for XP, Classic, ChromeOS and Frutiger. These are not physical Linux Mint screenshots and are intentionally kept separate from the historical screenshots above.
+The [GitHub Actions workflow](https://github.com/CopyPasteUser/RiceBowl/actions/workflows/ci.yml)
+checks the Python suite, all six native non-macOS GTK shells, window lifecycle,
+small-screen clipping and real virtual-X11 screenshots. The checked-in
+[`screenshots/current/`](screenshots/current/) gallery is refreshed from the
+latest successful run; obsolete historical image files have been removed.
 
 ## Limitations
 
-Physical Linux Mint XFCE validation of fast desktop switching, multiple monitors, login/resume and interactions with an independently configured Plank autostart is still outstanding. True live compositor blur, legacy XEmbed tray compatibility and full Wayland support are not claimed. The CI workflow runs Python regression tests and isolated GTK/X11 integration checks; it does not replace hardware acceptance.
+Physical Linux Mint XFCE validation of fast desktop switching, multiple monitors,
+login/resume and an independently configured Plank autostart is still outstanding.
+Aero Peek uses reversible Show Desktop hover, not Windows DWM compositing. GTK/X11
+preview thumbnails are best-effort and fall back to real app icons when an X11
+drawable cannot be read. Full DWM blur, legacy XEmbed tray compatibility and
+Wayland support are not claimed.
 
 For technical details, see [Windows 7](WINDOWS7.md), [Windows 10](WINDOWS10.md), [release notes](RELEASE_NOTES.md), [migration notes](RICEBOWL.md) and the [historical architecture notes](RICEHUB.md).
 

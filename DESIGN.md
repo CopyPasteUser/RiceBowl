@@ -26,7 +26,10 @@ original Linux artwork. Windows 11 and Liquid Glass are out of scope.
   working All Programs and search, amber session-dialog shutdown, original blue
   XFWM4 frame/button sprites and Explorer-like Thunar controls. The live Win7
   shell owns `win7-*` CSS classes and `_create_win7_menu()` in `aero_shell.py`;
-  `scripts/build_aero_assets.py` owns the checked-in original XFWM4/icon artwork.
+  `macrice/aero_superbar.py` groups immutable Wnck snapshots by WM_CLASS,
+  supplies active-aware group overflow, and feeds GTK window previews and Jump
+  Lists. A 450ms Show Desktop hover provides reversible Peek; it is not full
+  compositor transparency. `scripts/build_aero_assets.py` owns original art.
   The distinct XP, Classic, Frutiger and Windows 10 shells must not be restyled.
 - **Windows 10:** flat neutral panels and blue highlights with an original blue penguin.
 - **XP Luna:** 40px cobalt/green molded taskbar, contiguous bright-cyan notification

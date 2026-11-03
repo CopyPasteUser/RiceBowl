@@ -5,6 +5,11 @@
 XFWM4/GTK artwork, safe upgrade and real-X11 verification. The [XP Luna fidelity](XP_LUNA_ROADMAP.md)
 work is already on main; neither improvement changes the published v0.9.1 package.
 
+The Windows 7 follow-up adds WM_CLASS application grouping, native GTK preview
+popovers, local-document Jump Lists and hover Peek. Its review branch also
+replaces 32 historical gallery images with 12 current virtual-X11 captures;
+real Mint XFCE multi-monitor, resume and session switching remain owner tests.
+
 **RiceBowl is the umbrella application.** The 0.6.0 milestone introduced installable XP Luna, Windows 98/2000, ChromeOS and Frutiger Aero styles alongside macOS, Windows 7 and Windows 10. The new desktops share the tested session/recovery engine; physical Mint XFCE validation is still required for the 1.0 hardware-stability milestone. The original read-only design previews remain available. Unfinished Liquid Glass presets and Windows 11 are not planned. See the [new-rice acceptance checklist](CONCEPTS.md) and [historical project roadmap](RICEHUB.md#product-roadmap).
 
 MacRice is deliberately a thin integration layer. MacMenu, Control Center and MacBar keep their own tested lifecycles; Plank remains an external system dock.

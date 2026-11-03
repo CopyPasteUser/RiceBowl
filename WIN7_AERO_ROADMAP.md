@@ -1,6 +1,9 @@
 # Windows 7 Aero fidelity — implementation and acceptance
 
-Status: implemented on a review branch; native X11 screenshots and physical Mint/XFCE acceptance remain the release gates. The published `v0.9.1` package is unchanged.
+Status: Windows 7 cosmetic fidelity shipped to `main` via PR #14. The additional
+Superbar milestone (grouping, previews, Jump Lists, Peek and latest gallery) passed
+native Xvfb CI in pull request #15. Physical Mint/XFCE acceptance remains open. The published
+`v0.9.1` package is unchanged.
 
 ## Reference and constraints
 
@@ -21,13 +24,22 @@ All art here is originally drawn. We do not import Microsoft logos, wallpapers, 
 - [x] Workarea-aware menu, 1024x768 screenshots and dedicated tests for compact task capacity, menu ordering, artwork and asset migration.
 - [x] Whitelist the exact previous managed Aero assets, while rejecting unexpected user edits; automatic installation remains reversible.
 
-## Remaining verification and fidelity work
+## Superbar fidelity milestone
 
-- [ ] Examine CI's **actual X11** 1600x900 and 1024x768 Aero screenshots; correct any menu clipping, visual imbalance, or CSS rendering artifacts.
+- [x] Inspect CI's **actual X11** 1600x900 and 1024x768 Aero screenshots; menu and control popup remain within the usable monitor.
+- [x] Group running X11 windows by actual WM_CLASS, keeping unidentified windows separate and the active group visible when overflowing.
+- [x] Hover/click GTK popover with real titled window choices, bounded best-effort X11 thumbnails and safe icon fallback. Test native popover creation inside Xvfb.
+- [x] Right-click a running app to switch or request a window close; allow opening and pinning only when an installed `.desktop` launcher can be identified unambiguously.
+- [x] Pinned-app Jump Lists: genuine compatible local recent documents, actual app launch, and validated pin/unpin; never fake file history.
+- [x] Show Desktop Peek: delayed hover temporarily reveals desktop, pointer leave restores previous state, click commits; no destructive window minimize sequence.
+- [x] Replace old RC screenshots with checked-in captures from the latest green CI run; display only the current six-shell gallery in README and component docs.
+
+## Remaining physical acceptance and deeper fidelity
+
 - [ ] Physically test on the owner's Mint XFCE laptop at its own DPI and one external monitor: menu anchor, dock struts, Thunar, sound/battery/network widgets, pin/unpin, All Programs, Super_L and Control_R.
 - [ ] Run repeated seven-rice switches, Plank autostart reconciliation and login/re-login regression; verify an existing customized theme still blocks automatic overwrite.
-- [ ] Optional later milestone: faithful application grouping, taskbar Jump Lists, thumbnails and Aero Peek. Wnck currently provides individual working window buttons; advertising these deeper features as complete would be misleading.
-- [ ] Decide release version after owner's visual acceptance; do **not** label this branch a released 0.9.1 update.
+- [ ] Full Microsoft DWM-like Peek compositing, occluded-window thumbnails and Windows 7 thumbnail close glyphs remain outside GTK/Wnck parity. X11 previews depend on drawable visibility, and the implemented Peek is temporary Show Desktop, not full compositor transparency.
+- [ ] Decide release version after owner's physical acceptance; do **not** label this branch a released 0.9.1 update.
 
 ## Rollback
 
