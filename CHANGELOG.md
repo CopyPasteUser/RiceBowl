@@ -1,5 +1,31 @@
 # RiceBowl changelog
 
+## 0.8.0 — Distinct identities, hardware tray and recoverable theme upgrades (3 November 2026)
+
+### More individual non-macOS desktops
+
+- Added **42 original vector icons** for file manager, folders, settings, browser, terminal, home and trash across Aero 7, Windows 10, XP Luna, Classic 98/2000, ChromeOS and Frutiger Aero; the previous clones are gone.
+- Added **four independent heritage Start icons** and **66 status icons** for each desktop's battery, Wi-Fi/Ethernet and audio indicators.
+- ChromeOS now has a centered app/search dashboard, not a recolored Windows 10 Start screen. Frutiger Aero has an independent organic-glass dashboard with quick places; XP, Classic, Aero and Ten retain appropriate distinct navigation.
+- Extended per-rice notification-area geometry, colors, control surfaces, hover/focus states, spacing, and matching native Thunar treatments.
+
+### Real tray behavior
+
+- Show actual Linux battery percent/charging state from sysfs, aggregated over multiple batteries; hide the widget when no battery is present.
+- Read active route, including VPN-underlay Wi-Fi fallback; read PipeWire/WirePlumber/PulseAudio volume and mute using bounded subprocesses.
+- Launch installed XFCE settings utilities instead of fake toggles; the probes run on a background worker to keep GTK responsive.
+
+### Theme conflict remediation and safety
+
+- Automatically recognize *exact* official 0.6, 0.7.0 and 0.7.1 assets by embedded trusted Git blob hashes, then upgrade with **dated whole-theme backups**.
+- Leave user-modified themes untouched by default; use the explicit, confirmed Hub **Repair local theme assets…** button or `macrice rice repair-assets STYLE` to back up and replace only that style's assets.
+- Fail closed on symlinks, unmanaged paths and unexpected files. Keep macOS implementation, D-Bus IDs, session coordinators and user state compatible.
+
+### Validation
+
+- Full Python regression suite, six virtual-X11 shell smoke tests, native Wnck window-lifecycle test, and 12 real GTK menu/control captures in CI.
+- Physical Mint XFCE battery/Plank/multi-monitor acceptance remains outstanding; release is a **pre-release** until confirmed.
+
 ## 0.7.1 — Consistent RiceBowl branding (3 November 2026)
 
 - Standardized RiceBowl names across GTK window titles, sidebar icon, desktop entries, system tools, documentation and the package metadata (which previously reported 0.5.0rc2).
