@@ -8,7 +8,7 @@
 
 A lightweight, native GTK3 desktop-style manager for Linux Mint XFCE and other XFCE/X11 environments.
 
-[Latest release](https://github.com/CopyPasteUser/RiceHub/releases/tag/v0.7.0) · [Changelog](CHANGELOG.md) · [Development roadmap](ROADMAP.md) · [CI](https://github.com/CopyPasteUser/RiceHub/actions)
+[Latest release](https://github.com/CopyPasteUser/RiceHub/releases/tag/v0.7.1) · [Changelog](CHANGELOG.md) · [Development roadmap](ROADMAP.md) · [CI](https://github.com/CopyPasteUser/RiceHub/actions)
 
 </div>
 
@@ -16,7 +16,7 @@ A lightweight, native GTK3 desktop-style manager for Linux Mint XFCE and other X
 
 RiceBowl transforms an XFCE desktop using original GTK3, XFWM4, icon, wallpaper, taskbar, launcher and file-manager themes. Select a desktop in the graphical hub, review its requirements and apply it with a restore snapshot. The application is written in Python/GTK3, without an Electron runtime, remote services or telemetry.
 
-**Version 0.7.0** introduces the RiceBowl name and rice-bowl logo, profile-specific control panels, and more differentiated Thunar styling across the non-macOS rices. The established macOS rice is intentionally unchanged.
+**Version 0.7.1** introduces the RiceBowl name and rice-bowl logo, profile-specific control panels, and more differentiated Thunar styling across the non-macOS rices. The established macOS rice is intentionally unchanged.
 
 ## Desktop families
 
