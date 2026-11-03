@@ -161,8 +161,11 @@ def preflight(source_root: Path, data_root: Path,
             raise AeroAssetError("Unexpectedly large Aero theme asset")
         if any(p.is_symlink() for p in (target, *target.parents)):
             raise AeroAssetError(f"Refusing symlinked theme target: {target}")
-        from .asset_upgrade import inspect_bundle
-        inspect_bundle(source, target)
+        from .asset_upgrade import AssetConflict, inspect_bundle
+        try:
+            inspect_bundle(source, target)
+        except AssetConflict as exc:
+            raise AeroAssetError(str(exc)) from exc
         packages.append((source, target))
     return packages
 
@@ -171,6 +174,15 @@ def install(packages: list[tuple[Path, Path]]) -> None:
     """Upgrade verified historical bundles with backup and atomic replacement."""
     from .asset_upgrade import install_bundle
     for source, target in packages:
+        if target.exists():
+            old = {p.relative_to(target): p for p in target.rglob("*") if p.is_file()}
+            new = {p.relative_to(source): p for p in source.rglob("*") if p.is_file()}
+            if set(old) == set(new) and all(
+                _compatible_managed_file(relative, old[relative].read_bytes(), path.read_bytes())
+                for relative, path in new.items()
+            ):
+                _migrate_owned_metadata(target, source)
+                continue
         install_bundle(source, target)
 
 
