@@ -1,52 +1,41 @@
-# RiceBowl 0.8.0 — Distinct Rices and native system tray
+# RiceBowl 0.9.0 — Four native desktop identities
 
-RiceBowl 0.8.0 is an XFCE/X11 pre-release centered on **six genuinely different non-macOS desktops**. The proven macOS rice, user configuration, Plank settings, backup system and old launcher aliases remain unchanged.
+This pre-release translates four user-supplied desktop concept screenshots into **actual RiceBowl Python/GTK3 and XFCE theme code**. It does not present image mockups as implemented features. macOS rice and the working session switching/restore engine are intentionally untouched.
 
-## Desktop and artwork
+## XP Luna
+- Independent two-column Start menu with account header, real installed applications, Places folders and Log off / Turn off session dialogs.
+- Saturated blue taskbar, green Start button, raised active tasks, classic blue system status and an XP-style categorized Control Panel.
+- Warm file-menu colors, glossy file-manager toolbar, blue sidebar and period-inspired path buttons.
 
-- Original **42 differentiated application and place icons** (file manager, settings, browser, terminal, home, folder, trash) for Windows 7 Aero, Windows 10, XP Luna, Classic 98/2000, ChromeOS and Frutiger Aero.
-- **66 matching status icons**, four individual heritage Start graphics and more expressive rice-specific taskbar/button/control CSS.
-- ChromeOS has a centered search and app-grid launcher, rather than the Windows 10 tile interface. Frutiger Aero has a separate aqua/eco dashboard; other profiles retain their own era-appropriate Start menus and system controls.
-- Windows XP's category-style Control Panel now uses a single-column layout: lengthy labels remain readable, and the popup stays inside the screen in real X11 captures.
+## Windows 98 / 2000 Classic
+- Compact, sharp-edged Start menu with navy vertical rail and **real cascading Programs categories** built from installed desktop applications.
+- Functional Find search, settings, home/computer shortcuts and session dialog. Square gray beveled taskbar, recessed status controls and classic column/list styling in Thunar.
 
-## Battery, network and sound
+## ChromeOS
+- Searchable **12 real installed apps** launcher grid (no fake app tiles).
+- Separate launcher button, centered dock shelf with pinned/running apps, and grouped right-side status indicators.
+- Soft lilac/white UI, rounded controls and a pill-shaped file-manager path/toolbar.
 
-- The lower-right status area now displays **real battery charge and charging state**, not a fabricated icon. No battery: no battery widget.
-- Active Wi-Fi and Ethernet are determined from Linux interfaces and routing, with a VPN fallback for underlying Wi-Fi.
-- Audio percent and mute come from WirePlumber/PipeWire or PulseAudio, with bounded subprocesses and no UI-thread blocking.
-- Network, sound and battery buttons open appropriate installed settings tools; disabled or unavailable features are clearly reported.
+## Y2K / Frutiger Aero
+- Aqua dashboard with working **Apps / Places / Settings** tabs and real folders and XFCE tools, glossy cyan taskbar and green selection accents.
+- Luminous native GTK3 file manager chrome, cyan/glass toolbar, lime selected rows and aqua status controls.
 
-## Theme migration and recovery
+## Better hardware controls
+- Battery percentage and charging state are read from Linux power_supply; machines with no battery do not display a fabricated battery.
+- Actual Wi-Fi/Ethernet/VPN-underlay detection and read-only network state.
+- Real sound volume slider and mute button, using bounded PipeWire/WirePlumber or PulseAudio calls with read-back verification. Unsupported backends remain disabled; errors are displayed, not simulated.
 
-- The prior `Existing customized theme conflicts with RiceBowl` bug caused by routine official asset updates is addressed with a **version-aware migration**. Exact official 0.6, 0.7.0 and 0.7.1 assets are verified against bundled known Git hashes and upgraded with a dated full backup.
-- Unknown modifications still cannot be silently overwritten. The Hub's **Repair local theme assets…** action or `macrice rice repair-assets ten-dark` deliberately backs up and replaces only that Rice's themes/icons. No current desktop setting is switched by repair.
-- Reject symlinks and unmanaged asset paths; existing D-Bus IDs, theme directory names, old `ricehub` and `macrice` commands remain compatible.
-- Explicit repair of Windows 10 Dark or Light affects **only the selected variant plus its shared icon pack**; edits to the other variant remain untouched.
+## Upgrade safety and icons
+- 36 new illustrated folder, media, device, and network SVGs across the four profiles, protected against regeneration.
+- Trust exact official 0.8 theme hashes during upgrades and transparently migrate unchanged old 0.8 Thunar CSS blocks while preserving unrelated personal CSS.
+- Existing system settings, Plank preferences, RiceHub legacy aliases and backing up/restoring desktop state are preserved.
 
-## Verification and remaining gates
+## Verification and limitations
+GitHub Actions must pass Python/GTK regression suites, native XFCE/X11 smoke and window-lifecycle tests, and produce 12 non-identical valid GTK screenshots before publication. This is a **pre-release** pending acceptance on a physical Linux Mint XFCE machine (battery, Plank, displays, repeated switching).
 
-GitHub Actions runs the Python suite, native GTK/X11 smoke and window tracking tests, and captures real GTK menu/control screenshots under a virtual X11 desktop. The release contains a source ZIP, SHA-256 checksum and the new captures.
+**Stock Thunar limitation:** Thunar's GTK3 widgets are styled natively. The screenshot references show some custom-designed file-manager dashboards (e.g. Recent/download content sections) which cannot be reproduced by GTK CSS alone; no separate fake file-manager UI is shipped. This release retains the real file manager and its capabilities.
 
-**Physical Linux Mint XFCE acceptance is not yet complete**: repeat switching, real battery, Wi-Fi under VPN, Plank autostart, multi-monitor and external display/compositor behavior should be checked on target hardware before promoting this from pre-release.
+## Update
+Clone or pull the canonical repository, run bash install.sh --dry-run, then bash install.sh --no-start; launch with ~/.local/bin/ricebowl. Do not run the installer as root. Use the built-in **Repair local theme assets…** action only if a customized local theme blocks normal updating.
 
-## Upgrade
-
-From a clone of the canonical repository:
-
-```bash
-git pull --ff-only
-bash install.sh --dry-run
-bash install.sh
-ricebowl
-```
-
-Or clone: https://github.com/CopyPasteUser/RiceBowl
-
-Details: [README](README.md), [0.8.0 roadmap](RELEASE_0_8_0_ROADMAP.md), [Changelog](CHANGELOG.md).
-
-## Pre-release verification record
-
-The release candidate passed [GitHub Actions run 41586128188](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41586128188):
-**176 core Python tests**, native GTK/X11 smoke coverage for each desktop family, existing component regression suites, and **12 independently validated 1600 × 900 PNG captures** of real GTK windows under virtual X11. The captured gallery is attached to this GitHub pre-release, rather than represented as physical Mint screenshots.
-
-The project has not yet passed physical Mint XFCE acceptance for Plank coexistence, battery charging on hardware, monitor hotplugging and long-running session changes.
+Repository: https://github.com/CopyPasteUser/RiceBowl
