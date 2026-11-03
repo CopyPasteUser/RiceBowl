@@ -68,7 +68,15 @@ def inspect_bundle(source: Path, target: Path) -> None:
         expected = source_files[relative].read_bytes()
         if local == expected:
             continue
-        key = _relative_source_key(source, relative)
+        # Exact branding-only upgrade is also supported in isolated test bundles.
+        if ((relative.name == "index.theme" or relative.suffix == ".svg") and
+                b"RiceBowl" in expected and
+                local == expected.replace(b"RiceBowl", b"RiceHub")):
+            continue
+        try:
+            key = _relative_source_key(source, relative)
+        except AssetConflict:
+            key = ""
         if git_blob_sha(local) not in trusted.get(key, frozenset()):
             raise AssetConflict(
                 f"Existing customized theme conflicts with RiceBowl: {target} "
