@@ -32,3 +32,18 @@ tooltip { background: #e9effb; color: #293b57; border: 1px solid #bfcfe4; }
 window.thunar toolbar { background: #f7faff; border-bottom: 1px solid #d5e0f0; padding: 7px; }
 window.thunar .path-bar button { background: #e8effc; border: 1px solid #dae5f6; border-radius: 15px; padding: 6px 11px; }
 window.thunar .sidebar { background: #edf3ff; }
+
+/* RiceBowl 0.9: high-fidelity, Thunar-only era chrome. */
+/* ChromeOS: soft white tools, pill address field, cool lavender sidebar. */
+window.thunar menubar { background: #f4f6ff; border-bottom: 0; color: #344064; padding: 4px 8px; }
+window.thunar toolbar, window.thunar .location-bar { background-image: linear-gradient(#fafbff, #edf1fc); border-bottom: 1px solid #dde4f5; padding: 8px 11px; }
+window.thunar toolbar button { background: transparent; border: 1px solid transparent; border-radius: 14px; color: #35486d; padding: 6px 8px; }
+window.thunar toolbar button:hover { background: #e2eafd; border-color: #d1def5; }
+window.thunar .path-bar button, window.thunar .location-bar button { background: #e7ecfc; color: #303d67; border: 1px solid #dee3f5; border-radius: 16px; padding: 7px 13px; }
+window.thunar .sidebar, window.thunar .shortcuts-pane { background-image: linear-gradient(#eef1ff, #e4ebfc); color: #34476b; border-right: 1px solid #d4ddf3; }
+window.thunar .sidebar .view, window.thunar .shortcuts-pane .view { background: transparent; color: #34476b; }
+window.thunar .sidebar .view:selected { background: #cfdbfb; color: #24417a; border-radius: 9px; }
+window.thunar treeview.view:selected { background: #d6ddf9; color: #263966; }
+window.thunar .standard-view, window.thunar .view { background: #fcfdff; }
+window.thunar statusbar { background: #f2f4ff; color: #596987; border-top: 1px solid #e1e6f5; padding: 6px 10px; }
+window.thunar scrollbar slider { background: #c6d0ee; border-radius: 9px; }
