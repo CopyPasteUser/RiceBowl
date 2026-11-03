@@ -78,7 +78,7 @@ def parser() -> argparse.ArgumentParser:
     dock = commands.add_parser("dock", help="Inspect the existing dock or open its native preferences")
     dock.add_argument("action", choices=("status", "preferences"))
     rice = commands.add_parser("rice", help="Plan, apply or restore the complete XFCE desktop Rice")
-    rice.add_argument("action", choices=("plan", "apply", "restore"))
+    rice.add_argument("action", choices=("plan", "apply", "restore", "repair-assets"))
     from .rice import STYLES
     rice.add_argument("style", nargs="?", choices=tuple(STYLES))
     profile = commands.add_parser("performance", help="Apply a Control Center resource profile")
@@ -147,6 +147,13 @@ def main(argv: list[str] | None = None) -> int:
                     print("Preserved newer edits (not overwritten):", ", ".join(skipped))
             elif args.style is None:
                 raise RiceError("Choose night or day (example: macrice rice plan night)")
+            elif args.action == "repair-assets":
+                from .rice import repair_assets
+                backups = repair_assets(args.style)
+                print("RiceBowl asset repair complete. Original assets archived at:")
+                for backup in backups:
+                    print(" ", backup)
+                print("Review these backups before deletion; now choose Apply rice.")
             elif args.action == "plan":
                 changes, _, _, _ = plan_rice(args.style)
                 number = sum(item["before"] != item["after"] for item in changes)
