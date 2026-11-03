@@ -1,7 +1,7 @@
-"""Installable RiceHub XP, Classic, ChromeOS and Aqua profiles.
+"""Installable RiceBowl XP, Classic, ChromeOS and Aqua profiles.
 
 Every profile shares the proven GTK/X11 taskbar engine and reversible XFCE
-transaction. Only RiceHub-owned themes and login entries are managed.
+transaction. Only RiceBowl-owned themes and login entries are managed.
 """
 
 from __future__ import annotations
@@ -66,12 +66,21 @@ def autostart_content(key: str) -> str:
     executable = str(bin_home() / "macrice").replace('"', '\\"')
     return (
         "[Desktop Entry]\nType=Application\nVersion=1.0\n"
-        f"Name=RiceHub {profile.name} Shell\n"
-        f"Comment=Native RiceHub {profile.name} taskbar\n"
+        f"Name=RiceBowl {profile.name} Shell\n"
+        f"Comment=Native RiceBowl {profile.name} taskbar\n"
         f'Exec="{executable}" {key}-shell\n'
         "Terminal=false\nOnlyShowIn=XFCE;\nX-GNOME-Autostart-enabled=true\n"
         f"# RiceHub {key} autostart (managed by RiceHub)\n"
     )
+
+
+def legacy_autostart_content(key: str) -> str:
+    """Recognize the exact old user-owned launcher during safe restoration."""
+    profile = PROFILES[key]
+    return (autostart_content(key)
+            .replace(f"Name=RiceBowl {profile.name} Shell", f"Name=RiceHub {profile.name} Shell")
+            .replace(f"Comment=Native RiceBowl {profile.name} taskbar",
+                     f"Comment=Native RiceHub {profile.name} taskbar"))
 
 
 def read_autostart(key: str, config_root: Path) -> str | None:
@@ -83,7 +92,7 @@ def read_autostart(key: str, config_root: Path) -> str | None:
     if not target.is_file() or target.stat().st_size > 16 * 1024:
         raise AeroAssetError(f"Unexpected file at {key} autostart path")
     content = target.read_text(encoding="utf-8")
-    if content != autostart_content(key):
+    if content not in (autostart_content(key), legacy_autostart_content(key)):
         raise AeroAssetError(f"Existing {key} autostart was customized; refusing overwrite")
     return content
 
@@ -94,7 +103,7 @@ def write_autostart(key: str, config_root: Path, content: str | None) -> None:
     if content is None:
         target.unlink(missing_ok=True)
         return
-    if content != autostart_content(key):
+    if content not in (autostart_content(key), legacy_autostart_content(key)):
         raise AeroAssetError("Refusing non-canonical shell autostart")
     target.parent.mkdir(parents=True, exist_ok=True)
     fd, temp = tempfile.mkstemp(prefix=f".ricehub-{key}-start-", dir=target.parent)
