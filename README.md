@@ -8,7 +8,7 @@
 
 A lightweight, native GTK3 desktop-style manager for Linux Mint XFCE and other XFCE/X11 environments.
 
-[Latest release](https://github.com/CopyPasteUser/RiceBowl/releases/tag/v0.9.0) · [Changelog](CHANGELOG.md) · [Development roadmap](ROADMAP.md) · [CI](https://github.com/CopyPasteUser/RiceBowl/actions)
+[Latest release](https://github.com/CopyPasteUser/RiceBowl/releases/tag/v0.9.1) · [Changelog](CHANGELOG.md) · [Development roadmap](ROADMAP.md) · [CI](https://github.com/CopyPasteUser/RiceBowl/actions)
 
 </div>
 
@@ -16,7 +16,9 @@ A lightweight, native GTK3 desktop-style manager for Linux Mint XFCE and other X
 
 RiceBowl transforms an XFCE desktop using original GTK3, XFWM4, icon, wallpaper, taskbar, launcher and file-manager themes. Select a desktop in the graphical hub, review its requirements and apply it with a restore snapshot. The application is written in Python/GTK3, without an Electron runtime, remote services or telemetry.
 
-**Version 0.9.0** implements the four detailed desktop-reference directions in real GTK3 code. XP Luna gains an authentic blue/green two-column Start screen; Windows 98/2000 gets cascading Programs menus; ChromeOS gets a 12-app launcher and separately styled center shelf/status pill; Frutiger Aero gains functional Apps / Places / Settings tabs. All four receive richer Thunar styling, 36 additional folder/device icons, and working volume/mute controls with verified read-back. The macOS implementation remains unchanged.
+**Version 0.9.1** fixes the XP Luna Start menu overlapping its taskbar by positioning the window from its actual GTK allocation. Desktop changes now verify that a replacement taskbar has mapped before retiring XFCE Panel; if startup fails, RiceBowl attempts to restore the stock panel and saved shortcuts. The hub keeps responding while the transition is checked.
+
+Version 0.9.0 introduced four detailed desktop-reference directions in real GTK3 code: XP Luna's blue/green two-column Start screen, Windows 98/2000's cascading Programs menus, ChromeOS's 12-app launcher and center shelf, and Frutiger Aero's Apps / Places / Settings dashboard. The styles include richer Thunar chrome, original icons and verified volume/mute controls. The macOS implementation remains unchanged.
 
 ## Desktop families
 
@@ -32,19 +34,19 @@ RiceBowl transforms an XFCE desktop using original GTK3, XFWM4, icon, wallpaper,
 
 All seven families are installable and reversible. The non-macOS menus launch **real applications** from the desktop catalog, with Wnck-based window buttons when the relevant library is present. Control panels open installed system utilities; unavailable tools are disabled rather than simulated. No Microsoft, Google or Apple proprietary assets are bundled.
 
-### RiceBowl 0.9.0 — actual GTK/X11 screenshots
+### RiceBowl 0.9.1 — actual GTK/X11 screenshots
 
 Screenshots are captured by GitHub Actions directly from the **real running Python/GTK desktop shells**, not generated mockups. Preview rendering under virtual X11 is not a substitute for testing your Mint laptop.
 
 | XP Luna | Windows 98 / 2000 |
 | --- | --- |
-| ![XP Luna with working two-column launcher](https://github.com/CopyPasteUser/RiceBowl/releases/download/v0.9.0/ricebowl-winxp-start-0.9.0.png) | ![Classic cascaded programs menu](https://github.com/CopyPasteUser/RiceBowl/releases/download/v0.9.0/ricebowl-winclassic-start-0.9.0.png) |
+| ![XP Luna with working two-column launcher](https://github.com/CopyPasteUser/RiceBowl/releases/download/v0.9.1/ricebowl-winxp-start-0.9.1.png) | ![Classic cascaded programs menu](https://github.com/CopyPasteUser/RiceBowl/releases/download/v0.9.1/ricebowl-winclassic-start-0.9.1.png) |
 
 | ChromeOS | Frutiger Aero |
 | --- | --- |
-| ![ChromeOS app launcher and separated shelf](https://github.com/CopyPasteUser/RiceBowl/releases/download/v0.9.0/ricebowl-chromeos-start-0.9.0.png) | ![Frutiger Aero apps and places dashboard](https://github.com/CopyPasteUser/RiceBowl/releases/download/v0.9.0/ricebowl-frutiger-start-0.9.0.png) |
+| ![ChromeOS app launcher and separated shelf](https://github.com/CopyPasteUser/RiceBowl/releases/download/v0.9.1/ricebowl-chromeos-start-0.9.1.png) | ![Frutiger Aero apps and places dashboard](https://github.com/CopyPasteUser/RiceBowl/releases/download/v0.9.1/ricebowl-frutiger-start-0.9.1.png) |
 
-[All 12 menu/control-panel screenshots](https://github.com/CopyPasteUser/RiceBowl/releases/tag/v0.9.0).
+[All 12 menu/control-panel screenshots](https://github.com/CopyPasteUser/RiceBowl/releases/tag/v0.9.1).
 
 **File-manager scope:** the installed Thunar remains a functional GTK3 file manager; RiceBowl themes its window chrome, sidebar, toolbar, selected rows and path navigation. The conceptual "Recent + Downloads" dashboard in the reference images is **not** presented as an implemented Thunar feature.
 

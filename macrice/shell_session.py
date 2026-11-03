@@ -23,6 +23,59 @@ MAC_THEMES = ("WhiteSur-Dark", "WhiteSur-Light")
 MACBAR_APP_ID = "io.github.macbar.panel"
 
 
+def _shell_app_id(profile: str) -> str:
+    if profile == "aero":
+        return "io.github.copypasteuser.RiceHub.AeroShell"
+    if profile == "ten":
+        return "io.github.copypasteuser.RiceHub.TenShell"
+    return f"io.github.copypasteuser.RiceHub.{profile.title()}Shell"
+
+
+def _shell_ready(profile: str) -> bool:
+    """Read the native GApplication action published after GTK mapped the bar."""
+    try:
+        import gi
+
+        gi.require_version("Gio", "2.0")
+        from gi.repository import Gio, GLib
+
+        app_id = _shell_app_id(profile)
+        connection = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+        reply = connection.call_sync(
+            app_id, "/" + app_id.replace(".", "/"), "org.gtk.Actions", "List",
+            None, GLib.VariantType("(as)"), Gio.DBusCallFlags.NONE, 500, None,
+        )
+        return "ricebowl-ready" in reply.unpack()[0]
+    except Exception:
+        # A missing bus/name or a shell still starting is not readiness.
+        return False
+
+
+def _wait_for_shell_ready(profile: str) -> bool:
+    deadline = time.monotonic() + 4.0
+    while time.monotonic() < deadline:
+        if _shell_ready(profile):
+            return True
+        time.sleep(0.1)
+    return False
+
+
+def _recover_xfce_panel() -> list[str]:
+    """Keep the desktop operable after a failed GTK handoff."""
+    warnings = []
+    executable = shutil.which("xfce4-panel")
+    if executable:
+        warnings.extend(_start("xfce4-panel", [executable]))
+    else:
+        warnings.append("XFCE panel is unavailable for recovery")
+    from .session_shortcuts import restore_bindings
+    try:
+        warnings.extend(restore_bindings())
+    except (OSError, ValueError, RuntimeError) as exc:
+        warnings.append(f"Could not restore XFCE shortcuts: {exc}")
+    return warnings
+
+
 def _processes(name: str) -> list[int]:
     """Exact executable-name match, restricted to the current UID."""
     try:
@@ -275,6 +328,10 @@ def sync_theme(theme: str) -> tuple[str, ...]:
         warnings.extend(_stop_macbar())
         if not warnings:
             warnings.extend(_shell(desired, False))
+            if not warnings and not _wait_for_shell_ready(desired):
+                warnings.append(f"{desired} taskbar not ready; XFCE panel recovery attempted")
+                warnings.extend(_shell(desired, True))
+                warnings.extend(_recover_xfce_panel())
     elif mac:
         for name in ("plank", "macbar"):
             executable = _component_executable(name)

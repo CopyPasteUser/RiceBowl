@@ -16,7 +16,7 @@ from .hub_art import aspect_fill
 from .hub_catalog import FAMILIES, FAMILY_BY_KEY, recent_backups, search_families
 
 
-HUB_VERSION = "0.9.0"
+HUB_VERSION = "0.9.1"
 
 # A restrained native palette. All GTK CSS colors and font choices live here.
 TOKENS = {
@@ -707,20 +707,26 @@ def run() -> int:
             self._work("Checking installed themes and desktop settings…", lambda: plan(selected), ready)
 
         def _after_apply(self, backup, style_id):
-            from .shell_session import sync_theme
-            from .shell_session import install_login_reconciler
-            try:
-                install_login_reconciler()
-                startup_warnings = ()
-            except OSError as exc:
-                startup_warnings = (f"Login sync: {exc}",)
-            warnings = startup_warnings + sync_theme(STYLES[style_id].gtk)
-            if warnings:
-                self._notify("Rice saved, but taskbar switching needs attention: " + "; ".join(warnings), error=True)
-            else:
-                self._notify("Rice applied successfully. Recovery snapshot saved.")
-            self._refresh_backups()
-            self._refresh_system()
+            def activate():
+                from .shell_session import install_login_reconciler, sync_theme
+                try:
+                    install_login_reconciler()
+                    startup_warnings = ()
+                except OSError as exc:
+                    startup_warnings = (f"Login sync: {exc}",)
+                return startup_warnings + sync_theme(STYLES[style_id].gtk)
+
+            def finished(warnings):
+                if warnings:
+                    self._notify("Rice saved, but taskbar switching needs attention: " + "; ".join(warnings), error=True)
+                else:
+                    self._notify("Rice applied successfully. Recovery snapshot saved.")
+                self._refresh_backups()
+                self._refresh_system()
+
+            # The GTK/D-Bus handoff may wait for a taskbar to map. Never block
+            # the Hub's main thread during that readiness check.
+            self._work("Starting and verifying desktop taskbar…", activate, finished)
 
         def _restore_confirmed(self):
             backups = recent_backups()
@@ -734,24 +740,29 @@ def run() -> int:
             )
 
         def _after_restore(self, backup):
-            try:
+            def reconcile():
                 from .rice import XfceBackend
                 from .shell_session import sync_theme
-                warnings = sync_theme(XfceBackend().get("xfconf", "xsettings", "/Net/ThemeName"))
-            except (OSError, RuntimeError) as exc:
-                warnings = (str(exc),)
-            skipped = backup / "skipped.json"
-            message = "Desktop restored"
-            if skipped.is_file():
-                import json
-                message += "; newer edits preserved: " + ", ".join(json.loads(skipped.read_text(encoding="utf-8")))
-            if warnings:
-                message += "; taskbar switching needs attention: " + "; ".join(warnings)
-                self._notify(message, error=True)
-            else:
-                self._notify(message + ".")
-            self._refresh_backups()
-            self._refresh_system()
+                try:
+                    return sync_theme(XfceBackend().get("xfconf", "xsettings", "/Net/ThemeName"))
+                except (OSError, RuntimeError) as exc:
+                    return (str(exc),)
+
+            def finished(warnings):
+                skipped = backup / "skipped.json"
+                message = "Desktop restored"
+                if skipped.is_file():
+                    import json
+                    message += "; newer edits preserved: " + ", ".join(json.loads(skipped.read_text(encoding="utf-8")))
+                if warnings:
+                    message += "; taskbar switching needs attention: " + "; ".join(warnings)
+                    self._notify(message, error=True)
+                else:
+                    self._notify(message + ".")
+                self._refresh_backups()
+                self._refresh_system()
+
+            self._work("Restoring and verifying desktop taskbar…", reconcile, finished)
 
         def _refresh_backups(self):
             if not hasattr(self, "backup_list"):

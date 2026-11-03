@@ -22,6 +22,13 @@ def menu_geometry(x: int, y: int, width: int, height: int,
     return (x + margin, y + height - PANEL_HEIGHT - margin - h, w, h)
 
 
+def actual_popup_y(monitor_y: int, monitor_height: int, actual_height: int,
+                   margin: int = 8) -> int:
+    """Anchor a mapped GTK popup using its real, not requested, height."""
+    return max(monitor_y + margin,
+               monitor_y + monitor_height - PANEL_HEIGHT - margin - actual_height)
+
+
 def task_capacity(width: int, pinned: int, tray_reserve: int = 185) -> int:
     """Conservatively reserve space for Start, launchers, status and tray.
 

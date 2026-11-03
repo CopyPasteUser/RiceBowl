@@ -2,6 +2,8 @@
 import unittest
 import os
 import tempfile
+import sys
+import types
 from pathlib import Path
 from unittest import mock
 from macrice import shell_session as s
@@ -11,6 +13,9 @@ class SessionTests(unittest.TestCase):
         controls = mock.patch.object(s, "_activate_session_controls", return_value=[])
         self.controls = controls.start()
         self.addCleanup(controls.stop)
+        ready = mock.patch.object(s, "_wait_for_shell_ready", return_value=True)
+        self.ready = ready.start()
+        self.addCleanup(ready.stop)
 
     @mock.patch.dict("os.environ", {"DISPLAY": ":99"})
     @mock.patch.object(s, "_start", return_value=[])
@@ -113,6 +118,62 @@ class SessionTests(unittest.TestCase):
     def test_stop_failure_blocks_new_shell(self, stop_macbar, shell, stop):
         self.assertEqual(s.sync_theme("RiceHub-Aero"), ("plank did not exit",))
         self.assertNotIn(mock.call("aero", False), shell.call_args_list)
+
+    @mock.patch.dict("os.environ", {"DISPLAY": ":99"})
+    @mock.patch.object(s, "_recover_xfce_panel", return_value=[])
+    @mock.patch.object(s, "_stop_macbar", return_value=[])
+    @mock.patch.object(s, "_stop", return_value=[])
+    @mock.patch.object(s, "_shell", return_value=[])
+    def test_unready_shell_does_not_quit_xfce_panel(self, shell, stop, stop_macbar, fallback):
+        self.ready.return_value = False
+        result = s.sync_theme("RiceHub-Aero")
+        self.assertTrue(any("not ready" in warning for warning in result))
+        self.controls.assert_not_called()
+        fallback.assert_called_once_with()
+
+    @mock.patch.dict("os.environ", {"DISPLAY": ":99"})
+    @mock.patch.object(s, "_stop_macbar", return_value=[])
+    @mock.patch.object(s, "_stop", return_value=[])
+    @mock.patch.object(s, "_shell", return_value=[])
+    def test_shell_ready_before_original_panel_is_retired(self, shell, stop, stop_macbar):
+        self.assertEqual(s.sync_theme("RiceHub-Aero"), ())
+        self.ready.assert_called_once_with("aero")
+        self.controls.assert_called_once_with("RiceHub-Aero")
+
+    def test_all_shells_have_their_existing_dbus_application_id(self):
+        self.assertEqual(s._shell_app_id("aero"), "io.github.copypasteuser.RiceHub.AeroShell")
+        self.assertEqual(s._shell_app_id("ten"), "io.github.copypasteuser.RiceHub.TenShell")
+        for profile in ("winxp", "winclassic", "chromeos", "frutiger"):
+            self.assertEqual(s._shell_app_id(profile),
+                             f"io.github.copypasteuser.RiceHub.{profile.title()}Shell")
+
+    def test_readiness_requires_gtk_action_on_the_correct_dbus_path(self):
+        connection = mock.Mock()
+        connection.call_sync.return_value.unpack.return_value = (["toggle-menu", "ricebowl-ready"],)
+        gio = types.SimpleNamespace(BusType=types.SimpleNamespace(SESSION=0),
+                                    DBusCallFlags=types.SimpleNamespace(NONE=0),
+                                    VariantType=lambda signature: signature,
+                                    bus_get_sync=mock.Mock(return_value=connection))
+        gi = types.ModuleType("gi")
+        gi.require_version = mock.Mock()
+        gi.repository = types.ModuleType("gi.repository")
+        gi.repository.Gio = gio
+        gi.repository.GLib = types.SimpleNamespace(VariantType=lambda signature: signature)
+        with mock.patch.dict(sys.modules, {"gi": gi, "gi.repository": gi.repository}):
+            self.assertTrue(s._shell_ready("winxp"))
+            self.assertEqual(connection.call_sync.call_args.args[:4], (
+                "io.github.copypasteuser.RiceHub.WinxpShell",
+                "/io/github/copypasteuser/RiceHub/WinxpShell", "org.gtk.Actions", "List"))
+            connection.call_sync.return_value.unpack.return_value = (["toggle-menu"],)
+            self.assertFalse(s._shell_ready("winxp"))
+
+    @mock.patch.object(s, "_start", return_value=[])
+    @mock.patch.object(s.shutil, "which", return_value="/usr/bin/xfce4-panel")
+    def test_failure_recovers_stock_panel_and_saved_shortcuts(self, which, start):
+        with mock.patch("macrice.session_shortcuts.restore_bindings", return_value=()) as restore:
+            self.assertEqual(s._recover_xfce_panel(), [])
+        start.assert_called_once_with("xfce4-panel", ["/usr/bin/xfce4-panel"])
+        restore.assert_called_once_with()
 
 
 class PanelAndShortcutTests(unittest.TestCase):

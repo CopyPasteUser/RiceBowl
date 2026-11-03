@@ -31,7 +31,7 @@ jobs:
             RICEHUB_PROFILE="$profile" timeout 24s dbus-run-session -- xvfb-run -a -s '-screen 0 1600x900x24' /usr/bin/python3 -c 'import os; from macrice.aero_shell import run; p=os.environ["RICEHUB_PROFILE"]; raise SystemExit(run([f"ricebowl-{p}-shell", "--capture-gallery"], profile=p))'
           done
           # Fail the release if any gallery screen silently failed to capture.
-          /usr/bin/python3 -c 'from pathlib import Path; import hashlib, struct; fs=sorted(Path("screenshots").glob("ricebowl-*-0.9.0.png")); assert len(fs)==12, f"Expected 12 GTK captures, found {len(fs)}"; data=[p.read_bytes() for p in fs]; assert all(len(b)>50000 and b[:8]==bytes.fromhex("89504e470d0a1a0a") and struct.unpack(">II", b[16:24])==(1600,900) for b in data), "Invalid or incomplete screenshot"; assert len({hashlib.sha256(b).digest() for b in data})==12, "Duplicate screenshot detected"'
+          /usr/bin/python3 -c 'from pathlib import Path; import hashlib, struct; fs=sorted(Path("screenshots").glob("ricebowl-*-0.9.1.png")); assert len(fs)==12, f"Expected 12 GTK captures, found {len(fs)}"; data=[p.read_bytes() for p in fs]; assert all(len(b)>50000 and b[:8]==bytes.fromhex("89504e470d0a1a0a") and struct.unpack(">II", b[16:24])==(1600,900) for b in data), "Invalid or incomplete screenshot"; assert len({hashlib.sha256(b).digest() for b in data})==12, "Duplicate screenshot detected"'
           /usr/bin/python3 screenshots/validate_gallery.py
           (cd components/macmenu && /usr/bin/python3 -m unittest discover -s tests -v)
           (cd components/macbar && /usr/bin/python3 -m unittest discover -s tests -v)
@@ -40,14 +40,14 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ricebowl-0.9.0-native-x11-captures
-          path: screenshots/ricebowl-*-0.9.0.png
+          name: ricebowl-0.9.1-native-x11-captures
+          path: screenshots/ricebowl-*-0.9.1.png
           if-no-files-found: ignore
 
   publish-ricebowl:
-    name: Publish RiceBowl 0.9 after green CI
+    name: Publish RiceBowl 0.9.1 after green CI
     needs: test
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'RiceBowl 0.9.0 release')
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'RiceBowl 0.9.1 release')
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -59,18 +59,18 @@ jobs:
           test -f RELEASE_NOTES.md
           test -f assets/ricebowl-symbolic.svg
           mkdir -p dist
-          git archive --format=zip --output=dist/RiceBowl-v0.9.0-source.zip HEAD
-          (cd dist && sha256sum RiceBowl-v0.9.0-source.zip | tee SHA256SUMS)
+          git archive --format=zip --output=dist/RiceBowl-v0.9.1-source.zip HEAD
+          (cd dist && sha256sum RiceBowl-v0.9.1-source.zip | tee SHA256SUMS)
       - uses: actions/download-artifact@v4
         with:
-          name: ricebowl-0.9.0-native-x11-captures
+          name: ricebowl-0.9.1-native-x11-captures
           path: dist/screenshots
       - name: Create release if absent
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          if gh release view v0.9.0 >/dev/null 2>&1; then
-            echo 'RiceBowl v0.9.0 release already exists'
+          if gh release view v0.9.1 >/dev/null 2>&1; then
+            echo 'RiceBowl v0.9.1 release already exists'
             exit 0
           fi
-          gh release create v0.9.0 dist/RiceBowl-v0.9.0-source.zip dist/SHA256SUMS dist/screenshots/*.png --target "$GITHUB_SHA" --title 'RiceBowl v0.9.0' --notes-file RELEASE_NOTES.md --prerelease
+          gh release create v0.9.1 dist/RiceBowl-v0.9.1-source.zip dist/SHA256SUMS dist/screenshots/*.png --target "$GITHUB_SHA" --title 'RiceBowl v0.9.1' --notes-file RELEASE_NOTES.md --prerelease

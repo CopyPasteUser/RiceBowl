@@ -1,5 +1,14 @@
 # RiceBowl changelog
 
+## 0.9.1 — XP popup geometry and safer panel handoff (3 November 2026)
+
+- Position the XP Luna Start menu against the actual mapped GTK window height, not its requested 560 px; shrink its program-list minimum height so the taskbar stays exposed.
+- Add a native GTK application readiness action on taskbar map and verify it over the local D-Bus session before retiring the stock XFCE Panel.
+- On a failed taskbar startup, stop the incomplete replacement and attempt to recover XFCE Panel and previously saved keyboard shortcuts. Preserve Plank ownership and the existing restore snapshots.
+- Move post-apply and post-restore session reconciliation off the Hub's GTK main thread to avoid UI stalls during startup checks.
+- Extend layout and session regressions, and gate the release on real virtual-X11 popup bounds, smoke tests and 12 fresh gallery captures.
+- The owner accepted the 0.9.0 desktop designs and functionality, with the XP menu/taskbar overlap identified as the remaining issue. The 0.9.1 geometry fix still needs a final physical-machine check.
+
 ## 0.9.0 — Four reference-driven GTK/XFCE rice refinements (3 November 2026)
 
 ### Implemented, not rendered mockups

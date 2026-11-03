@@ -4,6 +4,15 @@
 
 MacRice is deliberately a thin integration layer. MacMenu, Control Center and MacBar keep their own tested lifecycles; Plank remains an external system dock.
 
+## 0.9.1 — Owner acceptance follow-up (3 November 2026)
+
+- [x] Record owner acceptance of the seven-rice experience except one observed XP Luna Start menu/taskbar overlap.
+- [x] Anchor XP Luna to its allocated GTK height, with a shrinkable app list and automated popup-bound checks.
+- [x] Gate the XFCE Panel handoff on a mapped replacement taskbar; add bounded recovery and regression tests.
+- [x] Keep the RiceBowl Hub responsive during readiness verification; prepare 0.9.1 CI and release artifacts.
+- [ ] Confirm XP Luna's fixed Start menu on the owner's Mint XFCE session, including external monitor and lower resolutions.
+- [ ] Run the remaining real-hardware multi-monitor, login/relogin and measured PSS/CPU checks before 1.0.
+
 ## 0.9 — Faithful XP, Classic, ChromeOS and Frutiger refinement (3 November 2026)
 
 - [x] Give XP its own actual two-column Start menu, account header, favorites list, places, power footer and vivid Luna taskbar.
@@ -15,7 +24,8 @@ MacRice is deliberately a thin integration layer. MacMenu, Control Center and Ma
 - [x] Add real, verified volume and mute controls, plus battery/network details; all hardware probes remain bounded.
 - [x] Preserve legacy 0.8 theme and Thunar CSS formats in safe migration logic.
 - [x] Validate all 12 actual GTK/X11 captures and six settings popups (visible-area regression check) with 193 passing Python tests; publish 0.9.0 as pre-release.
-- [ ] Physical Mint XFCE acceptance on real laptop: repeated switches, Plank autostart, external displays and real battery/charging.
+- [x] Owner acceptance of overall appearance and functionality (except XP menu overlap, targeted by 0.9.1).
+- [ ] Complete device-specific checks for external displays, login/relogin and battery/charging behavior.
 
 ## 0.8 — Visual identity, status tray and repair (3 November 2026)
 

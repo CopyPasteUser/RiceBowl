@@ -13,6 +13,7 @@ from PIL import Image, ImageChops
 
 
 PROFILES = ("aero", "windows10", "winxp", "winclassic", "chromeos", "frutiger")
+GALLERY_VERSION = "0.9.1"
 
 
 def changed_area(menu: Path, controls: Path) -> tuple[int, int]:
@@ -31,8 +32,8 @@ def changed_area(menu: Path, controls: Path) -> tuple[int, int]:
 def main() -> None:
     folder = Path("screenshots")
     for name in PROFILES:
-        start = folder / f"ricebowl-{name}-start-0.9.0.png"
-        controls = folder / f"ricebowl-{name}-controls-0.9.0.png"
+        start = folder / f"ricebowl-{name}-start-{GALLERY_VERSION}.png"
+        controls = folder / f"ricebowl-{name}-controls-{GALLERY_VERSION}.png"
         if not start.is_file() or not controls.is_file():
             raise SystemExit(f"Missing native GTK screenshots for {name}")
         changed, area = changed_area(start, controls)

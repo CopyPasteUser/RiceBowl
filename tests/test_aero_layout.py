@@ -1,7 +1,7 @@
 """Aero geometry and overflow regressions; independent of GTK hardware."""
 import unittest
 
-from macrice.aero_layout import PANEL_HEIGHT, bottom_strut, menu_geometry, task_capacity, select_windows
+from macrice.aero_layout import PANEL_HEIGHT, actual_popup_y, bottom_strut, menu_geometry, task_capacity, select_windows
 
 
 class AeroLayoutTests(unittest.TestCase):
@@ -13,6 +13,12 @@ class AeroLayoutTests(unittest.TestCase):
             self.assertGreaterEqual(b, y)
             self.assertLessEqual(a + c, x + w)
             self.assertLessEqual(b + d, y + h - PANEL_HEIGHT)
+
+    def test_xp_menu_is_reanchored_for_gtk_natural_height(self):
+        # The 0.9.0 menu grew beyond its requested 560 px and overlapped the panel.
+        for top, monitor_height, allocated_height in ((0, 900, 587), (75, 900, 587), (-20, 768, 608)):
+            y = actual_popup_y(top, monitor_height, allocated_height)
+            self.assertEqual(y + allocated_height, top + monitor_height - PANEL_HEIGHT - 8)
 
     def test_capacities_do_not_overflow_at_narrow_widths(self):
         self.assertEqual(task_capacity(320, 3), 0)

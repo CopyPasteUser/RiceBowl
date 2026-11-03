@@ -87,6 +87,7 @@ class HeritageTests(unittest.TestCase):
                   mock.patch("macrice.shell_session._shell", return_value=[]) as shell,
                   mock.patch("macrice.shell_session._stop", return_value=[]),
                   mock.patch("macrice.shell_session._stop_macbar", return_value=[]),
+                  mock.patch("macrice.shell_session._wait_for_shell_ready", return_value=True),
                   mock.patch("macrice.shell_session._activate_session_controls", return_value=[])):
                 self.assertEqual(sync_theme(profile.theme), ())
                 self.assertEqual([call.args for call in shell.call_args_list if call.args[1] is False], [(key, False)])

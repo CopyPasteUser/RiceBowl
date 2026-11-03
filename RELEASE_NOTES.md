@@ -1,41 +1,30 @@
-# RiceBowl 0.9.0 — Four native desktop identities
+# RiceBowl 0.9.1 — XP Luna geometry and resilient taskbar switching
 
-This pre-release translates four user-supplied desktop concept screenshots into **actual RiceBowl Python/GTK3 and XFCE theme code**. It does not present image mockups as implemented features. macOS rice and the working session switching/restore engine are intentionally untouched.
+This maintenance pre-release follows the owner's acceptance of the seven desktop personalities in 0.9.0, with one remaining visual defect: the XP Luna Start menu overlapped its taskbar slightly.
 
-## XP Luna
-- Independent two-column Start menu with account header, real installed applications, Places folders and Log off / Turn off session dialogs.
-- Saturated blue taskbar, green Start button, raised active tasks, classic blue system status and an XP-style categorized Control Panel.
-- Warm file-menu colors, glossy file-manager toolbar, blue sidebar and period-inspired path buttons.
+## What's fixed
 
-## Windows 98 / 2000 Classic
-- Compact, sharp-edged Start menu with navy vertical rail and **real cascading Programs categories** built from installed desktop applications.
-- Functional Find search, settings, home/computer shortcuts and session dialog. Square gray beveled taskbar, recessed status controls and classic column/list styling in Thunar.
+- **XP Luna Start:** the menu now follows its actual GTK-allocated height rather than assuming the requested 560 px was honored. Its installed-app list can contract when needed, and the menu is re-anchored above the bottom taskbar.
+- **Safer desktop transitions:** a new local GTK application action advertises when the replacement taskbar is mapped. The session coordinator waits for that signal before removing XFCE Panel.
+- **Failure recovery:** if the new bar does not become ready, RiceBowl closes the incomplete shell and attempts to restore XFCE Panel and saved keyboard shortcuts. Existing user-owned Plank configuration is untouched.
+- **Responsive Hub:** post-apply and post-restore taskbar reconciliation runs in the background, so a delayed startup does not freeze the GTK interface.
 
-## ChromeOS
-- Searchable **12 real installed apps** launcher grid (no fake app tiles).
-- Separate launcher button, centered dock shelf with pinned/running apps, and grouped right-side status indicators.
-- Soft lilac/white UI, rounded controls and a pill-shaped file-manager path/toolbar.
+## Verification
 
-## Y2K / Frutiger Aero
-- Aqua dashboard with working **Apps / Places / Settings** tabs and real folders and XFCE tools, glossy cyan taskbar and green selection accents.
-- Luminous native GTK3 file manager chrome, cyan/glass toolbar, lime selected rows and aqua status controls.
+The release pipeline runs the Python regression suite, GTK shell smoke checks, native X11 window-lifecycle test, and captures 12 fresh 1600×900 screenshots of six non-macOS Start menus and settings panels. The capture fails if a popup extends into the taskbar area. It also validates the settings views contain meaningful rendered content, not just a title strip. Release publication requires the CI tests to pass.
 
-## Better hardware controls
-- Battery percentage and charging state are read from Linux power_supply; machines with no battery do not display a fabricated battery.
-- Actual Wi-Fi/Ethernet/VPN-underlay detection and read-only network state.
-- Real sound volume slider and mute button, using bounded PipeWire/WirePlumber or PulseAudio calls with read-back verification. Unsupported backends remain disabled; errors are displayed, not simulated.
-
-## Upgrade safety and icons
-- 36 new illustrated folder, media, device, and network SVGs across the four profiles, protected against regeneration.
-- Trust exact official 0.8 theme hashes during upgrades and transparently migrate unchanged old 0.8 Thunar CSS blocks while preserving unrelated personal CSS.
-- Existing system settings, Plank preferences, RiceHub legacy aliases and backing up/restoring desktop state are preserved.
-
-## Verification and limitations
-GitHub Actions must pass Python/GTK regression suites, native XFCE/X11 smoke and window-lifecycle tests, and produce 12 non-identical valid GTK screenshots before publication. This is a **pre-release** pending acceptance on a physical Linux Mint XFCE machine (battery, Plank, displays, repeated switching).
-
-**Stock Thunar limitation:** Thunar's GTK3 widgets are styled natively. The screenshot references show some custom-designed file-manager dashboards (e.g. Recent/download content sections) which cannot be reproduced by GTK CSS alone; no separate fake file-manager UI is shipped. This release retains the real file manager and its capabilities.
+The owner's physical Mint XFCE acceptance of 0.9.0 covered the desktop appearance and functionality except this XP issue. **The 0.9.1 fix still needs confirmation on the actual laptop**, particularly at smaller resolutions and with an external display. RiceBowl remains a pre-release until the 1.0 hardware matrix is complete.
 
 ## Update
-Clone or pull the canonical repository, run bash install.sh --dry-run, then bash install.sh --no-start; launch with ~/.local/bin/ricebowl. Do not run the installer as root. Use the built-in **Repair local theme assets…** action only if a customized local theme blocks normal updating.
+
+```bash
+cd RiceBowl
+git pull --ff-only
+bash install.sh --dry-run
+bash install.sh
+ricebowl
+```
+
+Install as your normal desktop user, not root. Existing restore snapshots, RiceHub compatibility identifiers, and user-managed Plank preferences are preserved.
 
 Repository: https://github.com/CopyPasteUser/RiceBowl

@@ -128,6 +128,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
     gi.require_version("Gdk", "3.0")
     from gi.repository import Gdk, GdkPixbuf, Gio, GLib, Gtk, Pango
 
+    from .aero_layout import actual_popup_y
     from .aero_windows import create_window_tracker, toggle_window_id
     from .installer import project_root
 
@@ -232,6 +233,12 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._catalog_monitor = Gio.AppInfoMonitor.get()
             self._catalog_monitor.connect("changed", self._catalog_changed)
 
+        def _publish_ready(self, *_args):
+            """Expose readiness on D-Bus only when GTK maps the actual taskbar."""
+            if self.lookup_action("ricebowl-ready") is None:
+                self.add_action(Gio.SimpleAction.new("ricebowl-ready", None))
+            return False
+
         def _smoke_check(self):
             """Exercise actual GTK construction, menu open/search and close under Xvfb."""
             try:
@@ -302,7 +309,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _capture_menu(self):
             try:
-                self._capture_screen(f"ricebowl-{profile}-start-0.9.0.png")
+                self._assert_popup_on_monitor(self.menu)
+                self._capture_screen(f"ricebowl-{profile}-start-0.9.1.png")
                 self._hide_menu()
                 self._toggle_actions()
                 assert self.actions.get_visible()
@@ -316,13 +324,27 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _capture_actions(self):
             try:
-                self._capture_screen(f"ricebowl-{profile}-controls-0.9.0.png")
+                self._assert_popup_on_monitor(self.actions)
+                self._capture_screen(f"ricebowl-{profile}-controls-0.9.1.png")
             except Exception:
                 import traceback
                 traceback.print_exc()
                 self._smoke_failed = True
             self.quit()
             return False
+
+        def _assert_popup_on_monitor(self, popup):
+            """An on-screen image is insufficient if its controls overlap the bar."""
+            rect = self._desktop_rect()
+            actual_w, actual_h = popup.get_size()
+            actual_x, actual_y = popup.get_window().get_root_origin()
+            if not (rect.x <= actual_x and rect.y <= actual_y and
+                    actual_x + actual_w <= rect.x + rect.width and
+                    actual_y + actual_h <= rect.y + rect.height - PANEL_HEIGHT):
+                raise AssertionError(
+                    f"{profile} popup outside usable monitor: "
+                    f"{actual_x},{actual_y} {actual_w}x{actual_h}, "
+                    f"monitor={rect.x},{rect.y} {rect.width}x{rect.height}")
 
         def _shutdown(self, *_args):
             for name in self._popup_hide_sources:
@@ -836,6 +858,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             GLib.timeout_add_seconds(30, update_clock)
             win.add(row)
             win.connect("realize", self._reserve_workarea)
+            win.connect("map-event", self._publish_ready)
             win.show_all()
             win.move(rect.x, rect.y + rect.height - PANEL_HEIGHT)
             self.bar = win
@@ -1046,7 +1069,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             menu = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
             menu.set_title("RiceBowl XP Luna Start")
             menu.set_decorated(False)
-            menu.set_resizable(False)
+            # GTK's natural height may exceed the requested menu height.
+            # Keep the scrollable app list shrinkable and the window movable.
+            menu.set_resizable(True)
             menu.set_skip_taskbar_hint(True)
             menu.set_skip_pager_hint(True)
             menu.set_type_hint(Gdk.WindowTypeHint.UTILITY)
@@ -1081,7 +1106,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             apps.pack_start(search, False, False, 2)
             scroll = Gtk.ScrolledWindow()
             scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-            scroll.set_min_content_height(326)
+            scroll.set_min_content_height(160)
             self.results = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1)
             scroll.add(self.results)
             apps.pack_start(scroll, True, True, 0)
@@ -1912,7 +1937,18 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.menu.resize(w, h)
             self.menu.move(x, y)
             self.menu.present()
+            if profile == "winxp":
+                GLib.idle_add(self._reanchor_luna_menu)
             self.search.grab_focus()
+
+        def _reanchor_luna_menu(self):
+            """Anchor using GTK's allocated height, not its requested height."""
+            if not self.menu.get_visible():
+                return False
+            rect = self._desktop_rect()
+            actual_w, actual_h = self.menu.get_size()
+            self.menu.move(rect.x + 8, actual_popup_y(rect.y, rect.height, actual_h))
+            return False
 
         def _open_uri(self, uri):
             try:
