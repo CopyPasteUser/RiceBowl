@@ -663,6 +663,7 @@ def run() -> int:
                 proceed()
 
         def _repair_selected(self):
+            from .rice import repair_assets
             selected = self.style_picker.get_active_id()
             if selected not in STYLES or self._selected == "macos":
                 return
@@ -673,7 +674,7 @@ def run() -> int:
                 "before replacement. The desktop theme is not switched.",
                 lambda: self._work(
                     "Backing up and repairing local theme assets…",
-                    lambda: __import__("macrice.rice", fromlist=["repair_assets"]).repair_assets(selected),
+                    lambda: repair_assets(selected),
                     lambda backups: self._notify(
                         "Theme assets repaired. " +
                         (f"{len(backups)} backup(s) saved. " if backups else "") +
