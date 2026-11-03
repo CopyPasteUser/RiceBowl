@@ -23,7 +23,7 @@ original Linux artwork. Windows 11 and Liquid Glass are out of scope.
 - **Aurora / macOS:** restrained dark/light WhiteSur, native MacBar and user-managed Plank.
 - **Windows 7:** icon-only Aero penguin Start orb, 42px glass Superbar,
   active/hover glass task backplates, two-column white-program/blue-places Start,
-  working All Programs and search, green session-dialog shutdown, original blue
+  working All Programs and search, amber session-dialog shutdown, original blue
   XFWM4 frame/button sprites and Explorer-like Thunar controls. The live Win7
   shell owns `win7-*` CSS classes and `_create_win7_menu()` in `aero_shell.py`;
   `scripts/build_aero_assets.py` owns the checked-in original XFWM4/icon artwork.

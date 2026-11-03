@@ -14,7 +14,7 @@ All art here is originally drawn. We do not import Microsoft logos, wallpapers, 
 - [x] Icon-first running task buttons with glass rollover and active-state backplates; preserve per-window Wnck switching, user pins, right-click pin management and window overflow.
 - [x] New two-pane actual GTK Start menu: pinned/recent program priority, All Programs, live search, user avatar, native filesystem locations and Control Panel/Printers launchers.
 - [x] Disabled, explained actions when the installed tool or directory does not exist, rather than a nonfunctional imitation.
-- [x] Green session-dialog shutdown affordance, not an unconditional poweroff command.
+- [x] Orange session-dialog shutdown affordance, not an unconditional poweroff command.
 - [x] Repaint original XFWM4 top/corner/side frame assets and window controls (normal, inactive, hover, pressed).
 - [x] Draw distinct document, photo, music and download icons in the Aero icon theme; load them in the Start menu even before the theme is installed.
 - [x] Tune GTK3 and Thunar palette: white Explorer-style file views, cyan glass toolbars, pale-blue navigator, Windows-era button/scrollbar treatments.

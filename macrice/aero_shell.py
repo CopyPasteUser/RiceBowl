@@ -232,10 +232,10 @@ CSS = b"""
 .win7-place:hover, .win7-place:focus { background: rgba(235,250,255,.33); border-color: rgba(255,255,255,.6); }
 .win7-place:disabled label { color: #a8bfd0; }
 .win7-side-separator { background: rgba(227,248,255,.36); min-height: 1px; margin: 6px 3px; }
-.win7-power { color: #fff; border: 1px solid #5a6c3c; border-radius: 3px;
-  background-image: linear-gradient(to bottom, #addb74, #568834 48%, #38681d 52%, #659943);
+.win7-power { color: #fff; border: 1px solid #9f622e; border-radius: 3px;
+  background-image: linear-gradient(to bottom, #ffba7e, #e38942 48%, #ad5721 52%, #c77632);
   padding: 7px 14px; font-weight: bold; box-shadow: inset 0 1px rgba(255,255,255,.43); }
-.win7-power:hover { background-image: linear-gradient(to bottom, #d4f7a1, #76aa4e 48%, #447d28 52%, #80b652); }
+.win7-power:hover { background-image: linear-gradient(to bottom, #ffdbaf, #f5a85f 48%, #c66a29 52%, #e28c48); }
 .win7-power:disabled { background: #6c8290; color: #dfebf2; }
 /* White Windows 7 Control Panel interior with a thin Aero-glass frame. */
 .aero-control-root.win7-control-root {
@@ -2028,7 +2028,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
         def _create_actions(self):
             """Profile-aware controls; never simulate state-changing toggles."""
             actions = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
-            heading = heritage.control_heading if heritage else ("Action Center" if ten else "Aero Control Panel")
+            heading = heritage.control_heading if heritage else ("Action Center" if ten else "Control Panel")
             actions.set_title("RiceBowl " + heading)
             actions.set_decorated(False)
             # GtkScrolledWindow has no useful implicit minimum height.
@@ -2095,7 +2095,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 )
             else:
                 sections = (
-                    ("Quick settings" if tiles else "System tools",
+                    ("Quick settings" if tiles else "Control Panel items" if profile == "aero" else "System tools",
                      (("Network", "network-wireless", "nm-connection-editor"),
                       ("Sound", "audio-volume-high", "pavucontrol"),
                       ("Display", "video-display", "xfce4-display-settings"),
