@@ -225,6 +225,11 @@ CSS = b"""
   border-radius: 3px;
   padding: 7px 5px 6px;
 }
+/* RiceHub-Aero's shared GTK theme tints every viewport blue for Thunar.
+   The Windows 7 Start program list is an intentionally distinct ivory pane. */
+.win7-programs scrolledwindow, .win7-programs viewport {
+  background-color: #fffefa;
+}
 .win7-program { color: #1b2937; background: transparent; border: 1px solid transparent;
   border-radius: 2px; box-shadow: none; padding: 5px 7px; }
 .win7-program:hover, .win7-program:focus { background-image: linear-gradient(to bottom, #eaf7ff, #b9dff7); border-color: #73b0d8; }

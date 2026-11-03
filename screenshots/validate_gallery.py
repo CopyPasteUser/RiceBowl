@@ -45,6 +45,14 @@ def main() -> None:
             raise SystemExit(
                 f"{name}: the settings window is hidden/clipped or failed "
                 f"to render ({changed} changed pixels)")
+    # Aero's global GTK viewport palette is Explorer-blue. Its Start program
+    # list must explicitly retain the white/ivory Windows 7 surface instead.
+    with Image.open(folder / f"ricebowl-aero-start-{GALLERY_VERSION}.png") as preview:
+        red, green, blue = preview.convert("RGB").getpixel((160, 700))
+        if red < 249 or green < 247 or blue < 243:
+            raise SystemExit(
+                "Aero program-list viewport inherited the blue GTK background: "
+                f"{red},{green},{blue}")
     # Verify that the large Launcher is actually X11-shaped. The Quick Settings
     # UTILITY window has a GTK-owned extra backdrop on some uncomposited Xvfb
     # backends even when the native bounding region is correctly rounded;
