@@ -7,10 +7,11 @@ Capture provenance (3 November 2026):
 
 - **Windows 7 Aero workspace (`aero-workspace.webp`)**: passing native
   XFWM4/Thunar GitHub Actions run
-  [`41685514010`](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41685514010),
+  [`41686544328`](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41686544328),
   branch `feat/win7-explorer-fidelity`, source
-  `b600b96c179c1caf33868441d082c1269540c935`. This shows the **new**
-  Seven Explorer Thunar CSS and MIME-icon refinements.
+  `3392f0c50a8e134d388cef28a51c3271f6864d7a`. This shows the **new**
+  Seven Explorer Thunar CSS and MIME-icon refinements. The same passing run
+  also captured a real 1024×768 Thunar workspace in its artifact.
 - **Windows 7 Aero Start and Control Panel (`aero-start.webp`,
   `aero-controls.webp`)**: passing GitHub Actions run
   [`41678284256`](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41678284256),
@@ -37,3 +38,4 @@ recoverable from Git history, not in the current gallery.
 CI also verifies **1024×768** Start and settings capture for XP Luna, Windows 7,
 Frutiger Aero, Classic 98, Windows 10 and ChromeOS; the compact test screenshots
 remain CI artifacts rather than duplicates in this gallery.
+The Windows 7 artifact additionally includes a 1024×768 genuine Thunar window.

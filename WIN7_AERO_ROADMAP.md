@@ -23,10 +23,11 @@ physical Linux Mint acceptance remains open.
   GTK CSS or overwriting personalized managed rules.
 - [x] Add unit/integration checks, icon XML and GdkPixbuf decoding validation.
 - [x] Inspect the real 1600×900 XFWM4/Thunar capture from green
-  [CI run 41685514010](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41685514010)
+  [CI run 41686544328](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41686544328)
   and replace only the verified Aero workspace image in the current gallery.
-- [ ] Inspect a separate real 1024×768 Thunar workspace capture. The CI run
-  already verified 1024×768 Start/Control Panel but captures Thunar at 1600×900.
+- [x] Capture and visually inspect a real 1024×768 Thunar workspace (same CI
+  run, separate artifact image). The complete window, controls and statusbar
+  fit without screen-edge clipping; retain the full-sized image in the gallery.
 - [ ] Confirm on the owner's Mint XFCE desktop that the toolbar's native menu
   or Ctrl+M/F10 still opens the hidden menu.
 

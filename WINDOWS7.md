@@ -8,8 +8,8 @@ original RiceBowl Linux artwork, not Microsoft binaries, icons or wallpaper.
 These are real XFWM4/GTK3 desktop captures. Start and Control Panel come from
 passing CI run [`41678284256`](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41678284256);
 the **new Explorer-style Thunar workspace** comes from passing native CI run
-[`41685514010`](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41685514010).
-The pipeline also checks **1024×768** Start/Control Panel placement. Owner Mint
+[`41686544328`](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41686544328).
+The pipeline also checks **1024×768** Start/Control Panel and Thunar placement. Owner Mint
 hardware verification is separate.
 
 ### Desktop and taskbar
