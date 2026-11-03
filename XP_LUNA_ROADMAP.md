@@ -15,7 +15,8 @@ Scope: the live `winxp` GTK/XFWM/X11 rice, not the read-only preview or other de
 
 - [x] Inventory existing XP-specific widgets, CSS, generated XFWM/GTK assets and the historical-asset migration guard.
 - [x] Use historical layout/color guidelines as a fidelity baseline; record original-art constraint.
-- [ ] Measure initial vs final real GTK captures side by side at 1600×900 and 1024×768.
+- [x] Compare initial vs final real GTK captures at 1600×900 and 1024×768,
+  including the XP Control Panel and a genuine XFWM/Thunar workspace.
 
 ### P1 — Start menu anatomy
 
@@ -39,11 +40,46 @@ Scope: the live `winxp` GTK/XFWM/X11 rice, not the read-only preview or other de
 ### P4 — Release gate
 
 - [x] Extend pure-Python Luna layout, app discovery, icon and migration unit tests.
-- [ ] Run all six-profile virtual-X11 smoke/gallery checks on GitHub Actions.
-- [ ] Validate no collisions at 1600×900 and 1024×768, inspect real captures, and audit focus/empty/error states.
+- [x] Run all six-profile virtual-X11 smoke/gallery checks on GitHub Actions
+  (`41691336596` green, 3 November 2026).
+- [x] Validate the new XP Control Panel, Start and Thunar at 1600×900 and
+  1024×768 using native X11 captures; unit and smoke tests cover keyboard,
+  category/classic transitions, disabled actions and menu geometry.
 - [ ] Re-test on the owner's Mint XFCE laptop: external monitor, login/relogin, rapid rice switching, Plank autostart, volume/network/battery.
 - [ ] After acceptance, publish as the next RiceBowl pre-release with updated readme, evidence and checksum.
 
 ## Fidelity ceiling
 
 XFWM4/GTK3 cannot reproduce proprietary Windows Explorer internals or the exact original `msstyles` theme engine. Windows XP visuals here are reimplemented over Linux rather than copied bitmaps or a Windows session. The target is a convincingly faithful daily-driver rice, not a claim of binary/pixel identity with Windows XP.
+
+## Follow-up fidelity pass — November 2026
+
+The 2001-era Start/taskbar artwork from the first pass remains. The screenshot
+review revealed that the **file-manager interior** was still too glossy/modern,
+the **Control Panel** resembled a narrow notification popup, and missing XDG
+folders produced unexpectedly inert Start links. These improvements are scoped
+to `winxp` only:
+
+- [x] Build a centered XP-like category Control Panel window with an actual
+  category / classic switch and eight real settings launch targets. The blue
+  sidebar retains accurate network/battery information and verifiable output
+  volume/mute controls, even when an external sound backend is unavailable.
+- [x] Make Start > Control Panel open that same native panel, eliminating two
+  conflicting Windows settings destinations.
+- [x] Resolve My Documents / My Pictures / My Music via real XDG user dirs;
+  if one does not exist, offer to create it **only after explicit confirmation**.
+- [x] Align the recent-documents link and order its real file submenu by date.
+- [x] Add an isolated `LUNA_EXPLORER_CSS` layer over the exact previous managed
+  Thunar CSS so user overrides are preserved and old installed blocks migrate.
+- [x] Update screenshot position validation for the centered XP Control Panel.
+- [x] Unit-test applet discovery, directory permission prompts, CSS migrations
+  and absence of cross-profile styling.
+- [x] Inspect passing native 1600×900 and 1024×768 screenshots and republish
+  the current gallery from that precise passing CI commit.
+- [ ] Verify on the owner's physical Mint XFCE laptop (multimonitor, autostart,
+  volume, actual applet availability and quick profile switching).
+
+Remaining fidelity limit: Thunar's functional GTK shortcuts pane cannot be
+turned into Windows Explorer's proprietary context-sensitive *File and Folder
+Tasks* pane with CSS alone. The current UI styles real Thunar actions, never
+adds fake filesystem operations or replaces its file-management engine.

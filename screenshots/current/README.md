@@ -18,13 +18,20 @@ Capture provenance (3 November 2026):
   branch `feat/win7-fidelity-round2`, source
   `6bb1b6d0c6546a698efdc8207da7394941b4ecd7`. This includes the actual
   48px Superbar, new category Control Panel and all eight original Aero icons.
-- **Windows 10, XP, Classic 98, ChromeOS and Frutiger**: passing Actions run
+- **Windows XP Luna Start, Control Panel and real XFWM4/Thunar**
+  (`winxp-start.webp`, `winxp-controls.webp`, `winxp-workspace.webp`): passing
+  GitHub Actions run [`41691336596`](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41691336596),
+  source `6e8fea9c6dccf3b03348bca07150205ee8698ea0`. The rebuilt category
+  panel, XDG-aware Start links, warm Explorer command bar and exact applied
+  three-button XFWM4 layout are represented. The same artifact includes all
+  three XP views at **1024×768**, including an actual Thunar process.
+- **Windows 10, Classic 98, ChromeOS and Frutiger**: passing Actions run
   [`41666644729`](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41666644729),
   source `c3406bc572f6f314d3acacb1f5572c6b08c5508d`.
 
 Uncompressed PNG sources, including the 1024×768 tests, remain in their
-respective CI run artifacts. The other five rices were not cosmetically changed
-by the Windows 7 review.
+respective CI run artifacts. No other desktop family was cosmetically changed
+by the XP review.
 
 The `workspace` images display a real Thunar process under a real XFWM4 window
 manager, using the same GTK/icon theme and Thunar view preferences that RiceBowl
@@ -38,4 +45,4 @@ recoverable from Git history, not in the current gallery.
 CI also verifies **1024×768** Start and settings capture for XP Luna, Windows 7,
 Frutiger Aero, Classic 98, Windows 10 and ChromeOS; the compact test screenshots
 remain CI artifacts rather than duplicates in this gallery.
-The Windows 7 artifact additionally includes a 1024×768 genuine Thunar window.
+Windows 7 and XP artifacts additionally include 1024×768 genuine Thunar windows.

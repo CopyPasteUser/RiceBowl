@@ -11,6 +11,7 @@ from macrice.aero_layout import actual_popup_y, bottom_strut, menu_geometry
 from macrice.aero_shell import luna_programs
 from macrice.asset_upgrade import AssetConflict, git_blob_sha, inspect_bundle, install_bundle, trusted_assets
 from macrice.installer import project_root
+from macrice.luna_control_panel import LUNA_CATEGORIES, available_program
 
 
 class App:
@@ -60,12 +61,29 @@ class LunaProgramsTests(unittest.TestCase):
 
 
 class LunaGeometryTests(unittest.TestCase):
-    def test_control_panel_is_tall_enough_for_the_device_controls(self):
+    def test_control_panel_has_a_dedicated_monitor_constrained_window(self):
         shell = (project_root() / "macrice/aero_shell.py").read_text()
-        self.assertIn('"winxp": 630', shell)
         self.assertIn('"winclassic": 570', shell)
         self.assertIn('self._assert_control_footer_visible()', shell)
         self.assertIn('action_heights.get(profile, 430)', shell)
+        self.assertIn('from .luna_control_panel import build', shell)
+        self.assertIn('width = min(746, max(0, rect.width - 24))', shell)
+        self.assertIn('height = min(536, max(0, rect.height - panel_height - 24))', shell)
+
+    def test_control_panel_categories_never_launch_fake_or_unavailable_applets(self):
+        self.assertEqual(len(LUNA_CATEGORIES), 8)
+        self.assertEqual(available_program(("missing", "installed"),
+                                           lambda program: "/usr/bin/" + program
+                                           if program == "installed" else None), "installed")
+        self.assertIsNone(available_program(("absent",), lambda _program: None))
+        self.assertTrue(all(len(row) == 4 for row in LUNA_CATEGORIES))
+
+    def test_luna_user_folders_use_xdg_and_ask_before_creation(self):
+        shell = (project_root() / "macrice/aero_shell.py").read_text()
+        self.assertIn("GLib.get_user_special_dir(kind)", shell)
+        self.assertIn("Gtk.ButtonsType.YES_NO", shell)
+        self.assertIn("folder.mkdir(parents=True, exist_ok=True)", shell)
+        self.assertIn('"Control Panel", "preferences-system", callback=self._toggle_actions', shell)
 
     def test_40px_taskbar_menu_above_panel_on_common_screens(self):
         for x, y, width, height in ((0, 0, 1600, 900), (0, 0, 1024, 768),

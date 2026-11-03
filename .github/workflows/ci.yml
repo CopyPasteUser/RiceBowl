@@ -49,6 +49,8 @@ jobs:
           # XP 2001 layout must fit a real 1024x768 GTK/XFWM workarea as well.
           RICEBOWL_CAPTURE_SIZE=1024 timeout 24s dbus-run-session -- xvfb-run -a -s '-screen 0 1024x768x24' /usr/bin/python3 -c 'from macrice.aero_shell import run; raise SystemExit(run(["ricebowl-winxp-shell", "--capture-gallery"], profile="winxp"))'
           /usr/bin/python3 -c 'from pathlib import Path; import struct; fs=sorted(Path("screenshots").glob("ricebowl-winxp-*-0.9.1-1024.png")); assert len(fs)==2, "XP small-screen captures missing"; assert all(struct.unpack(">II", p.read_bytes()[16:24])==(1024,768) for p in fs), "XP 1024x768 capture invalid"'
+          RICEBOWL_CAPTURE_SIZE=1024 timeout 35s dbus-run-session -- xvfb-run -a -s '-screen 0 1024x768x24' /usr/bin/python3 screenshots/capture_native_workspace.py winxp
+          /usr/bin/python3 -c 'from pathlib import Path; import struct; p=Path("screenshots/ricebowl-winxp-workspace-0.9.1-1024.png"); b=p.read_bytes(); assert len(b)>30000 and struct.unpack(">II", b[16:24])==(1024,768), "XP compact Thunar window invalid"'
           # Windows 7 uses the historically sized 48px Superbar and a genuine
           # framed Control Panel, both fitting a 1024x768 XFWM4 desktop.
           RICEBOWL_CAPTURE_SIZE=1024 timeout 35s dbus-run-session -- xvfb-run -a -s '-screen 0 1024x768x24' /usr/bin/python3 screenshots/capture_win7_panel.py
@@ -79,6 +81,7 @@ jobs:
           path: |
             screenshots/ricebowl-*-0.9.1.png
             screenshots/ricebowl-winxp-*-0.9.1-1024.png
+            screenshots/ricebowl-winxp-workspace-0.9.1-1024.png
             screenshots/ricebowl-aero-*-0.9.1-1024.png
             screenshots/ricebowl-frutiger-*-0.9.1-1024.png
             screenshots/ricebowl-winclassic-*-0.9.1-1024.png

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Regression guard: a real GTK settings popup must occupy meaningful area.
 
-Checks PNGs from the same Xvfb display, comparing the right-hand control
+Checks PNGs from the same Xvfb display, comparing each actual control-window
 region with the corresponding Start screenshot. A clipped title strip (the
 0.9 pre-release regression) cannot pass this test.
 """
@@ -22,10 +22,10 @@ def changed_area(menu: Path, controls: Path, profile: str = "") -> tuple[int, in
         if a.size != b.size or a.size != (1600, 900):
             raise ValueError("Screenshot size mismatch; expected 1600x900")
         width, height = a.size
-        # Windows 7 uses a genuine centered, navigable Control Panel window;
+        # Windows 7 and XP both use a genuine centered Control Panel window;
         # the other profiles keep their right-anchored status popups.
         box = ((width // 2 - 340, 170, width // 2 + 340, 750)
-               if profile == "aero" else
+               if profile in ("aero", "winxp") else
                (width - 385, height - 515, width - 6, height - 60))
         diff = ImageChops.difference(a.crop(box), b.crop(box))
         changed = sum(1 for pixel in diff.getdata() if max(pixel) > 18)
@@ -69,7 +69,7 @@ def main() -> None:
                 raise SystemExit(
                     f"ChromeOS Launcher has an opaque rectangular backing at {x},{y} "
                     f"(color delta {delta}); check X11 rounded window shaping")
-    print("Six native GTK settings popups passed visible-area validation")
+    print("Six native GTK settings windows passed visible-area validation")
 
 
 if __name__ == "__main__":

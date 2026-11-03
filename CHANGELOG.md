@@ -1,5 +1,22 @@
 # RiceBowl changelog
 
+## Unreleased — Windows XP Luna Explorer and Control Panel fidelity (3 November 2026)
+
+- Replaced XP's narrow right-edge settings popup with a centered 2001-style
+  Control Panel, offering functional Category/Classic View switching, eight
+  Linux-backed applets and a blue sidebar with verified audio/network status.
+- Start > Control Panel opens this window. My Documents/Pictures/Music respect
+  XDG user directories; missing folders require confirmation before creation.
+  Recent Documents now has a proper icon and date-ordered submenu.
+- Changed only XP's Thunar controls to a warmer beige Explorer command bar,
+  flatter address navigation and blue tasks-pane styling, while retaining
+  genuine Thunar filesystem operations and exact CSS migration safeguards.
+- Added 1600×900 / 1024×768 native XFWM4/Thunar acceptance captures, matching
+  the actual applied window button layout, and replaced only XP's current
+  screenshots from the passing GitHub Actions run `41691336596`.
+- Remaining: the proprietary Explorer task-pane internals cannot be provided
+  by GTK CSS; physical Mint XFCE confirmation is still needed.
+
 ## Unreleased — Cross-rice visual QA and native application coverage (3 November 2026)
 
 - Fixed short initial XP Luna/Classic Control Panels and added a capture-time
