@@ -17,8 +17,19 @@ CSS = {
 .aero-menu-side { background-image: linear-gradient(#d7e8ff, #aacbf4); border-left: 1px solid #8db1e5; }
 .aero-menu-app:hover { background: #c3dcff; }
 .aero-control-root { background-image: linear-gradient(#fff, #d7e9ff); border: 2px solid #4284ce; }
+
+.aero-control-root { background: #f5f5ec; color: #173a70; border: 3px solid #2e69b7; border-radius: 7px; padding: 14px; }
+.aero-control-root .aero-menu-heading { color: #16417e; font-size: 19px; }
+.aero-control-root .aero-menu-sub { color: #38668c; font-weight: bold; }
+.aero-control-quick { background-image: linear-gradient(#fff, #e3eef9); color: #14467a; border: 1px solid #a3bdd7; border-radius: 4px; padding: 9px; }
+.aero-control-quick:hover { background: #d3e8ff; border-color: #4d88c6; }
 """,
-    "winclassic": b"""
+    "winclassic": b
+.aero-control-root { padding: 9px; color: #111; }
+.aero-control-root .aero-menu-heading { font-size: 15px; color: #000080; }
+.aero-control-root .aero-menu-sub { color: #333; font-size: 11px; }
+.aero-control-quick { padding: 6px; font-size: 12px; }
+"""
 .aero-taskbar { background: #c0c0c0; color: #111; border-top: 2px solid #fff; border-bottom: 1px solid #666; padding: 2px 4px; }
 .aero-start { background: #c0c0c0; border: 2px outset #eee; border-radius: 0; box-shadow: none; color: #111; padding: 4px 8px; font-weight: bold; }
 .aero-start:hover { background: #d8d8d8; }
@@ -58,6 +69,12 @@ CSS = {
 .ten-tile-label, .ten-muted { color: #344f76; }
 .ten-action-root { background: #f8fbff; color: #263b57; border: 1px solid #bed1eb; border-radius: 18px; padding: 14px; }
 .ten-quick { background: #e7effd; color: #2b4771; border: 1px solid #cbddf4; border-radius: 12px; }
+
+.ten-action-root { background: #f8faff; border: 1px solid #b9cce8; border-radius: 24px; padding: 17px; }
+.ten-action-root .aero-menu-heading { color: #1e3559; font-size: 20px; }
+.ten-action-root .aero-menu-sub { color: #577193; }
+.ten-quick { padding: 10px; border-radius: 15px; background: #e6efff; color: #263e63; }
+.ten-quick:hover { background: #d0e1fc; }
 """,
     "frutiger": b"""
 .aero-taskbar { background-image: linear-gradient(rgba(206,255,248,.96), rgba(82,208,222,.94) 40%, rgba(18,137,179,.96)); border-top: 2px solid #f2ffff; color: #053e5c; }
@@ -70,5 +87,11 @@ CSS = {
 .aero-menu-side { background-image: linear-gradient(#e1ffed, #7cdad0); border-left: 1px solid #8ccfd0; }
 .aero-menu-app:hover { background: #a9efe9; }
 .aero-control-root { background-image: linear-gradient(#f8fffe, #b1ece6); border: 2px solid #8acfcf; border-radius: 15px; }
+
+.aero-control-root { background-image: linear-gradient(#f7ffff, #d0fff0 55%, #b2e8f7); color: #07516a; border: 2px solid #7bd5e4; border-radius: 18px; padding: 16px; }
+.aero-control-root .aero-menu-heading { color: #086f8a; font-size: 20px; }
+.aero-control-root .aero-menu-sub { color: #277f85; }
+.aero-control-quick { background-image: linear-gradient(#fff, #c2f4f0); color: #07546a; border: 1px solid #78cad2; border-radius: 12px; padding: 9px; }
+.aero-control-quick:hover { background: #f4ffff; border-color: #20a7c1; }
 """,
 }
