@@ -23,6 +23,15 @@ CSS = {
 .aero-control-root .aero-menu-sub { color: #38668c; font-weight: bold; }
 .aero-control-quick { background-image: linear-gradient(#fff, #e3eef9); color: #14467a; border: 1px solid #a3bdd7; border-radius: 4px; padding: 9px; }
 .aero-control-quick:hover { background: #d3e8ff; border-color: #4d88c6; }
+
+/* Luna status and navigation: beveled, compact blue system tray. */
+.rice-status { background-image: linear-gradient(#377be3, #1e54b8); border: 1px solid #80b5ff; border-radius: 3px; color: white; padding: 2px 4px; box-shadow: inset 0 1px rgba(255,255,255,.4); }
+.rice-status:hover, .rice-status:focus { background: #5a9eee; border-color: #cceaff; }
+.rice-status label { color: #fff; font-size: 11px; font-weight: bold; }
+.aero-menu-app { background: #f9fbff; color: #184680; border-radius: 3px; }
+.aero-menu-search { background: #fff; border: 1px solid #73a5d9; border-radius: 3px; }
+.aero-menu-footer { background: #dae8ff; border-top: 2px solid #83ace0; }
+.rice-status-summary { color: #225f91; font-size: 11px; }
 """,
     "winclassic": b"""
 .aero-taskbar { background: #c0c0c0; color: #111; border-top: 2px solid #fff; border-bottom: 1px solid #666; padding: 2px 4px; }
@@ -48,6 +57,15 @@ CSS = {
 .aero-control-root .aero-menu-heading { font-size: 15px; color: #000080; }
 .aero-control-root .aero-menu-sub { color: #333; font-size: 11px; }
 .aero-control-quick { padding: 6px; font-size: 12px; }
+
+/* Win9x: crisp 1-pixel borders and recessed status indicators. */
+.rice-status { background: #c0c0c0; color: #111; border: 2px inset #f4f4f4; border-radius: 0; box-shadow: none; padding: 1px 3px; }
+.rice-status:hover, .rice-status:focus { background: #d3d3d3; border: 2px outset #f4f4f4; }
+.rice-status label { color: #111; font: 11px monospace; }
+.aero-taskbar { padding: 0 3px; }
+.aero-menu-app, .aero-menu-app button { border-radius: 0; box-shadow: none; }
+.aero-menu-footer { border-top: 2px inset #eee; }
+.rice-status-summary { color: #222; font-size: 11px; }
 """,
     "chromeos": b"""
 .aero-taskbar { background: rgba(242,246,255,.97); color: #26364e; border-top: 1px solid #c4d1e7; padding: 4px 12px; }
@@ -74,6 +92,19 @@ CSS = {
 .ten-action-root .aero-menu-sub { color: #577193; }
 .ten-quick { padding: 10px; border-radius: 15px; background: #e6efff; color: #263e63; }
 .ten-quick:hover { background: #d0e1fc; }
+
+/* Chromebooks: a centered app launcher and white pill-shaped status shelf. */
+.rice-status { background: #e4ecfa; color: #344e70; border: 1px solid transparent; border-radius: 22px; padding: 5px 7px; box-shadow: none; }
+.rice-status:hover, .rice-status:focus { background: #c9dbf7; border: 1px solid #8dabe2; }
+.rice-status label { color: #31466a; font-size: 11px; }
+.chrome-launcher { background: #f8faff; border: 1px solid #c8d6ed; border-radius: 23px; color: #27364e; box-shadow: 0 8px 16px rgba(20,47,80,.12); }
+.chrome-launcher .aero-menu-heading { font-size: 24px; color: #213d6f; }
+.chrome-launcher .aero-menu-search { background: #eaf0fb; border: 1px solid #d5e0f0; border-radius: 21px; padding: 10px 15px; }
+.chrome-launcher .ten-tile { border-radius: 18px; border: 1px solid transparent; background: #eef3ff; color: #2c4b76; box-shadow: none; padding: 8px 5px; }
+.chrome-launcher .ten-tile:hover, .chrome-launcher .ten-tile:focus { background: #d9e6ff; border-color: #b0c8ee; }
+.chrome-launcher .aero-menu-app { color: #3c557b; border-radius: 11px; padding: 8px 10px; }
+.chrome-launcher-settings { background: #edf4ff; border: 0; border-radius: 18px; padding: 7px; box-shadow: none; }
+.rice-status-summary { color: #486087; font-size: 11px; }
 """,
     "frutiger": b"""
 .aero-taskbar { background-image: linear-gradient(rgba(206,255,248,.96), rgba(82,208,222,.94) 40%, rgba(18,137,179,.96)); border-top: 2px solid #f2ffff; color: #053e5c; }
@@ -92,5 +123,14 @@ CSS = {
 .aero-control-root .aero-menu-sub { color: #277f85; }
 .aero-control-quick { background-image: linear-gradient(#fff, #c2f4f0); color: #07546a; border: 1px solid #78cad2; border-radius: 12px; padding: 9px; }
 .aero-control-quick:hover { background: #f4ffff; border-color: #20a7c1; }
+
+/* Frutiger Aero: high-key refractive glass, organically rounded controls. */
+.rice-status { background-image: linear-gradient(#f8ffff, #c1f7e9 53%, #65d1d5); color: #07607d; border: 1px solid #86dadb; border-radius: 13px; box-shadow: inset 0 1px #fff; padding: 5px 7px; }
+.rice-status:hover, .rice-status:focus { background-image: linear-gradient(#fff, #adfce1); border-color: #2f9fc1; }
+.rice-status label { color: #07607d; font-size: 11px; font-weight: bold; }
+.aero-menu-app { border-radius: 12px; }
+.aero-menu-search { border-radius: 17px; border: 1px solid #71c8d2; background: #f6fffb; }
+.aero-menu-power { background-image: linear-gradient(#fff, #78dfae); color: #096e7a; border-radius: 12px; border-color: #48bcad; }
+.rice-status-summary { color: #076e83; font-size: 11px; font-weight: bold; }
 """,
 }
