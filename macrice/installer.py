@@ -235,7 +235,7 @@ def _write_entrypoints(installed: Path) -> None:
     _atomic_write(fast_launcher, fast_content, 0o755)
     hub_desktop_content = (
         "[Desktop Entry]\nType=Application\nVersion=1.0\n"
-        "Name=RiceHub\nComment=Explore and manage desktop styles for XFCE\n"
+        "Name=RiceBowl (legacy launcher)\nComment=Compatibility shortcut for the RiceBowl desktop manager\n"
         f'Exec="{hub_launcher}"\n'
         f"Icon={installed / 'assets/ricebowl-symbolic.svg'}\n"
         "Terminal=false\nCategories=Settings;Utility;\nStartupNotify=true\n"
