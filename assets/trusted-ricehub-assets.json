@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "description": "Trusted Git blob SHA-1 IDs of bundled non-macOS theme and icon assets from RiceBowl 0.6, 0.7 and current main. Update deliberately for each release; never trust arbitrary local data.",
+  "description": "Trusted Git blob IDs of original non-macOS theme/icon assets from 0.6 through 0.8.0; exact official versions only. Do not remove historical entries.",
   "files": {
     "assets/icons/RiceHub-Aero/index.theme": [
       "242499ff414ec666b1ab4279a777a45d5eb4958e",
@@ -16,7 +16,8 @@
       "16658aa9870e952dabeae1424a713e1a2506ef40"
     ],
     "assets/icons/RiceHub-Aero/scalable/apps/preferences-system.svg": [
-      "5f8acafce5637ee8b88e908e9d6f0cc7b9525a9e"
+      "5f8acafce5637ee8b88e908e9d6f0cc7b9525a9e",
+      "08082f55fcfd224a80d7617dc17a237526e2bb9d"
     ],
     "assets/icons/RiceHub-Aero/scalable/apps/ricehub-aero.svg": [
       "8c51fe81066fa295812025e6422e8a4e3b30832c",
@@ -27,13 +28,16 @@
       "092055c740ae827326ac0ddb946f6ec21e869605"
     ],
     "assets/icons/RiceHub-Aero/scalable/apps/system-file-manager.svg": [
-      "65a82dfc093c321e77d9cde9b06bf3d9371929ed"
+      "65a82dfc093c321e77d9cde9b06bf3d9371929ed",
+      "89d194979f2539a1d9e1c8050f6d555204b3a4e6"
     ],
     "assets/icons/RiceHub-Aero/scalable/apps/utilities-terminal.svg": [
-      "a4cec1a0923e3037d75c8638558fc20bef4858b2"
+      "a4cec1a0923e3037d75c8638558fc20bef4858b2",
+      "e849c93d9890984835c425886bedb3e6c4e2995c"
     ],
     "assets/icons/RiceHub-Aero/scalable/apps/web-browser.svg": [
-      "8ac75b1792734ed57e70661a1439df9d3eba4316"
+      "8ac75b1792734ed57e70661a1439df9d3eba4316",
+      "fd457120aadeea5e5b889014c5ebdea29198f281"
     ],
     "assets/icons/RiceHub-Aero/scalable/apps/xfce4-menu.svg": [
       "8c51fe81066fa295812025e6422e8a4e3b30832c",
@@ -43,13 +47,16 @@
       "d786ded60937a1c4a5b2c7c1c0bd9d7891f7376a"
     ],
     "assets/icons/RiceHub-Aero/scalable/places/folder.svg": [
-      "bfcba02375b00eaab5fb9494f951f644a96c9815"
+      "bfcba02375b00eaab5fb9494f951f644a96c9815",
+      "7af0aa5d6b668414a4c2b1d975025dfb9aea9e87"
     ],
     "assets/icons/RiceHub-Aero/scalable/places/user-home.svg": [
-      "9c939c987a4d72cf5b404cb3eb408eb2fc47cee4"
+      "9c939c987a4d72cf5b404cb3eb408eb2fc47cee4",
+      "0380f2aac6d89926c01dcd4611390273c9d6c1d4"
     ],
     "assets/icons/RiceHub-Aero/scalable/places/user-trash.svg": [
-      "6ab8913089a8a59a70d6b99ecea2b75e44cea0bf"
+      "6ab8913089a8a59a70d6b99ecea2b75e44cea0bf",
+      "99ac92d4f01a0c3d09de218307433fdd29e870c5"
     ],
     "assets/icons/RiceHub-Chrome-Icons/index.theme": [
       "2edd46a36ccbc3c482ee0c1584b9e0a739b2b40d",
@@ -65,40 +72,50 @@
       "8dd9d98c28694fd3061d0fc20cf84e053979420c"
     ],
     "assets/icons/RiceHub-Chrome-Icons/scalable/apps/preferences-system.svg": [
-      "0871f6e24e3572e2cdf6ff89356a84aa2dc6f46d"
+      "0871f6e24e3572e2cdf6ff89356a84aa2dc6f46d",
+      "a9d3631dcecd7e6c422fba93f83eae1368999ac0"
     ],
     "assets/icons/RiceHub-Chrome-Icons/scalable/apps/ricehub-start.svg": [
       "36b282b8d571e8681d207399511771b339210b93",
-      "6e925ee0df64203d6388fa990c714c98e4068234"
+      "6e925ee0df64203d6388fa990c714c98e4068234",
+      "8d99d32324e100b6e69dabbcc14fdbf3a456c433"
     ],
     "assets/icons/RiceHub-Chrome-Icons/scalable/apps/start-here.svg": [
       "36b282b8d571e8681d207399511771b339210b93",
-      "6e925ee0df64203d6388fa990c714c98e4068234"
+      "6e925ee0df64203d6388fa990c714c98e4068234",
+      "8d99d32324e100b6e69dabbcc14fdbf3a456c433"
     ],
     "assets/icons/RiceHub-Chrome-Icons/scalable/apps/system-file-manager.svg": [
-      "3d7649c3fd6beb2e05a5c2671c39cd5c1574d49b"
+      "3d7649c3fd6beb2e05a5c2671c39cd5c1574d49b",
+      "a23c69490053f6d0d39b6f182afa080653712495"
     ],
     "assets/icons/RiceHub-Chrome-Icons/scalable/apps/utilities-terminal.svg": [
-      "3929109f40f67d85c5444603884b84c9ebc48794"
+      "3929109f40f67d85c5444603884b84c9ebc48794",
+      "c93ab88392bb0f3650bdd1e89fe79ef0847e341a"
     ],
     "assets/icons/RiceHub-Chrome-Icons/scalable/apps/web-browser.svg": [
-      "8a303e68d428d1f2faa48fc7fd667f97948c7ed2"
+      "8a303e68d428d1f2faa48fc7fd667f97948c7ed2",
+      "ecd3c03feb4a77197b16454d29f905cbf7b90a82"
     ],
     "assets/icons/RiceHub-Chrome-Icons/scalable/apps/xfce4-menu.svg": [
       "36b282b8d571e8681d207399511771b339210b93",
-      "6e925ee0df64203d6388fa990c714c98e4068234"
+      "6e925ee0df64203d6388fa990c714c98e4068234",
+      "8d99d32324e100b6e69dabbcc14fdbf3a456c433"
     ],
     "assets/icons/RiceHub-Chrome-Icons/scalable/places/computer.svg": [
       "28edf78ad3291f92111179af992080517328640f"
     ],
     "assets/icons/RiceHub-Chrome-Icons/scalable/places/folder.svg": [
-      "3d7649c3fd6beb2e05a5c2671c39cd5c1574d49b"
+      "3d7649c3fd6beb2e05a5c2671c39cd5c1574d49b",
+      "0ad804993bdd2217e1c3d926f37f8b314be2692f"
     ],
     "assets/icons/RiceHub-Chrome-Icons/scalable/places/user-home.svg": [
-      "396a1fe49ffb47fdd3e98ffb550259d47b51c32c"
+      "396a1fe49ffb47fdd3e98ffb550259d47b51c32c",
+      "cd66f997ef46b3dd8e5bdda6e7c15387336d85de"
     ],
     "assets/icons/RiceHub-Chrome-Icons/scalable/places/user-trash.svg": [
-      "cddec079f9c976f0d9e0924ff18552e2468ecf0b"
+      "cddec079f9c976f0d9e0924ff18552e2468ecf0b",
+      "eb3b0832ae36d4a7a9a3aa37de2b3b234a98faf6"
     ],
     "assets/icons/RiceHub-Classic-Icons/index.theme": [
       "984644969245a3271688d823aef9bc35141f46d9",
@@ -114,40 +131,50 @@
       "3045ed560e2d533cd5b974070a0f96387c7ca03f"
     ],
     "assets/icons/RiceHub-Classic-Icons/scalable/apps/preferences-system.svg": [
-      "4f764d63ffc2e32804ba7c7c4a2202d90783ce2f"
+      "4f764d63ffc2e32804ba7c7c4a2202d90783ce2f",
+      "891cf0af027cf570c00ce873f145c5a4ac96555f"
     ],
     "assets/icons/RiceHub-Classic-Icons/scalable/apps/ricehub-start.svg": [
       "36b282b8d571e8681d207399511771b339210b93",
-      "6e925ee0df64203d6388fa990c714c98e4068234"
+      "6e925ee0df64203d6388fa990c714c98e4068234",
+      "40e7518a2b7f0eaa5c372d24af438b5378f04c9f"
     ],
     "assets/icons/RiceHub-Classic-Icons/scalable/apps/start-here.svg": [
       "36b282b8d571e8681d207399511771b339210b93",
-      "6e925ee0df64203d6388fa990c714c98e4068234"
+      "6e925ee0df64203d6388fa990c714c98e4068234",
+      "40e7518a2b7f0eaa5c372d24af438b5378f04c9f"
     ],
     "assets/icons/RiceHub-Classic-Icons/scalable/apps/system-file-manager.svg": [
-      "3d7649c3fd6beb2e05a5c2671c39cd5c1574d49b"
+      "3d7649c3fd6beb2e05a5c2671c39cd5c1574d49b",
+      "19fe13f929f717f27923d57dd06f56d72e2f62e5"
     ],
     "assets/icons/RiceHub-Classic-Icons/scalable/apps/utilities-terminal.svg": [
-      "3929109f40f67d85c5444603884b84c9ebc48794"
+      "3929109f40f67d85c5444603884b84c9ebc48794",
+      "1ad7187587585a300a739c38efe028034728aaa8"
     ],
     "assets/icons/RiceHub-Classic-Icons/scalable/apps/web-browser.svg": [
-      "4521110ec2d605e7308d6f1171f1ea677f6d91c5"
+      "4521110ec2d605e7308d6f1171f1ea677f6d91c5",
+      "836cd4cbc941e3841a88225947287108b7553e88"
     ],
     "assets/icons/RiceHub-Classic-Icons/scalable/apps/xfce4-menu.svg": [
       "36b282b8d571e8681d207399511771b339210b93",
-      "6e925ee0df64203d6388fa990c714c98e4068234"
+      "6e925ee0df64203d6388fa990c714c98e4068234",
+      "40e7518a2b7f0eaa5c372d24af438b5378f04c9f"
     ],
     "assets/icons/RiceHub-Classic-Icons/scalable/places/computer.svg": [
       "2658876ceb5ae662b5ca9e06da5cb3ff38d91b5a"
     ],
     "assets/icons/RiceHub-Classic-Icons/scalable/places/folder.svg": [
-      "3d7649c3fd6beb2e05a5c2671c39cd5c1574d49b"
+      "3d7649c3fd6beb2e05a5c2671c39cd5c1574d49b",
+      "1d282146fde671542f5e35cba93786326ad56b6a"
     ],
     "assets/icons/RiceHub-Classic-Icons/scalable/places/user-home.svg": [
-      "396a1fe49ffb47fdd3e98ffb550259d47b51c32c"
+      "396a1fe49ffb47fdd3e98ffb550259d47b51c32c",
+      "2ad141386e920602f192084765cd2199d08e28d5"
     ],
     "assets/icons/RiceHub-Classic-Icons/scalable/places/user-trash.svg": [
-      "cddec079f9c976f0d9e0924ff18552e2468ecf0b"
+      "cddec079f9c976f0d9e0924ff18552e2468ecf0b",
+      "1716315f821281af838c0ea323feef354a1f3394"
     ],
     "assets/icons/RiceHub-Frutiger-Icons/index.theme": [
       "d8583fee2a7ee142461a4aceb8b6b704f57693ac",
@@ -163,40 +190,50 @@
       "de6f79d3465d4bc46880b7774952f4b47cc94f85"
     ],
     "assets/icons/RiceHub-Frutiger-Icons/scalable/apps/preferences-system.svg": [
-      "e500af0f5a035e585a34365e8c2ba195b8738528"
+      "e500af0f5a035e585a34365e8c2ba195b8738528",
+      "503bd92da35bc5f5735a36826542fd881768b86b"
     ],
     "assets/icons/RiceHub-Frutiger-Icons/scalable/apps/ricehub-start.svg": [
       "8c51fe81066fa295812025e6422e8a4e3b30832c",
-      "092055c740ae827326ac0ddb946f6ec21e869605"
+      "092055c740ae827326ac0ddb946f6ec21e869605",
+      "cdd1978f263d46dee98b370171aac83970e78080"
     ],
     "assets/icons/RiceHub-Frutiger-Icons/scalable/apps/start-here.svg": [
       "8c51fe81066fa295812025e6422e8a4e3b30832c",
-      "092055c740ae827326ac0ddb946f6ec21e869605"
+      "092055c740ae827326ac0ddb946f6ec21e869605",
+      "cdd1978f263d46dee98b370171aac83970e78080"
     ],
     "assets/icons/RiceHub-Frutiger-Icons/scalable/apps/system-file-manager.svg": [
-      "3d7649c3fd6beb2e05a5c2671c39cd5c1574d49b"
+      "3d7649c3fd6beb2e05a5c2671c39cd5c1574d49b",
+      "0cb8dd53af3d97af467fdff3934ec48c2f09d8f3"
     ],
     "assets/icons/RiceHub-Frutiger-Icons/scalable/apps/utilities-terminal.svg": [
-      "3929109f40f67d85c5444603884b84c9ebc48794"
+      "3929109f40f67d85c5444603884b84c9ebc48794",
+      "9667b5ecff310ef51ae048239bdf8c8c2ab57dd3"
     ],
     "assets/icons/RiceHub-Frutiger-Icons/scalable/apps/web-browser.svg": [
-      "5a638f65a21be81a42337d8de5701344a3bb1867"
+      "5a638f65a21be81a42337d8de5701344a3bb1867",
+      "755dbf844b55aa5ba535a7cd2a4c47bf71493379"
     ],
     "assets/icons/RiceHub-Frutiger-Icons/scalable/apps/xfce4-menu.svg": [
       "8c51fe81066fa295812025e6422e8a4e3b30832c",
-      "092055c740ae827326ac0ddb946f6ec21e869605"
+      "092055c740ae827326ac0ddb946f6ec21e869605",
+      "cdd1978f263d46dee98b370171aac83970e78080"
     ],
     "assets/icons/RiceHub-Frutiger-Icons/scalable/places/computer.svg": [
       "0d1b688d70b7b295e4154e75d8559046e47e4851"
     ],
     "assets/icons/RiceHub-Frutiger-Icons/scalable/places/folder.svg": [
-      "3d7649c3fd6beb2e05a5c2671c39cd5c1574d49b"
+      "3d7649c3fd6beb2e05a5c2671c39cd5c1574d49b",
+      "8325d64f8056b2782d7c818e6712d2b62f09048e"
     ],
     "assets/icons/RiceHub-Frutiger-Icons/scalable/places/user-home.svg": [
-      "396a1fe49ffb47fdd3e98ffb550259d47b51c32c"
+      "396a1fe49ffb47fdd3e98ffb550259d47b51c32c",
+      "52751aede27875e5a2851fd37e4de6efae6746c9"
     ],
     "assets/icons/RiceHub-Frutiger-Icons/scalable/places/user-trash.svg": [
-      "cddec079f9c976f0d9e0924ff18552e2468ecf0b"
+      "cddec079f9c976f0d9e0924ff18552e2468ecf0b",
+      "6aca2298c9f370ea8f6501046a7696d78c8bf689"
     ],
     "assets/icons/RiceHub-Luna-Icons/index.theme": [
       "50f7889e687b2a0bc734d9e8fb90be3d857ec3e6",
@@ -212,40 +249,50 @@
       "72c566f94b1341212fab421d8da0f762060034e1"
     ],
     "assets/icons/RiceHub-Luna-Icons/scalable/apps/preferences-system.svg": [
-      "d524f7a982992e9672af8e901318fdbb1de1bcd1"
+      "d524f7a982992e9672af8e901318fdbb1de1bcd1",
+      "b4e36b99e7b3217a15b476570e66c47a05dd951b"
     ],
     "assets/icons/RiceHub-Luna-Icons/scalable/apps/ricehub-start.svg": [
       "8c51fe81066fa295812025e6422e8a4e3b30832c",
-      "092055c740ae827326ac0ddb946f6ec21e869605"
+      "092055c740ae827326ac0ddb946f6ec21e869605",
+      "31b6e07bc12e0d682c9885d136880f53cc53f9f4"
     ],
     "assets/icons/RiceHub-Luna-Icons/scalable/apps/start-here.svg": [
       "8c51fe81066fa295812025e6422e8a4e3b30832c",
-      "092055c740ae827326ac0ddb946f6ec21e869605"
+      "092055c740ae827326ac0ddb946f6ec21e869605",
+      "31b6e07bc12e0d682c9885d136880f53cc53f9f4"
     ],
     "assets/icons/RiceHub-Luna-Icons/scalable/apps/system-file-manager.svg": [
-      "3d7649c3fd6beb2e05a5c2671c39cd5c1574d49b"
+      "3d7649c3fd6beb2e05a5c2671c39cd5c1574d49b",
+      "e0c7b21608fba1044518877b7334e39639a9e09f"
     ],
     "assets/icons/RiceHub-Luna-Icons/scalable/apps/utilities-terminal.svg": [
-      "3929109f40f67d85c5444603884b84c9ebc48794"
+      "3929109f40f67d85c5444603884b84c9ebc48794",
+      "2105230134e455c58708f16288414c9042ca062a"
     ],
     "assets/icons/RiceHub-Luna-Icons/scalable/apps/web-browser.svg": [
-      "679966e664877318b2ef4f2df7fa08f11646ea18"
+      "679966e664877318b2ef4f2df7fa08f11646ea18",
+      "bc2c7dbc41173f4ed2ff27aa98443b8fcc561a70"
     ],
     "assets/icons/RiceHub-Luna-Icons/scalable/apps/xfce4-menu.svg": [
       "8c51fe81066fa295812025e6422e8a4e3b30832c",
-      "092055c740ae827326ac0ddb946f6ec21e869605"
+      "092055c740ae827326ac0ddb946f6ec21e869605",
+      "31b6e07bc12e0d682c9885d136880f53cc53f9f4"
     ],
     "assets/icons/RiceHub-Luna-Icons/scalable/places/computer.svg": [
       "c00e967433f454bc9ee738ec48a28efb0fd30f78"
     ],
     "assets/icons/RiceHub-Luna-Icons/scalable/places/folder.svg": [
-      "3d7649c3fd6beb2e05a5c2671c39cd5c1574d49b"
+      "3d7649c3fd6beb2e05a5c2671c39cd5c1574d49b",
+      "7d7aa6ce10fed312c218cb1a5536c39dca02ff7d"
     ],
     "assets/icons/RiceHub-Luna-Icons/scalable/places/user-home.svg": [
-      "396a1fe49ffb47fdd3e98ffb550259d47b51c32c"
+      "396a1fe49ffb47fdd3e98ffb550259d47b51c32c",
+      "c315facccd100b0b94fb188e855091335c64075f"
     ],
     "assets/icons/RiceHub-Luna-Icons/scalable/places/user-trash.svg": [
-      "cddec079f9c976f0d9e0924ff18552e2468ecf0b"
+      "cddec079f9c976f0d9e0924ff18552e2468ecf0b",
+      "bf3dffa6c56b959eb5339c3ec8321c0774015e4c"
     ],
     "assets/icons/RiceHub-Ten-Penguin/index.theme": [
       "1eacc1e2b8017909beecd55ff552f28269c5ebed",
@@ -261,7 +308,8 @@
       "82a79f2034ca06874cbccb5cba5d34f111ff50e6"
     ],
     "assets/icons/RiceHub-Ten-Penguin/scalable/apps/preferences-system.svg": [
-      "18bb54c0576fca8b753b781d93a747af0f61ad28"
+      "18bb54c0576fca8b753b781d93a747af0f61ad28",
+      "16d6a33420a5fbfafa381ab78b532eb35738a796"
     ],
     "assets/icons/RiceHub-Ten-Penguin/scalable/apps/ricehub-ten.svg": [
       "36b282b8d571e8681d207399511771b339210b93",
@@ -272,13 +320,16 @@
       "6e925ee0df64203d6388fa990c714c98e4068234"
     ],
     "assets/icons/RiceHub-Ten-Penguin/scalable/apps/system-file-manager.svg": [
-      "3d7649c3fd6beb2e05a5c2671c39cd5c1574d49b"
+      "3d7649c3fd6beb2e05a5c2671c39cd5c1574d49b",
+      "1ba9c2398f6c3c7cc68d97f5a14b395518bbb858"
     ],
     "assets/icons/RiceHub-Ten-Penguin/scalable/apps/utilities-terminal.svg": [
-      "3929109f40f67d85c5444603884b84c9ebc48794"
+      "3929109f40f67d85c5444603884b84c9ebc48794",
+      "d02ad03bb05d10de44903adf75f114de2a867986"
     ],
     "assets/icons/RiceHub-Ten-Penguin/scalable/apps/web-browser.svg": [
-      "e17e2c1f8e8af1f9eb3f4e5ea4093080eb581875"
+      "e17e2c1f8e8af1f9eb3f4e5ea4093080eb581875",
+      "5d12f01ba26c64b8e9a07dde1e9fca2861d02160"
     ],
     "assets/icons/RiceHub-Ten-Penguin/scalable/apps/xfce4-menu.svg": [
       "36b282b8d571e8681d207399511771b339210b93",
@@ -288,13 +339,16 @@
       "1f41257855f2d34d655c8be8f65b37baba4cdabf"
     ],
     "assets/icons/RiceHub-Ten-Penguin/scalable/places/folder.svg": [
-      "3d7649c3fd6beb2e05a5c2671c39cd5c1574d49b"
+      "3d7649c3fd6beb2e05a5c2671c39cd5c1574d49b",
+      "3025dd1248d4b57e2b9259ce8728eecaf1c56ae5"
     ],
     "assets/icons/RiceHub-Ten-Penguin/scalable/places/user-home.svg": [
-      "396a1fe49ffb47fdd3e98ffb550259d47b51c32c"
+      "396a1fe49ffb47fdd3e98ffb550259d47b51c32c",
+      "e8fdc3eb6628694ebf499a0d9c68285067b2c551"
     ],
     "assets/icons/RiceHub-Ten-Penguin/scalable/places/user-trash.svg": [
-      "cddec079f9c976f0d9e0924ff18552e2468ecf0b"
+      "cddec079f9c976f0d9e0924ff18552e2468ecf0b",
+      "edcf53a1bb3dcac2e280ad61473c56a4f924afa5"
     ],
     "assets/themes/RiceHub-Aero/gtk-3.0/gtk.css": [
       "082318d3d88ac6ba94ab2344288112b53de850e4",
@@ -1380,6 +1434,18 @@
     ],
     "assets/themes/RiceHub-Ten-Light/xfwm4/top-right-inactive.png": [
       "71cfe1d73f0118d286433f805efb2f215e92fd7c"
+    ],
+    "assets/icons/RiceHub-Chrome-Icons/scalable/apps/ricebowl-start.svg": [
+      "8d99d32324e100b6e69dabbcc14fdbf3a456c433"
+    ],
+    "assets/icons/RiceHub-Classic-Icons/scalable/apps/ricebowl-start.svg": [
+      "40e7518a2b7f0eaa5c372d24af438b5378f04c9f"
+    ],
+    "assets/icons/RiceHub-Frutiger-Icons/scalable/apps/ricebowl-start.svg": [
+      "cdd1978f263d46dee98b370171aac83970e78080"
+    ],
+    "assets/icons/RiceHub-Luna-Icons/scalable/apps/ricebowl-start.svg": [
+      "31b6e07bc12e0d682c9885d136880f53cc53f9f4"
     ]
   }
 }
