@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Regenerate RiceHub's original XFWM4 raster chrome and SVG icon artwork.
+"""Regenerate RiceBowl's original XFWM4 raster chrome and SVG icon artwork.
 
-Development-only: Pillow is required to run this, NOT to install RiceHub.
+Development-only: Pillow is required to run this, NOT to install RiceBowl.
 Generated assets are tracked so user systems need no imaging dependencies.
 """
 
@@ -140,4 +140,4 @@ if __name__ == "__main__":
     frame_assets()
     button_assets()
     icon_assets()
-    print("Generated original RiceHub Aero assets")
+    print("Generated original RiceBowl Aero assets")
