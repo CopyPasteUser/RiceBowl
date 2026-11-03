@@ -32,6 +32,7 @@ jobs:
           done
           # Fail the release if any gallery screen silently failed to capture.
           /usr/bin/python3 -c 'from pathlib import Path; import hashlib, struct; fs=sorted(Path("screenshots").glob("ricebowl-*-0.9.0.png")); assert len(fs)==12, f"Expected 12 GTK captures, found {len(fs)}"; data=[p.read_bytes() for p in fs]; assert all(len(b)>50000 and b[:8]==bytes.fromhex("89504e470d0a1a0a") and struct.unpack(">II", b[16:24])==(1600,900) for b in data), "Invalid or incomplete screenshot"; assert len({hashlib.sha256(b).digest() for b in data})==12, "Duplicate screenshot detected"'
+          /usr/bin/python3 screenshots/validate_gallery.py
           (cd components/macmenu && /usr/bin/python3 -m unittest discover -s tests -v)
           (cd components/macbar && /usr/bin/python3 -m unittest discover -s tests -v)
           (cd components/control-center && PATH=/usr/bin:/bin bash run-tests.sh)
