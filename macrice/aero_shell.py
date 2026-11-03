@@ -859,8 +859,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.tile_grid.show_all()
 
         def _create_actions(self):
+            """Profile-aware controls; never simulate state-changing toggles."""
             actions = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
-            actions.set_title("RiceHub " + (heritage.control_heading if heritage else "Windows 10 Action Center" if ten else "Aero Control Panel"))
+            heading = heritage.control_heading if heritage else ("Action Center" if ten else "Aero Control Panel")
+            actions.set_title("RiceHub " + heading)
             actions.set_decorated(False)
             actions.set_resizable(False)
             actions.set_skip_taskbar_hint(True)
@@ -868,36 +870,83 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             actions.set_type_hint(Gdk.WindowTypeHint.UTILITY)
             actions.set_transient_for(self.bar)
             actions.set_keep_above(True)
-            root = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=13),
+            root = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10),
                                "ten-action-root" if tiles else "aero-control-root")
-            root.set_size_request(300, 350 if tiles else 245)
-            root.pack_start(self._class(Gtk.Label(label=heritage.control_heading if heritage else "Action Center" if ten else "Control Panel", xalign=0), "aero-menu-heading"),
-                            False, False, 0)
-            if tiles:
-                root.pack_start(self._class(Gtk.Label(label="Notifications", xalign=0), "aero-menu-sub"),
-                                False, False, 0)
-                note = self._class(Gtk.Label(label="Notification history is managed by XFCE.", xalign=0),
-                                   "ten-muted")
-                note.set_line_wrap(True)
-                root.pack_start(note, False, False, 0)
+            root.set_size_request(300, 265)
+
+            title = self._class(Gtk.Label(label=heading, xalign=0), "aero-menu-heading")
+            root.pack_start(title, False, False, 0)
+            descriptions = {
+                "winxp": "Pick a category to configure your computer",
+                "winclassic": "Settings  •  Control Panel",
+                "chromeos": "Device controls and preferences",
+                "frutiger": "Your connected desktop",
+                "aero": "Adjust your computer's settings",
+                "windows10": "Quick actions and system settings",
+            }
+            subtitle = self._class(Gtk.Label(label=descriptions.get(profile, ""), xalign=0),
+                                   "aero-menu-sub")
+            subtitle.set_line_wrap(True)
+            root.pack_start(subtitle, False, False, 0)
+
+            if profile == "chromeos":
+                sections = (
+                    ("Connectivity", (("Wi-Fi & network", "network-wireless", "nm-connection-editor"),
+                                      ("Bluetooth", "bluetooth", "blueman-manager"))),
+                    ("Device", (("Audio", "audio-volume-high", "pavucontrol"),
+                                ("Display", "video-display", "xfce4-display-settings"),
+                                ("Preferences", "preferences-system", "xfce4-settings-manager"))),
+                )
+            elif profile == "winxp":
+                sections = (
+                    ("Pick a category", (("Network and Internet", "network-workgroup", "nm-connection-editor"),
+                                         ("Sounds and Audio", "audio-card", "pavucontrol"),
+                                         ("Appearance and Themes", "preferences-desktop-theme", "xfce4-appearance-settings"),
+                                         ("Printers and Hardware", "printer", "system-config-printer"))),
+                    ("Other settings", (("Control Panel", "preferences-system", "xfce4-settings-manager"),)),
+                )
+            elif profile == "winclassic":
+                sections = (
+                    ("Control Panel", (("Display", "video-display", "xfce4-display-settings"),
+                                       ("Multimedia", "audio-card", "pavucontrol"),
+                                       ("Network", "network-workgroup", "nm-connection-editor"),
+                                       ("System", "computer", "xfce4-settings-manager"))),
+                )
+            elif profile == "frutiger":
+                sections = (
+                    ("Connections", (("Network", "network-wireless", "nm-connection-editor"),
+                                      ("Bluetooth", "bluetooth", "blueman-manager"))),
+                    ("Personalize", (("Appearance", "preferences-desktop-theme", "xfce4-appearance-settings"),
+                                     ("Sound", "audio-volume-high", "pavucontrol"),
+                                     ("Display", "video-display", "xfce4-display-settings"))),
+                )
             else:
-                root.pack_start(self._class(Gtk.Label(label="Desktop settings and devices", xalign=0), "aero-menu-sub"),
-                                False, False, 0)
-            root.pack_start(Gtk.Box(), True, True, 0)
-            root.pack_start(self._class(Gtk.Label(label="Quick settings" if tiles else "System tools", xalign=0), "aero-menu-sub"),
-                            False, False, 0)
-            grid = Gtk.Grid(row_spacing=5, column_spacing=5)
-            for index, (title, command) in enumerate((
-                ("Network", "nm-connection-editor"), ("Sound", "pavucontrol"),
-                ("Display", "xfce4-display-settings"), ("Settings", "xfce4-settings-manager"),
-            )):
-                button = self._class(Gtk.Button(label=title), "ten-quick" if tiles else "aero-control-quick")
-                button.set_size_request(138, 49)
-                button.get_accessible().set_name("Open " + title + " settings")
-                button.set_sensitive(shutil.which(command) is not None)
-                button.connect("clicked", lambda _button, cmd=command: self._open_tool(cmd))
-                grid.attach(button, index % 2, index // 2, 1, 1)
-            root.pack_start(grid, False, False, 0)
+                sections = (
+                    ("Quick settings" if tiles else "System tools",
+                     (("Network", "network-wireless", "nm-connection-editor"),
+                      ("Sound", "audio-volume-high", "pavucontrol"),
+                      ("Display", "video-display", "xfce4-display-settings"),
+                      ("Settings", "preferences-system", "xfce4-settings-manager"))),
+                )
+
+            for section_title, entries in sections:
+                section = self._class(Gtk.Label(label=section_title, xalign=0), "aero-menu-sub")
+                root.pack_start(section, False, False, 0)
+                grid = Gtk.Grid(row_spacing=5, column_spacing=5)
+                for index, (label, icon_name, command) in enumerate(entries):
+                    button = self._class(Gtk.Button(), "ten-quick" if tiles else "aero-control-quick")
+                    contents = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
+                    contents.pack_start(self._icon(icon_name, Gtk.IconSize.MENU), False, False, 0)
+                    contents.pack_start(Gtk.Label(label=label, xalign=0), True, True, 0)
+                    button.add(contents)
+                    button.set_tooltip_text("Open " + label if shutil.which(command) else
+                                            label + " is not installed")
+                    button.get_accessible().set_name("Open " + label)
+                    button.set_sensitive(shutil.which(command) is not None)
+                    button.connect("clicked", lambda _button, cmd=command: self._open_tool(cmd))
+                    grid.attach(button, index % 2, index // 2, 1, 1)
+                root.pack_start(grid, False, False, 0)
+
             actions.add(root)
             actions.connect("focus-out-event", lambda *_args: self._schedule_popup_hide("control"))
             actions.connect("key-press-event", lambda _widget, event: self._action_key(event))
