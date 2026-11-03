@@ -37,8 +37,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ricehub-0.6-new-rice-captures
-          path: screenshots/ricehub-*-0.6.0.png
+          name: ricebowl-0.7.1-native-x11-captures
+          path: screenshots/ricebowl-*-0.7.1.png
           if-no-files-found: ignore
 
   publish-ricebowl:
