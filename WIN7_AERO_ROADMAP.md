@@ -11,6 +11,14 @@ Microsoft's original Windows 7 taskbar design emphasized an icon-first Superbar,
 
 All art here is originally drawn. We do not import Microsoft logos, wallpapers, icons, fonts or binary theme files. The operating system remains XFCE/X11 with genuine Gio applications, Wnck window control, Thunar and XDG directories.
 
+## Aero Seven Blue identity milestone
+
+- [x] Replace both Frutiger-like landscape/water wallpapers with separately generated deep-blue Windows 7-era gradients and original frosted-glass Linux penguin art.
+- [x] Keep saved rice keys and backup compatibility while renaming the user-facing variants Aero Seven Blue / Night.
+- [x] Recolor only Windows 7's taskbar and Start frame to smoke-blue 2009 Aero glass; Frutiger Aero keeps its own turquoise/green design.
+- [x] Make Windows 7 folder and library icons gold/yellow instead of turquoise glass; whitelist only exact previous managed icon blobs for safe upgrades.
+- [ ] Complete physical Linux Mint XFCE wallpaper, taskbar, icon and profile-switch acceptance (including relogin and user-edited theme conflict).
+
 ## Completed implementation tasks
 
 - [x] Dedicated 42px Windows 7 Superbar; use an icon-only original Aero penguin Start orb.

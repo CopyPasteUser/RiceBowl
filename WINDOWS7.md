@@ -53,10 +53,10 @@ owner's Linux Mint XFCE acceptance; CI captures are not a physical desktop photo
 | **Glass** | [Aero shell CSS](macrice/aero_shell.py) | Glass-inspired gradient, optional translucent variant; no compositor blur guarantee |
 | **Window decoration** | [XFWM4 theme](assets/themes/RiceHub-Aero/xfwm4/) | Real minimize, maximize, close, shading, sticky, border and title button artwork |
 | **GTK widgets** | [GTK3 theme](assets/themes/RiceHub-Aero/gtk-3.0/gtk.css) | Unified buttons, menus, controls and palettes |
-| **Application / places icons** | [RiceHub-Aero icon theme](assets/icons/RiceHub-Aero/) | Original scalable SVG set and FreeDesktop fallback to installed icons |
+| **Application / places icons** | [RiceHub-Aero icon theme](assets/icons/RiceHub-Aero/) | Era-appropriate golden folder SVGs, original scalable applications and FreeDesktop fallback |
 | **File manager** | [Thunar integration](macrice/thunar.py) | Reversible application styling |
 | **Dock** | [Aero glass Plank theme](assets/plank-themes/RiceHub-Aero-Glass/dock.theme) | Existing Plank configuration shifted away from the bottom taskbar during Aero apply |
-| **Wallpapers** | [Meadow](assets/wallpapers/aero-meadow.jpg) / [Cascade](assets/wallpapers/aero-cascade.jpg) | Two original Frutiger Aero-style desktops |
+| **Wallpapers** | [Seven Blue](assets/wallpapers/aero-seven-blue.jpg) / [Seven Night](assets/wallpapers/aero-seven-night.jpg) | Two original cobalt-blue 2009 Aero Linux-penguin desktops, distinct from Frutiger Aero |
 | **Session startup** | [aero.py](macrice/aero.py) | RiceBowl-managed, user-local XFCE autostart; no global systemd service |
 | **Backup and restore** | [rice.py](macrice/rice.py) | Explicit preflight, snapshot, apply, restore, preservation of later user edits where possible |
 | **Hub gallery** | [hub.py](macrice/hub.py) | Select either Aero palette; check requirements before applying |
@@ -97,8 +97,8 @@ Use `macrice aero-shell` to open/toggle Start and `macrice aero-shell --quit` to
 ### Desktop backgrounds and identity
 
 - [assets/aero-penguin.svg](assets/aero-penguin.svg)
-- [assets/wallpapers/aero-cascade.jpg](assets/wallpapers/aero-cascade.jpg)
-- [assets/wallpapers/aero-meadow.jpg](assets/wallpapers/aero-meadow.jpg)
+- [assets/wallpapers/aero-seven-blue.jpg](assets/wallpapers/aero-seven-blue.jpg)
+- [assets/wallpapers/aero-seven-night.jpg](assets/wallpapers/aero-seven-night.jpg)
 
 ### GTK theme
 

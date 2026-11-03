@@ -138,7 +138,7 @@ def show_dialog(parent, Gtk, Gdk, GLib):
     overlay.set_size_request(-1, 490)
     root.pack_start(overlay, True, True, 0)
     scenery = Gtk.Overlay()
-    wallpaper = project_root() / "assets/wallpapers/aero-meadow.jpg"
+    wallpaper = project_root() / "assets/wallpapers/aero-seven-blue.jpg"
     if wallpaper.is_file():
         pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(str(wallpaper), 920, 490, False)
         background_image = Gtk.Image.new_from_pixbuf(pixbuf)

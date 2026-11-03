@@ -151,11 +151,11 @@ CSS = b"""
    deliberately retain their own proportions and status treatments. */
 .aero-taskbar.win7-taskbar {
   background-image: linear-gradient(to bottom,
-    rgba(212,235,248,.90) 0%, rgba(113,161,193,.78) 5%,
-    rgba(71,119,164,.75) 45%, rgba(22,60,104,.91) 48%,
-    rgba(34,78,126,.94) 86%, rgba(15,44,84,.96));
-  border-top: 1px solid rgba(246,253,255,.91);
-  border-bottom: 1px solid #092d55;
+    rgba(230,242,250,.82) 0%, rgba(102,134,169,.78) 5%,
+    rgba(59,91,129,.81) 44%, rgba(29,53,86,.92) 47%,
+    rgba(31,58,97,.93) 83%, rgba(14,35,67,.97) 100%);
+  border-top: 1px solid rgba(243,251,255,.95);
+  border-bottom: 1px solid #102847;
   padding: 1px 5px;
   color: white;
 }
@@ -199,15 +199,15 @@ CSS = b"""
   padding: 0;
 }
 .win7-menu-root {
-  background-image: linear-gradient(to bottom, rgba(205,234,248,.98), rgba(67,115,161,.97) 58%, rgba(20,58,108,.97));
-  border: 1px solid #164270;
+  background-image: linear-gradient(to bottom, rgba(218,232,244,.98), rgba(77,114,153,.97) 58%, rgba(25,57,94,.98));
+  border: 1px solid #244b74;
   border-radius: 8px 8px 5px 5px;
   padding: 6px;
   box-shadow: inset 0 1px rgba(255,255,255,.94), inset 0 -1px rgba(12,44,86,.8);
 }
 .win7-menu-body { background: transparent; }
 .win7-programs {
-  background: #ffffff;
+  background: #fffefa;
   border: 1px solid #7497b4;
   border-radius: 3px;
   padding: 7px 5px 6px;
@@ -220,7 +220,7 @@ CSS = b"""
 .win7-all-programs { color: #223b4c; background: transparent; border: 1px solid transparent;
   border-radius: 2px; padding: 7px; box-shadow: none; }
 .win7-all-programs:hover, .win7-all-programs:focus { background: #d4eaf8; border-color: #8dbfdc; }
-.win7-search { background: #fff; color: #1c3c52; border: 1px solid #718ea7;
+.win7-search { background: #fff; color: #1c3c52; border: 1px solid #798c9c;
   border-radius: 2px; padding: 6px; margin-top: 5px; }
 .win7-search:focus { border-color: #3697d3; box-shadow: 0 0 2px rgba(20,115,182,.55); }
 .win7-side { background: transparent; padding: 0 5px 1px 11px; }
@@ -473,7 +473,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             fixture.set_skip_pager_hint(True)
             fixture.set_type_hint(Gdk.WindowTypeHint.DESKTOP)
             fixture.set_keep_below(True)
-            image = project_root() / "assets/wallpapers" / (heritage.wallpaper if heritage else "ten-blue.jpg" if ten else "aero-cascade.jpg")
+            image = project_root() / "assets/wallpapers" / (heritage.wallpaper if heritage else "ten-blue.jpg" if ten else "aero-seven-night.jpg")
             pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(str(image), rect.width, rect.height, False)
             fixture.add(Gtk.Image.new_from_pixbuf(pixbuf))
             fixture.set_default_size(rect.width, rect.height)

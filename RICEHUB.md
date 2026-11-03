@@ -24,7 +24,7 @@ If you prefer the existing command, `macrice hub` opens the same app; `macrice g
 3. **My desktop:** Check the effective desktop configuration if a theme doesn't look right.
 4. **Backups & restore:** Restore the last active snapshot. The restore engine attempts to protect later manual edits. It cannot promise to reverse changes made by unrelated software.
 5. **Components:** Toggle the already installed menu and Control Center, start the bar/dock, or explicitly repair bundled apps.
-6. **Windows 7:** Select Aero Meadow or Aero Cascade. Check requirements, apply, then use the new GTK taskbar and Start menu. The menu indexes real `.desktop` launchers; the Aero session login entry is managed with the same backup/restore protections. A separate read-only preview is also available.
+6. **Windows 7:** Select Aero Seven Blue or Aero Seven Night. Check requirements, apply, then use the GTK Superbar and Start menu. The menu indexes real `.desktop` launchers; the Aero session login entry is managed with the same backup/restore protections. A separate read-only preview is also available.
 7. **Performance:** Choose a resource profile and run an on-demand memory/CPU snapshot. There is no extra monitoring service.
 8. **Windows 10:** Choose Midnight or Blue, check requirements, then apply. The actual shell searches and launches installed apps, shares real pinned launchers between Start tiles and the taskbar, tracks windows with Wnck, and provides XFCE quick-setting shortcuts. The older read-only concept dialog remains available.
 
@@ -36,7 +36,7 @@ The desktop remains usable if your XFCE configuration is different, but **the fu
 | --- | --- | --- |
 | macOS / Aurora collection | **Installable** | MacBar, MacMenu, Control Center, Plank, three full desktop palettes and Thunar styling |
 | Windows 10 | **Installable** | Two dark/light themes, original penguin icons and wallpapers, live taskbar, Gio Start and pinned tiles, Action Center and safe restore |
-| Windows 7 | **Installable** | Aero Meadow / Cascade wallpaper, Aero Penguin, original GTK/XFWM icons and chrome, Thunar, Plank glass theme, event-driven taskbar and searchable Start menu |
+| Windows 7 | **Installable** | Cobalt Aero Seven Blue / Night Linux-penguin wallpaper, gold folder icons, classic GTK/XFWM chrome, Thunar, glass Superbar and searchable Start menu |
 | Windows XP Luna | **Installable 0.6** | Blue/green taskbar, real searchable Start, original GTK/XFWM chrome, meadow wallpaper |
 | Windows 98 / 2000 | **Installable 0.6** | Teal desktop, compact gray live taskbar and classic Start |
 | ChromeOS | **Installable 0.6** | Pastel desktop, light shelf, centered live app drawer and quick settings |

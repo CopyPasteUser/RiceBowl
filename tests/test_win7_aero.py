@@ -11,6 +11,7 @@ from macrice.aero_layout import actual_popup_y, bottom_strut, menu_geometry, tas
 from macrice.aero_shell import CSS, win7_programs
 from macrice.asset_upgrade import AssetConflict, git_blob_sha, inspect_bundle, trusted_assets
 from macrice.installer import project_root
+from macrice.rice import STYLES
 
 
 class App:
@@ -61,6 +62,32 @@ class Win7MenuTests(unittest.TestCase):
 
 
 class Win7ArtworkTests(unittest.TestCase):
+    def test_blue_aero_wallpapers_have_linux_identity_without_frutiger_reuse(self):
+        try:
+            from PIL import Image
+        except ImportError:
+            self.skipTest("Pillow is only required for validating desktop artwork")
+        root = project_root()
+        wallpapers = []
+        for key, name in (("aero-meadow", "Aero Seven Blue"),
+                          ("aero-cascade", "Aero Seven Night")):
+            with self.subTest(key=key):
+                style = STYLES[key]
+                self.assertEqual(style.name, name)
+                self.assertTrue(style.wallpaper.startswith("aero-seven-"))
+                source = root / "assets/wallpapers" / style.wallpaper
+                with Image.open(source) as picture:
+                    self.assertEqual(picture.format, "JPEG")
+                    self.assertGreaterEqual(picture.width, 1600)
+                    self.assertGreaterEqual(picture.height, 900)
+                    # Original cobalt-blue Aero: keep green/nature palette
+                    # for the entirely separate Frutiger Aero profile.
+                    center = picture.getpixel((picture.width // 3, picture.height // 3))
+                    self.assertGreater(center[2], center[1])
+                    self.assertGreater(center[2], center[0])
+                wallpapers.append(source.read_bytes())
+        self.assertNotEqual(*wallpapers)
+
     def test_original_folders_are_valid_individual_svg_assets(self):
         source = project_root() / "assets/icons/RiceHub-Aero/scalable/places"
         icons = []
@@ -87,6 +114,29 @@ class Win7ArtworkTests(unittest.TestCase):
 
 
 class Win7UpgradeTests(unittest.TestCase):
+    def test_previous_blue_folders_are_accepted_but_unknown_edits_are_not(self):
+        root = project_root()
+        previous = {
+            "folder.svg": "7af0aa5d6b668414a4c2b1d975025dfb9aea9e87",
+            "folder-documents.svg": "134cde567bddcfb1da7249a55d26f2485da86f86",
+            "folder-download.svg": "ed258c073dfc16777f748b347ffb4c0407c45922",
+            "folder-music.svg": "6f0d523138eb5f775688a26b8b70a60c4b791e87",
+            "folder-pictures.svg": "3ef08a512de5340fa320a5e5cb56036f12fbf5fd",
+        }
+        for name, blob in previous.items():
+            path = f"assets/icons/RiceHub-Aero/scalable/places/{name}"
+            self.assertIn(blob, trusted_assets()[path])
+        with tempfile.TemporaryDirectory() as temp:
+            installed = Path(temp) / "icons/RiceHub-Aero"
+            icon = installed / "scalable/places/folder.svg"
+            icon.parent.mkdir(parents=True)
+            source = root / "assets/icons/RiceHub-Aero"
+            icon.write_bytes((source / "scalable/places/folder.svg").read_bytes())
+            inspect_bundle(source, installed)
+            icon.write_bytes(icon.read_bytes() + b"<!-- local customization -->")
+            with self.assertRaisesRegex(AssetConflict, "conflicts"):
+                inspect_bundle(source, installed)
+
     OLD_THEMERC = (
         "active_text_color=#143954\ninactive_text_color=#5c7387\n"
         "active_text_shadow_color=#f6fcff\ninactive_text_shadow_color=#edf4f9\n"
