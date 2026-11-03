@@ -1,4 +1,4 @@
-"""Interactive, read-only desktop sketches for future RiceHub families.
+"""Interactive, read-only desktop sketches for future RiceBowl families.
 
 These GTK widgets operate on sample data only. No desktop commands, process
 launches, session changes or settings writes are performed by the previews.
@@ -175,7 +175,7 @@ def show_dialog(parent, Gtk, Gdk, GLib, key):
     """Open a non-installing, interactive GTK3 desktop concept."""
     concept = CONCEPTS[key]
     install_css(Gtk, Gdk)
-    dialog = Gtk.Dialog(title=concept.title + " — RiceHub prototype", transient_for=parent,
+    dialog = Gtk.Dialog(title=concept.title + " — RiceBowl prototype", transient_for=parent,
                         flags=Gtk.DialogFlags.MODAL)
     dialog.set_default_size(1050, 720)
     dialog.add_button("Close preview", Gtk.ResponseType.CLOSE)
