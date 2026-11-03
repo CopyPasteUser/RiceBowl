@@ -320,6 +320,17 @@ def run() -> int:
             self.prototype_button = action("Explore read-only preview", lambda _: self._show_prototype())
             self.prototype_button.set_no_show_all(True)
             controls.pack_start(self.prototype_button, False, False, 0)
+            repair_row = horizontal(9)
+            self.repair_button = action("Repair local theme assets…",
+                                        lambda _: self._repair_selected())
+            self.repair_button.set_tooltip_text(
+                "Back up and replace only the selected Rice's theme and icon files. "
+                "Your desktop settings are not changed.")
+            repair_row.pack_start(self.repair_button, False, False, 0)
+            repair_row.pack_start(label(
+                "Only needed when an older or customized theme blocks Apply.",
+                "hub-hint"), False, False, 0)
+            body.pack_start(repair_row, False, False, 0)
             self.future_note = label("Concept preview only — no settings are changed.", "hub-soon")
             self.future_note.set_no_show_all(True)
             body.pack_start(self.future_note, False, False, 0)
@@ -513,6 +524,7 @@ def run() -> int:
             self.style_picker.set_visible(family.available)
             self.plan_button.set_visible(family.available)
             self.apply_button.set_visible(family.available)
+            self.repair_button.set_visible(family.available and key != "macos")
             self.prototype_button.set_visible(family.prototype)
             self.prototype_button.set_label(
                 "Explore Windows 10 preview" if key == "windows10" else
@@ -602,7 +614,7 @@ def run() -> int:
 
         def _set_busy(self, busy):
             self._busy = busy
-            for name in ("apply_button", "plan_button", "prototype_button", "install_button", "restore_button",
+            for name in ("apply_button", "plan_button", "repair_button", "prototype_button", "install_button", "restore_button",
                          "performance_button", "measure_button"):
                 button = getattr(self, name, None)
                 if button:
@@ -649,6 +661,25 @@ def run() -> int:
             dialog.destroy()
             if accepted:
                 proceed()
+
+        def _repair_selected(self):
+            selected = self.style_picker.get_active_id()
+            if selected not in STYLES or self._selected == "macos":
+                return
+            self._confirm(
+                f"Repair local assets for {STYLES[selected].name}?",
+                "Only this Rice's local theme and icon bundle will be replaced. "
+                "Existing files are archived in a dated, private backup directory "
+                "before replacement. The desktop theme is not switched.",
+                lambda: self._work(
+                    "Backing up and repairing local theme assets…",
+                    lambda: __import__("macrice.rice", fromlist=["repair_assets"]).repair_assets(selected),
+                    lambda backups: self._notify(
+                        "Theme assets repaired. " +
+                        (f"{len(backups)} backup(s) saved. " if backups else "") +
+                        "Run Check requirements again."),
+                ),
+            )
 
         def _plan_selected(self, apply_after=False):
             if not FAMILY_BY_KEY[self._selected].available:
