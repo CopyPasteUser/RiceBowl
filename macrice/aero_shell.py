@@ -777,6 +777,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             menu.popup_at_widget(button, Gdk.Gravity.NORTH_WEST, Gdk.Gravity.SOUTH_WEST, None)
 
         def _create_menu(self):
+            if profile == "frutiger":
+                self._create_frutiger_menu()
+                return
             if tiles:
                 self._create_ten_menu()
                 return
@@ -866,6 +869,86 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             search.connect("key-press-event", lambda _widget, event: self._search_key(event))
             self.menu = menu
             self.search = search
+            self._populate("")
+
+        def _create_frutiger_menu(self):
+            """An airy Y2K/Frutiger dashboard, intentionally unlike Aero Start."""
+            menu = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
+            menu.set_title("RiceBowl Frutiger Aero — Your World")
+            menu.set_decorated(False)
+            menu.set_resizable(False)
+            menu.set_skip_taskbar_hint(True)
+            menu.set_skip_pager_hint(True)
+            menu.set_type_hint(Gdk.WindowTypeHint.UTILITY)
+            menu.set_transient_for(self.bar)
+            menu.set_keep_above(True)
+            rect = self._desktop_rect()
+            _x, _y, width, height = menu_geometry(
+                rect.x, rect.y, rect.width, rect.height,
+                preferred_width=535, preferred_height=540)
+            menu.set_default_size(width, height)
+            root = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=11),
+                               "aqua-dashboard")
+            root.get_style_context().add_class("aero-menu-root")
+            root.set_border_width(15)
+            heading = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+            mark = Gtk.Image()
+            self._set_status_icon(mark, "wifi")
+            heading.pack_start(mark, False, False, 0)
+            heading.pack_start(self._class(
+                Gtk.Label(label="Your World", xalign=0), "aero-menu-heading"),
+                True, True, 0)
+            gear = self._class(Gtk.Button(), "aqua-gear")
+            gear.set_image(self._icon("preferences-system", Gtk.IconSize.MENU))
+            gear.get_accessible().set_name("Open desktop settings")
+            gear.set_tooltip_text("Desktop settings")
+            gear.connect("clicked", lambda _button:
+                         self._open_tool("xfce4-settings-manager"))
+            heading.pack_end(gear, False, False, 0)
+            root.pack_start(heading, False, False, 0)
+            root.pack_start(self._class(
+                Gtk.Label(label="Explore  •  Connect  •  Create", xalign=0),
+                "aero-menu-sub"), False, False, 0)
+            search = self._class(Gtk.SearchEntry(), "aero-menu-search")
+            search.set_placeholder_text("Search your applications")
+            search.get_accessible().set_name("Search applications")
+            root.pack_start(search, False, False, 0)
+            shortcuts = Gtk.Grid(column_spacing=8, row_spacing=6)
+            for i, (name, icon_name, uri) in enumerate((
+                ("Home", "user-home", Path.home().as_uri()),
+                ("Files", "system-file-manager", "file:///"),
+                ("Documents", "folder-documents", (Path.home() / "Documents").as_uri()),
+                ("Music", "folder-music", (Path.home() / "Music").as_uri()),
+            )):
+                button = self._class(Gtk.Button(), "aqua-shortcut")
+                col = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+                col.pack_start(self._icon(icon_name, Gtk.IconSize.LARGE_TOOLBAR),
+                               False, False, 0)
+                col.pack_start(Gtk.Label(label=name), False, False, 0)
+                button.add(col)
+                button.get_accessible().set_name("Open " + name)
+                button.connect("clicked", lambda _button, address=uri:
+                               self._open_uri(address))
+                shortcuts.attach(button, i, 0, 1, 1)
+            root.pack_start(shortcuts, False, False, 0)
+            root.pack_start(self._class(Gtk.Label(label="Applications", xalign=0),
+                                        "aero-menu-sub"), False, False, 0)
+            scroller = Gtk.ScrolledWindow()
+            scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+            scroller.set_min_content_height(110)
+            self.results = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+            scroller.add(self.results)
+            root.pack_start(scroller, True, True, 0)
+            menu.add(root)
+            menu.connect("focus-in-event", self._menu_focus_in)
+            menu.connect("focus-out-event", self._menu_focus_out)
+            def search_changed(*_args):
+                self._app_page_size = 24
+                self._populate(search.get_text())
+            search.connect("search-changed", search_changed)
+            search.connect("key-press-event", lambda _widget, event: self._search_key(event))
+            menu.connect("key-press-event", lambda _widget, event: self._search_key(event))
+            self.menu, self.search = menu, search
             self._populate("")
 
         def _create_ten_menu(self):
