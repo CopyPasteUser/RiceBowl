@@ -12,7 +12,7 @@ RiceHub has evolved into RiceBowl, a native GTK3 manager for seven opt-in XFCE/X
 
 ### Compatibility
 
-Existing D-Bus shell identifiers, internal theme names and startup entries remain compatible. The GitHub repository URL is still `CopyPasteUser/RiceHub` until its owner renames the repository through GitHub Settings; the new RiceBowl brand is independent of that GitHub administrative change.
+Existing D-Bus shell identifiers, internal theme names and startup entries remain compatible. The GitHub repository is now `CopyPasteUser/RiceBowl`. Former `CopyPasteUser/RiceHub` URLs are retained as GitHub redirects for existing installations.
 
 ### Acceptance
 

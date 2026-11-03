@@ -41,8 +41,8 @@ Target: Linux Mint XFCE or another desktop with XFCE **on X11**. Debian/Ubuntu e
 
 ```bash
 sudo apt install python3-gi gir1.2-gtk-3.0 gir1.2-wnck-3.0 plank
-git clone https://github.com/CopyPasteUser/RiceHub.git
-cd RiceHub
+git clone https://github.com/CopyPasteUser/RiceBowl.git
+cd RiceBowl
 bash install.sh --dry-run
 bash install.sh
 macrice rice plan ten-dark   # Read-only checks before any desktop changes

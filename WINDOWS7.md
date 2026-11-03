@@ -60,8 +60,8 @@ Supported target: Linux Mint XFCE running an **X11** session. Optional Wnck is r
 
 ```bash
 sudo apt install python3-gi gir1.2-gtk-3.0 gir1.2-wnck-3.0 librsvg2-common
-git clone https://github.com/CopyPasteUser/RiceHub.git
-cd RiceHub
+git clone https://github.com/CopyPasteUser/RiceBowl.git
+cd RiceBowl
 bash install.sh --dry-run
 bash install.sh                   # Never sudo for RiceBowl itself
 macrice rice plan aero-meadow    # Read-only preflight

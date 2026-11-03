@@ -11,7 +11,7 @@ MacRice is deliberately a thin integration layer. MacMenu, Control Center and Ma
 - [x] Align packaging metadata, documentation, screenshots provenance and project names.
 - [x] Keep historical RiceHub theme IDs, D-Bus names and installed state for backwards compatibility.
 - [x] Recognize old managed session launchers without overwriting customized entries.
-- [ ] Rename the GitHub repository via its owner's administrative settings; update clone URLs after it redirects.
+- [x] Rename the GitHub repository to `CopyPasteUser/RiceBowl`, preserving the former URL as a GitHub redirect.
 - [ ] Perform the physical Mint/XFCE switching, Plank and multi-monitor acceptance suite.
 
 ## 0.1 — Unified source and safe setup

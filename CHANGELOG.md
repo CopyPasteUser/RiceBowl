@@ -3,6 +3,7 @@
 ## 0.7.1 — Consistent RiceBowl branding (3 November 2026)
 
 - Standardized RiceBowl names across GTK window titles, sidebar icon, desktop entries, system tools, documentation and the package metadata (which previously reported 0.5.0rc2).
+- GitHub repository now uses the canonical name `CopyPasteUser/RiceBowl`; old `CopyPasteUser/RiceHub` URLs redirect.
 - Updated visible GTK/icon theme names and the accessible labels in original SVG artwork; retained the existing RiceHub-prefixed theme directories as compatibility identifiers.
 - Safely recognize exact old theme metadata and managed autostart entries. Back up original theme indices and SVG metadata before an atomic label-only migration; customized artwork and entries are not overwritten.
 - Updated the source asset generators and added migration regression tests. This maintenance release supersedes v0.7.0 without changing the working macOS rice.
@@ -19,7 +20,7 @@
 - The `ricehub` and `macrice` commands, user state paths, managed startup entries and D-Bus shell identifiers remain compatible.
 - The old RiceHub desktop shortcut stays installed but is hidden from the app menu to avoid duplicates.
 - Added regression tests for new/legacy launcher coexistence, Thunar migration, custom CSS protection and SVG validity.
-- Repository rename is **not complete**. Until owner-side GitHub Settings changes the name, the canonical clone URL remains `CopyPasteUser/RiceHub`.
+- Repository rename is **not complete**. Until owner-side GitHub Settings changes the name, the canonical clone URL remains `CopyPasteUser/RiceBowl`.
 
 ### Validation
 - Automated Python tests and isolated GTK/X11 checks are managed by the repository's GitHub Actions workflow; results must be checked per commit.

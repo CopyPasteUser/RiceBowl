@@ -11,7 +11,7 @@ RiceBowl 0.7.1 is the public-facing successor to RiceHub 0.6. It manages seven r
 
 ## Installation and upgrade
 
-Clone https://github.com/CopyPasteUser/RiceHub.git (the repository has not yet been renamed), then run the user-local installer: bash install.sh --dry-run; bash install.sh. Start the application with ricebowl. No sudo is needed and the installer does not apply a rice or terminate your existing panel. Use macrice rice restore to revert an applied theme.
+Clone https://github.com/CopyPasteUser/RiceBowl.git (the canonical repository name), then run the user-local installer: bash install.sh --dry-run; bash install.sh. Start the application with ricebowl. No sudo is needed and the installer does not apply a rice or terminate your existing panel. Use macrice rice restore to revert an applied theme.
 
 See README.md for details, CHANGELOG.md for version history, RICEHUB.md for architecture and rollback notes.
 

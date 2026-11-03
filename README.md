@@ -8,7 +8,7 @@
 
 A lightweight, native GTK3 desktop-style manager for Linux Mint XFCE and other XFCE/X11 environments.
 
-[Latest release](https://github.com/CopyPasteUser/RiceHub/releases/tag/v0.7.1) · [Changelog](CHANGELOG.md) · [Development roadmap](ROADMAP.md) · [CI](https://github.com/CopyPasteUser/RiceHub/actions)
+[Latest release](https://github.com/CopyPasteUser/RiceBowl/releases/tag/v0.7.1) · [Changelog](CHANGELOG.md) · [Development roadmap](ROADMAP.md) · [CI](https://github.com/CopyPasteUser/RiceBowl/actions)
 
 </div>
 
@@ -55,8 +55,8 @@ All seven families are installable and reversible. The non-macOS menus launch **
 
 ```bash
 sudo apt install python3-gi gir1.2-gtk-3.0 gir1.2-wnck-3.0
-git clone https://github.com/CopyPasteUser/RiceHub.git
-cd RiceHub
+git clone https://github.com/CopyPasteUser/RiceBowl.git
+cd RiceBowl
 bash install.sh --dry-run
 bash install.sh
 ricebowl
@@ -105,7 +105,7 @@ RiceBowl binds the active rice's menu to **Super** and its quick settings / cont
 
 ## Validation and 0.7.1 screenshots
 
-The [GitHub Actions test workflow](https://github.com/CopyPasteUser/RiceHub/actions/workflows/ci.yml) runs the Python suite and native GTK/X11 checks. Its `ricebowl-0.7.1-native-x11-captures` artifact contains fresh virtual-display launcher/control screenshots for XP, Classic, ChromeOS and Frutiger. These are not physical Linux Mint screenshots and are intentionally kept separate from the historical screenshots above.
+The [GitHub Actions test workflow](https://github.com/CopyPasteUser/RiceBowl/actions/workflows/ci.yml) runs the Python suite and native GTK/X11 checks. Its `ricebowl-0.7.1-native-x11-captures` artifact contains fresh virtual-display launcher/control screenshots for XP, Classic, ChromeOS and Frutiger. These are not physical Linux Mint screenshots and are intentionally kept separate from the historical screenshots above.
 
 ## Limitations
 
@@ -113,9 +113,9 @@ Physical Linux Mint XFCE validation of fast desktop switching, multiple monitors
 
 For technical details, see [Windows 7](WINDOWS7.md), [Windows 10](WINDOWS10.md), [release notes](RELEASE_NOTES.md), [migration notes](RICEBOWL.md) and the [historical architecture notes](RICEHUB.md).
 
-## Repository name
+## Repository name and compatibility
 
-The GitHub repository is currently **`CopyPasteUser/RiceHub`**. Changing the *repository name itself* to `RiceBowl` requires the GitHub owner to rename it in **Settings → General → Repository name**. The executable, UI, icon and package metadata already use RiceBowl. Working GitHub URLs above deliberately retain the current repository address.
+The canonical repository is **`CopyPasteUser/RiceBowl`**. GitHub redirects older `CopyPasteUser/RiceHub` links, but new clones and documentation use the RiceBowl URL. The existing `ricehub` command and legacy `RiceHub-*` theme/state identifiers remain supported for compatibility; do not rename them manually.
 
 ## License
 
