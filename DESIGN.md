@@ -1,6 +1,6 @@
-# RiceHub visual and interaction contract
+# RiceBowl visual and interaction contract
 
-RiceHub is an XFCE/X11 desktop-style studio. The GTK3 manager is intentionally
+RiceBowl is an XFCE/X11 desktop-style studio. The GTK3 manager is intentionally
 modern and compact; the *applied desktop shells* follow the visual language of
 their selected era. The app is not a pixel-accurate OS emulator, and all art is
 original Linux artwork. Windows 11 and Liquid Glass are out of scope.
@@ -38,7 +38,7 @@ GTK/XFWM assets. Change both together when a theme identity changes.
 - `Super_L` toggles the active rice's menu; `Control_R` toggles its quick settings.
 - Every shell performs actual Gio app discovery/launch and event-driven Wnck
   task switching. Menu and settings are independent toggles with Escape support.
-- Exactly one RiceHub taskbar may be active. The manager must stop inactive bars,
+- Exactly one RiceBowl taskbar may be active. The manager must stop inactive bars,
   Plank and MacBar before starting the selected taskbar; XFCE's stock panel
   exits only after a successful replacement handoff.
 - A preview remains read-only sample data, even when its rice is installable.
