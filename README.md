@@ -16,16 +16,19 @@ A lightweight, native GTK3 desktop-style manager for Linux Mint XFCE and other X
 
 RiceBowl transforms an XFCE desktop using original GTK3, XFWM4, icon, wallpaper, taskbar, launcher and file-manager themes. Select a desktop in the graphical hub, review its requirements and apply it with a restore snapshot. The application is written in Python/GTK3, without an Electron runtime, remote services or telemetry.
 
-**On `main`:** Windows 7 Aero has its own 42px Superbar, grouped running windows,
+**Current source:** Windows 7 Aero has its own 42px Superbar, grouped running windows,
 native X11 window previews (with safe icon fallback), app Jump Lists, desktop Peek
 and a two-column Start menu. XP Luna has a separately refined 2001-era Start,
-window chrome and 40px taskbar. The other five desktop families retain their
-distinct designs. All of these operate on actual Linux applications and X11
+window chrome and 40px taskbar. **Frutiger Aero / Aqua World** has a distinct
+water-and-nature identity with pearl-glass taskbar, live Apps / Places / Settings
+launcher, original refractive XFWM artwork and matching GTK/Thunar controls.
+The other four families retain their distinct designs. All of these operate on actual Linux applications and X11
 windows; they do not emulate Windows or ship proprietary Microsoft assets.
 
 The tagged **v0.9.1** package predates these fidelity improvements. For the
-latest source use `main`; see [Windows 7 engineering notes](WIN7_AERO_ROADMAP.md)
-and [XP Luna engineering notes](XP_LUNA_ROADMAP.md). RiceBowl verifies a
+latest source use `main`; see [Windows 7 engineering notes](WIN7_AERO_ROADMAP.md),
+[XP Luna engineering notes](XP_LUNA_ROADMAP.md) and
+[Frutiger Aero implementation roadmap](FRUTIGER_AERO_ROADMAP.md). RiceBowl verifies a
 replacement taskbar is mapped before handing off from XFCE Panel and keeps
 recoverable desktop settings backups.
 
@@ -39,7 +42,7 @@ recoverable desktop settings backups.
 | **Windows XP · Luna** | Blue/green taskbar, XP-inspired Start, categorized control panel |
 | **Windows 98 / 2000 · Classic** | Compact gray taskbar, classic Start, square dialogs and controls |
 | **ChromeOS · Pastel Shelf** | Centered app launcher, rounded shelf and device settings |
-| **Y2K · Frutiger Aero** | Aqua-inspired shell, original wallpaper, glossy controls and icons |
+| **Y2K · Frutiger Aero / Aqua World** | Sky/water/grass wallpaper, glossy cyan-and-lime live taskbar, original pearl-window chrome, large Gio app tiles, Apps / Places / Settings launcher and coordinated GTK/Thunar controls |
 
 All seven families are installable and reversible. The non-macOS menus launch **real applications** from the desktop catalog, with Wnck-based window buttons when the relevant library is present. Control panels open installed system utilities; unavailable tools are disabled rather than simulated. No Microsoft, Google or Apple proprietary assets are bundled.
 
@@ -115,7 +118,7 @@ RiceBowl binds the active rice's menu to **Super** and its quick settings / cont
 
 ### Theme upgrades and safe repair
 
-RiceBowl recognizes exact original theme/icon files from releases 0.6, 0.7.0 and 0.7.1. Unmodified old assets are upgraded with a dated backup under `~/.local/share/{themes,icons}/.ricebowl-asset-backups/`. Genuine user modifications are **never silently overwritten**. If `Check requirements` reports an existing customized theme, select **Repair local theme assets…** in the hub (confirmation and backup required), or run:
+RiceBowl recognizes exact original theme/icon files from earlier releases, including the pre-Aqua Frutiger theme. Unmodified old assets are upgraded with a dated backup under `~/.local/share/{themes,icons}/.ricebowl-asset-backups/`. Genuine user modifications are **never silently overwritten**. If `Check requirements` reports an existing customized theme, select **Repair local theme assets…** in the hub (confirmation and backup required), or run:
 
 ```bash
 macrice rice repair-assets ten-dark  # Explicitly replace only this Rice's bundled assets

@@ -1,5 +1,23 @@
 # RiceBowl changelog
 
+## Unreleased — Frutiger Aero / Aqua World fidelity (3 November 2026)
+
+- Hand-drew a deeper pearlescent cyan/lime taskbar, an organic water/leaf Start orb,
+  the original glass XFWM4 window-frame/button states and corresponding GTK3/Thunar controls.
+- Redesigned the **actual native GTK launcher** into a luminous `Your World`
+  dashboard with real hardware status, working places/settings quick links,
+  searchable three-column Gio application tiles, context pinning and Show more.
+- Gave Frutiger its own icon theme inside Xvfb previews without changing the
+  OS-wide GTK settings. Normalized unusual application icons to 48 px.
+- Made Frutiger Control Panel larger and more useful, with visible device
+  details, verified audio controls and a distinct refractive hardware card.
+- Added trusted hashes for unmodified pre-Aqua theme/icon bundles so updates
+  remain backup-backed; user-customized files continue to be protected.
+- Extended native 1024×768 screenshot tests to Frutiger and verified all
+  six non-macOS shells; refreshed only current gallery screenshots.
+- No tagged release is moved by these source-only improvements. Physical
+  Linux Mint XFCE and compositor-dependent rendering still need owner review.
+
 ## 0.9.1 — XP popup geometry and safer panel handoff (3 November 2026)
 
 - Position the XP Luna Start menu against the actual mapped GTK window height, not its requested 560 px; shrink its program-list minimum height so the taskbar stays exposed.

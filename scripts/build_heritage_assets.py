@@ -174,6 +174,160 @@ thunar paned separator, .thunar paned separator { background: #acbed8; }
 """, encoding="utf-8")
 
 
+def _frutiger_chrome(destination: Path) -> None:
+    """Draw original pearl-and-lagoon XFWM artwork for Aqua World alone."""
+    frame = destination / "xfwm4"
+    (frame / "themerc").write_text(
+        "active_text_color=#ffffff\ninactive_text_color=#e1fcfa\n"
+        "button_offset=2\nbutton_spacing=2\nfull_width_title=true\n"
+        "frame_border_top=0\nmaximized_offset=0\nshow_app_icon=true\n"
+        "title_horizontal_offset=8\ntitle_vertical_offset_active=1\n"
+        "title_vertical_offset_inactive=1\ntitle_shadow_active=true\n"
+        "title_shadow_inactive=false\n", encoding="utf-8",
+    )
+
+    def gradient(width, height, upper, lower):
+        canvas = Image.new("RGBA", (width, height))
+        draw = ImageDraw.Draw(canvas)
+        for y in range(height):
+            t = y / max(1, height - 1)
+            col = tuple(round(a * (1 - t) + b * t) for a, b in zip(upper, lower))
+            draw.line((0, y, width, y), fill=col + (255,))
+        return canvas
+
+    for state, top, bottom in (
+        ("active", (118, 238, 230), (5, 114, 170)),
+        ("inactive", (180, 235, 230), (77, 157, 176)),
+    ):
+        for number in range(1, 6):
+            image = gradient(15, 32, top, bottom)
+            draw = ImageDraw.Draw(image, "RGBA")
+            draw.rectangle((0, 0, 14, 1), fill=(255, 255, 255, 230))
+            draw.line((0, 13, 14, 13), fill=(240, 255, 255, 116))
+            draw.line((0, 31, 14, 31), fill=(1, 83, 136, 225))
+            image.save(frame / f"title-{number}-{state}.png")
+        for side in ("top-left", "top-right"):
+            image = gradient(8, 32, top, bottom)
+            draw = ImageDraw.Draw(image, "RGBA")
+            x = 0 if side == "top-left" else 7
+            draw.line((x, 5, x, 31), fill=(12, 123, 153, 230))
+            pixels = image.load()
+            for y, cut in ((0, 4), (1, 3), (2, 2), (3, 1)):
+                for d in range(cut):
+                    pixels[d if side == "top-left" else 7-d, y] = (0, 0, 0, 0)
+            image.save(frame / f"{side}-{state}.png")
+        for side in ("left", "right"):
+            image = gradient(5, 8, bottom, (7, 111, 145))
+            draw = ImageDraw.Draw(image)
+            x = 0 if side == "left" else 4
+            draw.line((x, 0, x, 8), fill=(12, 92, 137, 255))
+            image.save(frame / f"{side}-{state}.png")
+        for part in ("bottom", "bottom-left", "bottom-right"):
+            image = gradient(8, 6, bottom, (3, 91, 138))
+            image.save(frame / f"{part}-{state}.png")
+
+    for name in ("close", "maximize", "hide", "menu", "shade", "stick"):
+        for state in ("active", "inactive", "prelight", "pressed"):
+            if name == "close":
+                top, bottom = (255, 169, 130), (208, 59, 56)
+            elif name in ("shade", "stick"):
+                top, bottom = (209, 255, 159), (61, 168, 96)
+            else:
+                top, bottom = (220, 255, 255), (28, 156, 200)
+            if state == "inactive":
+                top, bottom = (226, 245, 244), (120, 178, 192)
+            elif state == "prelight":
+                top = tuple(min(255, component + 26) for component in top)
+            elif state == "pressed":
+                top, bottom = bottom, top
+            image = Image.new("RGBA", (27, 27), (0, 0, 0, 0))
+            draw = ImageDraw.Draw(image, "RGBA")
+            draw.rounded_rectangle((2, 2, 25, 24), radius=10,
+                                   fill=bottom + (255,), outline=(235, 255, 255, 255), width=1)
+            for y in range(4, 15):
+                t = (y - 4) / 11
+                col = tuple(round(a * (1 - t) + b * t) for a, b in zip(top, bottom))
+                draw.line((5, y, 22, y), fill=col + (255,))
+            draw.arc((5, 3, 22, 18), 190, 350, fill=(255, 255, 255, 210), width=2)
+            stroke = (255, 255, 255, 255)
+            if name == "close":
+                draw.line((10, 10, 18, 18), fill=stroke, width=2)
+                draw.line((18, 10, 10, 18), fill=stroke, width=2)
+            elif name == "maximize":
+                draw.rectangle((9, 10, 18, 18), outline=stroke, width=2)
+            elif name == "hide":
+                draw.line((8, 18, 19, 18), fill=stroke, width=2)
+            elif name == "menu":
+                draw.ellipse((10, 10, 18, 18), outline=stroke, width=2)
+            elif name == "shade":
+                draw.polygon(((9, 16), (19, 16), (14, 10)), fill=stroke)
+            else:
+                draw.ellipse((11, 11, 17, 17), fill=stroke)
+            image.save(frame / f"{name}-{state}.png")
+
+
+def _frutiger_gtk(destination: Path) -> None:
+    """Add scoped eco-glass GTK widgets without regenerating other rice themes."""
+    target = destination / "gtk-3.0/gtk.css"
+    css = target.read_text(encoding="utf-8")
+    marker = "/* RiceBowl Aqua World 0.9: light-refracting Frutiger widgets. */"
+    if marker in css:
+        css = css[:css.index(marker)].rstrip() + "\n"
+    target.write_text(css + """
+/* RiceBowl Aqua World 0.9: light-refracting Frutiger widgets. */
+window, dialog, .background, viewport { background-color: #e7fff8; color: #07506a; }
+button { background-image: linear-gradient(#fff, #ecfff9 38%, #bcf2ed 51%, #84d6df);
+  border: 1px solid #77c8d0; border-radius: 11px; color: #07506a;
+  padding: 7px 11px; box-shadow: inset 0 1px #fff; }
+button:hover { background-image: linear-gradient(#fff, #dfffed 40%, #a0efd6 55%, #57ccce);
+  border-color: #2ca6bf; }
+button:active, button:checked { background-image: linear-gradient(#efffd4, #b4ee68 50%, #72c943);
+  border-color: #4baa5d; color: #124d62; }
+button:focus { border-color: #127ba8; box-shadow: 0 0 3px #3bc3db; }
+button:disabled { color: #4e8491; opacity: .66; }
+entry, spinbutton, combobox box.linked { background: #faffff; color: #07506a;
+  border: 1px solid #77c6d7; border-radius: 11px; padding: 7px 10px; }
+entry:focus { border-color: #1588b4; box-shadow: 0 0 3px #70e5ed; }
+selection, :selected, row:selected, treeview.view:selected { background: #9ce54b;
+  color: #164e64; }
+headerbar, .titlebar { background-image: linear-gradient(#e2ffff 0%, #9bf0e4 42%,
+  #45b8cc 48%, #168baa 100%); color: #064b67; border-bottom: 2px solid #0e88a5;
+  box-shadow: inset 0 1px #fff; }
+headerbar button { border-radius: 12px; }
+toolbar { background-image: linear-gradient(#f8ffff, #c3fff2 48%, #81d8e3);
+  color: #07536d; border-bottom: 1px solid #75cbd7; }
+menubar, menu, popover, .menu, .popup { background: #e6fff7; color: #07546b;
+  border: 1px solid #7acecd; border-radius: 7px; }
+menuitem:hover, modelbutton:hover { background: #b9f3ab; color: #14566a; }
+notebook header { background: #dcfff3; border-color: #83d6db; }
+notebook tab { background-image: linear-gradient(#f7ffff, #bdeee9); border: 1px solid #8dd5d8;
+  border-radius: 12px 12px 0 0; padding: 7px 12px; }
+notebook tab:checked { background: #fbffed; border-bottom: 2px solid #96df43; }
+scrollbar trough { background: #c5f4ed; border-radius: 10px; }
+scrollbar slider { background-image: linear-gradient(#f8ffff, #7ad9d9);
+  border: 1px solid #5bb9c3; border-radius: 10px; min-width: 11px; min-height: 11px; }
+scrollbar slider:hover { background: #7ae6ce; }
+progressbar progress, scale highlight, switch:checked {
+  background-image: linear-gradient(#e9ff9e, #81d947);
+  border: 1px solid #5eae49; border-radius: 9px; }
+tooltip { background: #fafff0; color: #0b566a; border: 1px solid #8fd4c4;
+  border-radius: 6px; }
+window.thunar menubar, window.thunar toolbar { background-image: linear-gradient(#fff,
+  #d2fff1 38%, #8fe1e6); border-bottom: 2px solid #6bcbd5; }
+window.thunar toolbar button { border-radius: 11px; box-shadow: inset 0 1px #fff; }
+window.thunar .path-bar button, window.thunar .location-bar button {
+  background-image: linear-gradient(#fff, #c6fff3 40%, #8cdee0);
+  border: 1px solid #7bd2d2; border-radius: 15px; }
+window.thunar .sidebar, window.thunar .shortcuts-pane {
+  background-image: linear-gradient(to right, #e7fff3, #afe9e6);
+  border-right: 2px solid #84d3d2; }
+window.thunar .sidebar .view:selected, window.thunar treeview.view:selected {
+  background: #a1ed43; color: #174960; }
+window.thunar statusbar { background-image: linear-gradient(#effff5, #a5ecdf);
+  color: #075f7d; border-top: 1px solid #83cfd0; }
+""", encoding="utf-8")
+
+
 def _vertical(upper, lower):
     image = Image.new("RGB", (W, H))
     draw = ImageDraw.Draw(image)
@@ -280,7 +434,17 @@ def _icons(name, palette):
         (base / "scalable/apps" / f"{filename}.svg").write_text(logo, encoding="utf-8")
 
 
-def main(*, luna_only: bool = False):
+def main(*, luna_only: bool = False, frutiger_only: bool = False):
+    if luna_only and frutiger_only:
+        raise ValueError("Choose only one targeted art build")
+    if frutiger_only:
+        # Preserve every other rice and the already reviewed Frutiger wallpaper,
+        # icons and project-specific Thunar rules. Only redraw owned chrome.
+        path = ROOT / "assets/themes/RiceHub-Frutiger"
+        _frutiger_chrome(path)
+        _frutiger_gtk(path)
+        print("Refreshed original Frutiger window chrome and GTK styles only")
+        return
     for name, palette in PALETTES.items():
         if luna_only and name != "Luna":
             continue
@@ -311,4 +475,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--luna-only", action="store_true",
                         help="Refresh just Luna XFWM and GTK, preserving reviewed other rices")
-    main(luna_only=parser.parse_args().luna_only)
+    parser.add_argument("--frutiger-only", action="store_true",
+                        help="Refresh only the reviewed Frutiger XFWM and GTK glass styles")
+    arguments = parser.parse_args()
+    main(luna_only=arguments.luna_only, frutiger_only=arguments.frutiger_only)
