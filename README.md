@@ -94,9 +94,9 @@ fidelity pass. The XP captures show its own later fidelity pass; other rice
 images retain their last verified run; see
 [capture provenance](screenshots/current/README.md).
 
-| Windows 7: actual Thunar + XFWM4 | ChromeOS: actual Thunar + XFWM4 |
+| Windows 7: actual Thunar + XFWM4 | Windows XP: actual Thunar + XFWM4 |
 | --- | --- |
-| ![Windows 7 real Thunar file manager](screenshots/current/aero-workspace.webp) | ![ChromeOS real Thunar file manager](screenshots/current/chromeos-workspace.webp) |
+| ![Windows 7 real Thunar file manager](screenshots/current/aero-workspace.webp) | ![Windows XP Luna real Thunar file manager](screenshots/current/winxp-workspace.webp) |
 
 **File-manager scope:** the installed Thunar remains a functional GTK3 file manager; RiceBowl themes its window chrome, sidebar, toolbar, selected rows and path navigation. The conceptual "Recent + Downloads" dashboard in the reference images is **not** presented as an implemented Thunar feature.
 

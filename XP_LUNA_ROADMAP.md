@@ -15,7 +15,8 @@ Scope: the live `winxp` GTK/XFWM/X11 rice, not the read-only preview or other de
 
 - [x] Inventory existing XP-specific widgets, CSS, generated XFWM/GTK assets and the historical-asset migration guard.
 - [x] Use historical layout/color guidelines as a fidelity baseline; record original-art constraint.
-- [ ] Measure initial vs final real GTK captures side by side at 1600×900 and 1024×768.
+- [x] Compare initial vs final real GTK captures at 1600×900 and 1024×768,
+  including the XP Control Panel and a genuine XFWM/Thunar workspace.
 
 ### P1 — Start menu anatomy
 
@@ -39,8 +40,11 @@ Scope: the live `winxp` GTK/XFWM/X11 rice, not the read-only preview or other de
 ### P4 — Release gate
 
 - [x] Extend pure-Python Luna layout, app discovery, icon and migration unit tests.
-- [ ] Run all six-profile virtual-X11 smoke/gallery checks on GitHub Actions.
-- [ ] Validate no collisions at 1600×900 and 1024×768, inspect real captures, and audit focus/empty/error states.
+- [x] Run all six-profile virtual-X11 smoke/gallery checks on GitHub Actions
+  (`41691336596` green, 3 November 2026).
+- [x] Validate the new XP Control Panel, Start and Thunar at 1600×900 and
+  1024×768 using native X11 captures; unit and smoke tests cover keyboard,
+  category/classic transitions, disabled actions and menu geometry.
 - [ ] Re-test on the owner's Mint XFCE laptop: external monitor, login/relogin, rapid rice switching, Plank autostart, volume/network/battery.
 - [ ] After acceptance, publish as the next RiceBowl pre-release with updated readme, evidence and checksum.
 
@@ -70,7 +74,7 @@ to `winxp` only:
 - [x] Update screenshot position validation for the centered XP Control Panel.
 - [x] Unit-test applet discovery, directory permission prompts, CSS migrations
   and absence of cross-profile styling.
-- [ ] Inspect passing native 1600×900 and 1024×768 screenshots and republish
+- [x] Inspect passing native 1600×900 and 1024×768 screenshots and republish
   the current gallery from that precise passing CI commit.
 - [ ] Verify on the owner's physical Mint XFCE laptop (multimonitor, autostart,
   volume, actual applet availability and quick profile switching).
