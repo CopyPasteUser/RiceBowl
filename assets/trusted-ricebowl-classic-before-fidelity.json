@@ -1,0 +1,171 @@
+{
+  "schema": 1,
+  "description": "Byte-identical previously shipped Windows 98 / 2000 Classic GTK, XFWM and icon assets. Automatic upgrades remain backup-backed; custom user assets are never trusted.",
+  "files": {
+    "assets/icons/RiceHub-Classic-Icons/scalable/apps/applications-other.svg": [
+      "3045ed560e2d533cd5b974070a0f96387c7ca03f"
+    ],
+    "assets/icons/RiceHub-Classic-Icons/scalable/apps/ricebowl-start.svg": [
+      "40e7518a2b7f0eaa5c372d24af438b5378f04c9f"
+    ],
+    "assets/icons/RiceHub-Classic-Icons/scalable/apps/ricehub-start.svg": [
+      "40e7518a2b7f0eaa5c372d24af438b5378f04c9f"
+    ],
+    "assets/icons/RiceHub-Classic-Icons/scalable/apps/start-here.svg": [
+      "40e7518a2b7f0eaa5c372d24af438b5378f04c9f"
+    ],
+    "assets/icons/RiceHub-Classic-Icons/scalable/apps/xfce4-menu.svg": [
+      "40e7518a2b7f0eaa5c372d24af438b5378f04c9f"
+    ],
+    "assets/themes/RiceHub-Classic/gtk-3.0/gtk.css": [
+      "bf29d8c537b219466012d5f890d5c3d62709dc40"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/bottom-active.png": [
+      "5cef29d3e8815565d5d6a0dec86d800d0a9dce1e"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/bottom-inactive.png": [
+      "05f5e70cd4e8b53307228c1bd69d50b85998e674"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/bottom-left-active.png": [
+      "5cef29d3e8815565d5d6a0dec86d800d0a9dce1e"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/bottom-left-inactive.png": [
+      "05f5e70cd4e8b53307228c1bd69d50b85998e674"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/bottom-right-active.png": [
+      "5cef29d3e8815565d5d6a0dec86d800d0a9dce1e"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/bottom-right-inactive.png": [
+      "05f5e70cd4e8b53307228c1bd69d50b85998e674"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/close-active.png": [
+      "620c2af54dfcd451f125bc81bf71839a4c819610"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/close-inactive.png": [
+      "ea0b64b7bd56f822aa7f5e60a2f31d257008bcef"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/close-prelight.png": [
+      "4dc4ab6b5c99df2772c705dc5fc303c92cf1a32e"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/close-pressed.png": [
+      "4dc4ab6b5c99df2772c705dc5fc303c92cf1a32e"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/hide-active.png": [
+      "5b16a48a0b144a68ba6a74ac561a8111ab99f1f6"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/hide-inactive.png": [
+      "8e27c5d4a797a7b6a19cd2241c038d9eeef015e1"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/hide-prelight.png": [
+      "9082ea996f55bc0ee84e0292dbbd801c5bf78f07"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/hide-pressed.png": [
+      "9082ea996f55bc0ee84e0292dbbd801c5bf78f07"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/left-active.png": [
+      "c1f8670ce9fa6d21823eb8b26005fc48f3acda62"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/left-inactive.png": [
+      "78a02ca30ec65425b0515b1aa5330ec48202375a"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/maximize-active.png": [
+      "2fdf04b120dd3ffb3928a047b010cfcc44a55f20"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/maximize-inactive.png": [
+      "999a5b790881c1d002545838e15c393af1fff236"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/maximize-prelight.png": [
+      "cbfe6b910bb0310a6364edb133f46fd21f3b5b7d"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/maximize-pressed.png": [
+      "cbfe6b910bb0310a6364edb133f46fd21f3b5b7d"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/menu-active.png": [
+      "c2601ef9d85538cc1248fe59ec48b28911c0df39"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/menu-inactive.png": [
+      "c54307585d8ec98f029eb238dff7b015f69376f7"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/menu-prelight.png": [
+      "b3908ade1ec44ce39f7376792e73b30a9715c320"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/menu-pressed.png": [
+      "b3908ade1ec44ce39f7376792e73b30a9715c320"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/right-active.png": [
+      "c1f8670ce9fa6d21823eb8b26005fc48f3acda62"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/right-inactive.png": [
+      "78a02ca30ec65425b0515b1aa5330ec48202375a"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/shade-active.png": [
+      "4f60898b22ded9442a44f202a62ef9998aa71997"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/shade-inactive.png": [
+      "7199fcf5a28ae9418433eb652f24f550cfd42fa4"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/shade-prelight.png": [
+      "7c003e1afd7eba82ac39151f3783de9b24656728"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/shade-pressed.png": [
+      "7c003e1afd7eba82ac39151f3783de9b24656728"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/stick-active.png": [
+      "468b442445368b1c46cd96b76e44bc6a3380035a"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/stick-inactive.png": [
+      "138cd2efb8c4c95da07d439ff320abc946db3d97"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/stick-prelight.png": [
+      "f53971295ebb3689f20d9b5294f7ce547767697a"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/stick-pressed.png": [
+      "f53971295ebb3689f20d9b5294f7ce547767697a"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/themerc": [
+      "6fbe3db6fbde61e4cfb329152b96c48cc241fa46"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/title-1-active.png": [
+      "62fc06df6368cb559d03ccf3415d5e5ddd9b03e9"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/title-1-inactive.png": [
+      "9eb2c02de089486e9ca52a173acb7157b569019b"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/title-2-active.png": [
+      "62fc06df6368cb559d03ccf3415d5e5ddd9b03e9"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/title-2-inactive.png": [
+      "9eb2c02de089486e9ca52a173acb7157b569019b"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/title-3-active.png": [
+      "62fc06df6368cb559d03ccf3415d5e5ddd9b03e9"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/title-3-inactive.png": [
+      "9eb2c02de089486e9ca52a173acb7157b569019b"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/title-4-active.png": [
+      "62fc06df6368cb559d03ccf3415d5e5ddd9b03e9"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/title-4-inactive.png": [
+      "9eb2c02de089486e9ca52a173acb7157b569019b"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/title-5-active.png": [
+      "62fc06df6368cb559d03ccf3415d5e5ddd9b03e9"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/title-5-inactive.png": [
+      "9eb2c02de089486e9ca52a173acb7157b569019b"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/top-left-active.png": [
+      "846a952045218e1f42eb71105f4906cd0e9ca74e"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/top-left-inactive.png": [
+      "07095146efe51f61fb8f0b6df1403a0e58a23d57"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/top-right-active.png": [
+      "846a952045218e1f42eb71105f4906cd0e9ca74e"
+    ],
+    "assets/themes/RiceHub-Classic/xfwm4/top-right-inactive.png": [
+      "07095146efe51f61fb8f0b6df1403a0e58a23d57"
+    ]
+  }
+}

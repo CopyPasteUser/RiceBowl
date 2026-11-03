@@ -283,6 +283,55 @@ DETAIL_CSS = {
 menu { background: #c0c0c0; border: 2px outset #fff; }
 menu menuitem { color: #111; padding: 5px 11px; }
 menu menuitem:hover { background: #000080; color: #fff; }
+/* Win98 refinement: keyboard-accessible dense controls, 28px taskbar rhythm. */
+.aero-taskbar { min-height: 34px; padding: 0 2px; border-top: 2px solid #ffffff; }
+.aero-start { min-height: 26px; min-width: 74px; padding: 1px 5px;
+  border-width: 2px; font: bold 12px Sans; }
+.aero-start:active, .aero-start:checked, .aero-start:focus {
+  border-style: inset; background: #b9b9b9; }
+.aero-task, .aero-pin { min-height: 25px; padding: 1px 5px; font-size: 11px; }
+.aero-pin:active, .aero-pin:focus, .aero-task:focus { border-style: inset; }
+.aero-task-overflow, .aero-quick, .aero-desktop { background: #c0c0c0;
+  border: 2px outset #fff; border-radius: 0; padding: 1px 3px; }
+.aero-task-overflow:active, .aero-quick:active, .aero-desktop:active {
+  border-style: inset; background: #b1b1b1; }
+.aero-time { font: 11px Sans; min-height: 19px; padding: 2px 7px; }
+.rice-status { border: 0; padding: 1px 2px; }
+.rice-status:hover, .rice-status:focus { border: 1px dotted #000080; padding: 0 1px; }
+.classic-menu { border-style: solid; border-width: 2px;
+  border-top-color: #ffffff; border-left-color: #ffffff;
+  border-bottom-color: #404040; border-right-color: #404040; }
+.classic-brand { background: #000080; border: 0; min-width: 27px; }
+.classic-brand-label { font: bold 16px Sans; color: #ffffff; }
+.classic-menu-list { padding: 2px 3px; min-width: 225px; }
+.classic-menu-item { min-height: 30px; padding: 3px 6px; font: 12px Sans;
+  border: 1px solid transparent; border-radius: 0; box-shadow: none;
+  text-shadow: none; }
+.classic-menu-item:hover, .classic-menu-item:focus, .classic-menu-item:checked {
+  background: #000080; color: #ffffff; border-color: #000080; }
+.classic-menu-item:disabled { color: #777777; text-shadow: 1px 1px #fff; }
+.classic-menu-item image { margin-right: 3px; }
+.classic-chevron { font-size: 8px; }
+.classic-menu-list separator { min-height: 1px; margin: 2px 4px;
+  background: #808080; border-bottom: 1px solid #ffffff; }
+.classic-menu .aero-menu-search { margin: 4px 5px; padding: 3px;
+  border-style: inset; border-width: 2px; }
+.classic-menu menuitem, menu menuitem { min-height: 23px; padding: 3px 8px; }
+.classic-menu menuitem:focus, menu menuitem:focus { background: #000080; color: #fff; }
+.aero-control-root { padding: 8px; border: 2px outset #ffffff; }
+.classic-control-caption { background: #000080; color: #ffffff;
+  min-height: 26px; padding: 2px 3px; font: bold 12px Sans; }
+.classic-control-caption label { color: #ffffff; font-weight: bold; }
+.classic-control-close { min-width: 20px; min-height: 20px; padding: 0 3px;
+  background: #c0c0c0; color: #000; border: 2px outset #fff;
+  border-radius: 0; font-weight: bold; box-shadow: none; }
+.classic-control-close:active { border-style: inset; }
+.classic-control-close label { color: #000; }
+.aero-control-root .aero-menu-heading { color: #000; font: bold 14px Sans; }
+.aero-control-root .aero-menu-sub { color: #333; font: 11px Sans; }
+.aero-control-quick { font: 11px Sans; border: 2px outset #ffffff; }
+.aero-control-quick:active { border-style: inset; background: #b6b6b6; }
+.aero-control-quick:focus { outline: 1px dotted #000080; outline-offset: -4px; }
 """,
     "chromeos": b"""
 /* Modern ChromeOS: separated launcher, centered app shelf and status capsule. */

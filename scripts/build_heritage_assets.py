@@ -174,6 +174,217 @@ thunar paned separator, .thunar paned separator { background: #acbed8; }
 """, encoding="utf-8")
 
 
+def _classic_chrome(destination: Path) -> None:
+    """Draw authentic square 9x-era XFWM furniture from original pixels."""
+    frame = destination / "xfwm4"
+    (frame / "themerc").write_text(
+        "active_text_color=#ffffff\ninactive_text_color=#444444\n"
+        "button_offset=2\nbutton_spacing=2\nfull_width_title=true\n"
+        "frame_border_top=0\nmaximized_offset=0\nshow_app_icon=true\n"
+        "title_horizontal_offset=5\ntitle_vertical_offset_active=1\n"
+        "title_vertical_offset_inactive=1\ntitle_shadow_active=false\n"
+        "title_shadow_inactive=false\n", encoding="utf-8",
+    )
+    silver = (192, 192, 192, 255)
+    white = (255, 255, 255, 255)
+    dark = (64, 64, 64, 255)
+    shadow = (128, 128, 128, 255)
+
+    for state, color in (("active", (0, 0, 128, 255)),
+                         ("inactive", (128, 128, 128, 255))):
+        for number in range(1, 6):
+            image = Image.new("RGBA", (12, 27), color)
+            draw = ImageDraw.Draw(image)
+            draw.line((0, 0, 11, 0), fill=white if state == "active" else silver)
+            draw.line((0, 26, 11, 26), fill=dark)
+            image.save(frame / f"title-{number}-{state}.png")
+        for name in ("top-left", "top-right"):
+            image = Image.new("RGBA", (5, 27), color)
+            draw = ImageDraw.Draw(image)
+            edge = 0 if name == "top-left" else 4
+            draw.line((edge, 0, edge, 26), fill=white if name == "top-left" else dark)
+            draw.line((0, 0, 4, 0), fill=white)
+            image.save(frame / f"{name}-{state}.png")
+        for name in ("left", "right"):
+            image = Image.new("RGBA", (4, 7), silver)
+            draw = ImageDraw.Draw(image)
+            edge = 0 if name == "left" else 3
+            draw.line((edge, 0, edge, 6), fill=white if name == "left" else dark)
+            image.save(frame / f"{name}-{state}.png")
+        for name in ("bottom", "bottom-left", "bottom-right"):
+            image = Image.new("RGBA", (5, 4), silver)
+            draw = ImageDraw.Draw(image)
+            draw.line((0, 3, 4, 3), fill=dark)
+            if name == "bottom-left":
+                draw.line((0, 0, 0, 3), fill=white)
+            elif name == "bottom-right":
+                draw.line((4, 0, 4, 3), fill=dark)
+            image.save(frame / f"{name}-{state}.png")
+
+    for name in ("close", "maximize", "hide", "menu", "shade", "stick"):
+        for state in ("active", "inactive", "prelight", "pressed"):
+            image = Image.new("RGBA", (22, 22), silver)
+            draw = ImageDraw.Draw(image)
+            pressed = state == "pressed"
+            draw.rectangle((0, 0, 21, 21), outline=dark if pressed else white)
+            draw.line((1, 1, 20, 1), fill=shadow if pressed else white)
+            draw.line((1, 1, 1, 20), fill=shadow if pressed else white)
+            draw.line((1, 20, 20, 20), fill=white if pressed else shadow)
+            draw.line((20, 1, 20, 20), fill=white if pressed else shadow)
+            draw.line((1, 21, 21, 21), fill=white if pressed else dark)
+            draw.line((21, 1, 21, 21), fill=white if pressed else dark)
+            ink = (50, 50, 50, 255) if state == "inactive" else (0, 0, 0, 255)
+            dx = dy = 1 if pressed else 0
+            if name == "close":
+                draw.line((7+dx, 7+dy, 14+dx, 14+dy), fill=ink, width=2)
+                draw.line((14+dx, 7+dy, 7+dx, 14+dy), fill=ink, width=2)
+            elif name == "maximize":
+                draw.rectangle((6+dx, 6+dy, 15+dx, 15+dy), outline=ink, width=1)
+                draw.line((7+dx, 7+dy, 14+dx, 7+dy), fill=ink, width=2)
+            elif name == "hide":
+                draw.line((6+dx, 15+dy, 15+dx, 15+dy), fill=ink, width=2)
+            elif name == "menu":
+                draw.rectangle((6+dx, 6+dy, 15+dx, 15+dy), outline=ink)
+                draw.line((7+dx, 8+dy, 14+dx, 8+dy), fill=ink)
+            elif name == "shade":
+                draw.polygon([(6+dx, 13+dy), (15+dx, 13+dy), (10+dx, 8+dy)], fill=ink)
+            else:
+                draw.ellipse((8+dx, 8+dy, 13+dx, 13+dy), fill=ink)
+            image.save(frame / f"{name}-{state}.png")
+
+
+def _classic_gtk(destination: Path) -> None:
+    """Extend genuine GTK/Thunar widgets with no glass, radius or gradient."""
+    target = destination / "gtk-3.0/gtk.css"
+    original = target.read_text(encoding="utf-8")
+    marker = "/* RiceBowl Windows 98 Classic fidelity layer. */"
+    if marker in original:
+        original = original.split(marker, 1)[0].rstrip() + "\n"
+    target.write_text(original + """
+/* RiceBowl Windows 98 Classic fidelity layer. */
+window, dialog, .background, viewport { background-color: #c0c0c0; color: #000; }
+button, .button { background: #c0c0c0; color: #000; border-radius: 0;
+  border-style: solid; border-width: 2px; border-top-color: #fff;
+  border-left-color: #fff; border-bottom-color: #404040;
+  border-right-color: #404040; padding: 3px 8px; box-shadow: none; }
+button:hover { background: #d0d0d0; color: #000; }
+button:active, button:checked { background: #c0c0c0; color: #000;
+  border-top-color: #404040; border-left-color: #404040;
+  border-bottom-color: #fff; border-right-color: #fff; }
+button:focus { outline: 1px dotted #000; outline-offset: -5px; }
+button:disabled { color: #808080; text-shadow: 1px 1px #fff; }
+entry, spinbutton, textview, combobox box.linked { background: #fff; color: #000;
+  border-style: solid; border-width: 2px; border-top-color: #808080;
+  border-left-color: #808080; border-bottom-color: #fff;
+  border-right-color: #fff; border-radius: 0; padding: 3px; }
+entry:focus { border-top-color: #000080; border-left-color: #000080; }
+selection, :selected, row:selected, treeview.view:selected { background: #000080; color: #fff; }
+headerbar, .titlebar { background: #000080; color: #fff;
+  border-radius: 0; border: 2px solid #c0c0c0; box-shadow: none; }
+headerbar:backdrop, .titlebar:backdrop { background: #808080; color: #ddd; }
+headerbar button { padding: 1px 4px; border-radius: 0; }
+toolbar, menubar { background: #c0c0c0; color: #000;
+  border-top: 1px solid #fff; border-bottom: 1px solid #808080; }
+menu, popover, .menu, .popup { background: #c0c0c0; color: #000;
+  border: 2px solid #808080; border-top-color: #fff;
+  border-left-color: #fff; border-radius: 0; box-shadow: none; }
+menuitem { padding: 2px 7px; min-height: 18px; }
+menuitem:hover, modelbutton:hover { background: #000080; color: #fff; }
+notebook header { background: #c0c0c0; border: 0; }
+notebook tab { padding: 3px 9px; border-radius: 0; background: #c0c0c0;
+  border: 2px solid #808080; border-top-color: #fff; border-left-color: #fff; }
+notebook tab:checked { background: #d8d8d8; border-bottom-color: #d8d8d8; }
+scrollbar trough { background: #c0c0c0; border: 1px solid #808080; border-radius: 0; }
+scrollbar slider { background: #c0c0c0; border: 2px solid #808080;
+  border-top-color: #fff; border-left-color: #fff;
+  border-radius: 0; min-width: 12px; min-height: 12px; }
+scrollbar slider:hover { background: #d1d1d1; }
+scale trough, progressbar trough { background: #fff; border: 2px inset #808080; border-radius: 0; }
+scale highlight, progressbar progress, switch:checked { background: #000080; border-radius: 0; }
+tooltip { background: #ffffe1; color: #000; border: 1px solid #000; border-radius: 0; }
+window.thunar toolbar, window.thunar menubar, window.thunar .location-bar {
+  background: #c0c0c0; border-top: 2px solid #fff; border-bottom: 2px solid #808080; }
+window.thunar .path-bar button, window.thunar toolbar button { padding: 2px 5px;
+  border: 2px outset #fff; border-radius: 0; background: #c0c0c0; }
+window.thunar .sidebar, window.thunar .shortcuts-pane { background: #c0c0c0;
+  color: #000; border: 2px inset #fff; }
+window.thunar treeview.view, window.thunar .standard-view { background: #fff;
+  color: #000; border: 2px inset #fff; }
+window.thunar treeview.view:selected, window.thunar .sidebar .view:selected {
+  background: #000080; color: #fff; }
+window.thunar statusbar { background: #c0c0c0; border-top: 2px outset #fff; }
+""", encoding="utf-8")
+
+
+def _classic_wallpaper() -> None:
+    """Win98's familiar plain teal desktop, entirely original pixel artwork."""
+    destination = ROOT / "assets/wallpapers/classic-teal.jpg"
+    Image.new("RGB", (W, H), (0, 128, 128)).save(
+        destination, "JPEG", quality=98, subsampling=0, optimize=True)
+
+
+def _classic_icons() -> None:
+    """Original VGA-era pixel geometry; no Microsoft bitmaps or icon packs."""
+    base = ROOT / "assets/icons/RiceHub-Classic-Icons/scalable/apps"
+    base.mkdir(parents=True, exist_ok=True)
+    pixel = {
+        "applications-other": (
+            '<rect x="8" y="11" width="26" height="29" fill="#fff" stroke="#000" stroke-width="3"/>'
+            '<rect x="28" y="24" width="26" height="29" fill="#c0c0c0" stroke="#000" stroke-width="3"/>'
+            '<rect x="11" y="14" width="20" height="8" fill="#000080"/>'
+            '<path d="M33 30h17v8H33Z" fill="#008080"/><path d="M33 43h17" stroke="#808080" stroke-width="3"/>'),
+        "classic-control-panel": (
+            '<path d="M11 13h42v39H11Z" fill="#fff" stroke="#000" stroke-width="3"/>'
+            '<path d="M12 14h40v9H12Z" fill="#000080"/>'
+            '<path d="M18 29h29M18 37h29M18 45h29" stroke="#808080" stroke-width="3"/>'
+            '<circle cx="26" cy="29" r="4" fill="#c0c0c0" stroke="#000" stroke-width="2"/>'
+            '<circle cx="38" cy="37" r="4" fill="#c0c0c0" stroke="#000" stroke-width="2"/>'),
+        "edit-find": (
+            '<rect x="9" y="9" width="42" height="43" fill="#c0c0c0" stroke="#000" stroke-width="3"/>'
+            '<circle cx="29" cy="28" r="12" fill="#fff" stroke="#000080" stroke-width="5"/>'
+            '<path d="M38 38l17 17" stroke="#000" stroke-width="7"/>'),
+        "help-browser": (
+            '<rect x="11" y="9" width="42" height="46" fill="#fdfdf0" stroke="#000" stroke-width="3"/>'
+            '<rect x="14" y="12" width="36" height="8" fill="#000080"/>'
+            '<path d="M24 30q1-8 9-8 10 0 8 9l-7 6v3" stroke="#000080" stroke-width="5" fill="none"/>'
+            '<rect x="31" y="44" width="5" height="5" fill="#000080"/>'),
+        "system-run": (
+            '<rect x="6" y="10" width="52" height="44" fill="#c0c0c0" stroke="#000" stroke-width="3"/>'
+            '<rect x="10" y="14" width="44" height="8" fill="#000080"/>'
+            '<rect x="10" y="26" width="44" height="24" fill="#fff"/>'
+            '<path d="M14 31l8 7-8 7M27 45h18" fill="none" stroke="#000" stroke-width="3"/>'),
+        "system-shutdown": (
+            '<rect x="9" y="12" width="46" height="39" fill="#c0c0c0" stroke="#000" stroke-width="3"/>'
+            '<rect x="13" y="16" width="38" height="31" fill="#fff" stroke="#808080" stroke-width="2"/>'
+            '<path d="M32 19v15M25 24a11 11 0 1 0 14 0" fill="none" stroke="#b00000" stroke-width="5"/>'),
+    }
+    for name, drawing in pixel.items():
+        (base / f"{name}.svg").write_text(
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
+            f'<title>Original RiceBowl Classic {name}</title>' + drawing + '</svg>\n',
+            encoding="utf-8")
+    # A monochrome penguin in a square CRT: the Linux twist on the Win98 badge.
+    symbol = (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
+        '<title>RiceBowl Windows 98 Linux pixel penguin</title>'
+        '<rect x="4" y="6" width="56" height="52" fill="#c0c0c0" stroke="#fff" stroke-width="3"/>'
+        '<path d="M6 58h54V8" fill="none" stroke="#404040" stroke-width="3"/>'
+        '<rect x="11" y="12" width="41" height="35" fill="#000"/>'
+        '<rect x="14" y="15" width="35" height="29" fill="#008080"/>'
+        '<path d="M26 36V26q0-12 8-12t8 12v10q6 6 0 8H25q-6-2 1-8" fill="#111"/>'
+        '<path d="M29 30q0-8 5-8t5 8v8H29Z" fill="#fff"/>'
+        '<rect x="31" y="24" width="2" height="3" fill="#000"/>'
+        '<rect x="37" y="24" width="2" height="3" fill="#000"/>'
+        '<path d="M32 30h6l-3 4" fill="#ffc343"/>'
+        '<path d="M23 42h8M38 42h8" stroke="#ffc343" stroke-width="4"/>'
+        '<path d="M24 53h18" stroke="#000" stroke-width="3"/>'
+        '</svg>\n'
+    )
+    (ROOT / "assets/ricebowl-classic-start.svg").write_text(symbol, encoding="utf-8")
+    for name in ("start-here", "xfce4-menu", "ricehub-start", "ricebowl-start"):
+        (base / f"{name}.svg").write_text(symbol, encoding="utf-8")
+
+
 def _frutiger_chrome(destination: Path) -> None:
     """Draw original pearl-and-lagoon XFWM artwork for Aqua World alone."""
     frame = destination / "xfwm4"
@@ -434,9 +645,19 @@ def _icons(name, palette):
         (base / "scalable/apps" / f"{filename}.svg").write_text(logo, encoding="utf-8")
 
 
-def main(*, luna_only: bool = False, frutiger_only: bool = False):
-    if luna_only and frutiger_only:
+def main(*, luna_only: bool = False, frutiger_only: bool = False,
+         classic_only: bool = False):
+    if sum((luna_only, frutiger_only, classic_only)) > 1:
         raise ValueError("Choose only one targeted art build")
+    if classic_only:
+        # Never regenerate other rices or overwrite hand-curated Classic SVGs.
+        path = ROOT / "assets/themes/RiceHub-Classic"
+        _classic_chrome(path)
+        _classic_gtk(path)
+        _classic_wallpaper()
+        _classic_icons()
+        print("Refreshed original Windows 98 classic chrome, GTK and teal wallpaper")
+        return
     if frutiger_only:
         # Preserve every other rice and the already reviewed Frutiger wallpaper,
         # icons and project-specific Thunar rules. Only redraw owned chrome.
@@ -477,5 +698,8 @@ if __name__ == "__main__":
                         help="Refresh just Luna XFWM and GTK, preserving reviewed other rices")
     parser.add_argument("--frutiger-only", action="store_true",
                         help="Refresh only the reviewed Frutiger XFWM and GTK glass styles")
+    parser.add_argument("--classic-only", action="store_true",
+                        help="Refresh only Windows 98 square XFWM, GTK and teal wallpaper")
     arguments = parser.parse_args()
-    main(luna_only=arguments.luna_only, frutiger_only=arguments.frutiger_only)
+    main(luna_only=arguments.luna_only, frutiger_only=arguments.frutiger_only,
+         classic_only=arguments.classic_only)

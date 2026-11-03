@@ -19,16 +19,19 @@ RiceBowl transforms an XFCE desktop using original GTK3, XFWM4, icon, wallpaper,
 **Current source:** Windows 7 Aero has its own 42px Superbar, grouped running windows,
 native X11 window previews (with safe icon fallback), app Jump Lists, desktop Peek
 and a two-column Start menu. XP Luna has a separately refined 2001-era Start,
-window chrome and 40px taskbar. **Frutiger Aero / Aqua World** has a distinct
+window chrome and 40px taskbar. **Windows 98 / 2000 Classic** now has the
+authentic teal desktop, a compact 34px beveled taskbar, real cascading Start
+hierarchies and original square window chrome. **Frutiger Aero / Aqua World** has a distinct
 water-and-nature identity with pearl-glass taskbar, live Apps / Places / Settings
 launcher, original refractive XFWM artwork and matching GTK/Thunar controls.
-The other four families retain their distinct designs. All of these operate on actual Linux applications and X11
+The other three families retain their distinct designs. All of these operate on actual Linux applications and X11
 windows; they do not emulate Windows or ship proprietary Microsoft assets.
 
 The tagged **v0.9.1** package predates these fidelity improvements. For the
 latest source use `main`; see [Windows 7 engineering notes](WIN7_AERO_ROADMAP.md),
 [XP Luna engineering notes](XP_LUNA_ROADMAP.md) and
-[Frutiger Aero implementation roadmap](FRUTIGER_AERO_ROADMAP.md). RiceBowl verifies a
+[Frutiger Aero implementation roadmap](FRUTIGER_AERO_ROADMAP.md) and
+[Windows 98 implementation roadmap](CLASSIC_98_ROADMAP.md). RiceBowl verifies a
 replacement taskbar is mapped before handing off from XFCE Panel and keeps
 recoverable desktop settings backups.
 
@@ -40,7 +43,7 @@ recoverable desktop settings backups.
 | **Windows 7 · Aero** | Classic cobalt-blue Linux-penguin wallpaper, golden folders, smoke-blue glass Superbar, previews, Jump Lists, Peek, two-column Start and Aero chrome |
 | **Windows 10 · Ten** | Dark/light styles, Start tiles, running apps, Action Center |
 | **Windows XP · Luna** | Blue/green taskbar, XP-inspired Start, categorized control panel |
-| **Windows 98 / 2000 · Classic** | Compact gray taskbar, classic Start, square dialogs and controls |
+| **Windows 98 / 2000 · Classic** | Flat teal wallpaper, 34px embossed taskbar, Linux-penguin Start badge, keyboard-operable classic Programs / Favorites / Documents / Settings cascades, original navy XFWM windows and coordinated GTK/Thunar 3D controls |
 | **ChromeOS · Pastel Shelf** | Centered app launcher, rounded shelf and device settings |
 | **Y2K · Frutiger Aero / Aqua World** | Sky/water/grass wallpaper, glossy cyan-and-lime live taskbar, original pearl-window chrome, large Gio app tiles, Apps / Places / Settings launcher and coordinated GTK/Thunar controls |
 
