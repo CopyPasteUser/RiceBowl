@@ -32,16 +32,16 @@ class HeritageProfile:
 PROFILES = {
     "winxp": HeritageProfile("winxp", "Windows XP Luna", "RiceHub-Luna", "RiceHub-Luna-Icons",
                               "luna-hills.jpg", "start", "All Programs", "Control Panel",
-                              "aero-penguin.svg", "classic"),
+                              "ricebowl-xp-start.svg", "classic"),
     "winclassic": HeritageProfile("winclassic", "Windows 98 / 2000", "RiceHub-Classic", "RiceHub-Classic-Icons",
                                    "classic-teal.jpg", "Start", "Programs", "Control Panel",
-                                   "ten-start.svg", "classic"),
+                                   "ricebowl-classic-start.svg", "classic"),
     "chromeos": HeritageProfile("chromeos", "ChromeOS", "RiceHub-Chrome", "RiceHub-Chrome-Icons",
                                  "chrome-pastel.jpg", "Apps", "Launcher", "Quick Settings",
-                                 "ten-start.svg", "tiles"),
+                                 "ricebowl-chrome-start.svg", "tiles"),
     "frutiger": HeritageProfile("frutiger", "Y2K / Frutiger Aero", "RiceHub-Frutiger", "RiceHub-Frutiger-Icons",
                                  "frutiger-future.jpg", "Apps", "Applications", "Quick Settings",
-                                 "aero-penguin.svg", "classic"),
+                                 "ricebowl-frutiger-start.svg", "classic"),
 }
 
 BY_THEME = {profile.theme: profile for profile in PROFILES.values()}
