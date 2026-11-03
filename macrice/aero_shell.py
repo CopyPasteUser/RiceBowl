@@ -585,7 +585,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 if not fixture or not Path(fixture).is_dir():
                     raise RuntimeError("Missing isolated screenshot fixture directory")
                 self._capture_file_manager = subprocess.Popen(
-                    ["thunar", "--window", fixture], stdout=subprocess.DEVNULL,
+                    ["thunar", fixture], stdout=subprocess.DEVNULL,
                     stderr=subprocess.PIPE, text=True)
                 self._capture_window_attempts = 0
                 GLib.timeout_add(550, self._capture_workspace_position)
