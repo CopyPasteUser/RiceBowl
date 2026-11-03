@@ -152,6 +152,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._volume_write_source = 0
             self._volume_writing = False
             self._volume_queued = None
+            self._mute_writing = False
             self._pin_count = 0
             self._pinned_ids = ()
             self._pin_config_path = pin_file("windows10" if ten else profile)
@@ -579,6 +580,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     self.control_battery_level.show()
                 else:
                     self.control_battery_level.hide()
+                if status.sound.muted is not None and not self._mute_writing:
+                    self.mute_button.set_sensitive(True)
+                    self.mute_button.set_active(status.sound.muted)
+                elif status.sound.muted is None:
+                    self.mute_button.set_sensitive(False)
                 if status.sound.percent is not None:
                     self.volume_scale.set_sensitive(True)
                     self.volume_status_label.set_text(
@@ -682,6 +688,42 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     180, self._commit_volume_change)
             else:
                 self._refresh_status_async()
+            return False
+
+        def _toggle_output_mute(self, button):
+            if self._mute_writing or self._last_status is None:
+                return
+            sound = self._last_status.sound
+            if sound.muted is None:
+                return
+            requested = bool(button.get_active())
+            # GTK ToggleButton is optimistic; display the real state until
+            # the backend confirms the change.
+            button.set_active(sound.muted)
+            button.set_sensitive(False)
+            self._mute_writing = True
+
+            def worker():
+                from .hardware_status import set_sound_mute
+                try:
+                    state = set_sound_mute(requested)
+                    error = None
+                except (OSError, ValueError, RuntimeError) as exc:
+                    state, error = None, str(exc)
+                GLib.idle_add(self._mute_change_complete, state, error)
+
+            threading.Thread(target=worker, daemon=True,
+                             name="ricebowl-set-mute").start()
+
+        def _mute_change_complete(self, state, error):
+            self._mute_writing = False
+            if error:
+                self.volume_status_label.set_text("Mute action failed: " + error)
+            else:
+                self.mute_button.set_active(bool(state.muted))
+                self.volume_status_label.set_text(
+                    "Audio muted" if state.muted else "Audio unmuted")
+            self._refresh_status_async()
             return False
 
         def _create_taskbar(self):
@@ -1692,6 +1734,12 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 "Adjust actual PipeWire/PulseAudio output volume, verified after changing")
             self.volume_scale.connect("value-changed", self._queue_volume_change)
             hardware.pack_start(self.volume_scale, False, False, 0)
+            self.mute_button = self._class(
+                Gtk.ToggleButton(label="Mute output"), "rice-mute")
+            self.mute_button.set_sensitive(False)
+            self.mute_button.get_accessible().set_name("Mute or unmute output")
+            self.mute_button.connect("clicked", self._toggle_output_mute)
+            hardware.pack_start(self.mute_button, False, False, 0)
             root.pack_end(hardware, False, False, 4)
 
             self.status_summary = self._class(
