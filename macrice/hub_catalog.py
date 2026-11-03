@@ -1,4 +1,4 @@
-"""RiceHub's read-only catalog and private restore history.
+"""RiceBowl's read-only catalog and private restore history.
 
 The macOS, Windows 7 and Windows 10 palettes use the same reversible engine.
 """
