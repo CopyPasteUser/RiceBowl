@@ -13,6 +13,7 @@ import logging
 import os
 import shutil
 import subprocess
+import threading
 
 from .aero_layout import PANEL_HEIGHT, bottom_strut, menu_geometry, select_windows, task_capacity
 from .aero_pins import PIN_LIMIT, PinConfigError, load_pins, pin_file, save_pins
@@ -138,6 +139,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._overflow_windows = ()
             self._menu_focused = False
             self._tray = None
+            self._status_pending = False
+            self._status_widgets = {}
+            self._last_status = None
             self._pin_count = 0
             self._pinned_ids = ()
             self._pin_config_path = pin_file("windows10" if ten else profile)
@@ -441,7 +445,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
         def _open_tool(self, command):
             """Open a known XFCE utility without a shell or implicit system changes."""
             allowed = ("xfce4-settings-manager", "xfce4-session-logout",
-                       "nm-connection-editor", "pavucontrol", "xfce4-display-settings")
+                       "nm-connection-editor", "pavucontrol", "xfce4-display-settings",
+                       "blueman-manager", "xfce4-appearance-settings",
+                       "xfce4-power-manager-settings", "system-config-printer")
             if command not in allowed:
                 return
             executable = shutil.which(command)
@@ -479,6 +485,120 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _icon(self, name, size=Gtk.IconSize.LARGE_TOOLBAR):
             return Gtk.Image.new_from_icon_name(name, size)
+
+        def _set_status_icon(self, image, kind):
+            """Use Rice-specific vector artwork, with a GTK icon fallback."""
+            path = project_root() / "assets/status" / profile / (kind + ".svg")
+            fallback = ("audio-volume-muted" if kind == "muted" else
+                        "audio-volume-high" if kind == "sound" else
+                        "network-wireless" if kind == "wifi" else
+                        "network-wired" if kind == "ethernet" else
+                        "network-offline" if kind == "offline" else
+                        "battery-good-symbolic")
+            try:
+                image.set_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_scale(
+                    str(path), 20, 20, True))
+            except (GLib.Error, OSError):
+                image.set_from_icon_name(fallback, Gtk.IconSize.MENU)
+
+        def _status_action(self, name):
+            """Open a real settings tool; never fake an interactive switch."""
+            options = {
+                "network": ("nm-connection-editor", "xfce4-settings-manager"),
+                "audio": ("pavucontrol", "xfce4-settings-manager"),
+                "battery": ("xfce4-power-manager-settings", "xfce4-settings-manager"),
+            }[name]
+            for candidate in options:
+                if shutil.which(candidate):
+                    self._open_tool(candidate)
+                    return
+            self._error("No suitable " + name + " settings application was found.")
+
+        def _install_status_widgets(self, row):
+            for name in ("battery", "network", "audio"):
+                button = self._class(Gtk.Button(), "rice-status")
+                button.get_style_context().add_class("rice-status-" + name)
+                contents = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
+                image = Gtk.Image()
+                contents.pack_start(image, False, False, 0)
+                label = Gtk.Label()
+                contents.pack_start(label, False, False, 0)
+                button.add(contents)
+                button.get_accessible().set_name(name.capitalize() + " status")
+                button.connect("clicked", lambda _button, selected=name:
+                               self._status_action(selected))
+                row.pack_end(button, False, False, 0)
+                self._status_widgets[name] = (button, image, label)
+            self._refresh_status_async()
+            GLib.timeout_add_seconds(20, self._refresh_status_async)
+
+        def _refresh_status_async(self):
+            if self._status_pending:
+                return True
+            self._status_pending = True
+            def worker():
+                try:
+                    from .hardware_status import read_status
+                    status = read_status()
+                except Exception as exc:
+                    logging.getLogger(__name__).warning("Hardware status probe failed: %s", exc)
+                    status = None
+                GLib.idle_add(self._apply_status, status)
+            threading.Thread(target=worker, name="ricebowl-status", daemon=True).start()
+            return True
+
+        def _apply_status(self, status):
+            self._status_pending = False
+            if status is None:
+                for button, _image, _label in self._status_widgets.values():
+                    button.set_sensitive(False)
+                    button.set_tooltip_text("Hardware status temporarily unavailable")
+                return False
+            self._last_status = status
+            battery_button, battery_icon, battery_label = self._status_widgets["battery"]
+            battery = status.battery
+            if battery is None:
+                battery_button.hide()
+            else:
+                battery_button.show_all()
+                level = min(100, (battery.percent + 12) // 25 * 25)
+                self._set_status_icon(battery_icon, "battery-charging" if battery.charging
+                                      else "battery-" + str(level))
+                battery_label.set_text(str(battery.percent) + "%")
+                battery_button.set_sensitive(True)
+                battery_button.set_tooltip_text(
+                    f"Battery {battery.percent}% — {battery.label}. Open power settings")
+                battery_button.get_accessible().set_name(
+                    f"Battery {battery.percent} percent, {battery.label}")
+            network_button, network_icon, network_label = self._status_widgets["network"]
+            self._set_status_icon(network_icon, status.network)
+            network_label.set_text("" if profile != "chromeos" else
+                                   "Wi-Fi" if status.network == "wifi" else
+                                   "LAN" if status.network == "ethernet" else "Offline")
+            network_button.set_tooltip_text({
+                "wifi": "Wi-Fi is the default route; open network settings",
+                "ethernet": "Ethernet / other default route; open network settings",
+                "offline": "No IPv4 default route; open network settings",
+            }[status.network])
+            network_button.get_accessible().set_name("Network " + status.network)
+            sound_button, sound_icon, sound_label = self._status_widgets["audio"]
+            sound = status.sound
+            self._set_status_icon(sound_icon, "muted" if sound.muted else "sound")
+            sound_label.set_text("" if sound.percent is None or profile != "chromeos"
+                                 else str(sound.percent) + "%")
+            sound_button.set_tooltip_text(
+                "Volume unknown; open sound settings" if sound.percent is None else
+                f"Audio {sound.percent}% — {'muted' if sound.muted else 'unmuted'}; open sound settings")
+            sound_button.get_accessible().set_name(
+                "Audio status unknown" if sound.percent is None else
+                f"Audio {sound.percent} percent" + (", muted" if sound.muted else ""))
+            if hasattr(self, "status_summary"):
+                self.status_summary.set_text(
+                    ("Battery " + str(battery.percent) + "% · " if battery else "") +
+                    status.network.upper() + " · " +
+                    ("Audio unavailable" if sound.percent is None else
+                     "Audio " + str(sound.percent) + "%"))
+            return False
 
         def _create_taskbar(self):
             rect = self._desktop_rect()
@@ -560,17 +680,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 control.get_accessible().set_name("Toggle " + (heritage.control_heading if heritage else "Windows 7 Control Panel"))
                 control.connect("clicked", lambda _button: self._toggle_actions())
                 row.pack_end(control, False, False, 0)
-            for label, icon, command in (
-                ("Network connections", "network-wireless", "nm-connection-editor"),
-                ("Sound settings", "audio-volume-high", "pavucontrol"),
-            ):
-                if shutil.which(command):
-                    quick = self._class(Gtk.Button(), "aero-quick")
-                    quick.set_image(self._icon(icon, Gtk.IconSize.MENU))
-                    quick.set_tooltip_text(label)
-                    quick.get_accessible().set_name(label)
-                    quick.connect("clicked", lambda _btn, cmd=command: self._open_tool(cmd))
-                    row.pack_end(quick, False, False, 0)
+            self._install_status_widgets(row)
             tray_option = "RICEHUB_TEN_TRAY" if ten else f"RICEHUB_{profile.upper()}_TRAY"
             if os.environ.get(tray_option, "1") != "0":
                 tray_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
@@ -947,6 +1057,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     grid.attach(button, index % 2, index // 2, 1, 1)
                 root.pack_start(grid, False, False, 0)
 
+            self.status_summary = self._class(Gtk.Label(label="Reading hardware status…", xalign=0),
+                                              "rice-status-summary")
+            self.status_summary.set_line_wrap(True)
+            root.pack_end(self.status_summary, False, False, 2)
             actions.add(root)
             actions.connect("focus-out-event", lambda *_args: self._schedule_popup_hide("control"))
             actions.connect("key-press-event", lambda _widget, event: self._action_key(event))
