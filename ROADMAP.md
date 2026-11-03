@@ -14,7 +14,7 @@ MacRice is deliberately a thin integration layer. MacMenu, Control Center and Ma
 - [x] Draw 36 additional profile-unique folder/device icons and prevent the asset generator from replacing them.
 - [x] Add real, verified volume and mute controls, plus battery/network details; all hardware probes remain bounded.
 - [x] Preserve legacy 0.8 theme and Thunar CSS formats in safe migration logic.
-- [ ] Validate screenshots and CI for tagged 0.9 release, then publish.
+- [x] Validate all 12 actual GTK/X11 captures and six settings popups (visible-area regression check) with 193 passing Python tests; publish 0.9.0 as pre-release.
 - [ ] Physical Mint XFCE acceptance on real laptop: repeated switches, Plank autostart, external displays and real battery/charging.
 
 ## 0.8 — Visual identity, status tray and repair (3 November 2026)
