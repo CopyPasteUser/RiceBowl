@@ -146,6 +146,14 @@ class FrutigerAeroContractTests(unittest.TestCase):
                 self.assertIn("cdd1978f263d46dee98b370171aac83970e78080",
                               manifest[path])
 
+    def test_thunar_desktop_entry_resolves_to_real_aqua_file_manager_icon(self):
+        icons = ROOT / "assets/icons/RiceHub-Frutiger-Icons/scalable/apps"
+        base = (icons / "system-file-manager.svg").read_text(encoding="utf-8")
+        thunar = (icons / "org.xfce.thunar.svg").read_text(encoding="utf-8")
+        self.assertEqual(thunar,
+                         base.replace("system-file-manager</title>",
+                                      "org.xfce.thunar</title>"))
+
 
 if __name__ == "__main__":
     unittest.main()

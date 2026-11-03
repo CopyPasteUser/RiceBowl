@@ -573,6 +573,20 @@ window.thunar statusbar {
 """, encoding="utf-8")
 
 
+def _frutiger_thunar_icon() -> None:
+    """Give XFCE's real Thunar desktop entry our existing glossy file icon.
+
+    Thunar's GIcon is ``org.xfce.thunar``, not ``system-file-manager``;
+    without this alias the launcher and taskbar fall back to an unrelated
+    monotone GTK icon even when our Aqua folder assets are installed.
+    """
+    directory = ROOT / "assets/icons/RiceHub-Frutiger-Icons/scalable/apps"
+    source = (directory / "system-file-manager.svg").read_text(encoding="utf-8")
+    (directory / "org.xfce.thunar.svg").write_text(
+        source.replace("system-file-manager</title>", "org.xfce.thunar</title>"),
+        encoding="utf-8")
+
+
 def _vertical(upper, lower):
     image = Image.new("RGB", (W, H))
     draw = ImageDraw.Draw(image)
@@ -703,6 +717,7 @@ def main(*, luna_only: bool = False, frutiger_only: bool = False,
         path = ROOT / "assets/themes/RiceHub-Frutiger"
         _frutiger_chrome(path)
         _frutiger_gtk(path)
+        _frutiger_thunar_icon()
         print("Refreshed original Frutiger window chrome and GTK styles only")
         return
     for name, palette in PALETTES.items():

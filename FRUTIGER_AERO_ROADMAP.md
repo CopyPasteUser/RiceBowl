@@ -64,6 +64,8 @@ this visual change. Original art only; do not bundle third-party assets.
   utility popups on systems without a compositor.
 - **[x] Real folder behavior:** XDG-aware user folders and explicit creation
   confirmation remove hardcoded English folder paths and disabled shortcuts.
+- **[x] App-icon identity:** the `org.xfce.thunar` desktop launcher resolves to
+  RiceBowl's own turquoise file-manager SVG, rather than the OS fallback.
 - **[x] Usable device controls:** Frutiger-only hero, larger readable captions,
   real status readings, volume and mute share the existing verified backend.
 - **[x] Actual file-manager controls:** `FRUTIGER_EXPLORER_CSS` styles real

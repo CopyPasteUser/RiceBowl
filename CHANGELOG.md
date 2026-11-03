@@ -8,6 +8,8 @@
   programs, while search still covers the complete application catalog.
   A fresh desktop no longer mistakes XFCE's File Manager Settings for the
   actual Thunar File Manager when seeding its default taskbar pins.
+  The real `org.xfce.thunar` icon now resolves to the matching original Aqua
+  file-manager artwork in both the taskbar and the launcher.
   Optional native X11 corner masks eliminate rectangular popup backing when
   XFWM4 runs without a compositor.
 - Quick Home/Documents/Music links and the Places page now resolve XDG user
