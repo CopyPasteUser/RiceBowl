@@ -237,11 +237,11 @@ def _write_entrypoints(installed: Path) -> None:
         "[Desktop Entry]\nType=Application\nVersion=1.0\n"
         "Name=RiceHub\nComment=Explore and manage desktop styles for XFCE\n"
         f'Exec="{hub_launcher}"\n'
-        f"Icon={installed / 'assets/ricehub-symbolic.svg'}\n"
+        f"Icon={installed / 'assets/ricebowl-symbolic.svg'}\n"
         "Terminal=false\nCategories=Settings;Utility;\nStartupNotify=true\n"
         f"{HUB_DESKTOP_MARKER}\n"
     )
-    # Preserve RiceHub's owned shortcut for compatibility without duplicate menu items.
+    # Preserve the legacy shortcut for compatibility without duplicate menu items.
     hub_desktop_content = hub_desktop_content.replace("StartupNotify=true\n",
                                                       "StartupNotify=true\nNoDisplay=true\n")
     _atomic_write(hub_desktop, hub_desktop_content, 0o644)
