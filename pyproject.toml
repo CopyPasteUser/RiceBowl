@@ -1,6 +1,6 @@
 [project]
 name = "ricebowl-xfce"
-version = "0.7.0"
+version = "0.7.1"
 description = "RiceBowl: a lightweight, reversible GTK3 hub for OS-inspired XFCE desktops"
 requires-python = ">=3.10"
 dependencies = []
