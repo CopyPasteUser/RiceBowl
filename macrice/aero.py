@@ -161,41 +161,29 @@ def preflight(source_root: Path, data_root: Path,
             raise AeroAssetError("Unexpectedly large Aero theme asset")
         if any(p.is_symlink() for p in (target, *target.parents)):
             raise AeroAssetError(f"Refusing symlinked theme target: {target}")
-        if target.exists():
-            if not target.is_dir():
-                raise AeroAssetError(f"Theme target is not a directory: {target}")
-            actual = {p.relative_to(target) for p in target.rglob("*") if p.is_file()}
-            expected = {p.relative_to(source) for p in files}
-            if (actual != expected or any(p.is_symlink() for p in target.rglob("*")) or
-                    any(not _compatible_managed_file(
-                        p.relative_to(source), (target / p.relative_to(source)).read_bytes(), p.read_bytes()
-                    ) for p in files)):
-                raise AeroAssetError(f"Existing customized theme conflicts with RiceBowl: {target}")
+        from .asset_upgrade import inspect_bundle
+        inspect_bundle(source, target)
         packages.append((source, target))
     return packages
 
 
 def install(packages: list[tuple[Path, Path]]) -> None:
-    """Stage complete directories then rename them into an unoccupied path."""
+    """Upgrade verified historical bundles with backup and atomic replacement."""
+    from .asset_upgrade import install_bundle
     for source, target in packages:
-        if target.exists():
-            _migrate_owned_metadata(target, source)
-            continue
-        target.parent.mkdir(parents=True, exist_ok=True)
-        stage = Path(tempfile.mkdtemp(prefix=".ricehub-aero-", dir=target.parent))
-        try:
-            for item in source.rglob("*"):
-                relative = item.relative_to(source)
-                output = stage / relative
-                if item.is_dir():
-                    output.mkdir(parents=True, exist_ok=True)
-                else:
-                    output.parent.mkdir(parents=True, exist_ok=True)
-                    shutil.copyfile(item, output, follow_symlinks=False)
-                    os.chmod(output, 0o644)
-            if target.exists() or target.is_symlink():
-                raise AeroAssetError(f"Theme target appeared during installation: {target}")
-            os.rename(stage, target)
-        finally:
-            if stage.exists():
-                shutil.rmtree(stage)
+        install_bundle(source, target)
+
+
+def repair(packages: list[tuple[Path, Path]]) -> tuple[Path, ...]:
+    """User-approved repair for customized assets; backups are never discarded."""
+    from .asset_upgrade import _validate_destination, install_bundle
+    for source, target in packages:
+        _validate_destination(target)  # Check ALL destinations before the first write.
+        if not source.is_dir() or source.is_symlink():
+            raise AeroAssetError(f"Missing RiceBowl source assets: {source}")
+    backups = []
+    for source, target in packages:
+        archived = install_bundle(source, target, repair=True)
+        if archived:
+            backups.append(archived)
+    return tuple(backups)
