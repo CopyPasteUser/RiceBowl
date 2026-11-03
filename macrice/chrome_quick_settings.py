@@ -147,6 +147,7 @@ def build(shell, Gtk, Gdk, GLib):
         GLib.idle_add(apply_rounded_window_shape, actions, 26)
         return False
     actions.connect("configure-event", shape_later)
+    actions.connect("map-event", shape_later)
     actions.connect("focus-out-event",
                     lambda *_args: shell._schedule_popup_hide("control"))
     actions.connect("key-press-event",

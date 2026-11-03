@@ -2920,6 +2920,12 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.actions.move(rect.x + rect.width - width - margin,
                               rect.y + rect.height - panel_height - height - margin)
             self.actions.present()
+            if profile == "chromeos":
+                # Utility popups don't reliably emit a second configure event
+                # after present() under Xvfb. Apply the X11 mask once mapped.
+                from .chrome_shell import apply_rounded_window_shape
+
+                GLib.idle_add(apply_rounded_window_shape, self.actions, 26)
 
         def _open_search(self):
             if not self.menu.get_visible():
