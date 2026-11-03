@@ -349,7 +349,11 @@ def repair_assets(style_name: str, *, data_root: Path | None = None,
         from .aero import BUNDLES as aero_bundles
         bundles = aero_bundles
     elif style.gtk in ten.THEMES:
-        bundles = ten.BUNDLES
+        # Ten Dark and Ten Light share an icon pack, not their GTK themes.
+        # Explicit repair of one variant must not replace edits in the other.
+        bundles = tuple(pair for pair in ten.BUNDLES
+                        if pair[1] == f"themes/{style.gtk}"
+                        or pair[1] == f"icons/{ten.ICON_THEME}")
     else:
         bundles = heritage.bundles(style_name)
     packages = [(source_root / relative, data_root / destination)
