@@ -499,10 +499,15 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 if profile == "aero":
                     assert len(self.win7_panel_rows) == 8
                     self.win7_panel_search.set_text("power")
+                    # Gtk.SearchEntry emits search-changed 150ms after edits.
+                    # Drive the event explicitly in this synchronous Xvfb smoke.
+                    self.win7_panel_search.emit("search-changed")
                     assert sum(row.get_visible() for _, row in self.win7_panel_rows) == 1
                     self.win7_panel_search.set_text("not-a-real-setting-39083")
+                    self.win7_panel_search.emit("search-changed")
                     assert not any(row.get_visible() for _, row in self.win7_panel_rows)
                     self.win7_panel_search.set_text("")
+                    self.win7_panel_search.emit("search-changed")
                     self.win7_panel_show_category(self.win7_panel_rows[0][0])
                     assert self.win7_panel_back.get_sensitive()
                     self.win7_panel_back.clicked()
