@@ -346,7 +346,8 @@ def repair_assets(style_name: str, *, data_root: Path | None = None,
     source_root = source_root or project_root()
     style = STYLES[style_name]
     if style.gtk == AERO_THEME:
-        bundles = __import__("macrice.aero", fromlist=["BUNDLES"]).BUNDLES
+        from .aero import BUNDLES as aero_bundles
+        bundles = aero_bundles
     elif style.gtk in ten.THEMES:
         bundles = ten.BUNDLES
     else:
