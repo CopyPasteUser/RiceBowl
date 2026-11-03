@@ -103,6 +103,10 @@ RiceBowl binds the active rice's menu to **Super** and its quick settings / cont
 
 **Upgrade compatibility:** RiceBowl retains some legacy `RiceHub-*` internal theme identifiers, D-Bus names, state paths, managed autostart filenames and the `macrice` command. These are intentional compatibility contracts for older installations and restore points, **not the public product name**. The old `ricehub` shortcut is hidden from the application menu but remains executable.
 
+## Validation and 0.7.1 screenshots
+
+The [GitHub Actions test workflow](https://github.com/CopyPasteUser/RiceHub/actions/workflows/ci.yml) runs the Python suite and native GTK/X11 checks. Its `ricebowl-0.7.1-native-x11-captures` artifact contains fresh virtual-display launcher/control screenshots for XP, Classic, ChromeOS and Frutiger. These are not physical Linux Mint screenshots and are intentionally kept separate from the historical screenshots above.
+
 ## Limitations
 
 Physical Linux Mint XFCE validation of fast desktop switching, multiple monitors, login/resume and interactions with an independently configured Plank autostart is still outstanding. True live compositor blur, legacy XEmbed tray compatibility and full Wayland support are not claimed. The CI workflow runs Python regression tests and isolated GTK/X11 integration checks; it does not replace hardware acceptance.
