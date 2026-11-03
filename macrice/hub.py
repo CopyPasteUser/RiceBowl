@@ -854,6 +854,9 @@ def run() -> int:
                 assert window.style_picker.get_active_id() == family.styles[0]
                 assert window._image_cache.get(window._preview_asset) is not None, family.key
             window.search.set_text("Windows XP")
+            # Gtk.SearchEntry debounces the user-facing search-changed signal.
+            # Exercise the filter deterministically without waiting on a timer.
+            window._filter_families()
             assert window._selected == "winxp"
             window._clear_filter()
             assert window.search.get_text() == ""
