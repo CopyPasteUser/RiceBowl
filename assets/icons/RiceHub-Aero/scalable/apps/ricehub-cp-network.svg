@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>RiceBowl Aero Network and Internet</title>
+  <defs><radialGradient id="globe" cx=".35" cy=".26"><stop stop-color="#e8ffff"/><stop offset=".58" stop-color="#64d9f4"/><stop offset="1" stop-color="#1471b9"/></radialGradient></defs>
+  <circle cx="37" cy="27" r="22" fill="url(#globe)" stroke="#286b97" stroke-width="2"/>
+  <ellipse cx="37" cy="27" rx="11" ry="21" fill="none" stroke="#f4ffff" stroke-width="2" opacity=".85"/>
+  <path d="M16 27h42M21 16h32M21 38h32" fill="none" stroke="#f4ffff" stroke-width="2" opacity=".85"/>
+  <rect x="3" y="33" width="30" height="21" rx="3" fill="#253d59" stroke="#132b49"/>
+  <rect x="6" y="36" width="24" height="15" rx="1" fill="#9eeafc"/>
+  <path d="M10 39h15" stroke="#fff" stroke-width="2"/><path d="M17 55v3h-7v2h18v-2h-7v-3" fill="#557c92"/>
+</svg>

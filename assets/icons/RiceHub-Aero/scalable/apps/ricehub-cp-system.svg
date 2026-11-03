@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>RiceBowl Aero System and Security</title>
+  <defs><linearGradient id="screen" x2="0" y2="1"><stop stop-color="#e3f9ff"/><stop offset=".52" stop-color="#5ac3f2"/><stop offset="1" stop-color="#1162b4"/></linearGradient><linearGradient id="shield" x2="0" y2="1"><stop stop-color="#edff96"/><stop offset="1" stop-color="#53983b"/></linearGradient></defs>
+  <rect x="4" y="6" width="48" height="34" rx="4" fill="#193a59" stroke="#486f95" stroke-width="2"/>
+  <rect x="7" y="9" width="42" height="28" rx="2" fill="url(#screen)"/>
+  <path d="M10 13H45" stroke="#fff" stroke-opacity=".65" stroke-width="2"/>
+  <path d="M23 41h10v8H23zM15 49h26v4H15z" fill="#526e80" stroke="#263f56" stroke-width="1"/>
+  <path d="M44 28l14 5v11c0 9-8 14-14 17-6-3-14-8-14-17V33z" fill="url(#shield)" stroke="#376e2d" stroke-width="2"/>
+  <path d="M37 44l5 5 9-11" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

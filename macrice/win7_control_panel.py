@@ -24,38 +24,38 @@ class Category:
 
 
 CATEGORIES = (
-    Category("System and Security", "computer", (
+    Category("System and Security", "ricehub-cp-system", (
         Task("System settings", ("xfce4-settings-manager",)),
         Task("Power options", ("xfce4-power-manager-settings",)),
         Task("Session and startup", ("xfce4-session-settings",)),
     )),
-    Category("Network and Internet", "network-workgroup", (
+    Category("Network and Internet", "ricehub-cp-network", (
         Task("View network connections", ("nm-connection-editor",)),
         Task("Network settings", ("nm-connection-editor", "nm-applet")),
     )),
-    Category("Hardware and Sound", "audio-card", (
+    Category("Hardware and Sound", "ricehub-cp-hardware", (
         Task("Sound", ("pavucontrol", "xfce4-mixer")),
         Task("Devices and printers", ("system-config-printer",)),
         Task("Display", ("xfce4-display-settings",)),
     )),
-    Category("Programs", "applications-other", (
+    Category("Programs", "ricehub-cp-programs", (
         Task("Browse installed applications", ("xfce4-appfinder",)),
         Task("Preferred applications", ("exo-preferred-applications",)),
     )),
-    Category("User Accounts and Family Safety", "system-users", (
+    Category("User Accounts and Family Safety", "ricehub-cp-accounts", (
         Task("User accounts", ("users-admin", "mate-user-admin")),
         Task("Session and startup", ("xfce4-session-settings",)),
     )),
-    Category("Appearance and Personalization", "preferences-desktop-theme", (
+    Category("Appearance and Personalization", "ricehub-cp-appearance", (
         Task("Change the theme", ("xfce4-appearance-settings",)),
         Task("Desktop background", ("xfdesktop-settings",)),
         Task("Window borders", ("xfwm4-settings",)),
     )),
-    Category("Clock, Language, and Region", "preferences-system-time", (
+    Category("Clock, Language, and Region", "ricehub-cp-clock", (
         Task("Date and time", ("time-admin", "gnome-control-center")),
         Task("Keyboard and language", ("xfce4-keyboard-settings",)),
     )),
-    Category("Ease of Access", "preferences-desktop-accessibility", (
+    Category("Ease of Access", "ricehub-cp-ease", (
         Task("Accessibility settings", ("xfce4-accessibility-settings",)),
         Task("Mouse and touchpad", ("xfce4-mouse-settings",)),
     )),

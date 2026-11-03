@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>RiceBowl Aero Hardware and Sound</title>
+  <defs><linearGradient id="metal" x2="0" y2="1"><stop stop-color="#fff8d9"/><stop offset=".5" stop-color="#e4b66e"/><stop offset="1" stop-color="#96623d"/></linearGradient><linearGradient id="cone" x2="0" y2="1"><stop stop-color="#d6f8ff"/><stop offset="1" stop-color="#438fc6"/></linearGradient></defs>
+  <rect x="5" y="21" width="15" height="23" rx="2" fill="url(#metal)" stroke="#855634" stroke-width="2"/>
+  <path d="M20 21l17-14v50L20 44z" fill="url(#cone)" stroke="#306b99" stroke-width="2"/>
+  <path d="M43 20q15 11 0 23M47 13q24 17 0 37" fill="none" stroke="#327fba" stroke-width="4" stroke-linecap="round"/>
+  <path d="M9 27h6v11H9" stroke="#fff" stroke-opacity=".85" stroke-width="2" fill="none"/>
+</svg>

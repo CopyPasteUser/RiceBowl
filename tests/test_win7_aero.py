@@ -97,6 +97,19 @@ class Win7ControlPanelTests(unittest.TestCase):
         self.assertEqual(installed_command(task, lambda cmd: "/usr/bin/" + cmd
                                            if cmd == "second" else None), "second")
 
+    def test_all_eight_categories_have_original_readable_aero_icons(self):
+        source = project_root() / "assets/icons/RiceHub-Aero/scalable/apps"
+        icons = []
+        for category in CATEGORIES:
+            self.assertTrue(category.icon.startswith("ricehub-cp-"))
+            icon = source / (category.icon + ".svg")
+            root = ElementTree.parse(icon).getroot()
+            self.assertEqual(root.tag, "{http://www.w3.org/2000/svg}svg")
+            self.assertEqual(root.get("viewBox"), "0 0 64 64")
+            self.assertTrue(root.find("{http://www.w3.org/2000/svg}title") is not None)
+            icons.append(icon.read_bytes())
+        self.assertEqual(len(set(icons)), 8)
+
 
 class Win7ArtworkTests(unittest.TestCase):
     def test_blue_aero_wallpapers_have_linux_identity_without_frutiger_reuse(self):

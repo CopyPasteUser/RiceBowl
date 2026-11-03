@@ -52,6 +52,8 @@ All art here is originally drawn. We do not import Microsoft logos, wallpapers, 
   actual installed Linux settings applications.
 - [x] Provide a true decorated, task-switchable Control Panel window with
   category/detail/back navigation, nested search and disabled missing tools.
+- [x] Replace inconsistent and missing inherited category icons with eight
+  original, distinctive Aero SVGs; validate XML and GdkPixbuf decoding.
 - [x] Keep existing verified audio/network/battery controls behind an explicit
   Linux-device expander instead of displaying them as Windows category tiles.
 - [x] Make Start's Control Panel link open that window; remove the extra gear

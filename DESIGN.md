@@ -43,7 +43,10 @@ original Linux artwork. Windows 11 and Liquid Glass are out of scope.
   search. Only installed XFCE/Linux tools can launch; missing actions are
   disabled with explanatory tooltips. Real device status and volume controls
   remain in a clearly named expandable Linux hardware region, never a fake
-  Windows toggle. The Control Panel is opened from Start or `Control_R`; no
+  Windows toggle. Its eight 64×64 original SVG category icons live exclusively
+  in the Aero theme's `scalable/apps/ricehub-cp-*.svg` assets, avoiding accidental
+  changes to other rices or missing system-theme glyphs. The Control Panel is
+  opened from Start or `Control_R`; no
   anachronistic Control Panel gear occupies the right notification area. The
   48px bar carries larger pinned and running-app icons; Wnck supplies original
   large icons where available. XP, Classic, Frutiger and Ten stay untouched.

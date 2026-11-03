@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>RiceBowl Aero User Accounts</title>
+  <defs><linearGradient id="skin" x2="0" y2="1"><stop stop-color="#fff0bf"/><stop offset="1" stop-color="#d99b63"/></linearGradient><linearGradient id="shirt" x2="0" y2="1"><stop stop-color="#a9eaff"/><stop offset="1" stop-color="#246db8"/></linearGradient></defs>
+  <circle cx="40" cy="19" r="10" fill="url(#skin)" stroke="#a37a52" stroke-width="2"/>
+  <path d="M23 50q0-19 17-19t18 19v7H23z" fill="#91b9d9" stroke="#3d729e" stroke-width="2"/>
+  <circle cx="23" cy="24" r="12" fill="url(#skin)" stroke="#a37a52" stroke-width="2"/>
+  <path d="M4 56q0-20 19-20t19 20v4H4z" fill="url(#shirt)" stroke="#235a99" stroke-width="2"/>
+  <path d="M13 22q4-8 15-6" fill="none" stroke="#794c36" stroke-width="3" stroke-linecap="round"/>
+</svg>
