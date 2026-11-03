@@ -302,7 +302,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _capture_menu(self):
             try:
-                self._capture_screen(f"ricebowl-{profile}-start-0.8.0.png")
+                self._capture_screen(f"ricebowl-{profile}-start-0.9.0.png")
                 self._hide_menu()
                 self._toggle_actions()
                 assert self.actions.get_visible()
@@ -316,7 +316,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _capture_actions(self):
             try:
-                self._capture_screen(f"ricebowl-{profile}-controls-0.8.0.png")
+                self._capture_screen(f"ricebowl-{profile}-controls-0.9.0.png")
             except Exception:
                 import traceback
                 traceback.print_exc()
