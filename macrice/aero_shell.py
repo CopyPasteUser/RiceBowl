@@ -1479,20 +1479,13 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
             def search_changed(*_args):
                 self._app_page_size = 24
-                needle = search.get_text().strip()
-                # Search results replace the grid; don't show two competing app lists.
-                self.tile_grid.set_visible(not bool(needle))
-                pinned_label.set_visible(not bool(needle))
-                scroller.set_visible(bool(needle))
-                self._populate(needle)
+                self._populate(search.get_text())
             search.connect("search-changed", search_changed)
             search.connect("key-press-event", lambda _widget, event: self._search_key(event))
             menu.connect("key-press-event", lambda _widget, event: self._search_key(event))
             self.menu, self.search = menu, search
             self._render_ten_tiles()
             self._populate("")
-            scroller.set_no_show_all(True)
-            scroller.hide()
 
         def _create_chrome_launcher(self):
             """ChromeOS-inspired centered search and app grid, not a Windows tile menu."""
@@ -1553,13 +1546,19 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             menu.connect("focus-out-event", self._menu_focus_out)
             def search_changed(*_args):
                 self._app_page_size = 24
-                self._populate(search.get_text())
+                needle = search.get_text().strip()
+                self.tile_grid.set_visible(not bool(needle))
+                pinned_label.set_visible(not bool(needle))
+                scroller.set_visible(bool(needle))
+                self._populate(needle)
             search.connect("search-changed", search_changed)
             search.connect("key-press-event", lambda _widget, event: self._search_key(event))
             menu.connect("key-press-event", lambda _widget, event: self._search_key(event))
             self.menu, self.search = menu, search
             self._render_ten_tiles()
             self._populate("")
+            scroller.set_no_show_all(True)
+            scroller.hide()
 
         def _render_ten_tiles(self):
             if not hasattr(self, "tile_grid"):
