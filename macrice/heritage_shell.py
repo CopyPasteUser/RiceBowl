@@ -132,5 +132,15 @@ CSS = {
 .aero-menu-search { border-radius: 17px; border: 1px solid #71c8d2; background: #f6fffb; }
 .aero-menu-power { background-image: linear-gradient(#fff, #78dfae); color: #096e7a; border-radius: 12px; border-color: #48bcad; }
 .rice-status-summary { color: #076e83; font-size: 11px; font-weight: bold; }
+
+.aqua-dashboard { background-image: linear-gradient(to bottom, #fafffe, #d4ffeb 55%, #b1eaf2); border: 2px solid #73cad8; border-radius: 22px; box-shadow: 0 4px 14px rgba(4,92,128,.22); }
+.aqua-dashboard .aero-menu-heading { color: #087d93; font-size: 27px; font-weight: bold; }
+.aqua-dashboard .aero-menu-sub { color: #118f9c; font-size: 12px; font-weight: bold; }
+.aqua-dashboard .aero-menu-search { background: #faffff; border: 1px solid #87d6e0; border-radius: 20px; padding: 10px 12px; color: #0c627d; }
+.aqua-dashboard .aero-menu-app { background: rgba(255,255,255,.45); border: 1px solid transparent; border-radius: 12px; color: #075a75; }
+.aqua-dashboard .aero-menu-app:hover { background: #efffff; border-color: #72d3da; }
+.aqua-shortcut { border-radius: 18px; border: 1px solid #a9ede7; background-image: linear-gradient(#fff, #d4fbec 55%, #a8e4eb); box-shadow: inset 0 1px #fff; color: #0d7283; padding: 9px; }
+.aqua-shortcut:hover, .aqua-shortcut:focus { background-image: linear-gradient(#fff, #93e4cf); border-color: #27a8c4; }
+.aqua-gear { border-radius: 18px; background: #d8fff4; border: 1px solid #8fdddf; padding: 5px; }
 """,
 }
