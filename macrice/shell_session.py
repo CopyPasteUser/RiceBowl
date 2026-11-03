@@ -1,7 +1,7 @@
-"""Coordinate RiceHub taskbars, Plank and MacBar in an X11 session.
+"""Coordinate RiceBowl taskbars, Plank and MacBar in an X11 session.
 
 Plank is user-owned: never change its launchers or its autostart file.
-Instead a RiceHub login reconciler corrects the chosen session after login.
+Instead a RiceBowl login reconciler corrects the chosen session after login.
 """
 from __future__ import annotations
 
@@ -84,7 +84,7 @@ def _start(name: str, argv: list[str]) -> list[str]:
 
 
 def _component_executable(name: str) -> str | None:
-    """Find RiceHub-managed binaries even when XFCE starts the hub with a minimal PATH."""
+    """Find RiceBowl-managed binaries even when XFCE starts the hub with a minimal PATH."""
     if name == "macbar":
         local = bin_home() / "macbar"
         if local.is_file() and os.access(local, os.X_OK):
@@ -172,7 +172,7 @@ def _stop_macbar() -> list[str]:
         if owner_pid is not None:
             targets.add(owner_pid)
     if not targets:
-        return ["MacBar is running but RiceHub could not verify its user-owned PID"]
+        return ["MacBar is running but RiceBowl could not verify its user-owned PID"]
     errors = []
     for pid in sorted(targets):
         try:
@@ -217,7 +217,7 @@ def _activate_session_controls(theme: str) -> list[str]:
     try:
         warnings = list(install_bindings(theme))
     except (OSError, ValueError, RuntimeError) as exc:
-        return [f"RiceHub shortcuts: {exc}"]
+        return [f"RiceBowl shortcuts: {exc}"]
     if warnings:
         return warnings
     return _stop_xfce_panel()
@@ -238,11 +238,11 @@ def _shell(profile: str, quit: bool) -> list[str]:
         # No watchdog or extra resident process is needed.
         root = Path(os.environ.get("XDG_STATE_HOME") or Path.home() / ".local/state") / "ricehub"
         if root.is_symlink() or (root.exists() and (not root.is_dir() or root.stat().st_uid != os.getuid())):
-            return ["Unmanaged RiceHub diagnostic log location"]
+            return ["Unmanaged RiceBowl diagnostic log location"]
         root.mkdir(mode=0o700, parents=True, exist_ok=True)
         log = root / f"{profile}-shell.log"
         if log.is_symlink() or (log.exists() and (not log.is_file() or log.stat().st_uid != os.getuid())):
-            return ["Unmanaged RiceHub taskbar log"]
+            return ["Unmanaged RiceBowl taskbar log"]
         if log.exists() and log.stat().st_size > 256 * 1024:
             log.write_text("", encoding="utf-8")
         with log.open("ab") as output:
@@ -306,7 +306,7 @@ def install_login_reconciler(config_root: Path | None = None) -> None:
     root = config_root or config_home()
     target = root / "autostart/ricehub-session-sync.desktop"
     command = bin_home() / "macrice"
-    content = ("[Desktop Entry]\\nType=Application\\nName=RiceHub Session Reconcile\\n"
+    content = ("[Desktop Entry]\\nType=Application\\nName=RiceBowl Session Reconcile\\n"
                f"Exec={command} session-sync\\n"
                "OnlyShowIn=XFCE;\\nTerminal=false\\n"
                "X-XFCE-Autostart-Delay=12\\n"
@@ -314,9 +314,24 @@ def install_login_reconciler(config_root: Path | None = None) -> None:
     content = content.replace("\\n", "\n")
     if target.is_symlink() or target.parent.is_symlink():
         raise OSError("Unmanaged session autostart symlink")
-    if target.exists() and target.read_text(encoding="utf-8") != content:
+    legacy = content.replace("Name=RiceBowl Session Reconcile", "Name=RiceHub Session Reconcile")
+    if target.exists() and target.read_text(encoding="utf-8") not in (content, legacy):
         raise OSError("Existing session autostart was customized; refusing overwrite")
     target.parent.mkdir(parents=True, exist_ok=True)
     if not target.exists():
         with target.open("x", encoding="utf-8") as f:
             f.write(content)
+    elif target.read_text(encoding="utf-8") == legacy:
+        # Migrate only an exact previously managed desktop entry.
+        temporary = target.with_name(target.name + ".ricebowl-new")
+        if temporary.exists() or temporary.is_symlink():
+            raise OSError("Unmanaged temporary session entry")
+        try:
+            with temporary.open("x", encoding="utf-8") as f:
+                f.write(content)
+                f.flush()
+                os.fsync(f.fileno())
+            os.chmod(temporary, target.stat().st_mode & 0o777)
+            os.replace(temporary, target)
+        finally:
+            temporary.unlink(missing_ok=True)
