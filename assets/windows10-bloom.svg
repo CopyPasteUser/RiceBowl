@@ -16,7 +16,7 @@
   <path d="M732 405 1200 675H930L700 414Z" fill="#16b8fc" opacity=".16"/>
   <path d="M727 278 0 56V0L736 268Z" fill="#0877bd" opacity=".2"/>
   <path d="M727 409 0 665V568L739 419Z" fill="#0791d2" opacity=".17"/>
-  <!-- RiceHub Ten Penguin: angular, original geometry with a flat blue glow. -->
+  <!-- RiceBowl Ten Penguin: angular, original geometry with a flat blue glow. -->
   <g transform="translate(635 75) scale(7)" opacity=".86">
     <path d="M17 26 6 43l3 8 13-10ZM47 26l11 17-3 8-13-10" fill="#168ee0"/>
     <path d="M32 5C21 5 16 15 16 28v14c0 11 7 17 16 17s16-6 16-17V28C48 15 43 5 32 5Z" fill="#a7e4ff"/>
