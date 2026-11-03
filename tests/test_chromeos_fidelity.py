@@ -58,6 +58,7 @@ class ChromeOSFidelityTests(unittest.TestCase):
             self.assertTrue(all((label, icon, command, explanation)))
             self.assertTrue(command.endswith(("settings", "editor", "manager", "config")))
         source = (ROOT / "macrice/chrome_quick_settings.py").read_text()
+        self.assertIn("actions.add(root)", source)
         self.assertIn("shutil.which(command)", source)
         self.assertIn("shell._queue_volume_change", source)
         self.assertIn("shell._toggle_output_mute", source)

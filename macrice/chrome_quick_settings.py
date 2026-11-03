@@ -36,8 +36,6 @@ def build(shell, Gtk, Gdk, GLib):
     actions.set_keep_above(True)
     actions.set_default_size(396, 608)
 
-    scroll = Gtk.ScrolledWindow()
-    scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
     root = shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12),
                         "chrome-quick-root")
     header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=9)
@@ -140,8 +138,12 @@ def build(shell, Gtk, Gdk, GLib):
     root.pack_start(hardware, False, False, 0)
     # The real network/battery/sound states already appear directly above;
     # avoid a duplicated footer that gets clipped on 1024x768 laptops.
-    scroll.add(root)
-    actions.add(scroll)
+    # A plain GtkBox is windowless; it inherits the exact X11 shape of the
+    # top-level popup. An extra ScrolledWindow creates its own Gdk child window
+    # whose rectangular backing can leak outside the rounded top-level mask.
+    # The content is intentionally bounded to fit the 608px popup on 768px
+    # desktops, with no redundant status footer.
+    actions.add(root)
 
     def shape_later(*_args):
         GLib.idle_add(apply_rounded_window_shape, actions, 26)
