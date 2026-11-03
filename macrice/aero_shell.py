@@ -17,6 +17,7 @@ import threading
 
 from .aero_layout import PANEL_HEIGHT, bottom_strut, menu_geometry, select_windows, task_capacity
 from .aero_pins import PIN_LIMIT, PinConfigError, load_pins, pin_file, save_pins
+from .aero_superbar import group_windows, select_groups
 
 
 APP_ID = "io.github.copypasteuser.RiceHub.AeroShell"
@@ -262,6 +263,22 @@ CSS = b"""
 .win7-hardware { background: rgba(244,250,254,.94); border: 1px solid #c1d9ea;
   border-radius: 3px; padding: 8px; }
 .win7-hardware .rice-control-detail { color: #2b526d; }
+.win7-group-count { color: #fff; font-size: 10px; font-weight: bold;
+  background: #246da9; border: 1px solid #caefff; border-radius: 8px;
+  min-width: 12px; padding: 0 2px; }
+.win7-preview { background-image: linear-gradient(to bottom, #eaf8ff, #a3cfe9);
+  border: 1px solid #548ebc; border-radius: 5px; padding: 9px;
+  box-shadow: inset 0 1px #fff; }
+.win7-preview-card { background: rgba(255,255,255,.7); border: 1px solid #9ebdd1;
+  border-radius: 3px; padding: 5px; color: #174368; }
+.win7-preview-card:hover, .win7-preview-card:focus { background: #d5f1ff;
+  border-color: #4695d2; }
+.win7-preview-name { font-size: 11px; color: #15446d; }
+.win7-preview-fallback { background: #e7f1f8; min-width: 150px; min-height: 95px;
+  border: 1px solid #b4cede; }
+.win7-jumplist { background: #f5fbff; color: #19456b;
+  border: 1px solid #729fbd; padding: 5px; }
+.win7-jumplist menuitem:hover { background: #c4e8fb; }
 """
 
 
@@ -283,7 +300,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
     from gi.repository import Gdk, GdkPixbuf, Gio, GLib, Gtk, Pango
 
     from .aero_layout import actual_popup_y
-    from .aero_windows import create_window_tracker, toggle_window_id
+    from .aero_windows import WindowSnapshot, create_window_tracker, toggle_window_id
     from .installer import project_root
 
     class AeroShell(Gtk.Application):
@@ -298,6 +315,15 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.window_buttons = {}
             self._visible_window_ids = ()
             self._overflow_windows = ()
+            self._win7_visible_groups = ()
+            self._win7_group_members = {}
+            self._win7_group_signature = {}
+            self._win7_group_buttons = {}
+            self._win7_preview = None
+            self._win7_preview_group = None
+            self._win7_preview_timer = 0
+            self._win7_peek_timer = 0
+            self._win7_peek_active = False
             self._menu_focused = False
             self._tray = None
             self._status_pending = False
@@ -417,6 +443,19 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 assert self.actions.get_visible()
                 self._toggle_actions()
                 assert not self.actions.get_visible()
+                if profile == "aero":
+                    # Run the native group button / preview construction path
+                    # even if the CI virtual desktop has no ordinary app windows.
+                    first = WindowSnapshot(987654, "First window", False, None, "ricebowl-ci")
+                    second = WindowSnapshot(987655, "Second window", False, None, "ricebowl-ci")
+                    self._win7_windows_changed((first, second), second)
+                    assert self._win7_visible_groups == ("app:ricebowl-ci",)
+                    button = self._win7_group_buttons["app:ricebowl-ci"][0]
+                    assert button.get_visible()
+                    self._win7_show_preview("app:ricebowl-ci", button)
+                    assert self._win7_preview is not None
+                    self._win7_stop_preview()
+                    self._win7_windows_changed((), None)
             except Exception:
                 import traceback
                 traceback.print_exc()
@@ -514,6 +553,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 raise AssertionError("XP Luna Run action is clipped by its footer")
 
         def _shutdown(self, *_args):
+            if profile == "aero":
+                self._win7_stop_preview()
+                self._win7_end_peek()
             for name in self._popup_hide_sources:
                 self._cancel_popup_hide(name)
             if self._tray is not None:
@@ -523,6 +565,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self.actions.destroy()
 
         def _screen_changed(self, *_args):
+            if profile == "aero":
+                self._win7_stop_preview()
+                self._win7_end_peek()
             rect = self._desktop_rect()
             self.bar.resize(rect.width, panel_height)
             self.bar.move(rect.x, rect.y + rect.height - panel_height)
@@ -569,6 +614,23 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 return False
             menu = Gtk.Menu()
             pinned = identifier in self._pinned_ids
+            if profile == "aero" and widget.get_parent() is self.pinned_box:
+                menu.get_style_context().add_class("win7-jumplist")
+                launch = Gtk.MenuItem(label="Open " + (app.get_display_name() or app.get_name()))
+                launch.connect("activate", lambda _item: self._launch(app))
+                menu.append(launch)
+                recent = self._win7_app_recent_files(app)
+                if recent:
+                    menu.append(Gtk.SeparatorMenuItem())
+                    heading = Gtk.MenuItem(label="Recent")
+                    heading.set_sensitive(False)
+                    menu.append(heading)
+                    for name, uri in recent:
+                        item = Gtk.MenuItem(label=name)
+                        item.connect("activate", lambda _item, address=uri, selected=app:
+                                     self._win7_launch_recent(selected, address))
+                        menu.append(item)
+                menu.append(Gtk.SeparatorMenuItem())
             label = "Unpin from taskbar" if pinned else "Pin to taskbar"
             item = Gtk.MenuItem(label=label)
             item.set_sensitive(pinned or len(self._pinned_ids) < PIN_LIMIT)
@@ -580,6 +642,34 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             else:
                 menu.popup_at_widget(widget, Gdk.Gravity.SOUTH_WEST, Gdk.Gravity.NORTH_WEST, None)
             return True
+
+        def _win7_app_recent_files(self, app):
+            """Only real local recent files supported by this installed app."""
+            get_types = getattr(app, "get_supported_types", None)
+            supported = set(get_types() or ()) if callable(get_types) else set()
+            if not supported:
+                return ()
+            try:
+                entries = Gtk.RecentManager.get_default().get_items()[:60]
+                recent = []
+                for entry in entries:
+                    uri = entry.get_uri()
+                    if (uri.startswith("file:") and entry.get_mime_type() in supported
+                            and entry.exists() and (uri not in (url for _, url in recent))):
+                        recent.append((entry.get_display_name(), uri))
+                        if len(recent) == 5:
+                            break
+                return tuple(recent)
+            except (GLib.Error, OSError, RuntimeError) as exc:
+                logging.getLogger(__name__).debug("Recent files unavailable for Jump List: %s", exc)
+                return ()
+
+        def _win7_launch_recent(self, app, uri):
+            try:
+                app.launch_uris([uri], None)
+                self._hide_menu()
+            except (GLib.Error, OSError) as exc:
+                self._error("Cannot open recent file: " + str(exc))
 
         def _change_pin(self, identifier, add):
             candidate = list(self._pinned_ids)
@@ -666,9 +756,46 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _show_desktop(self, *_args):
             if self._window_tracker is not None:
+                if profile == "aero":
+                    # A click during temporary Peek commits Show Desktop.
+                    if self._win7_peek_timer:
+                        GLib.source_remove(self._win7_peek_timer)
+                        self._win7_peek_timer = 0
+                    if self._win7_peek_active:
+                        self._win7_peek_active = False
+                        self._hide_menu()
+                        return
                 screen = self._window_tracker.screen
                 screen.toggle_showing_desktop(not screen.get_showing_desktop())
                 self._hide_menu()
+
+        def _win7_begin_peek(self, *_args):
+            if self._window_tracker is None or self._win7_peek_active:
+                return False
+            if self._win7_peek_timer:
+                GLib.source_remove(self._win7_peek_timer)
+            self._win7_peek_timer = GLib.timeout_add(450, self._win7_preview_desktop)
+            return False
+
+        def _win7_preview_desktop(self):
+            self._win7_peek_timer = 0
+            if (self._window_tracker is not None and
+                    not self._window_tracker.screen.get_showing_desktop()):
+                self._window_tracker.screen.toggle_showing_desktop(True)
+                self._win7_peek_active = True
+            return False
+
+        def _win7_end_peek(self):
+            if self._win7_peek_timer:
+                GLib.source_remove(self._win7_peek_timer)
+                self._win7_peek_timer = 0
+            if self._win7_peek_active and self._window_tracker is not None:
+                self._window_tracker.screen.toggle_showing_desktop(False)
+            self._win7_peek_active = False
+
+        def _win7_leave_peek(self, *_args):
+            self._win7_end_peek()
+            return False
 
         def _catalog_changed(self, *_args):
             self.apps = app_catalog(Gio)
@@ -1013,7 +1140,12 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             desktop = self._class(Gtk.Button(), "aero-desktop")
             if profile == "aero":
                 desktop.get_style_context().add_class("win7-desktop")
-            desktop.set_tooltip_text("Show desktop / restore windows")
+                desktop.set_tooltip_text("Peek at desktop (hover) / Show desktop (click)")
+                desktop.add_events(Gdk.EventMask.ENTER_NOTIFY_MASK | Gdk.EventMask.LEAVE_NOTIFY_MASK)
+                desktop.connect("enter-notify-event", self._win7_begin_peek)
+                desktop.connect("leave-notify-event", self._win7_leave_peek)
+            else:
+                desktop.set_tooltip_text("Show desktop / restore windows")
             desktop.get_accessible().set_name("Show desktop or restore windows")
             desktop.connect("clicked", self._show_desktop)
             right_area.pack_end(desktop, False, False, 0)
@@ -1062,6 +1194,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _windows_changed(self, windows, active):
             """Render copied task data without retaining native WnckWindow objects."""
+            if profile == "aero":
+                self._win7_windows_changed(windows, active)
+                return
             visible, self._overflow_windows = select_windows(tuple(windows), active, self._task_capacity)
             visible_ids = tuple(window.xid for window in visible)
             if visible_ids != self._visible_window_ids:
@@ -1117,6 +1252,249 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             elif self.overflow_button.get_parent() is self.tasks:
                 self.tasks.remove(self.overflow_button)
             self.tasks.show_all()
+
+        def _win7_windows_changed(self, windows, active):
+            """Show one task button per WM_CLASS, never discard member windows."""
+            groups = group_windows(tuple(windows))
+            active_xid = active.xid if active is not None else None
+            visible, hidden = select_groups(groups, active_xid, self._task_capacity)
+            self._overflow_windows = tuple(member for group in hidden for member in group.windows)
+            identifiers = tuple(group.key for group in visible)
+            signature = {group.key: group.xids for group in groups}
+            if signature != self._win7_group_signature:
+                self._win7_stop_preview()
+            self._win7_group_signature = signature
+            self._win7_group_members = {group.key: group for group in groups}
+            if identifiers != self._win7_visible_groups:
+                self._win7_stop_preview()
+                for child in self.tasks.get_children():
+                    self.tasks.remove(child)
+                self._win7_group_buttons.clear()
+                for group in visible:
+                    button = self._class(Gtk.Button(), "aero-task")
+                    button.get_style_context().add_class("win7-task")
+                    button.set_size_request(44, 37)
+                    content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
+                    icon = Gtk.Image.new_from_icon_name("application-x-executable", Gtk.IconSize.MENU)
+                    badge = self._class(Gtk.Label(), "win7-group-count")
+                    badge.set_no_show_all(True)
+                    content.pack_start(icon, False, False, 0)
+                    content.pack_start(badge, False, False, 0)
+                    button.add(content)
+                    button.connect("clicked", lambda widget, key=group.key:
+                                   self._win7_group_click(key, widget))
+                    button.connect("button-press-event", lambda widget, event, key=group.key:
+                                   self._win7_group_context(widget, event, key))
+                    button.add_events(Gdk.EventMask.ENTER_NOTIFY_MASK | Gdk.EventMask.LEAVE_NOTIFY_MASK)
+                    button.connect("enter-notify-event", lambda widget, event, key=group.key:
+                                   self._win7_preview_hover(widget, key))
+                    button.connect("leave-notify-event", self._win7_preview_leave)
+                    self.tasks.pack_start(button, False, False, 0)
+                    self._win7_group_buttons[group.key] = (button, icon, badge)
+                self._win7_visible_groups = identifiers
+            for group in visible:
+                button, icon, badge = self._win7_group_buttons[group.key]
+                foreground = next((w for w in group.windows if w.xid == active_xid), group.windows[0])
+                if foreground.mini_icon is not None:
+                    icon.set_from_pixbuf(foreground.mini_icon)
+                count = len(group.windows)
+                badge.set_text(str(count))
+                if count > 1:
+                    badge.show()
+                else:
+                    badge.hide()
+                title = (group.title if count == 1 else f"{group.title} ({count} windows)")
+                button.set_tooltip_text(title)
+                button.get_accessible().set_name("Open window previews for " + title)
+                style = button.get_style_context()
+                if active_xid in group.xids and not foreground.minimized:
+                    style.add_class("aero-task-active")
+                else:
+                    style.remove_class("aero-task-active")
+            if self._overflow_windows:
+                self.overflow_button.set_label(f"+{len(self._overflow_windows)}")
+                if self.overflow_button.get_parent() is None:
+                    self.tasks.pack_start(self.overflow_button, False, False, 0)
+            elif self.overflow_button.get_parent() is self.tasks:
+                self.tasks.remove(self.overflow_button)
+            self.tasks.show_all()
+            for group in visible:
+                if len(group.windows) == 1:
+                    self._win7_group_buttons[group.key][2].hide()
+
+        def _win7_group_click(self, key, button):
+            group = self._win7_group_members.get(key)
+            if group is None:
+                return
+            if len(group.windows) == 1:
+                self._win7_stop_preview()
+                self._activate_task(group.windows[0].xid)
+            else:
+                self._win7_stop_preview()
+                self._win7_show_preview(key, button)
+
+        def _win7_close_window(self, xid):
+            """Ask the real application to close; it can still warn about unsaved work."""
+            if self._window_tracker is None:
+                return
+            window = self._window_tracker.wnck.Window.get(xid)
+            if window is not None:
+                window.close(Gtk.get_current_event_time())
+            self._win7_stop_preview()
+
+        def _win7_group_context(self, button, event, key):
+            if event.button != 3:
+                return False
+            group = self._win7_group_members.get(key)
+            if group is None:
+                return False
+            self._win7_stop_preview()
+            menu = Gtk.Menu()
+            menu.get_style_context().add_class("win7-jumplist")
+            app = self._win7_group_app(key)
+            if app is not None:
+                name = app.get_display_name() or app.get_name()
+                launch = Gtk.MenuItem(label="Open new " + name + " window")
+                launch.connect("activate", lambda _item, selected=app: self._launch(selected))
+                menu.append(launch)
+                identifier = app.get_id()
+                if identifier:
+                    pinned = identifier in self._pinned_ids
+                    pin = Gtk.MenuItem(label="Unpin from taskbar" if pinned else "Pin to taskbar")
+                    pin.set_sensitive(pinned or len(self._pinned_ids) < PIN_LIMIT)
+                    pin.connect("activate", lambda _item: self._change_pin(identifier, not pinned))
+                    menu.append(pin)
+                menu.append(Gtk.SeparatorMenuItem())
+            for window in group.windows[:16]:
+                item = Gtk.MenuItem(label="Switch to " + window.title)
+                item.connect("activate", lambda _item, xid=window.xid: self._activate_task(xid))
+                menu.append(item)
+            menu.append(Gtk.SeparatorMenuItem())
+            for window in group.windows[:16]:
+                item = Gtk.MenuItem(label="Close " + window.title)
+                item.connect("activate", lambda _item, xid=window.xid: self._win7_close_window(xid))
+                menu.append(item)
+            menu.show_all()
+            menu.popup_at_pointer(event)
+            return True
+
+        def _win7_group_app(self, key):
+            """Match WM_CLASS to installed .desktop metadata only when unambiguous."""
+            if not key.startswith("app:"):
+                return None
+            group_id = key[4:]
+            candidates = []
+            for app in self.apps:
+                wmclass = getattr(app, "get_startup_wm_class", None)
+                identity = wmclass() if callable(wmclass) else None
+                desktop_id = app.get_id() or ""
+                if ((identity and identity.casefold() == group_id) or
+                        desktop_id.casefold() == group_id + ".desktop"):
+                    candidates.append(app)
+            return candidates[0] if len(candidates) == 1 else None
+
+        def _win7_preview_hover(self, button, key):
+            if self._win7_preview_timer:
+                GLib.source_remove(self._win7_preview_timer)
+            self._win7_preview_timer = GLib.timeout_add(450, self._win7_show_preview, key, button)
+            return False
+
+        def _win7_preview_leave(self, *_args):
+            if self._win7_preview_timer:
+                GLib.source_remove(self._win7_preview_timer)
+            self._win7_preview_timer = GLib.timeout_add(650, self._win7_stop_preview)
+            return False
+
+        def _win7_stop_preview(self, *_args):
+            if self._win7_preview_timer:
+                GLib.source_remove(self._win7_preview_timer)
+                self._win7_preview_timer = 0
+            if self._win7_preview is not None:
+                self._win7_preview.popdown()
+                self._win7_preview.destroy()
+                self._win7_preview = None
+            self._win7_preview_group = None
+            return False
+
+        def _win7_thumbnail(self, xid):
+            """Bounded best-effort capture of an X11 drawable, never persisted."""
+            if (self._window_tracker is None or
+                    self._window_tracker.wnck.Window.get(xid) is None):
+                return None
+            try:
+                gi.require_version("GdkX11", "3.0")
+                from gi.repository import GdkX11
+                drawable = GdkX11.X11Window.foreign_new_for_display(Gdk.Display.get_default(), xid)
+                if drawable is None or not drawable.is_visible():
+                    return None
+                width, height = min(drawable.get_width(), 360), min(drawable.get_height(), 210)
+                if width < 20 or height < 20:
+                    return None
+                pixbuf = Gdk.pixbuf_get_from_window(drawable, 0, 0, width, height)
+                if pixbuf is not None:
+                    return pixbuf.scale_simple(180, 105, GdkPixbuf.InterpType.BILINEAR)
+            except (ImportError, GLib.Error, OSError, RuntimeError, ValueError, AttributeError) as exc:
+                logging.getLogger(__name__).debug("X11 thumbnail unavailable: %s", exc)
+            return None
+
+        def _win7_show_preview(self, key, button):
+            self._win7_preview_timer = 0
+            group = self._win7_group_members.get(key)
+            if group is None or not button.get_mapped():
+                return False
+            if self._win7_preview_group == key and self._win7_preview is not None:
+                return False
+            self._win7_stop_preview()
+            popover = self._class(Gtk.Popover.new(button), "win7-preview")
+            popover.set_modal(False)
+            popover.set_position(Gtk.PositionType.TOP)
+            popover.add_events(Gdk.EventMask.ENTER_NOTIFY_MASK | Gdk.EventMask.LEAVE_NOTIFY_MASK)
+            popover.connect("enter-notify-event", lambda *_args: self._win7_cancel_preview_timer())
+            popover.connect("leave-notify-event", self._win7_preview_leave)
+            scroller = Gtk.ScrolledWindow()
+            scroller.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.NEVER)
+            scroller.set_size_request(min(620, len(group.windows) * 200), 166)
+            cards = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+            for window in group.windows[:20]:
+                card = self._class(Gtk.Button(), "win7-preview-card")
+                card.set_size_request(193, 153)
+                content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+                thumb = self._win7_thumbnail(window.xid)
+                if thumb is not None:
+                    picture = Gtk.Image.new_from_pixbuf(thumb)
+                else:
+                    picture = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL),
+                                          "win7-preview-fallback")
+                    preview_icon = (Gtk.Image.new_from_pixbuf(window.mini_icon) if
+                                    window.mini_icon is not None else
+                                    self._icon("application-x-executable", Gtk.IconSize.DIALOG))
+                    picture.set_center_widget(preview_icon)
+                content.pack_start(picture, True, True, 0)
+                caption = self._class(Gtk.Label(label=window.title), "win7-preview-name")
+                caption.set_max_width_chars(23)
+                caption.set_ellipsize(Pango.EllipsizeMode.END)
+                content.pack_start(caption, False, False, 0)
+                card.add(content)
+                card.get_accessible().set_name("Activate " + window.title)
+                card.connect("clicked", lambda _btn, xid=window.xid: self._activate_preview(xid))
+                cards.pack_start(card, False, False, 0)
+            scroller.add(cards)
+            popover.add(scroller)
+            self._win7_preview = popover
+            self._win7_preview_group = key
+            popover.show_all()
+            popover.popup()
+            return False
+
+        def _win7_cancel_preview_timer(self):
+            if self._win7_preview_timer:
+                GLib.source_remove(self._win7_preview_timer)
+                self._win7_preview_timer = 0
+            return False
+
+        def _activate_preview(self, xid):
+            self._win7_stop_preview()
+            self._activate_task(xid)
 
         def _activate_task(self, xid):
             if self._window_tracker:

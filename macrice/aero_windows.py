@@ -17,6 +17,7 @@ class WindowSnapshot:
     title: str = field(compare=False)
     minimized: bool = field(compare=False)
     mini_icon: object | None = field(compare=False, repr=False)
+    group_id: str = field(default="", compare=False)
 
 
 def is_task_window(window, wnck) -> bool:
@@ -94,8 +95,13 @@ class WindowTracker:
                     window.connect(signal, self._changed)
                     for signal in ("name-changed", "icon-changed", "state-changed"))
             if is_task_window(window, self.wnck):
+                # WM_CLASS is the closest native X11 analogue to Win7 AppUserModelID.
+                # Never retain a libwnck class-group object beyond this refresh.
+                class_group = getattr(window, "get_class_group", lambda: None)()
+                group_id = (class_group.get_id() or "").strip() if class_group else ""
                 snapshots.append(WindowSnapshot(xid, window.get_name() or "Application",
-                                                bool(window.is_minimized()), window.get_mini_icon()))
+                                                bool(window.is_minimized()), window.get_mini_icon(),
+                                                group_id))
         for old_xid in tuple(self._window_handlers):
             if old_xid not in current:
                 # Do not touch a native window that vanished without a signal.
