@@ -63,6 +63,15 @@ def build(shell, Gtk, Gdk):
     close.get_accessible().set_name("Close Control Panel")
     close.connect("clicked", lambda _button: shell._hide_actions())
     caption.pack_end(close, False, False, 0)
+
+    def move_window(_widget, event):
+        if event.button != 1:
+            return False
+        window.begin_move_drag(1, int(event.x_root), int(event.y_root), event.time)
+        return True
+
+    caption.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+    caption.connect("button-press-event", move_window)
     frame.pack_start(caption, False, False, 0)
 
     body = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)

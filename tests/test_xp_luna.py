@@ -61,13 +61,14 @@ class LunaProgramsTests(unittest.TestCase):
 
 
 class LunaGeometryTests(unittest.TestCase):
-    def test_control_panel_is_tall_enough_for_the_device_controls(self):
+    def test_control_panel_has_a_dedicated_monitor_constrained_window(self):
         shell = (project_root() / "macrice/aero_shell.py").read_text()
-        self.assertIn('"winxp": 630', shell)
         self.assertIn('"winclassic": 570', shell)
         self.assertIn('self._assert_control_footer_visible()', shell)
         self.assertIn('action_heights.get(profile, 430)', shell)
         self.assertIn('from .luna_control_panel import build', shell)
+        self.assertIn('width = min(746, max(0, rect.width - 24))', shell)
+        self.assertIn('height = min(536, max(0, rect.height - panel_height - 24))', shell)
 
     def test_control_panel_categories_never_launch_fake_or_unavailable_applets(self):
         self.assertEqual(len(LUNA_CATEGORIES), 8)

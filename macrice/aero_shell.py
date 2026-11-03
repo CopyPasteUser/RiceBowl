@@ -324,7 +324,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     40 if profile in ("winxp", "windows10") else
                     56 if profile == "chromeos" else
                     48 if profile == "aero" else PANEL_HEIGHT)
-    action_heights = {"winxp": 630, "winclassic": 570, "aero": 530,
+    action_heights = {"winclassic": 570, "aero": 530,
                       "frutiger": 560, "chromeos": 608, "windows10": 680}
     if ten:
         from .ten_shell import APP_ID as TEN_APP_ID, CSS as TEN_CSS

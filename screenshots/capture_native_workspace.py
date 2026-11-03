@@ -66,6 +66,13 @@ def prepare_isolated_desktop(base: Path, profile: str) -> Path:
         ["xfconf-query", "-c", "xfwm4", "-p", "/general/theme",
          "--create", "-t", "string", "-s", style.xfwm],
         check=True, timeout=8, capture_output=True)
+    # Match the actual Rice apply transaction. xfwm4's distro default may
+    # include a Shade button that Windows XP/7 never had; showing it in a
+    # screenshot would falsely suggest that the applied Rice uses that layout.
+    subprocess.run(
+        ["xfconf-query", "-c", "xfwm4", "-p", "/general/button_layout",
+         "--create", "-t", "string", "-s", style.button_layout],
+        check=True, timeout=8, capture_output=True)
     # The applied Rice also owns these precise Thunar preferences; a native
     # acceptance screenshot must exercise the same breadcrumb/icon-view layout.
     for property_name, value in preferences_for(palette):
