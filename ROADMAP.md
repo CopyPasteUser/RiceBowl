@@ -1,8 +1,18 @@
-# MacRice engine roadmap to 1.0
+# RiceBowl roadmap to 1.0
 
-**RiceHub is now the umbrella application.** Release 0.6.0 introduces installable XP Luna, Windows 98/2000, ChromeOS and Frutiger Aero styles alongside macOS, Windows 7 and Windows 10. The new desktops share the tested session/recovery engine; physical Mint XFCE validation is still required for the 1.0 hardware-stability milestone. The original read-only design previews remain available. Unfinished Liquid Glass presets and Windows 11 are not planned. See the [new-rice acceptance checklist](CONCEPTS.md) and [RiceHub roadmap](RICEHUB.md#product-roadmap).
+**RiceBowl is the umbrella application.** The 0.6.0 milestone introduced installable XP Luna, Windows 98/2000, ChromeOS and Frutiger Aero styles alongside macOS, Windows 7 and Windows 10. The new desktops share the tested session/recovery engine; physical Mint XFCE validation is still required for the 1.0 hardware-stability milestone. The original read-only design previews remain available. Unfinished Liquid Glass presets and Windows 11 are not planned. See the [new-rice acceptance checklist](CONCEPTS.md) and [historical project roadmap](RICEHUB.md#product-roadmap).
 
 MacRice is deliberately a thin integration layer. MacMenu, Control Center and MacBar keep their own tested lifecycles; Plank remains an external system dock.
+
+## 0.7 — RiceBowl naming and integration
+
+- [x] RiceBowl application icon, desktop entry, native GUI title and public CLI.
+- [x] Individual control layouts and enhanced Thunar chrome for non-macOS rices.
+- [x] Align packaging metadata, documentation, screenshots provenance and project names.
+- [x] Keep historical RiceHub theme IDs, D-Bus names and installed state for backwards compatibility.
+- [x] Recognize old managed session launchers without overwriting customized entries.
+- [ ] Rename the GitHub repository via its owner's administrative settings; update clone URLs after it redirects.
+- [ ] Perform the physical Mint/XFCE switching, Plank and multi-monitor acceptance suite.
 
 ## 0.1 — Unified source and safe setup
 
