@@ -188,7 +188,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                                     else "toggle-menu")
                 return 0
             self._smoke = "--smoke-test" in args
-            self._capture_gallery = (ten or bool(heritage)) and "--capture-gallery" in args
+            self._capture_gallery = "--capture-gallery" in args
             self.activate()
             if self._smoke:
                 GLib.timeout_add(850, self._smoke_check)
@@ -265,7 +265,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             fixture.set_skip_pager_hint(True)
             fixture.set_type_hint(Gdk.WindowTypeHint.DESKTOP)
             fixture.set_keep_below(True)
-            image = project_root() / "assets/wallpapers" / (heritage.wallpaper if heritage else "ten-blue.jpg")
+            image = project_root() / "assets/wallpapers" / (heritage.wallpaper if heritage else "ten-blue.jpg" if ten else "aero-cascade.jpg")
             pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(str(image), rect.width, rect.height, False)
             fixture.add(Gtk.Image.new_from_pixbuf(pixbuf))
             fixture.set_default_size(rect.width, rect.height)
@@ -297,8 +297,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _capture_menu(self):
             try:
-                self._capture_screen(f"ricebowl-{profile}-start-0.7.1.png" if heritage else
-                                     "windows10-live-start-0.5.0rc2.png")
+                self._capture_screen(f"ricebowl-{profile}-start-0.8.0.png")
                 self._hide_menu()
                 self._toggle_actions()
                 assert self.actions.get_visible()
@@ -312,8 +311,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _capture_actions(self):
             try:
-                self._capture_screen(f"ricebowl-{profile}-controls-0.7.1.png" if heritage else
-                                     "windows10-live-actions-0.5.0rc2.png")
+                self._capture_screen(f"ricebowl-{profile}-controls-0.8.0.png")
             except Exception:
                 import traceback
                 traceback.print_exc()
