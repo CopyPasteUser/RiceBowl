@@ -68,7 +68,7 @@ class InstallerTests(unittest.TestCase):
                 self.assertIn("aero-menu", toggle.read_text())
                 hub_entry = (base / "data/applications/ricehub.desktop").read_text()
                 self.assertIn("Name=RiceHub", hub_entry)
-                self.assertIn("assets/ricehub-symbolic.svg", hub_entry)
+                self.assertIn("assets/ricebowl-symbolic.svg", hub_entry)
                 self.assertNotIn("sudo", hub_entry)
 
     def test_installed_ricehub_entrypoint_loads_bundled_application(self):
