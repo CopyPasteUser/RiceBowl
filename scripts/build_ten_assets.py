@@ -6,6 +6,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from PIL import Image, ImageDraw
+from ricebowl_artwork import write_generated_icon
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -140,7 +141,11 @@ def icons() -> None:
     for path, artwork in ART.items():
         target = root / "scalable" / path
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">' + artwork + '</svg>\n', encoding="utf-8")
+        write_generated_icon(
+            target, path,
+            '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'
+            + artwork + '</svg>\n',
+        )
     logo = (ROOT / "assets/ten-start.svg").read_text(encoding="utf-8")
     for name in ("start-here", "xfce4-menu", "ricehub-ten"):
         (root / "scalable/apps" / (name + ".svg")).write_text(logo, encoding="utf-8")
