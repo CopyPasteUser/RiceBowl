@@ -1,6 +1,6 @@
 # Windows 10-inspired XFCE rice — 0.5 RC2
 
-This is a native, **installable and reversible XFCE/X11 rice**, not merely a GTK mockup. Both palettes use original RiceHub artwork, including a crisp blue-and-white Linux penguin as the Start icon instead of a Windows mark; no Microsoft binaries, icons or wallpapers are bundled. The early non-installing concept dialog is retained separately as a design reference.
+This is a native, **installable and reversible XFCE/X11 rice**, not merely a GTK mockup. Both palettes use original RiceBowl artwork, including a crisp blue-and-white Linux penguin as the Start icon instead of a Windows mark; no Microsoft binaries, icons or wallpapers are bundled. The early non-installing concept dialog is retained separately as a design reference.
 
 ## Release roadmap and acceptance
 
@@ -11,7 +11,7 @@ The implementation phases have been completed in the repository. **The last phys
 | 1 · Live shell | **Done** | Dark left-aligned GTK taskbar, keyboard-friendly searchable Start, real Gio app catalog, app launching, persistent pinned apps and tiles, two-line clock, Show Desktop; optional Wnck task switcher and StatusNotifier tray use event signals. |
 | 2 · Look and feel | **Done** | Independent dark/light GTK3 and XFWM4 themes, original PNG window controls, flat Linux-penguin Start SVG and icon theme, two high-resolution blue wallpapers, Thunar palette and flat Plank theme. All artwork bundled, no runtime Pillow dependency. |
 | 3 · Installation / recovery | **Done** | Preflight checks, no-write plan, user-local theme staging, named autostart, transaction backup schema 4, rollback on apply failure, preservation of customized settings, and switching Aero ↔ Ten ↔ other styles. Schema 1–3 restore compatibility retained. |
-| 4 · Product workflow | **Done** | RiceHub Discover selection, **Check requirements / Apply rice / Restore**, `macrice rice plan/apply/restore`, separate `macrice windows10-shell` command, safe autostart and optional read-only concept preview. |
+| 4 · Product workflow | **Done** | RiceBowl Discover selection, **Check requirements / Apply rice / Restore**, `macrice rice plan/apply/restore`, separate `macrice windows10-shell` command, safe autostart and optional read-only concept preview. |
 | 5 · Automated validation and screenshots | **Done** | Unit tests for assets, safety, setup/restore, cross-rice switches, GTK/X11 startup and interaction; CI Xvfb smoke, native screenshots and updated docs. |
 | 6 · Real Mint/XFCE acceptance | **Pending owner hardware** | Fresh install and rollback on the actual Linux Mint XFCE/X11 machine; Wnck, SNI tray and native notifications with real apps; multi-monitor, HiDPI, focus, suspend/resume, session autostart, idle CPU/PSS and panel placement. |
 
@@ -23,7 +23,7 @@ The implementation phases have been completed in the repository. **The last phys
 - Action Center contains real shortcuts to the installed XFCE settings manager, display configuration, `pavucontrol` and NetworkManager connection editor. Missing utilities are visibly disabled. Notification history stays with XFCE's notification daemon; it is **not** a second notification store. Quick buttons do **not** silently toggle radios or audio policy.
 - Two original GTK3 / XFWM4 themes and wallpaper choices are installed into XDG user data directories. Existing third-party themes are neither overwritten nor deleted.
 - The RC2 penguin icon theme is named `RiceHub-Ten-Penguin` so upgrades never overwrite potentially customized RC1 `RiceHub-Ten` assets; the managed autostart filename and command remain unchanged.
-- The existing XFCE Panel is left running and untouched. You can adjust/hide it in XFCE Panel Preferences after inspecting the new taskbar. RiceHub will not forcibly kill it or rewrite your panel settings.
+- The existing XFCE Panel is left running and untouched. You can adjust/hide it in XFCE Panel Preferences after inspecting the new taskbar. RiceBowl will not forcibly kill it or rewrite your panel settings.
 
 ## Actual running GTK / X11 screenshots
 
@@ -52,7 +52,7 @@ macrice rice restore         # Return to the previous desktop layer
 
 `gir1.2-wnck-3.0` is optional for the shell but required for live window buttons. Network/sound quick settings rely on the existing `nm-connection-editor` and `pavucontrol` programs. The basic GTK shell runs without these extras. The shared full-rice engine also reads Plank's GSettings schema and the appropriate XFCE channels; preflight will reject missing prerequisites rather than partially apply a theme. The installer itself never applies a style.
 
-After installation, `ricehub` opens the style picker. `macrice windows10-shell` opens the shell manually; `macrice windows10-shell --quit` stops it, without terminating the XFCE panel. The managed autostart is activated only while a Windows 10 preset is selected. `macrice rice restore` restores the latest active snapshot. Restore is layered: if you applied Windows 7, then Windows 10, restore once to return to Windows 7 and a second time to return to your initial desktop.
+After installation, `ricebowl` opens the style picker. `macrice windows10-shell` opens the shell manually; `macrice windows10-shell --quit` stops it, without terminating the XFCE panel. The managed autostart is activated only while a Windows 10 preset is selected. `macrice rice restore` restores the latest active snapshot. Restore is layered: if you applied Windows 7, then Windows 10, restore once to return to Windows 7 and a second time to return to your initial desktop.
 
 ### Session and layout options
 
