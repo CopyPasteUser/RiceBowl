@@ -1,12 +1,14 @@
 # Windows 7 · Aero Rice
 
-The latest native GTK3/XFWM4 Windows 7 Aero experience on `main`. It uses
+This source tree contains the native GTK3/XFWM4 Windows 7 Aero experience. It uses
 original RiceBowl Linux artwork, not Microsoft binaries, icons or wallpaper.
 
 ## Screenshots & coverage
 
-These images are from the **latest native virtual-X11 CI run**. They show
-working GTK windows, not mockups; owner hardware verification is separate.
+These are real XFWM4/GTK3 desktop captures from the passing virtual-X11 CI run
+[`41678284256`](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41678284256).
+They include the second Control Panel/Superbar fidelity pass. The same pipeline
+also checks **1024×768** placement. Owner Mint hardware verification is separate.
 
 ### Desktop and taskbar
 
@@ -19,6 +21,14 @@ All Programs and actual XDG folders. `Super_L` opens it with the search field
 focused; `Escape` dismisses it.
 
 ### Control Panel
+
+The Control Panel is now a genuine decorated, resizable Windows 7-style window,
+opened from Start or `Control_R` rather than an Android-style tile popup. Its
+eight historical categories have browseable task pages, a working category/task
+search and a Back button. The links launch **installed Linux applications**;
+missing utilities are disabled with a tooltip. Hardware/network/volume status
+remains in an explicitly labeled expandable Linux section. It is not a Windows
+settings backend or a simulated connectivity toggle.
 
 ![Latest Aero Control Panel](screenshots/current/aero-controls.webp)
 
@@ -45,7 +55,8 @@ owner's Linux Mint XFCE acceptance; CI captures are not a physical desktop photo
 | --- | --- | --- |
 | **Start orb** | [Aero Penguin](assets/aero-penguin.svg) | Original branded Linux Start button; toggles a real GTK window |
 | **Start menu** | [aero_shell.py](macrice/aero_shell.py) | Installed desktop programs, search, Enter/Escape/Down keyboard operation, paging, Home/Computer/Documents, Control Panel, safe XFCE session dialog |
-| **Taskbar** | [aero_shell.py](macrice/aero_shell.py) / [aero_superbar.py](macrice/aero_superbar.py) | 42px glass Superbar, WM_CLASS grouping, window previews, Jump Lists, minimize/restore, active group, overflow |
+| **Taskbar** | [aero_shell.py](macrice/aero_shell.py) / [aero_superbar.py](macrice/aero_superbar.py) | 48px glass Superbar, larger real app icons, WM_CLASS grouping, window previews, Jump Lists, minimize/restore, active group, overflow |
+| **Control Panel** | [win7_control_panel.py](macrice/win7_control_panel.py) | Native framed category window, eight period-accurate sections, real XFCE task links, search and back navigation; Linux status disclosure |
 | **Pinned applications** | [aero_pins.py](macrice/aero_pins.py) | Right-click a Start result to pin, right-click taskbar icon to unpin; 6 persistent launchers maximum |
 | **Show Desktop** | [aero_windows.py](macrice/aero_windows.py) | Wnck Show Desktop with safe reversible hover Peek and click action |
 | **Notification area** | [aero_tray.py](macrice/aero_tray.py) | Experimental D-Bus StatusNotifier icons, click and context menu, coexists with an existing watcher |

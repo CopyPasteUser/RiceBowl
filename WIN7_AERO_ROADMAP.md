@@ -3,7 +3,9 @@
 Status: Windows 7 cosmetic fidelity shipped to `main` via PR #14. The additional
 Superbar milestone (grouping, previews, Jump Lists, Peek and latest gallery) passed
 native Xvfb CI in pull request #15. Physical Mint/XFCE acceptance remains open. The published
-`v0.9.1` package is unchanged.
+`v0.9.1` package is unchanged. The second fidelity pass passed the complete
+native Xvfb/GTK/XFWM4 CI matrix in PR #22 and received fresh gallery images;
+physical Linux Mint acceptance remains open.
 
 ## Reference and constraints
 
@@ -43,6 +45,26 @@ All art here is originally drawn. We do not import Microsoft logos, wallpapers, 
 - [x] Replace old RC screenshots with checked-in captures from the latest green CI run; display only the current six-shell gallery in README and component docs.
 
 ## Remaining physical acceptance and deeper fidelity
+
+### Second fidelity pass (native Control Panel and Superbar)
+
+- [x] Replace the four-tile fake Control Panel layout with the eight real
+  Windows 7-era category groupings (Microsoft historical reference), backed by
+  actual installed Linux settings applications.
+- [x] Provide a true decorated, task-switchable Control Panel window with
+  category/detail/back navigation, nested search and disabled missing tools.
+- [x] Replace inconsistent and missing inherited category icons with eight
+  original, distinctive Aero SVGs; validate XML and GdkPixbuf decoding.
+- [x] Keep existing verified audio/network/battery controls behind an explicit
+  Linux-device expander instead of displaying them as Windows category tiles.
+- [x] Make Start's Control Panel link open that window; remove the extra gear
+  button from the notification area, keeping `Control_R` as a keyboard route.
+- [x] Size Aero's Superbar to the 48px Windows 7 taskbar guideline and prefer
+  Wnck's full-resolution icon for live task buttons.
+- [x] Add pure category/action tests and a native GTK smoke/navigation check;
+  isolate XFWM4 in the virtual-X11 Control Panel capture.
+- [x] Confirm fresh 1600×900 and 1024×768 CI captures, inspect the resulting
+  Start/Control Panel/Thunar screenshots, then update the current gallery.
 
 - [ ] Physically test on the owner's Mint XFCE laptop at its own DPI and one external monitor: menu anchor, dock struts, Thunar, sound/battery/network widgets, pin/unpin, All Programs, Super_L and Control_R.
 - [ ] Run repeated seven-rice switches, Plank autostart reconciliation and login/re-login regression; verify an existing customized theme still blocks automatic overwrite.

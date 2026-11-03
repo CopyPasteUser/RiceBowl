@@ -1,12 +1,22 @@
 # Current RiceBowl screenshot gallery
 
-Only the latest **actual** virtual-X11 captures are retained in this directory.
-Each `*-start.webp`, `*-controls.webp` and `*-workspace.webp` image was captured
-from one successful Linux/Xvfb GitHub Actions run of the
-`review/cross-rice-fidelity-20261103` branch on 3 November 2026
-(workflow run `41666644729`, source `c3406bc572f6f314d3acacb1f5572c6b08c5508d`).
-Images are WebP-optimized from the **1600×900** screenshots; the original
-uncompressed PNGs remain in that CI run's screenshot artifact.
+Only the latest verified **actual** virtual-X11 captures are retained in this directory.
+All are WebP-optimized from genuine **1600×900** GTK/XFWM4 captures, not mockups.
+
+Capture provenance (3 November 2026):
+
+- **Windows 7 Aero (`aero-*.webp`)**: passing GitHub Actions run
+  [`41678284256`](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41678284256),
+  branch `feat/win7-fidelity-round2`, source
+  `6bb1b6d0c6546a698efdc8207da7394941b4ecd7`. This includes the actual
+  48px Superbar, new category Control Panel and all eight original Aero icons.
+- **Windows 10, XP, Classic 98, ChromeOS and Frutiger**: passing Actions run
+  [`41666644729`](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41666644729),
+  source `c3406bc572f6f314d3acacb1f5572c6b08c5508d`.
+
+Uncompressed PNG sources, including the 1024×768 tests, remain in their
+respective CI run artifacts. The other five rices were not cosmetically changed
+by the Windows 7 review.
 
 The `workspace` images display a real Thunar process under a real XFWM4 window
 manager, using the same GTK/icon theme and Thunar view preferences that RiceBowl

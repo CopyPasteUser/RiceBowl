@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>RiceBowl Aero Appearance and Personalization</title>
+  <defs><linearGradient id="display" x2="0" y2="1"><stop stop-color="#f3ffff"/><stop offset=".5" stop-color="#a4dafa"/><stop offset="1" stop-color="#3a81bb"/></linearGradient><linearGradient id="brush" x2="0" y2="1"><stop stop-color="#ffefbf"/><stop offset="1" stop-color="#bb7b33"/></linearGradient></defs>
+  <rect x="3" y="6" width="48" height="35" rx="4" fill="#2b526f" stroke="#15314a" stroke-width="2"/>
+  <rect x="6" y="9" width="42" height="29" rx="2" fill="url(#display)"/>
+  <path d="M11 17q13-10 30-2" stroke="#fff" stroke-width="3" opacity=".8" fill="none"/>
+  <path d="M23 42h8v7H23zM15 49h23v4H15z" fill="#5d7686" stroke="#304b60"/>
+  <path d="M42 23l9 5-17 26-8 3 1-9z" fill="url(#brush)" stroke="#8a5835" stroke-width="2"/>
+  <path d="M46 18l10 6-5 8-10-6z" fill="#ef6f56" stroke="#ac4439" stroke-width="2"/>
+  <path d="M24 55q-9 2-8 7" stroke="#6e9fc4" stroke-width="3" fill="none" stroke-linecap="round"/>
+</svg>

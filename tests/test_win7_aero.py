@@ -12,6 +12,7 @@ from macrice.aero_shell import CSS, win7_programs
 from macrice.asset_upgrade import AssetConflict, git_blob_sha, inspect_bundle, trusted_assets
 from macrice.installer import project_root
 from macrice.rice import STYLES
+from macrice.win7_control_panel import CATEGORIES, Task, installed_command, matching_categories
 
 
 class App:
@@ -38,18 +39,18 @@ class Win7MenuTests(unittest.TestCase):
         self.assertEqual(win7_programs(apps, (), "tERm"), (apps[0],))
         self.assertEqual(win7_programs(apps, ("missing.desktop",), "", limit=2), apps[:2])
 
-    def test_42px_superbar_and_start_fit_low_resolution(self):
+    def test_48px_superbar_and_start_fit_low_resolution(self):
         for x, y, w, h in ((0, 0, 1600, 900), (0, 0, 1024, 768),
                             (1024, 80, 1024, 768), (-1280, 0, 1280, 800)):
             with self.subTest(monitor=(x, y, w, h)):
                 mx, my, mw, mh = menu_geometry(x, y, w, h, preferred_width=525,
-                                                preferred_height=535, panel_height=42)
+                                                preferred_height=535, panel_height=48)
                 self.assertGreaterEqual(mx, x)
                 self.assertGreaterEqual(my, y)
                 self.assertLessEqual(mx + mw, x + w)
-                self.assertEqual(my + mh, y + h - 42 - 8)
-                self.assertEqual(actual_popup_y(y, h, mh, panel_height=42), my)
-        self.assertEqual(bottom_strut(0, 0, 1024, 768, 768, panel_height=42)[0][-1], 42)
+                self.assertEqual(my + mh, y + h - 48 - 8)
+                self.assertEqual(actual_popup_y(y, h, mh, panel_height=48), my)
+        self.assertEqual(bottom_strut(0, 0, 1024, 768, 768, panel_height=48)[0][-1], 48)
         self.assertGreater(task_capacity(1024, 3, 345, compact=True),
                            task_capacity(1024, 3, 345))
         self.assertEqual(task_capacity(320, 6, 345, compact=True), 0)
@@ -61,8 +62,53 @@ class Win7MenuTests(unittest.TestCase):
         self.assertIn(b".aero-taskbar.win7-taskbar", CSS)
         self.assertIn(b".win7-control-search", CSS)
         shell = (project_root() / "macrice/aero_shell.py").read_text()
-        self.assertIn('search.set_placeholder_text("Search Control Panel")', shell)
-        self.assertIn('"aero": 530', shell)
+        self.assertIn('48 if profile == "aero"', shell)
+        panel = (project_root() / "macrice/win7_control_panel.py").read_text()
+        self.assertIn('search.set_placeholder_text("Search Control Panel")', panel)
+        self.assertIn('window.set_skip_taskbar_hint(False)', panel)
+
+
+class Win7ControlPanelTests(unittest.TestCase):
+    def test_eight_historical_categories_have_only_real_linux_tasks(self):
+        self.assertEqual(tuple(category.name for category in CATEGORIES), (
+            "System and Security", "Network and Internet", "Hardware and Sound",
+            "Programs", "User Accounts and Family Safety",
+            "Appearance and Personalization", "Clock, Language, and Region",
+            "Ease of Access"))
+        for category in CATEGORIES:
+            self.assertGreaterEqual(len(category.tasks), 2)
+            self.assertTrue(category.icon)
+            for task in category.tasks:
+                self.assertTrue(task.name)
+                self.assertTrue(all(" " not in command and "/" not in command
+                                    for command in task.commands))
+
+    def test_search_matches_categories_and_nested_tasks(self):
+        self.assertEqual(len(matching_categories("")), 8)
+        self.assertEqual([c.name for c in matching_categories("SOuNd")],
+                         ["Hardware and Sound"])
+        self.assertEqual([c.name for c in matching_categories("Theme")],
+                         ["Appearance and Personalization"])
+        self.assertEqual(matching_categories("no-matching-tool-39083"), ())
+
+    def test_unavailable_tool_does_not_create_fake_click_target(self):
+        task = Task("Choose a tool", ("first", "second"))
+        self.assertIsNone(installed_command(task, lambda _: None))
+        self.assertEqual(installed_command(task, lambda cmd: "/usr/bin/" + cmd
+                                           if cmd == "second" else None), "second")
+
+    def test_all_eight_categories_have_original_readable_aero_icons(self):
+        source = project_root() / "assets/icons/RiceHub-Aero/scalable/apps"
+        icons = []
+        for category in CATEGORIES:
+            self.assertTrue(category.icon.startswith("ricehub-cp-"))
+            icon = source / (category.icon + ".svg")
+            root = ElementTree.parse(icon).getroot()
+            self.assertEqual(root.tag, "{http://www.w3.org/2000/svg}svg")
+            self.assertEqual(root.get("viewBox"), "0 0 64 64")
+            self.assertTrue(root.find("{http://www.w3.org/2000/svg}title") is not None)
+            icons.append(icon.read_bytes())
+        self.assertEqual(len(set(icons)), 8)
 
 
 class Win7ArtworkTests(unittest.TestCase):

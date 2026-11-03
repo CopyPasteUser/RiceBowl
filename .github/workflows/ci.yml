@@ -27,9 +27,12 @@ jobs:
           timeout 18s dbus-run-session -- xvfb-run -a -s '-screen 0 1600x900x24' /usr/bin/python3 screenshots/capture_ten_shell.py
           timeout 18s dbus-run-session -- xvfb-run -a /usr/bin/python3 screenshots/capture_windows10.py
           timeout 18s dbus-run-session -- xvfb-run -a /usr/bin/python3 screenshots/capture_windows10_hub.py
-          for profile in aero windows10 winxp winclassic chromeos frutiger; do
+          for profile in windows10 winxp winclassic chromeos frutiger; do
             RICEHUB_PROFILE="$profile" timeout 24s dbus-run-session -- xvfb-run -a -s '-screen 0 1600x900x24' /usr/bin/python3 -c 'import os; from macrice.aero_shell import run; p=os.environ["RICEHUB_PROFILE"]; raise SystemExit(run([f"ricebowl-{p}-shell", "--capture-gallery"], profile=p))'
           done
+          # Aero Control Panel is now a real decorated window; run the XFWM4
+          # compositor-free native frame rather than capturing bare GTK only.
+          timeout 35s dbus-run-session -- xvfb-run -a -s '-screen 0 1600x900x24' /usr/bin/python3 screenshots/capture_win7_panel.py
           # Fail the release if any gallery screen silently failed to capture.
           # Flat Windows 98 teal compresses to ~28 KiB as a valid 1600x900 PNG;
           # size alone must not reject a real capture. The area-diff validation below
@@ -46,8 +49,9 @@ jobs:
           # XP 2001 layout must fit a real 1024x768 GTK/XFWM workarea as well.
           RICEBOWL_CAPTURE_SIZE=1024 timeout 24s dbus-run-session -- xvfb-run -a -s '-screen 0 1024x768x24' /usr/bin/python3 -c 'from macrice.aero_shell import run; raise SystemExit(run(["ricebowl-winxp-shell", "--capture-gallery"], profile="winxp"))'
           /usr/bin/python3 -c 'from pathlib import Path; import struct; fs=sorted(Path("screenshots").glob("ricebowl-winxp-*-0.9.1-1024.png")); assert len(fs)==2, "XP small-screen captures missing"; assert all(struct.unpack(">II", p.read_bytes()[16:24])==(1024,768) for p in fs), "XP 1024x768 capture invalid"'
-          # Windows 7 Aero must preserve the 42px taskbar and fully visible Start menu at 1024x768.
-          RICEBOWL_CAPTURE_SIZE=1024 timeout 24s dbus-run-session -- xvfb-run -a -s '-screen 0 1024x768x24' /usr/bin/python3 -c 'from macrice.aero_shell import run; raise SystemExit(run(["ricebowl-aero-shell", "--capture-gallery"], profile="aero"))'
+          # Windows 7 uses the historically sized 48px Superbar and a genuine
+          # framed Control Panel, both fitting a 1024x768 XFWM4 desktop.
+          RICEBOWL_CAPTURE_SIZE=1024 timeout 35s dbus-run-session -- xvfb-run -a -s '-screen 0 1024x768x24' /usr/bin/python3 screenshots/capture_win7_panel.py
           /usr/bin/python3 -c 'from pathlib import Path; import struct; fs=sorted(Path("screenshots").glob("ricebowl-aero-*-0.9.1-1024.png")); assert len(fs)==2, "Aero small-screen captures missing"; assert all(struct.unpack(">II", p.read_bytes()[16:24])==(1024,768) for p in fs), "Aero 1024x768 capture invalid"'
           # Aqua World must also fit on older 1024x768 laptops while preserving tab/search controls.
           RICEBOWL_CAPTURE_SIZE=1024 timeout 24s dbus-run-session -- xvfb-run -a -s '-screen 0 1024x768x24' /usr/bin/python3 -c 'from macrice.aero_shell import run; raise SystemExit(run(["ricebowl-frutiger-shell", "--capture-gallery"], profile="frutiger"))'
