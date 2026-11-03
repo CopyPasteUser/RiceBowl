@@ -44,6 +44,10 @@ def apply_rounded_window_shape(window, radius=26):
     """
     try:
         import cairo
+        import gi
+        # The PyGObject Cairo bridge registers cairo.Region as a foreign
+        # GObject type. python3-cairo alone does not register it with Gdk.
+        gi.require_foreign("cairo")
         native = window.get_window()
         if native is None:
             return False
@@ -61,7 +65,7 @@ def apply_rounded_window_shape(window, radius=26):
             region.union(cairo.RectangleInt(inset, height - y - 1,
                                              max(1, width - 2 * inset), 1))
         native.shape_combine_region(region, 0, 0)
-    except (ImportError, AttributeError, OSError, ValueError, TypeError):
+    except (ImportError, AttributeError, OSError, ValueError, TypeError, KeyError):
         pass
     return False
 

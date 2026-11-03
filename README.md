@@ -90,7 +90,7 @@ composite mockups have been removed to avoid presenting them as current builds.
 **Target:** XFCE on X11. Install as your regular desktop user, never with `sudo`.
 
 ```bash
-sudo apt install python3-gi python3-cairo gir1.2-gtk-3.0 gir1.2-wnck-3.0
+sudo apt install python3-gi python3-cairo python3-gi-cairo gir1.2-gtk-3.0 gir1.2-wnck-3.0
 git clone https://github.com/CopyPasteUser/RiceBowl.git
 cd RiceBowl
 bash install.sh --dry-run

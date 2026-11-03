@@ -46,6 +46,8 @@ class ChromeOSFidelityTests(unittest.TestCase):
         self.assertIn('"chromeos": (610, 628)', source)
         self.assertIn('396 if profile == "chromeos"', source)
         self.assertIn("apply_rounded_window_shape", source)
+        shape_source = (ROOT / "macrice/chrome_shell.py").read_text()
+        self.assertIn('gi.require_foreign("cairo")', shape_source)
         for token in (b"chrome-quick-root", b"chrome-app-card",
                       b"chrome-status-pill", b"chrome-clock-button"):
             self.assertIn(token, CSS)
