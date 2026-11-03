@@ -10,6 +10,8 @@
   search; ChromeOS settings links have distinct navigation chevrons.
 - Added disposable Xvfb/DBus workspace captures for six actual Thunar windows
   with per-rice GTK/icon styling and XFWM4 frames, rather than mockups.
+- Fixed top-level Thunar menu-item spacing in Aero, XP, ChromeOS and Frutiger,
+  preserving exact previous managed CSS blocks and unrelated user styles.
 - Physical Mint/Plank acceptance and macOS equivalent captures remain open.
   The tagged v0.9.1 release and existing user settings are unchanged.
 

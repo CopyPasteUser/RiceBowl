@@ -10,6 +10,8 @@
   button opening Start search; clarify ChromeOS settings-navigation chevrons.
 - [x] Implement isolated XFWM4 + actual Thunar screenshot automation for all six
   non-macOS identities, with per-rice icon, GTK and Thunar palettes.
+- [x] Use those authentic screenshots to detect Thunar's collapsed menu-item
+  spacing, repair only affected rices and preserve installed managed CSS.
 - [ ] Green CI visual review of 1600x900 and 1024x768 layouts; refresh the
   checked-in screenshots from the verified run.
 - [ ] Add same-revision, genuine macOS Aurora MacBar + dock + file-window
