@@ -37,11 +37,18 @@ def autostart_content(source_root: Path) -> str:
     icon = str(source_root / "assets/ten-start.svg").replace('"', '\\"')
     return (
         "[Desktop Entry]\nType=Application\nVersion=1.0\n"
-        "Name=RiceHub Windows 10 Taskbar\n"
+        "Name=RiceBowl Windows 10 Taskbar\n"
         "Comment=Windows 10-inspired Start menu and taskbar for XFCE/X11\n"
         f'Exec="{command}" windows10-shell\nIcon={icon}\n'
         "Terminal=false\nOnlyShowIn=XFCE;\nX-GNOME-Autostart-enabled=true\n"
         f"{MARKER}\n"
+    )
+
+
+def legacy_autostart_content(source_root: Path) -> str:
+    """Exact legacy managed entry, recognized during upgrades and restore."""
+    return autostart_content(source_root).replace(
+        "Name=RiceBowl Windows 10 Taskbar", "Name=RiceHub Windows 10 Taskbar"
     )
 
 
@@ -55,8 +62,8 @@ def read_autostart(config_root: Path) -> str | None:
         raise AeroAssetError("Unexpected file at Windows 10 autostart path")
     content = target.read_text(encoding="utf-8")
     from .installer import project_root
-    if content != autostart_content(project_root()):
-        raise AeroAssetError("Existing Windows 10 autostart is not managed by RiceHub or was customized")
+    if content not in (autostart_content(project_root()), legacy_autostart_content(project_root())):
+        raise AeroAssetError("Existing Windows 10 autostart is not managed by RiceBowl or was customized")
     return content
 
 
@@ -67,7 +74,7 @@ def write_autostart(config_root: Path, content: str | None) -> None:
         target.unlink(missing_ok=True)
         return
     from .installer import project_root
-    if content != autostart_content(project_root()):
+    if content not in (autostart_content(project_root()), legacy_autostart_content(project_root())):
         raise AeroAssetError("Refusing non-canonical Windows 10 autostart content")
     target.parent.mkdir(parents=True, exist_ok=True)
     fd, temp = tempfile.mkstemp(prefix=".ricehub-ten-start-", dir=target.parent)
