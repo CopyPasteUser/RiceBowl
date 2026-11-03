@@ -200,7 +200,7 @@ def _write_entrypoints(installed: Path) -> None:
         "Name=MacRice Settings\nComment=Manage the macOS-inspired XFCE desktop\n"
         f'Exec="{launcher}" gui\n'
         f"Icon={installed / 'assets/macrice-symbolic.svg'}\n"
-        "Terminal=false\nCategories=Settings;Utility;\nStartupNotify=true\n"
+        "Terminal=false\nCategories=Settings;Utility;\nStartupNotify=true\nNoDisplay=true\n"
         f"{DESKTOP_MARKER}\n"
     )
     _atomic_write(desktop, desktop_content, 0o644)

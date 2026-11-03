@@ -58,7 +58,11 @@ class InstallerTests(unittest.TestCase):
                 self.assertTrue(os.access(wrapper, os.X_OK))
                 entry = (base / "data/applications/macrice.desktop").read_text()
                 self.assertIn("Name=MacRice Settings", entry)
+                self.assertIn("NoDisplay=true\n", entry)
                 self.assertNotIn("sudo", entry)
+                bowl_entry = (base / "data/applications/ricebowl.desktop").read_text()
+                self.assertIn("Name=RiceBowl\n", bowl_entry)
+                self.assertNotIn("NoDisplay=true", bowl_entry)
                 hub = base / "bin" / "ricehub"
                 self.assertTrue(os.access(hub, os.X_OK))
                 self.assertIn('" hub "$@"', hub.read_text())
