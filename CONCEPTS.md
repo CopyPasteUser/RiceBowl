@@ -1,4 +1,4 @@
-# Four new RiceHub rices · 0.6 release roadmap
+# RiceBowl · Four historic 0.6 rice studies
 
 The four additional installable desktop styles are Windows XP Luna, Windows
 98/2000 Classic, ChromeOS and Y2K / Frutiger Aero. They are original XFCE/X11
@@ -39,7 +39,7 @@ separate from the live installable versions.
 
 ### P0 — Design validation (completed in the concept stage)
 
-- [x] Initially include the four families in RiceHub Discover as **Prototype only** before their 0.6 promotion.
+- [x] Initially include the four families in RiceBowl Discover as **Prototype only** before their 0.6 promotion.
 - [x] Create a distinct themed GTK3 teaser for each family.
 - [x] Provide an interactive, no-write desktop preview with launcher, search,
   empty-results state, sample file-manager window and task buttons.
@@ -92,7 +92,7 @@ real Linux Mint XFCE/X11 acceptance is the outstanding 1.0 gate.
 
 ## Try the full rices and previews
 
-Open `ricehub` → **Discover rices** → choose a family → **Check requirements**
+Open `ricebowl` → **Discover rices** → choose a family → **Check requirements**
 → **Apply rice**. Alternatively, use `macrice rice plan winxp` before applying
 from the terminal. The **Explore read-only preview** button opens a separate,
 non-installing illustration; preview sample windows still never launch apps.
