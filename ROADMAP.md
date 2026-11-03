@@ -12,8 +12,8 @@
   non-macOS identities, with per-rice icon, GTK and Thunar palettes.
 - [x] Use those authentic screenshots to detect Thunar's collapsed menu-item
   spacing, repair only affected rices and preserve installed managed CSS.
-- [ ] Green CI visual review of 1600x900 and 1024x768 layouts; refresh the
-  checked-in screenshots from the verified run.
+- [x] Green CI and visual review of 1600x900 and 1024x768 layouts; refresh the
+  checked-in screenshots from the verified run, including six real workspaces.
 - [ ] Add same-revision, genuine macOS Aurora MacBar + dock + file-window
   captures; do not reuse historical composite mockups.
 - [ ] Owner run: repeated seven-rice switch/restore on Mint XFCE with Plank
