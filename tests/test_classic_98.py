@@ -66,6 +66,10 @@ class Win98FidelityTests(unittest.TestCase):
         self.assertIn("xfce4-appfinder", shell)
         self.assertIn("xfce4-keyboard-settings", shell)
         self.assertIn("classic-control-caption", shell)
+        self.assertIn("classic-control-grid", shell)
+        self.assertIn("grid.attach(button, index % 3", shell)
+        self.assertIn("Gtk.Orientation.VERTICAL if classic_icon", shell)
+        self.assertIn("Gtk.Justification.CENTER", shell)
         self.assertIn("Close Control Panel", shell)
         self.assertEqual(PROFILES["winclassic"].wallpaper, "classic-teal.jpg")
 
@@ -73,6 +77,7 @@ class Win98FidelityTests(unittest.TestCase):
         css = CSS["winclassic"]
         for token in (b".classic-chevron", b".classic-menu-list", b".classic-brand-label",
                       b".classic-control-caption", b".classic-control-close",
+                      b".classic-control-grid",
                       b".classic-menu-item:focus", b"min-height: 34px", b"#000080"):
             self.assertIn(token, css)
         self.assertNotIn(b".classic-chevron", CSS["winxp"])

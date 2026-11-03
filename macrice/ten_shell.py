@@ -78,11 +78,11 @@ CSS = b"""
 .aero-tray-icon { background: transparent; border: 0; border-radius: 0; }
 .aero-tray-icon:hover { background: #333338; }
 .ten-search {
-  background: #eeeeee; color: #242424; border: 1px solid #a0a0a0;
-  border-radius: 0; box-shadow: none; padding: 7px 13px; min-width: 180px;
+  background: transparent; color: #f1f1f1; border: 0;
+  border-radius: 0; box-shadow: none; padding: 6px 10px; min-width: 36px;
   font-family: "Segoe UI", "Noto Sans", sans-serif; font-size: 12px;
 }
-.ten-search:hover, .ten-search:focus { background: white; border-color: @ten-blue; }
+.ten-search:hover, .ten-search:focus { background: #333338; }
 
 .aero-menu-root, .ten-action-root {
   background: @ten-surface; color: @ten-text; border: 1px solid #424242;

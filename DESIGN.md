@@ -37,9 +37,12 @@ original Linux artwork. Windows 11 and Liquid Glass are out of scope.
   Frutiger Aero). Stable profile keys `aero-meadow` / `aero-cascade` remain for
   backup compatibility; their visible names are **Aero Seven Blue / Night**.
   Runtime colors are owned by the `win7-*` CSS in `aero_shell.py` and mirrored
-  here as design intent. XP, Classic, Frutiger and Ten stay untouched.
+  here as design intent. Its wider Control Panel has category search and a
+  distinct pale-blue hardware summary; unavailable system tools stay visibly
+  disabled but legible. XP, Classic, Frutiger and Ten stay untouched.
 - **Windows 10:** native 22H2-era flat charcoal (#101014) 40px taskbar,
-  compact four-pane/penguin Start mark, bright-but-square search, icon-first
+  compact four-pane/penguin Start mark, icon-only taskbar search opening the
+  functional Start search field (not two simultaneous search boxes), icon-first
   running-app buttons with active bottom underline, real network/audio/battery
   status and a two-line clock. The ten-shell GTK CSS in macrice/ten_shell.py
   owns the runtime #0078d7 accent and rectangular hover/focus treatments.
@@ -61,7 +64,9 @@ original Linux artwork. Windows 11 and Liquid Glass are out of scope.
   colors and states are in `heritage_shell.DETAIL_CSS["winxp"]`.
   `scripts/build_heritage_assets.py --luna-only` refreshes the original drawn
   XFWM4 titlebar/button states and layered GTK/Thunar controls without touching
-  other reviewed themes. XP artwork is original; preserve valid installed
+  other reviewed themes. Its category-first, single-column Control Panel is tall
+  enough to expose status and real audio controls on normal displays, with a
+  scroll fallback on compact screens. XP artwork is original; preserve valid installed
   `.desktop` launchers and disabled unavailable Linux utilities.
 - **98 / 2000:** visually faithful 1998 desktop: solid `#008080` wallpaper,
   compact 34px `#c0c0c0` taskbar, 19px original CRT/penguin Start badge,
@@ -77,6 +82,8 @@ original Linux artwork. Windows 11 and Liquid Glass are out of scope.
   curated folder artwork. `assets/trusted-ricebowl-classic-before-fidelity.json`
   enables safe, backup-backed upgrades of byte-identical older managed assets.
   The palette must never use gloss, water, transparency or XP-rounded controls.
+  Its Control Panel uses an inset three-column icon view with centered labels
+  and a vintage caption, rather than Luna's category navigation list.
 - **ChromeOS / Material You:** independent pastel-indigo `#e7e9f8` and iris
   `#4b66d7` identity with an original flowing wallpaper, 56px shelf,
   consistent app circles, window activity underline and accessible status pill.
@@ -87,7 +94,9 @@ original Linux artwork. Windows 11 and Liquid Glass are out of scope.
   popup with date, verified Linux volume/mute, real network and battery status
   and only installed XFCE/NetworkManager utility navigation. It deliberately
   does not pretend to toggle Wi-Fi, Bluetooth or notifications; XFCE still
-  owns notifications. `macrice/chrome_shell.py` owns Chrome-only selectors and
+  owns notifications. Settings links use navigation chevrons, reserving toggle
+  affordances for real controls whose state is verified.
+  `macrice/chrome_shell.py` owns Chrome-only selectors and
   optional X11 rounded popup window shapes even without a compositor.
   `scripts/build_chrome_assets.py` generates this profile's original wallpaper,
   35px XFWM4 frames/buttons and light GTK3/Thunar styles. Rebuild with
@@ -138,3 +147,9 @@ Headless tests, native GTK/Xvfb shell smoke, window-close crash regression,
 fresh install, login reconcile, rapid multi-rice switching and real Mint XFCE
 hardware tests must pass before declaring a fully stable release. Screenshots
 must be real X11 captures or explicitly labeled illustrations.
+
+The gallery also needs genuine Thunar processes for all six non-macOS rices,
+with their own GTK, icon and XFWM4 themes under a real X11 window manager.
+Disposable `*-workspace-*` captures are not image-composited file managers.
+macOS still needs an equivalent current live MacBar/Plank capture. Neither
+CI alone nor mockups replace the owner's real Mint/Plank sign-off.

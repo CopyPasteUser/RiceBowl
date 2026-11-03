@@ -1,5 +1,18 @@
 # RiceBowl changelog
 
+## Unreleased — Cross-rice visual QA and native application coverage (3 November 2026)
+
+- Fixed short initial XP Luna/Classic Control Panels and added a capture-time
+  regression check for initially hidden volume/mute controls.
+- Refined Classic settings to a 1998-style icon view; added functioning Windows 7
+  Control Panel search and improved disabled-link contrast in Win7 and XP.
+- Reduced Windows 10 taskbar search to a compact button opening existing app
+  search; ChromeOS settings links have distinct navigation chevrons.
+- Added disposable Xvfb/DBus workspace captures for six actual Thunar windows
+  with per-rice GTK/icon styling and XFWM4 frames, rather than mockups.
+- Physical Mint/Plank acceptance and macOS equivalent captures remain open.
+  The tagged v0.9.1 release and existing user settings are unchanged.
+
 ## Unreleased — ChromeOS Material You native fidelity (3 November 2026)
 
 - Rebuilt the 56px ChromeOS shelf with native Gio pinned and running app icons,

@@ -60,6 +60,13 @@ class LunaProgramsTests(unittest.TestCase):
 
 
 class LunaGeometryTests(unittest.TestCase):
+    def test_control_panel_is_tall_enough_for_the_device_controls(self):
+        shell = (project_root() / "macrice/aero_shell.py").read_text()
+        self.assertIn('"winxp": 630', shell)
+        self.assertIn('"winclassic": 570', shell)
+        self.assertIn('self._assert_control_footer_visible()', shell)
+        self.assertIn('action_heights.get(profile, 430)', shell)
+
     def test_40px_taskbar_menu_above_panel_on_common_screens(self):
         for x, y, width, height in ((0, 0, 1600, 900), (0, 0, 1024, 768),
                                      (1600, 90, 1024, 768), (-1280, 0, 1280, 800)):

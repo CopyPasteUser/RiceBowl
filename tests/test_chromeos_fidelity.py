@@ -62,6 +62,8 @@ class ChromeOSFidelityTests(unittest.TestCase):
         self.assertIn("shutil.which(command)", source)
         self.assertIn("shell._queue_volume_change", source)
         self.assertIn("shell._toggle_output_mute", source)
+        self.assertIn('Gtk.Label(label="›"), "chrome-quick-chevron"', source)
+        self.assertIn(b".chrome-quick-chevron", CSS)
         self.assertNotIn("sudo", source)
 
     def test_generated_art_and_safe_prior_hashes(self):

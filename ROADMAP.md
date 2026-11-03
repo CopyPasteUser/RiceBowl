@@ -1,5 +1,24 @@
 # RiceBowl roadmap to 1.0
 
+## Post-0.9.1 — Cross-rice visual QA and real-window coverage (3 November 2026)
+
+- [x] Correct XP Luna and Classic Control Panel initial heights, keeping their
+  volume/mute controls reachable and retaining scroll on compact desktops.
+- [x] Make Classic's Control Panel a three-column icon view rather than an
+  XP-style category list; add Win7 category search and legible inactive links.
+- [x] Replace Windows 10's oversized duplicate taskbar search box with a compact
+  button opening Start search; clarify ChromeOS settings-navigation chevrons.
+- [x] Implement isolated XFWM4 + actual Thunar screenshot automation for all six
+  non-macOS identities, with per-rice icon, GTK and Thunar palettes.
+- [ ] Green CI visual review of 1600x900 and 1024x768 layouts; refresh the
+  checked-in screenshots from the verified run.
+- [ ] Add same-revision, genuine macOS Aurora MacBar + dock + file-window
+  captures; do not reuse historical composite mockups.
+- [ ] Owner run: repeated seven-rice switch/restore on Mint XFCE with Plank
+  autostart, shortcuts, battery, suspend and external HDMI.
+- [ ] Measure actual startup latency, CPU and proportional RAM on the owner's
+  ThinkPad before calling this a stable 1.0 release.
+
 **Next visual-fidelity milestone:** [Windows 7 Aero fidelity and acceptance](WIN7_AERO_ROADMAP.md)
 — a native icon-first Superbar, actual Aero Start menu, original custom-drawn
 XFWM4/GTK artwork, safe upgrade and real-X11 verification. The [XP Luna fidelity](XP_LUNA_ROADMAP.md)

@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install GTK introspection for Linux tests
-        run: sudo apt-get update && sudo apt-get install -y python3-gi python3-cairo python3-gi-cairo python3-pil gir1.2-gtk-3.0 xvfb dbus-x11 gir1.2-wnck-3.0 librsvg2-common xfwm4
+        run: sudo apt-get update && sudo apt-get install -y python3-gi python3-cairo python3-gi-cairo python3-pil gir1.2-gtk-3.0 xvfb dbus-x11 gir1.2-wnck-3.0 librsvg2-common xfwm4 xfconf thunar xdotool
       - name: Validate and test the suite
         run: |
           /usr/bin/python3 -m compileall -q macrice launcher.py
@@ -36,6 +36,13 @@ jobs:
           # independently proves that the functional control panel rendered.
           /usr/bin/python3 -c 'from pathlib import Path; import hashlib, struct; fs=sorted(Path("screenshots").glob("ricebowl-*-0.9.1.png")); assert len(fs)==12, f"Expected 12 GTK captures, found {len(fs)}"; data=[p.read_bytes() for p in fs]; assert all(len(b)>15000 and b[:8]==bytes.fromhex("89504e470d0a1a0a") and struct.unpack(">II", b[16:24])==(1600,900) for b in data), "Invalid or incomplete screenshot"; assert len({hashlib.sha256(b).digest() for b in data})==12, "Duplicate screenshot detected"'
           /usr/bin/python3 screenshots/validate_gallery.py
+          # Each desktop must also render a REAL application window, with its
+          # own GTK theme, icons, Thunar controls and native XFWM4 titlebar.
+          # The helper uses a temporary HOME inside a fresh DBus/Xvfb session.
+          for profile in aero windows10 winxp winclassic chromeos frutiger; do
+            timeout 35s dbus-run-session -- xvfb-run -a -s '-screen 0 1600x900x24' /usr/bin/python3 screenshots/capture_native_workspace.py "$profile"
+          done
+          /usr/bin/python3 -c 'from pathlib import Path; import struct; fs=sorted(Path("screenshots").glob("ricebowl-*-workspace-0.9.1.png")); assert len(fs)==6, f"Expected 6 genuine workspace captures, got {len(fs)}"; assert all(p.stat().st_size>30000 and struct.unpack(">II",p.read_bytes()[16:24])==(1600,900) for p in fs),"Invalid native XFWM4/Thunar screenshot"'
           # XP 2001 layout must fit a real 1024x768 GTK/XFWM workarea as well.
           RICEBOWL_CAPTURE_SIZE=1024 timeout 24s dbus-run-session -- xvfb-run -a -s '-screen 0 1024x768x24' /usr/bin/python3 -c 'from macrice.aero_shell import run; raise SystemExit(run(["ricebowl-winxp-shell", "--capture-gallery"], profile="winxp"))'
           /usr/bin/python3 -c 'from pathlib import Path; import struct; fs=sorted(Path("screenshots").glob("ricebowl-winxp-*-0.9.1-1024.png")); assert len(fs)==2, "XP small-screen captures missing"; assert all(struct.unpack(">II", p.read_bytes()[16:24])==(1024,768) for p in fs), "XP 1024x768 capture invalid"'

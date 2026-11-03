@@ -164,6 +164,7 @@ CSS = b"""
   border-color: #e0e3ec; }
 .chrome-quick-action { color: @chrome-ink; font-size: 11px; font-weight: 600; }
 .chrome-quick-detail { color: #596782; font-size: 10px; }
+.chrome-quick-chevron { color: #536aa9; font-size: 21px; font-weight: 600; }
 .chrome-quick-icon { color: #394f8f; }
 .chrome-surface { background: #eef0fa; border: 1px solid #e3e6f2;
   border-radius: 19px; padding: 11px; }

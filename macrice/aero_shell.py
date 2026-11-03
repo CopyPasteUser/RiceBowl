@@ -244,7 +244,7 @@ CSS = b"""
   border-radius: 3px; box-shadow: none; padding: 6px 3px; }
 .win7-place label { color: #fff; font-weight: bold; font-size: 11px; }
 .win7-place:hover, .win7-place:focus { background: rgba(235,250,255,.33); border-color: rgba(255,255,255,.6); }
-.win7-place:disabled label { color: #a8bfd0; }
+.win7-place:disabled label { color: #e1ebf5; }
 .win7-side-separator { background: rgba(227,248,255,.36); min-height: 1px; margin: 6px 3px; }
 .win7-power { color: #fff; border: 1px solid #9f622e; border-radius: 3px;
   background-image: linear-gradient(to bottom, #ffba7e, #e38942 48%, #ad5721 52%, #c77632);
@@ -276,6 +276,9 @@ CSS = b"""
 .win7-hardware { background: rgba(244,250,254,.94); border: 1px solid #c1d9ea;
   border-radius: 3px; padding: 8px; }
 .win7-hardware .rice-control-detail { color: #2b526d; }
+.win7-control-search { background: #fff; color: #1f4059;
+  border: 1px solid #91b8d4; border-radius: 2px; padding: 5px 8px; }
+.win7-control-search:focus { border-color: #328dca; }
 .win7-group-count { color: #fff; font-size: 10px; font-weight: bold;
   background: #246da9; border: 1px solid #caefff; border-radius: 8px;
   min-width: 12px; padding: 0 2px; }
@@ -306,6 +309,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     40 if profile in ("winxp", "windows10") else
                     56 if profile == "chromeos" else
                     42 if profile == "aero" else PANEL_HEIGHT)
+    action_heights = {"winxp": 630, "winclassic": 570, "aero": 530,
+                      "frutiger": 560, "chromeos": 608, "windows10": 680}
     if ten:
         from .ten_shell import APP_ID as TEN_APP_ID, CSS as TEN_CSS
     if heritage:
@@ -406,6 +411,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 return 0
             self._smoke = "--smoke-test" in args
             self._capture_gallery = "--capture-gallery" in args
+            self._capture_workspace = "--capture-workspace" in args
             self._capture_variant = "-1024" if (
                 profile in ("winxp", "aero", "frutiger", "winclassic", "windows10", "chromeos")
                 and os.environ.get("RICEBOWL_CAPTURE_SIZE") == "1024") else ""
@@ -414,6 +420,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 GLib.timeout_add(850, self._smoke_check)
             if self._capture_gallery:
                 GLib.timeout_add(950, self._capture_start)
+            if self._capture_workspace:
+                GLib.timeout_add(950, self._capture_workspace_start)
             return 0
 
         def do_activate(self):
@@ -436,7 +444,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 logging.getLogger(__name__).warning("Aero pins are unavailable: %s", exc)
                 saved = None
             self._pinned_ids = default_pins(self.apps) if saved is None else saved
-            if self._capture_gallery:
+            if self._capture_gallery or self._capture_workspace:
                 self._capture_background()
             self._create_taskbar()
             self._create_menu()
@@ -558,7 +566,73 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
         def _capture_actions(self):
             try:
                 self._assert_popup_on_monitor(self.actions)
+                if profile in ("winxp", "winclassic"):
+                    self._assert_control_footer_visible()
                 self._capture_screen(f"ricebowl-{profile}-controls-0.9.1{self._capture_variant}.png")
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._smoke_failed = True
+            self.quit()
+            return False
+
+        def _capture_workspace_start(self):
+            """Open an actual file-manager window under the active XFWM theme."""
+            try:
+                import subprocess
+
+                fixture = os.environ.get("RICEBOWL_CAPTURE_FIXTURE_DIR", "")
+                if not fixture or not Path(fixture).is_dir():
+                    raise RuntimeError("Missing isolated screenshot fixture directory")
+                self._capture_file_manager = subprocess.Popen(
+                    ["thunar", "--window", fixture], stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL)
+                GLib.timeout_add(1500, self._capture_workspace_position)
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._smoke_failed = True
+                self.quit()
+            return False
+
+        def _capture_workspace_position(self):
+            try:
+                import subprocess
+
+                result = subprocess.run(
+                    ["xdotool", "search", "--onlyvisible", "--class", "Thunar"],
+                    check=True, capture_output=True, text=True, timeout=4)
+                window_id = result.stdout.splitlines()[-1].strip()
+                if not window_id.isdecimal():
+                    raise AssertionError("Thunar has no mapped X11 window")
+                for args in (("windowsize", window_id, "1020", "640"),
+                             ("windowmove", window_id, "290", "105"),
+                             ("windowactivate", "--sync", window_id)):
+                    subprocess.run(["xdotool", *args], check=True, timeout=4,
+                                   capture_output=True)
+                GLib.timeout_add(420, self._capture_workspace_finish)
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._smoke_failed = True
+                self.quit()
+            return False
+
+        def _capture_workspace_finish(self):
+            try:
+                # Exercise actual Wnck-based window integration, not a fake
+                # screenshot composed from image assets or shell widgets.
+                if self._window_tracker is None:
+                    raise AssertionError("Native Wnck window tracking is unavailable")
+                screen = self._window_tracker.screen
+                screen.force_update()
+                if not any(
+                        "thunar" in (window.get_name() or "").casefold()
+                        or (window.get_class_group() is not None and
+                            "thunar" in (window.get_class_group().get_id() or "").casefold())
+                        for window in screen.get_windows()):
+                    raise AssertionError("Real Thunar window missing from XFWM4 workspace")
+                self._capture_screen(f"ricebowl-{profile}-workspace-0.9.1.png")
             except Exception:
                 import traceback
                 traceback.print_exc()
@@ -586,6 +660,14 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             if link is None or footer is None or link[1] < 0 or (
                     link[1] + self.luna_run_link.get_allocated_height() > footer[1]):
                 raise AssertionError("XP Luna Run action is clipped by its footer")
+
+        def _assert_control_footer_visible(self):
+            """Keep the mute/status controls visible without an initial scroll."""
+            location = self.mute_button.translate_coordinates(self.actions, 0, 0)
+            if location is None or location[1] < 0 or (
+                    location[1] + self.mute_button.get_allocated_height() >
+                    self.actions.get_allocated_height() - 8):
+                raise AssertionError(f"{profile} device controls are clipped on open")
 
         def _shutdown(self, *_args):
             if profile == "aero":
@@ -1170,11 +1252,13 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 shelf_box = row
             self.start_button = start
             if ten:
-                search_button = self._class(Gtk.Button(label="⌕  Type here to search"), "ten-search")
+                # Windows 10 supports the compact taskbar search-icon mode.
+                # The functional text field remains inside Start, not twice on screen.
+                search_button = self._class(Gtk.Button(), "ten-search")
+                search_button.add(self._icon("edit-find", Gtk.IconSize.BUTTON))
                 search_button.get_accessible().set_name("Search installed applications")
+                search_button.set_tooltip_text("Search installed applications")
                 search_button.connect("clicked", lambda _button: self._open_search())
-                if rect.width < 1000:
-                    search_button.set_label("⌕")
                 row.pack_start(search_button, False, False, 0)
             self.pinned_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
             if profile == "frutiger":
@@ -2689,8 +2773,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             # A non-resizable utility window collapses to its first header,
             # making the controls look like a clipped title strip.
             actions.set_resizable(True)
-            actions.set_default_size(382 if profile == "winclassic" else 362 if profile == "frutiger" else 330,
-                                     488 if profile == "winclassic" else 560 if profile == "frutiger" else 430)
+            rect = self._desktop_rect()
+            actions.set_default_size(
+                382 if profile == "winclassic" else 362 if profile == "frutiger" else
+                412 if profile == "aero" else 330,
+                min(action_heights.get(profile, 430), rect.height - panel_height - 16))
             actions.set_skip_taskbar_hint(True)
             actions.set_skip_pager_hint(True)
             actions.set_type_hint(Gdk.WindowTypeHint.UTILITY)
@@ -2777,19 +2864,36 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                       ("Settings", "preferences-system", "xfce4-settings-manager"))),
                 )
 
+            category_buttons = []
+            if profile == "aero":
+                search = self._class(Gtk.SearchEntry(), "win7-control-search")
+                search.set_placeholder_text("Search Control Panel")
+                search.get_accessible().set_name("Search Control Panel settings")
+                root.pack_start(search, False, False, 0)
             for section_title, entries in sections:
                 section = self._class(Gtk.Label(label=section_title, xalign=0), "aero-menu-sub")
                 root.pack_start(section, False, False, 0)
                 grid = Gtk.Grid(row_spacing=5, column_spacing=5)
+                if profile == "winclassic":
+                    grid.get_style_context().add_class("classic-control-grid")
                 for index, (label, icon_name, command) in enumerate(entries):
                     button = self._class(Gtk.Button(), "ten-quick" if tiles else "aero-control-quick")
                     if profile == "aero":
                         button.get_style_context().add_class("win7-control-tool")
-                    contents = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
-                    contents.pack_start(self._icon(icon_name, Gtk.IconSize.MENU), False, False, 0)
-                    caption = Gtk.Label(label=label, xalign=0)
+                    classic_icon = profile == "winclassic"
+                    contents = Gtk.Box(
+                        orientation=(Gtk.Orientation.VERTICAL if classic_icon else
+                                     Gtk.Orientation.HORIZONTAL), spacing=5 if classic_icon else 7)
+                    contents.pack_start(
+                        self._icon(icon_name, Gtk.IconSize.LARGE_TOOLBAR if classic_icon else
+                                   Gtk.IconSize.MENU), False, False, 0)
+                    caption = Gtk.Label(label=label, xalign=0.5 if classic_icon else 0)
                     caption.set_line_wrap(True)
-                    caption.set_max_width_chars(27 if profile == "winxp" else 20)
+                    caption.set_max_width_chars(
+                        12 if classic_icon else 27 if profile == "winxp" else 20)
+                    if classic_icon:
+                        caption.set_justify(Gtk.Justification.CENTER)
+                        button.set_hexpand(True)
                     contents.pack_start(caption, True, True, 0)
                     button.add(contents)
                     button.set_tooltip_text("Open " + label if shutil.which(command) else
@@ -2797,13 +2901,31 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     button.get_accessible().set_name("Open " + label)
                     button.set_sensitive(shutil.which(command) is not None)
                     button.connect("clicked", lambda _button, cmd=command: self._open_tool(cmd))
+                    if profile == "aero":
+                        category_buttons.append((label, button))
                     # XP category names are full-length navigation entries, not
                     # tiny quick-action tiles: a two-column layout overflows 330px.
                     if profile == "winxp":
                         grid.attach(button, 0, index, 1, 1)
+                    elif profile == "winclassic":
+                        grid.attach(button, index % 3, index // 3, 1, 1)
                     else:
                         grid.attach(button, index % 2, index // 2, 1, 1)
                 root.pack_start(grid, False, False, 0)
+            if profile == "aero":
+                empty_settings = self._class(Gtk.Label(label="No matching settings", xalign=0),
+                                             "aero-menu-sub")
+                empty_settings.set_no_show_all(True)
+                root.pack_start(empty_settings, False, False, 0)
+
+                def filter_settings(entry):
+                    needle = entry.get_text().casefold().strip()
+                    for label, button in category_buttons:
+                        button.set_visible(needle in label.casefold())
+                    empty_settings.set_visible(not any(button.get_visible()
+                                                       for _, button in category_buttons))
+
+                search.connect("search-changed", filter_settings)
 
             # Actual hardware information and a VERIFIED volume slider make
             # this a usable control panel rather than decorative quick tiles.
@@ -2904,9 +3026,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 return
             self._hide_menu()
             rect = self._desktop_rect()
-            width = min(396 if profile == "chromeos" else 362 if ten else 382 if profile == "winclassic" else 362 if profile == "frutiger" else 330,
+            width = min(396 if profile == "chromeos" else 362 if ten else 382 if profile == "winclassic" else 362 if profile == "frutiger" else 412 if profile == "aero" else 330,
                         max(0, rect.width - 16))
-            height = min(608 if profile == "chromeos" else 680 if ten else 488 if profile == "winclassic" else 560 if profile == "frutiger" else 430,
+            height = min(action_heights.get(profile, 430),
                          max(0, rect.height - panel_height - 16))
             if width < 235 or height < 250:
                 self._error("The display is too small for " + ("Action Center." if ten else "Control Panel."))

@@ -78,9 +78,13 @@ def build(shell, Gtk, Gdk, GLib):
         detail = shell._class(Gtk.Label(label=explanation, xalign=0),
                               "chrome-quick-detail")
         detail.set_ellipsize(Pango.EllipsizeMode.END)
-        detail.set_max_width_chars(17)
+        detail.set_max_width_chars(15)
         description.pack_start(detail, False, False, 0)
         content.pack_start(description, True, True, 0)
+        # These launch real Linux settings; the chevron makes that different
+        # from the actual on/off controls below, which verify their state.
+        arrow = shell._class(Gtk.Label(label="›"), "chrome-quick-chevron")
+        content.pack_end(arrow, False, False, 0)
         button.add(content)
         button.get_accessible().set_name("Open " + name + " settings")
         available = shutil.which(command) is not None

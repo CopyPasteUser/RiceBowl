@@ -59,6 +59,10 @@ class Win7MenuTests(unittest.TestCase):
                      b"win7-program", b"win7-side", b"win7-power"):
             self.assertIn(name, CSS)
         self.assertIn(b".aero-taskbar.win7-taskbar", CSS)
+        self.assertIn(b".win7-control-search", CSS)
+        shell = (project_root() / "macrice/aero_shell.py").read_text()
+        self.assertIn('search.set_placeholder_text("Search Control Panel")', shell)
+        self.assertIn('"aero": 530', shell)
 
 
 class Win7ArtworkTests(unittest.TestCase):
