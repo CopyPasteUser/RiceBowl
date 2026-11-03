@@ -1,4 +1,4 @@
-"""Read-only Windows 10-inspired desktop concept for the RiceHub gallery.
+"""Read-only Windows 10-inspired desktop concept for the RiceBowl gallery.
 
 All program entries and quick actions in this preview are examples. This
 module never launches programs, modifies XFCE, or creates background services.
@@ -116,7 +116,7 @@ def _box(Gtk, orientation, spacing=0):
 
 
 def teaser(Gtk):
-    """Compact read-only concept preview in RiceHub's Discover gallery."""
+    """Compact read-only concept preview in RiceBowl's Discover gallery."""
     card = _style(_box(Gtk, Gtk.Orientation.VERTICAL, 8), "w10-hero")
     card.set_size_request(-1, 190)
     title = _label(Gtk, "Windows 10 · XFCE edition", "w10-hero-title")
@@ -141,7 +141,7 @@ def show_dialog(parent, Gtk, Gdk, GLib, screenshot_paths=None):
     from .installer import project_root
 
     install_css(Gtk, Gdk)
-    dialog = Gtk.Dialog(title="Windows 10 — RiceHub prototype", transient_for=parent,
+    dialog = Gtk.Dialog(title="Windows 10 — RiceBowl prototype", transient_for=parent,
                         flags=Gtk.DialogFlags.MODAL)
     _style(dialog, "w10-dialog")
     dialog.set_default_size(1050, 700)
