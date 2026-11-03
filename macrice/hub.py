@@ -29,9 +29,9 @@ TOKENS = {
 }
 
 CSS = """/* RiceBowl native GTK3 app screen — measured, accessible, low-motion. */
-#ricehub-window {{ background: {window}; color: {text}; }}
-#ricehub-sidebar {{ background: {sidebar}; border-right: 1px solid {border}; }}
-#ricehub-content {{ background: {window}; }}
+#ricebowl-window {{ background: {window}; color: {text}; }}
+#ricebowl-sidebar {{ background: {sidebar}; border-right: 1px solid {border}; }}
+#ricebowl-content {{ background: {window}; }}
 .hub-brand {{ color: {text}; font-family: {font}; font-size: 20px; font-weight: 700; }}
 .hub-overline {{ color: {quiet}; font-size: 11px; }}
 .hub-header {{ color: {text}; font-family: {font}; font-size: 25px; font-weight: 700; }}
@@ -150,7 +150,7 @@ def run() -> int:
     class HubWindow(Gtk.ApplicationWindow):
         def __init__(self, application):
             super().__init__(application=application, title="RiceBowl — XFCE Rices")
-            self.set_name("ricehub-window")
+            self.set_name("ricebowl-window")
             self.set_default_size(1060, 720)
             self.set_size_request(760, 510)
             self.set_position(Gtk.WindowPosition.CENTER)
@@ -172,7 +172,7 @@ def run() -> int:
             self.add(layout)
             self._build_sidebar(layout)
             area = vertical(0)
-            area.set_name("ricehub-content")
+            area.set_name("ricebowl-content")
             layout.pack_start(area, True, True, 0)
             self.pages = Gtk.Stack()
             self.pages.set_transition_type(Gtk.StackTransitionType.NONE)
@@ -198,7 +198,7 @@ def run() -> int:
 
         def _build_sidebar(self, layout):
             side = vertical(16)
-            side.set_name("ricehub-sidebar")
+            side.set_name("ricebowl-sidebar")
             side.set_size_request(206, -1)
             side.set_margin_top(23)
             side.set_margin_bottom(18)
@@ -207,7 +207,7 @@ def run() -> int:
             layout.pack_start(side, False, False, 0)
 
             brand = horizontal(11)
-            symbol = project_root() / "assets/ricehub-symbolic.svg"
+            symbol = project_root() / "assets/ricebowl-symbolic.svg"
             if symbol.is_file():
                 try:
                     pixbuf = GdkPixbuf.Pixbuf.new_from_file_at_scale(str(symbol), 36, 36, True)
@@ -823,5 +823,5 @@ def run() -> int:
             startup_failed = True
 
     app.connect("activate", activate)
-    status = app.run(["ricehub"])
+    status = app.run(["ricebowl"])
     return 1 if startup_failed else status
