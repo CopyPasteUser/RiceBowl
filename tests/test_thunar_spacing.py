@@ -66,8 +66,26 @@ class ThunarMenubarTests(unittest.TestCase):
                          "window.thunar .standard-view", "window.thunar statusbar"):
             self.assertIn(selector, css)
         self.assertNotIn("Seven Explorer", _block("winxp"))
-        self.assertEqual(_block("winxp"), _v091_block("winxp"))
+        self.assertIn("Luna Explorer", _block("winxp"))
+        self.assertNotIn("Luna Explorer", _block("aero"))
+        self.assertNotIn("Luna Explorer", _block("winclassic"))
         self.assertEqual(_block("frutiger"), _v091_block("frutiger"))
+
+    def test_luna_explorer_migrates_previous_version_without_touching_custom_css(self):
+        with tempfile.TemporaryDirectory() as directory:
+            config = Path(directory)
+            css_path = config / "gtk-3.0/gtk.css"
+            css_path.parent.mkdir()
+            original = "/* hand-made rule */\n" + _v091_block("winxp")
+            css_path.write_text(original)
+            self.assertEqual(plan_css("winxp", config),
+                             {"before": original,
+                              "after": "/* hand-made rule */\n" + _block("winxp")})
+            css_path.write_text(_block("winxp"))
+            self.assertEqual(plan_css("winxp", config)["after"], _block("winxp"))
+            css_path.write_text(_block("winxp").replace("#ece9d8", "#ece9d9"))
+            with self.assertRaisesRegex(ValueError, "customized"):
+                plan_css("winxp", config)
 
     def test_menubar_behavior_is_profile_specific_and_has_real_boolean_type(self):
         self.assertEqual(dict(preferences_for("aero"))["/last-menubar-visible"], "false")

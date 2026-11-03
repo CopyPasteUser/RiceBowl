@@ -267,11 +267,125 @@ window.thunar scrollbar slider:hover {
 """
 
 
+# XP Explorer uses a warm, mostly flat command surface and a blue tasks area.
+# Retain native Thunar actions: GTK CSS cannot safely inject fake Explorer
+# task-pane links, drives or non-functional toolbar buttons.
+LUNA_EXPLORER_CSS = """/* Luna Explorer: Windows XP's warm command bar and blue task pane. */
+window.thunar menubar {
+  background: #ece9d8;
+  border: 0;
+  border-bottom: 1px solid #c6c2ac;
+  color: #202020;
+  padding: 1px 5px;
+}
+window.thunar menubar > menuitem { padding: 3px 9px; }
+window.thunar toolbar, window.thunar .location-bar {
+  background-image: linear-gradient(to bottom, #fffef8, #f2f0e5 62%, #e8e6d8);
+  border-top: 1px solid #ffffff;
+  border-bottom: 1px solid #b7b5a6;
+  padding: 2px 4px;
+}
+window.thunar toolbar button {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  box-shadow: none;
+  color: #193b69;
+  padding: 3px 5px;
+  min-width: 19px;
+  min-height: 19px;
+}
+window.thunar toolbar button:hover {
+  background-image: linear-gradient(#fffbea, #f8df9a);
+  border-color: #e0ad4c;
+}
+window.thunar toolbar button:active, window.thunar toolbar button:checked {
+  background: #d0dcec;
+  border-color: #7f9db9;
+}
+window.thunar toolbar button:disabled {
+  background: transparent;
+  border-color: transparent;
+  color: #9da7b4;
+}
+window.thunar .path-bar, window.thunar .location-bar entry {
+  background: #ffffff;
+  border: 1px solid #7f9db9;
+  border-radius: 0;
+  padding: 1px 2px;
+}
+window.thunar .path-bar button, window.thunar .location-bar button {
+  background: transparent;
+  color: #2e4f75;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 2px 5px;
+}
+window.thunar .path-bar button:hover, window.thunar .location-bar button:hover {
+  background: #dceafe;
+  color: #183b80;
+}
+window.thunar .sidebar, window.thunar .shortcuts-pane {
+  background-image: linear-gradient(to right, #86a9dd, #cbdff6 65%, #dce8f7);
+  border-right: 1px solid #86a5d3;
+  color: #183b78;
+}
+window.thunar .sidebar .view, window.thunar .shortcuts-pane .view,
+window.thunar .sidebar treeview, window.thunar .shortcuts-pane treeview {
+  background: transparent;
+  color: #1c4079;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+window.thunar .sidebar .view:selected, window.thunar .shortcuts-pane .view:selected {
+  background: #316ac5;
+  color: #ffffff;
+}
+window.thunar .standard-view, window.thunar .standard-view .view,
+window.thunar treeview.view, window.thunar iconview {
+  background: #ffffff;
+  color: #222222;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+window.thunar .standard-view .view:selected, window.thunar treeview.view:selected {
+  background: #316ac5;
+  color: #ffffff;
+}
+window.thunar treeview header button {
+  background-image: linear-gradient(#fdfcf6, #e9e6d8);
+  border: 0;
+  border-right: 1px solid #bbb7a7;
+  border-bottom: 1px solid #aaa897;
+  border-radius: 0;
+  box-shadow: none;
+  color: #303030;
+  padding: 3px 6px;
+}
+window.thunar statusbar {
+  background: #ece9d8;
+  border-top: 1px solid #c0bca8;
+  color: #333333;
+  padding: 2px 6px;
+}
+window.thunar scrollbar slider {
+  background-image: linear-gradient(to right, #e0eafb, #a2c1ec);
+  border: 1px solid #6c94ca;
+  border-radius: 0;
+}
+"""
+
+
 def _block(style: str) -> str:
     original = _v091_block(style)
-    if style != "aero":
-        return original
-    return original.replace(END + "\n", AERO_EXPLORER_CSS + END + "\n")
+    if style == "aero":
+        return original.replace(END + "\n", AERO_EXPLORER_CSS + END + "\n")
+    if style == "winxp":
+        return original.replace(END + "\n", LUNA_EXPLORER_CSS + END + "\n")
+    return original
 
 
 def _read_css(path: Path) -> str | None:

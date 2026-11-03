@@ -562,6 +562,46 @@ CONTROL_DETAIL_CSS = {
 .rice-mute { background-image: linear-gradient(#fff, #cfe0f9);
   color: #204d88; border-radius: 4px; }
 .rice-mute:checked { background: #357bd1; color: white; }
+/* A real, centered XP category-view window. Only the Luna profile uses it. */
+.luna-control-window { background: #ffffff; border: 3px solid #1953b7;
+  color: #202020; }
+.luna-control-caption { background-image: linear-gradient(to bottom,
+  #77b1ff, #2f7bd8 35%, #1557be 75%, #1046ab);
+  border-bottom: 1px solid #073b99; padding: 2px 7px; min-height: 28px;
+  color: #ffffff; font-size: 12px; font-weight: bold; }
+.luna-control-caption label { color: #ffffff; }
+.luna-control-close { background-image: linear-gradient(#ffb58c, #d7472b);
+  border: 1px solid #fff4d3; border-radius: 4px; min-width: 24px;
+  min-height: 22px; padding: 0; color: white; box-shadow: inset 0 1px #ffefc8; }
+.luna-control-close label { color: white; font: bold 17px Sans; }
+.luna-control-close:hover { background: #f15b38; border-color: white; }
+.luna-control-sidebar { background-image: linear-gradient(to right, #6595d4, #c7dafa);
+  padding: 15px 12px; border-right: 1px solid #8ba9d5; }
+.luna-control-side-group { background: #d7e6fa; border: 1px solid #7b9dcd;
+  border-radius: 5px; padding: 10px; color: #194785; }
+.luna-control-side-heading { color: #184788; font-size: 12px; font-weight: bold;
+  border-bottom: 1px solid #99b6d9; padding-bottom: 5px; }
+.luna-control-nav { background: transparent; color: #164990; border: 0;
+  border-radius: 0; padding: 4px 2px; box-shadow: none; }
+.luna-control-nav:hover, .luna-control-nav:focus { background: #c3d9f7;
+  color: #102f70; text-decoration: underline; }
+.luna-control-main { background: #ffffff; padding: 18px 20px; color: #333333; }
+.luna-control-heading { color: #164eae; font-size: 19px; font-weight: bold; }
+.luna-control-category, .luna-control-applet { background: transparent; border: 1px solid transparent;
+  border-radius: 2px; box-shadow: none; padding: 7px 5px; color: #1b3e75; }
+.luna-control-category:hover, .luna-control-applet:hover,
+.luna-control-category:focus, .luna-control-applet:focus { background: #edf5ff;
+  border-color: #a8c8ef; }
+.luna-control-category:disabled, .luna-control-applet:disabled { opacity: .53; }
+.luna-control-link { color: #164eae; font-size: 12px; font-weight: bold; }
+.luna-control-explanation { color: #4c4c4c; font-size: 10px; font-weight: normal; }
+.luna-control-summary { color: #325b91; font-size: 10px; }
+.luna-control-sidebar .rice-control-detail { color: #254f85; font-size: 11px;
+  font-weight: normal; }
+.luna-control-sidebar scale trough { background: white; border: 1px solid #7b9bbd;
+  border-radius: 2px; min-height: 8px; }
+.luna-control-sidebar scale highlight { background: #4fa52d; }
+.luna-control-sidebar .rice-mute { padding: 4px; }
 """,
     "winclassic": b"""
 .rice-hardware-panel { background: #c0c0c0; border: 2px inset #fff; border-radius: 0;

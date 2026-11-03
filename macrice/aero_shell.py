@@ -2065,6 +2065,29 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 button.connect("clicked", lambda _button: callback())
             return button
 
+        def _open_luna_user_folder(self, folder):
+            """Offer to create a missing XDG folder, never silently make files."""
+            if folder.is_dir():
+                self._open_uri(folder.as_uri())
+                return
+            dialog = Gtk.MessageDialog(
+                transient_for=self.menu, modal=True, message_type=Gtk.MessageType.QUESTION,
+                buttons=Gtk.ButtonsType.YES_NO,
+                text=f"Create {folder.name} folder?")
+            dialog.format_secondary_text(
+                f"The folder {folder} does not exist. Create it and open it?")
+            try:
+                if dialog.run() != Gtk.ResponseType.YES:
+                    return
+            finally:
+                dialog.destroy()
+            try:
+                folder.mkdir(parents=True, exist_ok=True)
+            except OSError as exc:
+                self._error(f"Cannot create {folder}: {exc}")
+                return
+            self._open_uri(folder.as_uri())
+
         def _luna_recent_documents(self):
             """Real XDG recent files, only when GTK knows about them."""
             button = self._class(Gtk.MenuButton(label="My Recent Documents   ▸"), "luna-place")
@@ -2150,17 +2173,25 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                                  "luna-places")
             places.set_size_request(205, -1)
             home = Path.home()
-            for name, icon, folder in (
-                ("My Documents", "folder-documents", home / "Documents"),
-                ("My Pictures", "folder-pictures", home / "Pictures"),
-                ("My Music", "folder-music", home / "Music"),
-                ("My Computer", "computer", Path("/")),
+            for name, icon, kind, fallback in (
+                ("My Documents", "folder-documents", GLib.UserDirectory.DIRECTORY_DOCUMENTS, "Documents"),
+                ("My Pictures", "folder-pictures", GLib.UserDirectory.DIRECTORY_PICTURES, "Pictures"),
+                ("My Music", "folder-music", GLib.UserDirectory.DIRECTORY_MUSIC, "Music"),
             ):
-                places.pack_start(self._luna_navigation(name, icon, path=folder), False, False, 0)
+                folder = Path(GLib.get_user_special_dir(kind) or home / fallback)
+                button = self._luna_navigation(
+                    name, icon, callback=lambda target=folder: self._open_luna_user_folder(target))
+                button.set_tooltip_text("Open " + str(folder) if folder.is_dir() else
+                                        "Create and open " + str(folder) + " (with confirmation)")
+                places.pack_start(button, False, False, 0)
+            places.pack_start(self._luna_navigation("My Computer", "computer", path=Path("/")),
+                              False, False, 0)
             places.pack_start(self._luna_recent_documents(), False, False, 0)
             places.pack_start(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL), False, False, 5)
+            places.pack_start(self._luna_navigation(
+                "Control Panel", "preferences-system", callback=self._toggle_actions),
+                False, False, 0)
             for name, icon, cmd in (
-                ("Control Panel", "preferences-system", "xfce4-settings-manager"),
                 ("Network Connections", "network-workgroup", "nm-connection-editor"),
                 ("Printers and Faxes", "printer", "system-config-printer"),
             ):
@@ -2846,6 +2877,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
                 self.actions = build(self, Gtk, Gdk)
                 return
+            if profile == "winxp":
+                from .luna_control_panel import build
+
+                self.actions = build(self, Gtk, Gdk)
+                return
             if ten:
                 from .ten_action_center import build
 
@@ -3111,6 +3147,18 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 return
             self._hide_menu()
             rect = self._desktop_rect()
+            if profile == "winxp":
+                width = min(746, max(0, rect.width - 24))
+                height = min(536, max(0, rect.height - panel_height - 24))
+                if width < 410 or height < 320:
+                    self._error("The display is too small for Control Panel.")
+                    return
+                self.actions.show_all()
+                self.actions.resize(width, height)
+                self.actions.move(rect.x + (rect.width - width) // 2,
+                                  rect.y + (rect.height - panel_height - height) // 2)
+                self.actions.present()
+                return
             if profile == "aero":
                 width = min(810, max(0, rect.width - 32))
                 height = min(565, max(0, rect.height - panel_height - 32))
