@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>RiceBowl Luna Printers</title>
+  <defs><linearGradient id="shell" x2="0" y2="1"><stop stop-color="#faffff"/><stop offset="1" stop-color="#98b5d7"/></linearGradient></defs>
+  <path d="M15 6H48V24H15Z" fill="#fff" stroke="#335a8b" stroke-width="2"/>
+  <path d="M20 13H42M20 17H39" stroke="#6d94bb" stroke-width="2"/>
+  <rect x="6" y="22" width="52" height="27" rx="5" fill="url(#shell)" stroke="#24518a" stroke-width="2"/>
+  <path d="M12 31H52V43H12Z" fill="#b8d3ec"/>
+  <circle cx="49" cy="28" r="3" fill="#5dbf48"/>
+  <path d="M15 39H49V59H15Z" fill="#fff" stroke="#265995" stroke-width="2"/>
+  <path d="M21 45H43M21 50H42M21 55H35" stroke="#7fa6cb" stroke-width="2"/>
+</svg>

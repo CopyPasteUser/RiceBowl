@@ -18,6 +18,12 @@ RiceBowl transforms an XFCE desktop using original GTK3, XFWM4, icon, wallpaper,
 
 **Version 0.9.1** fixes the XP Luna Start menu overlapping its taskbar by positioning the window from its actual GTK allocation. Desktop changes now verify that a replacement taskbar has mapped before retiring XFCE Panel; if startup fails, RiceBowl attempts to restore the stock panel and saved shortcuts. The hub keeps responding while the transition is checked.
 
+An in-development [XP Luna fidelity pass](XP_LUNA_ROADMAP.md) makes the live
+taskbar and Start menu substantially more period-accurate, adds original
+blue XFWM4 decorations and Luna-styled GTK/Thunar widgets, and preserves
+backed-up upgrades from official v0.9.1 assets. It is **not yet in v0.9.1**;
+review the development branch and its native-X11 checks before deployment.
+
 Version 0.9.0 introduced four detailed desktop-reference directions in real GTK3 code: XP Luna's blue/green two-column Start screen, Windows 98/2000's cascading Programs menus, ChromeOS's 12-app launcher and center shelf, and Frutiger Aero's Apps / Places / Settings dashboard. The styles include richer Thunar chrome, original icons and verified volume/mute controls. The macOS implementation remains unchanged.
 
 ## Desktop families

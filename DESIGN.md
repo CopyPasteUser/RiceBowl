@@ -23,7 +23,15 @@ original Linux artwork. Windows 11 and Liquid Glass are out of scope.
 - **Aurora / macOS:** restrained dark/light WhiteSur, native MacBar and user-managed Plank.
 - **Windows 7:** blue glass-like Aero surfaces, original Linux Aero penguin and right-hand status area.
 - **Windows 10:** flat neutral panels and blue highlights with an original blue penguin.
-- **XP Luna:** saturated cobalt taskbar, green rounded Start, warm sunlit meadow wallpaper.
+- **XP Luna:** 40px cobalt/green molded taskbar, contiguous bright-cyan notification
+  tray, user-account Start header, ivory programs and pastel-blue system-links
+  columns, separate log-off/power affordances, and a warm meadow wallpaper.
+  Live menu structure and geometry are in `macrice/aero_shell.py`; all XP-only
+  colors and states are in `heritage_shell.DETAIL_CSS["winxp"]`.
+  `scripts/build_heritage_assets.py --luna-only` refreshes the original drawn
+  XFWM4 titlebar/button states and layered GTK/Thunar controls without touching
+  other reviewed themes. XP artwork is original; preserve valid installed
+  `.desktop` launchers and disabled unavailable Linux utilities.
 - **98 / 2000:** square relief borders, cool gray chrome, high-density menus and teal wallpaper.
 - **ChromeOS:** light pastel background, soft shelf, rounded launcher and quiet blue accents.
 - **Frutiger Aero:** translucent cyan-to-turquoise panels, nature-inspired green landscape and airy highlights.

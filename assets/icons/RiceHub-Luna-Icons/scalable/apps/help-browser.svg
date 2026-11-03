@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>RiceBowl Luna Help and Support</title>
+  <defs><linearGradient id="blue" x2="0" y2="1"><stop stop-color="#a7d6ff"/><stop offset=".42" stop-color="#3788e7"/><stop offset="1" stop-color="#16469e"/></linearGradient></defs>
+  <circle cx="32" cy="32" r="27" fill="url(#blue)" stroke="#16427f" stroke-width="2"/>
+  <path d="M9 23C16 12 27 10 39 10" stroke="#e2f7ff" stroke-width="5" opacity=".7" fill="none" stroke-linecap="round"/>
+  <path d="M23 24C23 12 45 11 46 25C47 34 36 36 35 41" fill="none" stroke="#123f87" stroke-width="9" stroke-linecap="round"/>
+  <path d="M23 24C23 12 45 11 46 25C47 34 36 36 35 41" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="35" cy="50" r="3.4" fill="#fff"/>
+</svg>

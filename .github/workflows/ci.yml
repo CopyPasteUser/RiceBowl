@@ -33,6 +33,9 @@ jobs:
           # Fail the release if any gallery screen silently failed to capture.
           /usr/bin/python3 -c 'from pathlib import Path; import hashlib, struct; fs=sorted(Path("screenshots").glob("ricebowl-*-0.9.1.png")); assert len(fs)==12, f"Expected 12 GTK captures, found {len(fs)}"; data=[p.read_bytes() for p in fs]; assert all(len(b)>50000 and b[:8]==bytes.fromhex("89504e470d0a1a0a") and struct.unpack(">II", b[16:24])==(1600,900) for b in data), "Invalid or incomplete screenshot"; assert len({hashlib.sha256(b).digest() for b in data})==12, "Duplicate screenshot detected"'
           /usr/bin/python3 screenshots/validate_gallery.py
+          # XP 2001 layout must fit a real 1024x768 GTK/XFWM workarea as well.
+          RICEBOWL_CAPTURE_SIZE=1024 timeout 24s dbus-run-session -- xvfb-run -a -s '-screen 0 1024x768x24' /usr/bin/python3 -c 'from macrice.aero_shell import run; raise SystemExit(run(["ricebowl-winxp-shell", "--capture-gallery"], profile="winxp"))'
+          /usr/bin/python3 -c 'from pathlib import Path; import struct; fs=sorted(Path("screenshots").glob("ricebowl-winxp-*-0.9.1-1024.png")); assert len(fs)==2, "XP small-screen captures missing"; assert all(struct.unpack(">II", p.read_bytes()[16:24])==(1024,768) for p in fs), "XP 1024x768 capture invalid"'
           (cd components/macmenu && /usr/bin/python3 -m unittest discover -s tests -v)
           (cd components/macbar && /usr/bin/python3 -m unittest discover -s tests -v)
           (cd components/control-center && PATH=/usr/bin:/bin bash run-tests.sh)
@@ -41,7 +44,9 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ricebowl-0.9.1-native-x11-captures
-          path: screenshots/ricebowl-*-0.9.1.png
+          path: |
+            screenshots/ricebowl-*-0.9.1.png
+            screenshots/ricebowl-winxp-*-0.9.1-1024.png
           if-no-files-found: ignore
 
   publish-ricebowl:

@@ -52,6 +52,29 @@ def matching_apps(apps, query: str):
                  (app.get_display_name() or app.get_name() or "").casefold())
 
 
+def luna_programs(apps, pins: tuple[str, ...], query: str, limit: int = 8):
+    """Pick real installed apps for the XP pin band and the recent-program area."""
+    if query.strip():
+        return (), matching_apps(apps, query)[:limit]
+    featured = []
+    for category in ("WebBrowser", "Email"):
+        for app in apps:
+            classifier = getattr(app, "get_categories", None)
+            categories = (classifier() or "").split(";") if callable(classifier) else ()
+            if category in categories and app not in featured:
+                featured.append(app)
+                break
+    for identifier in pins:
+        if len(featured) >= 2:
+            break
+        for app in apps:
+            if app.get_id() == identifier and app not in featured:
+                featured.append(app)
+                break
+    featured = featured[:2]
+    return tuple(featured), tuple(app for app in apps if app not in featured)[:limit]
+
+
 CSS = b"""
 .aero-taskbar {
   background-image: linear-gradient(to bottom, rgba(193,232,255,.95), rgba(91,161,211,.96) 48%, rgba(24,74,133,.98));
@@ -119,6 +142,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
     ten = profile == "windows10"
     heritage = PROFILES.get(profile)
     tiles = ten or profile == "chromeos"
+    panel_height = 40 if profile == "winxp" else PANEL_HEIGHT
     if ten:
         from .ten_shell import APP_ID as TEN_APP_ID, CSS as TEN_CSS
     if heritage:
@@ -163,6 +187,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._smoke = False
             self._smoke_failed = False
             self._capture_gallery = False
+            self._capture_variant = ""
             self._popup_hide_sources = {"menu": 0, "control": 0}
 
         def do_startup(self):
@@ -195,6 +220,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 return 0
             self._smoke = "--smoke-test" in args
             self._capture_gallery = "--capture-gallery" in args
+            self._capture_variant = "-1024" if (
+                profile == "winxp" and os.environ.get("RICEBOWL_CAPTURE_SIZE") == "1024") else ""
             self.activate()
             if self._smoke:
                 GLib.timeout_add(850, self._smoke_check)
@@ -310,7 +337,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
         def _capture_menu(self):
             try:
                 self._assert_popup_on_monitor(self.menu)
-                self._capture_screen(f"ricebowl-{profile}-start-0.9.1.png")
+                self._capture_screen(f"ricebowl-{profile}-start-0.9.1{self._capture_variant}.png")
                 self._hide_menu()
                 self._toggle_actions()
                 assert self.actions.get_visible()
@@ -325,7 +352,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
         def _capture_actions(self):
             try:
                 self._assert_popup_on_monitor(self.actions)
-                self._capture_screen(f"ricebowl-{profile}-controls-0.9.1.png")
+                self._capture_screen(f"ricebowl-{profile}-controls-0.9.1{self._capture_variant}.png")
             except Exception:
                 import traceback
                 traceback.print_exc()
@@ -340,7 +367,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             actual_x, actual_y = popup.get_window().get_root_origin()
             if not (rect.x <= actual_x and rect.y <= actual_y and
                     actual_x + actual_w <= rect.x + rect.width and
-                    actual_y + actual_h <= rect.y + rect.height - PANEL_HEIGHT):
+                    actual_y + actual_h <= rect.y + rect.height - panel_height):
                 raise AssertionError(
                     f"{profile} popup outside usable monitor: "
                     f"{actual_x},{actual_y} {actual_w}x{actual_h}, "
@@ -357,8 +384,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _screen_changed(self, *_args):
             rect = self._desktop_rect()
-            self.bar.resize(rect.width, PANEL_HEIGHT)
-            self.bar.move(rect.x, rect.y + rect.height - PANEL_HEIGHT)
+            self.bar.resize(rect.width, panel_height)
+            self.bar.move(rect.x, rect.y + rect.height - panel_height)
             if self.bar.get_realized():
                 self._reserve_workarea(self.bar)
             self._task_capacity = task_capacity(rect.width, self._pin_count, 340 if tiles else 185)
@@ -443,7 +470,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 from gi.repository import GdkX11
                 rect = self._desktop_rect()
                 props = bottom_strut(rect.x, rect.y, rect.width, rect.height,
-                                     Gdk.Screen.get_default().get_height())
+                                     Gdk.Screen.get_default().get_height(), panel_height)
                 library = ctypes.util.find_library("X11")
                 if not library:
                     return
@@ -760,10 +787,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             win.set_type_hint(Gdk.WindowTypeHint.DOCK)
             win.set_keep_above(True)
             win.set_accept_focus(False)
-            win.set_default_size(rect.width, PANEL_HEIGHT)
-            win.move(rect.x, rect.y + rect.height - PANEL_HEIGHT)
+            win.set_default_size(rect.width, panel_height)
+            win.move(rect.x, rect.y + rect.height - panel_height)
 
-            row = self._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8), "aero-taskbar")
+            row = self._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL,
+                                      spacing=4 if profile == "winxp" else 8), "aero-taskbar")
             if not ten and os.environ.get("RICEHUB_AERO_GLASS") == "1":
                 row.get_style_context().add_class("aero-glass")
             start = self._class(Gtk.Button(), "aero-start")
@@ -772,7 +800,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                                      "assets/" + heritage.logo if heritage else "assets/aero-penguin.svg")
             try:
                 img = Gtk.Image.new_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_scale(
-                    str(logo), 26 if ten else 34, 26 if ten else 34, True))
+                    str(logo), 26 if ten or profile == "winxp" else 34,
+                    26 if ten or profile == "winxp" else 34, True))
             except (GLib.Error, OSError):
                 img = self._icon("start-here", Gtk.IconSize.LARGE_TOOLBAR)
             contents.pack_start(img, False, False, 0)
@@ -782,7 +811,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             start.get_accessible().set_name("Toggle " + (heritage.name if heritage else
                 "Windows 10" if ten else "Aero") + " application menu")
             start.connect("clicked", lambda _button: self._toggle_menu())
-            row.pack_start(start, False, False, 4)
+            row.pack_start(start, False, False, 0 if profile == "winxp" else 4)
             if profile == "chromeos":
                 # Three independent visual zones: launcher, centered shelf,
                 # and the device-status pill at the far right.
@@ -813,11 +842,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             shelf_box.pack_start(self.tasks, False, False, 4)
             row.pack_start(Gtk.Box(), True, True, 0)
             right_area = row
-            if profile == "chromeos":
+            if profile in ("chromeos", "winxp"):
                 right_area = self._class(
                     Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5),
-                    "chrome-status-pill")
-                row.pack_end(right_area, False, False, 4)
+                    "chrome-status-pill" if profile == "chromeos" else "luna-tray")
+                row.pack_end(right_area, False, False, 0 if profile == "winxp" else 4)
             desktop = self._class(Gtk.Button(), "aero-desktop")
             desktop.set_tooltip_text("Show desktop / restore windows")
             desktop.get_accessible().set_name("Show desktop or restore windows")
@@ -852,7 +881,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     logging.getLogger(__name__).warning("Optional Aero tray unavailable: %s", exc)
             def update_clock():
                 clock.set_text(GLib.DateTime.new_now_local().format(
+                    "%H:%M" if profile == "winxp" else
                     "%H:%M\n%d %b" if not ten else "%H:%M\n%d/%m/%Y"))
+                if profile == "winxp":
+                    clock.set_tooltip_text(GLib.DateTime.new_now_local().format("%A, %d %B %Y"))
                 return True
             update_clock()
             GLib.timeout_add_seconds(30, update_clock)
@@ -860,7 +892,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             win.connect("realize", self._reserve_workarea)
             win.connect("map-event", self._publish_ready)
             win.show_all()
-            win.move(rect.x, rect.y + rect.height - PANEL_HEIGHT)
+            win.move(rect.x, rect.y + rect.height - panel_height)
             self.bar = win
 
         def _windows_changed(self, windows, active):
@@ -1064,6 +1096,98 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.menu, self.search = menu, search
             self._populate("")
 
+        def _programs_cascade(self, reveal_search):
+            """One real .desktop category flyout for XP and Classic, no fake items."""
+            groups = (
+                ("Accessories", ("Utility", "Accessories", "TextEditor")),
+                ("Games", ("Game",)),
+                ("Graphics", ("Graphics", "Photography")),
+                ("Internet", ("Network", "WebBrowser", "Email")),
+                ("Multimedia", ("Audio", "Video", "Player")),
+                ("Office", ("Office", "Spreadsheet", "WordProcessor")),
+                ("System Tools", ("System", "Settings", "FileManager", "Terminal")),
+            )
+            programs_menu = Gtk.Menu()
+            for title, categories in groups:
+                submenu = Gtk.Menu()
+                count = 0
+                for app in self.apps:
+                    classifier = getattr(app, "get_categories", None)
+                    names = (classifier() or "").split(";") if callable(classifier) else []
+                    if not any(category in names for category in categories):
+                        continue
+                    item = Gtk.MenuItem(label=app.get_display_name() or app.get_name())
+                    item.connect("activate", lambda _item, selected=app: self._launch(selected))
+                    submenu.append(item)
+                    count += 1
+                    if count >= 20:
+                        break
+                if count:
+                    parent = Gtk.MenuItem(label=title)
+                    parent.set_submenu(submenu)
+                    programs_menu.append(parent)
+            if programs_menu.get_children():
+                programs_menu.append(Gtk.SeparatorMenuItem())
+            all_item = Gtk.MenuItem(label="Search all installed programs…")
+            all_item.connect("activate", lambda *_args: reveal_search())
+            programs_menu.append(all_item)
+            programs_menu.show_all()
+            return programs_menu
+
+        def _luna_navigation(self, label, icon_name, *, path=None, command=None, callback=None):
+            """XP right-column link; never enable unavailable system operations."""
+            button = self._class(Gtk.Button(), "luna-place")
+            row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=9)
+            row.pack_start(self._icon(icon_name, Gtk.IconSize.LARGE_TOOLBAR), False, False, 0)
+            row.pack_start(Gtk.Label(label=label, xalign=0), True, True, 0)
+            button.add(row)
+            button.get_accessible().set_name(label)
+            if path is not None:
+                button.set_sensitive(path.is_dir())
+                button.set_tooltip_text("Open " + str(path) if path.is_dir() else
+                                        "Folder not available: " + str(path))
+                button.connect("clicked", lambda _button: self._open_uri(path.as_uri()))
+            elif command is not None:
+                candidates = (command,) if isinstance(command, str) else command
+                installed = next((name for name in candidates if shutil.which(name)), None)
+                button.set_sensitive(installed is not None)
+                button.set_tooltip_text("Open " + label if installed else
+                                        "Requires " + " or ".join(candidates))
+                if installed:
+                    button.connect("clicked", lambda _button, executable=installed:
+                                   self._open_tool(executable))
+            elif callback is not None:
+                button.connect("clicked", lambda _button: callback())
+            return button
+
+        def _luna_recent_documents(self):
+            """Real XDG recent files, only when GTK knows about them."""
+            button = self._class(Gtk.MenuButton(label="My Recent Documents   ▸"), "luna-place")
+            button.get_accessible().set_name("Recent documents")
+            menu = Gtk.Menu()
+            try:
+                items = (item for item in Gtk.RecentManager.get_default().get_items()
+                         if item.exists() and item.get_uri().startswith("file:"))
+                for item in list(items)[:10]:
+                    entry = Gtk.MenuItem(label=item.get_display_name())
+                    entry.connect("activate", lambda _entry, uri=item.get_uri():
+                                  self._open_uri(uri))
+                    menu.append(entry)
+            except (GLib.Error, OSError) as exc:
+                logging.getLogger(__name__).debug("Recent documents unavailable: %s", exc)
+            if not menu.get_children():
+                entry = Gtk.MenuItem(label="No recent documents")
+                entry.set_sensitive(False)
+                menu.append(entry)
+            menu.show_all()
+            button.set_popup(menu)
+            return button
+
+        def _reveal_luna_search(self):
+            self.search.set_no_show_all(False)
+            self.search.show()
+            self.search.grab_focus()
+
         def _create_luna_menu(self):
             """XP Luna: blue user band, ivory apps list, blue places and power footer."""
             menu = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
@@ -1077,7 +1201,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             menu.set_type_hint(Gdk.WindowTypeHint.UTILITY)
             menu.set_transient_for(self.bar)
             menu.set_keep_above(True)
-            menu.set_default_size(480, 560)
+            menu.set_default_size(480, 540)
 
             root = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0),
                                "luna-menu")
@@ -1086,7 +1210,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             avatar = self._class(Gtk.Image(), "luna-avatar")
             try:
                 avatar.set_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_scale(
-                    str(project_root() / "assets/ricebowl-xp-start.svg"), 44, 44, True))
+                    str(project_root() / "assets/ricebowl-xp-user.svg"), 44, 44, True))
             except (GLib.Error, OSError):
                 avatar.set_from_icon_name("computer", Gtk.IconSize.DIALOG)
             header.pack_start(avatar, False, False, 0)
@@ -1097,54 +1221,68 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             root.pack_start(header, False, False, 0)
 
             columns = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
-            apps = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5),
+            apps = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2),
                                "luna-apps")
             apps.set_size_request(247, -1)
             search = self._class(Gtk.SearchEntry(), "aero-menu-search")
-            search.set_placeholder_text("Find a program")
+            search.set_placeholder_text("Search programs")
             search.get_accessible().set_name("Search installed programs")
+            search.set_no_show_all(True)
             apps.pack_start(search, False, False, 2)
             scroll = Gtk.ScrolledWindow()
             scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-            scroll.set_min_content_height(160)
+            scroll.set_min_content_height(140)
             self.results = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1)
             scroll.add(self.results)
             apps.pack_start(scroll, True, True, 0)
-            browse = self._class(Gtk.Button(label="All Programs  ▸"), "luna-all-programs")
-            browse.connect("clicked", lambda _button: self._open_search())
+            browse = self._class(Gtk.MenuButton(label="All Programs  ▸"), "luna-all-programs")
+            browse.set_popup(self._programs_cascade(self._reveal_luna_search))
+            browse.get_accessible().set_name("Browse all installed programs")
             apps.pack_end(browse, False, False, 3)
             columns.pack_start(apps, True, True, 0)
 
-            places = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3),
+            places = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0),
                                  "luna-places")
             places.set_size_request(205, -1)
             home = Path.home()
             for name, icon, folder in (
-                ("Home", "user-home", home),
-                ("Documents", "folder-documents", home / "Documents"),
-                ("Downloads", "folder-download", home / "Downloads"),
-                ("Pictures", "folder-pictures", home / "Pictures"),
-                ("Music", "folder-music", home / "Music"),
-                ("Videos", "folder-videos", home / "Videos"),
+                ("My Documents", "folder-documents", home / "Documents"),
+                ("My Pictures", "folder-pictures", home / "Pictures"),
+                ("My Music", "folder-music", home / "Music"),
+                ("My Computer", "computer", Path("/")),
             ):
-                places.pack_start(self._place_button(name, icon, folder), False, False, 0)
-            separator = Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL)
-            places.pack_start(separator, False, False, 6)
-            system = self._class(Gtk.Button(label="Control Panel"), "rice-place")
-            system.set_image(self._icon("preferences-system", Gtk.IconSize.MENU))
-            system.set_always_show_image(True)
-            system.set_sensitive(shutil.which("xfce4-settings-manager") is not None)
-            system.connect("clicked", lambda _button:
-                           self._open_tool("xfce4-settings-manager"))
-            places.pack_start(system, False, False, 0)
-            columns.pack_start(places, False, False, 0)
+                places.pack_start(self._luna_navigation(name, icon, path=folder), False, False, 0)
+            places.pack_start(self._luna_recent_documents(), False, False, 0)
+            places.pack_start(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL), False, False, 5)
+            for name, icon, cmd in (
+                ("Control Panel", "preferences-system", "xfce4-settings-manager"),
+                ("Network Connections", "network-workgroup", "nm-connection-editor"),
+                ("Printers and Faxes", "printer", "system-config-printer"),
+            ):
+                places.pack_start(self._luna_navigation(name, icon, command=cmd), False, False, 0)
+            places.pack_start(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL), False, False, 5)
+            places.pack_start(self._luna_navigation("Help and Support", "help-browser",
+                                                     command=("xfhelp4", "yelp")), False, False, 0)
+            places.pack_start(self._luna_navigation("Search", "system-search",
+                                                     command="catfish" if shutil.which("catfish") else None,
+                                                     callback=self._reveal_luna_search), False, False, 0)
+            places.pack_start(self._luna_navigation("Run…", "system-run",
+                                                     command="xfce4-appfinder"), False, False, 0)
+            place_scroll = Gtk.ScrolledWindow()
+            place_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+            place_scroll.set_min_content_height(120)
+            place_scroll.set_min_content_width(205)
+            place_scroll.add(places)
+            columns.pack_start(place_scroll, False, False, 0)
             root.pack_start(columns, True, True, 0)
 
             footer = self._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=9),
                                  "luna-footer")
             footer.pack_start(Gtk.Box(), True, True, 0)
-            for name, icon in (("Log off…", "system-log-out"), ("Turn off…", "system-shutdown")):
+            for name, icon, css in (("Log Off", "system-log-out", "luna-logoff"),
+                                    ("Turn Off Computer", "system-shutdown", "luna-shutdown")):
                 button = self._class(Gtk.Button(label=name), "luna-power")
+                button.get_style_context().add_class(css)
                 button.set_image(self._icon(icon, Gtk.IconSize.MENU))
                 button.set_always_show_image(True)
                 button.set_tooltip_text("Open XFCE session dialog; no immediate logout")
@@ -1179,40 +1317,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             main = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0),
                                "classic-menu-list")
 
-            programs_menu = Gtk.Menu()
-            groups = (
-                ("Accessories", ("Utility", "Accessories", "TextEditor")),
-                ("Graphics", ("Graphics", "Photography")),
-                ("Internet", ("Network", "WebBrowser", "Email")),
-                ("Multimedia", ("Audio", "Video", "Player")),
-                ("Office", ("Office", "Spreadsheet", "WordProcessor")),
-                ("System Tools", ("System", "Settings", "FileManager", "Terminal")),
-            )
-            for title, categories in groups:
-                submenu = Gtk.Menu()
-                count = 0
-                for app in self.apps:
-                    classifier = getattr(app, "get_categories", None)
-                    names = (classifier() or "").split(";") if callable(classifier) else []
-                    if not any(category in names for category in categories):
-                        continue
-                    item = Gtk.MenuItem(label=app.get_display_name() or app.get_name())
-                    item.connect("activate", lambda _item, selected=app: self._launch(selected))
-                    submenu.append(item)
-                    count += 1
-                    if count >= 20:
-                        break
-                if not count:
-                    continue
-                parent = Gtk.MenuItem(label=title)
-                parent.set_submenu(submenu)
-                programs_menu.append(parent)
-            all_item = Gtk.MenuItem(label="Find all installed programs…")
-            all_item.connect("activate", lambda *_args: self._reveal_classic_search())
-            programs_menu.append(all_item)
-            programs_menu.show_all()
             programs = self._class(Gtk.MenuButton(label="Programs   ▸"), "classic-menu-item")
-            programs.set_popup(programs_menu)
+            programs.set_popup(self._programs_cascade(self._reveal_classic_search))
             main.pack_start(programs, False, False, 0)
 
             for title, icon, target in (
@@ -1832,25 +1938,33 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._hide_menu()
             rect = self._desktop_rect()
             width = min(330, max(0, rect.width - 16))
-            height = min(430, max(0, rect.height - PANEL_HEIGHT - 16))
+            height = min(430, max(0, rect.height - panel_height - 16))
             if width < 235 or height < 250:
                 self._error("The display is too small for " + ("Action Center." if ten else "Control Panel."))
                 return
             self.actions.show_all()
             self.actions.resize(width, height)
             self.actions.move(rect.x + rect.width - width - 8,
-                              rect.y + rect.height - PANEL_HEIGHT - height - 8)
+                              rect.y + rect.height - panel_height - height - 8)
             self.actions.present()
 
         def _open_search(self):
             if not self.menu.get_visible():
                 self._toggle_menu()
             if self.menu.get_visible():
-                self.search.grab_focus()
+                if profile == "winxp":
+                    self._reveal_luna_search()
+                elif profile == "winclassic":
+                    self._reveal_classic_search()
+                else:
+                    self.search.grab_focus()
 
         def _populate(self, query):
             for child in self.results.get_children():
                 self.results.remove(child)
+            if profile == "winxp":
+                self._populate_luna(query)
+                return
             matches = matching_apps(self.apps, query)
             if not matches:
                 self.results.pack_start(self._class(Gtk.Label(label="No matching applications", xalign=0),
@@ -1877,6 +1991,63 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 more.connect("clicked", expand)
                 self.results.pack_start(more, False, False, 0)
             self.results.show_all()
+
+        def _populate_luna(self, query):
+            """XP: 2 prominent favorites, a separator and actual installed apps."""
+            featured, regular = luna_programs(
+                self.apps, self._pinned_ids, query,
+                self._app_page_size if query.strip() else 6)
+
+            def add_app(app, *, large=False):
+                button = self._class(Gtk.Button(), "luna-program")
+                if large:
+                    button.get_style_context().add_class("luna-featured")
+                content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=9)
+                icon = app.get_icon()
+                size = Gtk.IconSize.LARGE_TOOLBAR if large else Gtk.IconSize.MENU
+                content.pack_start(Gtk.Image.new_from_gicon(icon, size) if icon else
+                                   self._icon("applications-other", size), False, False, 0)
+                caption = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+                if large:
+                    classifier = getattr(app, "get_categories", None)
+                    category = (classifier() or "").split(";") if callable(classifier) else ()
+                    headline = "Internet" if "WebBrowser" in category else (
+                        "E-mail" if "Email" in category else "Favorite program")
+                    title = self._class(Gtk.Label(label=headline, xalign=0), "luna-program-category")
+                    caption.pack_start(title, False, False, 0)
+                label = Gtk.Label(label=app.get_display_name() or app.get_name(), xalign=0)
+                label.set_ellipsize(Pango.EllipsizeMode.END)
+                caption.pack_start(label, False, False, 0)
+                content.pack_start(caption, True, True, 0)
+                button.add(content)
+                button.get_accessible().set_name("Launch " + (app.get_display_name() or app.get_name()))
+                button.connect("clicked", lambda _button, selected=app: self._launch(selected))
+                button.connect("button-press-event", lambda widget, event, selected=app:
+                               self._pin_context(widget, selected, event))
+                button.connect("popup-menu", lambda widget, selected=app:
+                               self._pin_context(widget, selected))
+                self.results.pack_start(button, False, False, 0)
+
+            for app in featured:
+                add_app(app, large=True)
+            if featured and regular:
+                self.results.pack_start(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL),
+                                        False, False, 5)
+            for app in regular:
+                add_app(app)
+            if not featured and not regular:
+                self.results.pack_start(self._class(
+                    Gtk.Label(label="No installed programs match", xalign=0),
+                    "luna-empty"), False, False, 12)
+            if query.strip() and len(matching_apps(self.apps, query)) > self._app_page_size:
+                more = self._class(Gtk.Button(label="Show more results…"), "luna-program")
+                more.connect("clicked", lambda *_args: self._expand_luna_results(query))
+                self.results.pack_start(more, False, False, 0)
+            self.results.show_all()
+
+        def _expand_luna_results(self, query):
+            self._app_page_size += 24
+            self._populate(query)
 
         def _search_key(self, event):
             if event.keyval == Gdk.KEY_Escape:
@@ -1917,7 +2088,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._menu_opened_at = GLib.get_monotonic_time()
             self.search.set_text("")
             preferred_sizes = {
-                "winxp": (480, 560),
+                "winxp": (480, 540),
                 "winclassic": (285, 430),
                 "chromeos": (650, 548),
                 "frutiger": (535, 540),
@@ -1927,19 +2098,28 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             preferred_width, preferred_height = preferred_sizes.get(profile, (490, 505))
             x, y, w, h = menu_geometry(
                 rect.x, rect.y, rect.width, rect.height,
-                preferred_width=preferred_width, preferred_height=preferred_height)
+                preferred_width=preferred_width, preferred_height=preferred_height,
+                panel_height=panel_height)
             if w < 180 or h < 180:
                 self._error("The display is too small for the Start menu.")
                 return
             if profile == "chromeos":
                 x = rect.x + (rect.width - w) // 2
+            if profile == "winxp":
+                self.search.set_no_show_all(True)
+                self.search.hide()
             self.menu.show_all()
             self.menu.resize(w, h)
             self.menu.move(x, y)
             self.menu.present()
             if profile == "winxp":
                 GLib.idle_add(self._reanchor_luna_menu)
-            self.search.grab_focus()
+                first_app = next((widget for widget in self.results.get_children()
+                                  if isinstance(widget, Gtk.Button)), None)
+                if first_app:
+                    first_app.grab_focus()
+            else:
+                self.search.grab_focus()
 
         def _reanchor_luna_menu(self):
             """Anchor using GTK's allocated height, not its requested height."""
@@ -1947,7 +2127,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 return False
             rect = self._desktop_rect()
             actual_w, actual_h = self.menu.get_size()
-            self.menu.move(rect.x + 8, actual_popup_y(rect.y, rect.height, actual_h))
+            self.menu.move(rect.x + 8, actual_popup_y(rect.y, rect.height, actual_h,
+                                                       panel_height=panel_height))
             return False
 
         def _open_uri(self, uri):
