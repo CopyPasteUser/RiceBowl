@@ -622,10 +622,6 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             row = self._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8), "aero-taskbar")
             if not ten and os.environ.get("RICEHUB_AERO_GLASS") == "1":
                 row.get_style_context().add_class("aero-glass")
-            if profile == "chromeos":
-                # Balance the trailing expanding spacer so the application
-                # cluster sits near the middle of a ChromeOS-style shelf.
-                row.pack_start(Gtk.Box(), True, True, 0)
             start = self._class(Gtk.Button(), "aero-start")
             contents = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
             logo = project_root() / ("assets/ten-start.svg" if ten else
@@ -643,6 +639,16 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 "Windows 10" if ten else "Aero") + " application menu")
             start.connect("clicked", lambda _button: self._toggle_menu())
             row.pack_start(start, False, False, 4)
+            if profile == "chromeos":
+                # Three independent visual zones: launcher, centered shelf,
+                # and the device-status pill at the far right.
+                row.pack_start(Gtk.Box(), True, True, 0)
+                shelf_box = self._class(
+                    Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5),
+                    "chrome-app-shelf")
+                row.pack_start(shelf_box, False, False, 0)
+            else:
+                shelf_box = row
             self.start_button = start
             if ten:
                 search_button = self._class(Gtk.Button(label="⌕  Type here to search"), "ten-search")
@@ -652,7 +658,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     search_button.set_label("⌕")
                 row.pack_start(search_button, False, False, 0)
             self.pinned_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
-            row.pack_start(self.pinned_box, False, False, 0)
+            shelf_box.pack_start(self.pinned_box, False, False, 0)
             self._render_pins()
             self._pin_count = len(self._pinned_ids)
             self.tasks = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
@@ -660,35 +666,41 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.overflow_button = self._class(Gtk.Button(), "aero-task-overflow")
             self.overflow_button.get_accessible().set_name("Show other running windows")
             self.overflow_button.connect("clicked", self._show_overflow)
-            row.pack_start(self.tasks, False, False, 4)
+            shelf_box.pack_start(self.tasks, False, False, 4)
             row.pack_start(Gtk.Box(), True, True, 0)
+            right_area = row
+            if profile == "chromeos":
+                right_area = self._class(
+                    Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5),
+                    "chrome-status-pill")
+                row.pack_end(right_area, False, False, 4)
             desktop = self._class(Gtk.Button(), "aero-desktop")
             desktop.set_tooltip_text("Show desktop / restore windows")
             desktop.get_accessible().set_name("Show desktop or restore windows")
             desktop.connect("clicked", self._show_desktop)
-            row.pack_end(desktop, False, False, 0)
+            right_area.pack_end(desktop, False, False, 0)
             self.show_desktop_button = desktop
             clock = self._class(Gtk.Label(), "aero-time")
             clock.set_justify(Gtk.Justification.CENTER)
-            row.pack_end(clock, False, False, 6)
+            right_area.pack_end(clock, False, False, 6)
             if tiles:
                 action = self._class(Gtk.Button(label="▤"), "aero-quick")
                 action.get_accessible().set_name("Toggle " + (heritage.control_heading if heritage else "Windows 10 Action Center"))
                 action.set_tooltip_text("Quick settings and notification information")
                 action.connect("clicked", lambda _button: self._toggle_actions())
-                row.pack_end(action, False, False, 0)
+                right_area.pack_end(action, False, False, 0)
             else:
                 control = self._class(Gtk.Button(), "aero-quick")
                 control.set_image(self._icon("preferences-system", Gtk.IconSize.MENU))
                 control.set_tooltip_text("Control Panel")
                 control.get_accessible().set_name("Toggle " + (heritage.control_heading if heritage else "Windows 7 Control Panel"))
                 control.connect("clicked", lambda _button: self._toggle_actions())
-                row.pack_end(control, False, False, 0)
-            self._install_status_widgets(row)
+                right_area.pack_end(control, False, False, 0)
+            self._install_status_widgets(right_area)
             tray_option = "RICEHUB_TEN_TRAY" if ten else f"RICEHUB_{profile.upper()}_TRAY"
             if os.environ.get(tray_option, "1") != "0":
                 tray_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
-                row.pack_end(tray_box, False, False, 4)
+                right_area.pack_end(tray_box, False, False, 4)
                 try:
                     from .aero_tray import StatusNotifierTray
                     self._tray = StatusNotifierTray(tray_box, Gtk, Gio, GLib, GdkPixbuf)
@@ -721,12 +733,15 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                         button, icon, label = previous[xid]
                     else:
                         button = self._class(Gtk.Button(), "aero-task")
-                        button.set_size_request(135, 35)
+                        button.set_size_request(42 if profile == "chromeos" else 135, 35)
                         content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
                         icon = Gtk.Image.new_from_icon_name("application-x-executable", Gtk.IconSize.MENU)
                         label = Gtk.Label(xalign=0)
                         label.set_max_width_chars(12)
                         label.set_ellipsize(Pango.EllipsizeMode.END)
+                        if profile == "chromeos":
+                            label.set_no_show_all(True)
+                            label.hide()
                         content.pack_start(icon, False, False, 0)
                         content.pack_start(label, True, True, 0)
                         button.add(content)
