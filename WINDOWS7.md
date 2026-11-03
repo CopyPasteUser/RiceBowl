@@ -24,9 +24,9 @@ These four images are **real desktop captures** of RiceHub 0.3 RC2 running on a 
 
 **Capture coverage:** Start menu, search, wallpaper, desktop icons, launcher pins, bottom taskbar, clock, Show Desktop button and XFWM4 window chrome are visible. This test environment did not provide optional Wnck tracking, StatusNotifier clients, network/audio settings launchers or Plank, so running-window buttons, tray contents, quick links and the separate dock do **not** appear in these screenshots. GTK/Thunar widget styling can also differ from a complete applied rice. Those integrations still need captures and acceptance checks on a real Linux Mint XFCE machine.
 
-### RiceHub gallery
+### RiceBowl gallery
 
-![Aero rice selection in RiceHub](screenshots/ricehub-aero-gallery-0.2.0rc1.png)
+![Aero rice selection in RiceBowl](screenshots/ricehub-aero-gallery-0.2.0rc1.png)
 
 The hub-gallery image is an older genuine GTK3 capture of the preset selector; the four desktop screenshots above show the newer RC2 shell.
 
@@ -48,7 +48,7 @@ The hub-gallery image is an older genuine GTK3 capture of the preset selector; t
 | **File manager** | [Thunar integration](macrice/thunar.py) | Reversible application styling |
 | **Dock** | [Aero glass Plank theme](assets/plank-themes/RiceHub-Aero-Glass/dock.theme) | Existing Plank configuration shifted away from the bottom taskbar during Aero apply |
 | **Wallpapers** | [Meadow](assets/wallpapers/aero-meadow.jpg) / [Cascade](assets/wallpapers/aero-cascade.jpg) | Two original Frutiger Aero-style desktops |
-| **Session startup** | [aero.py](macrice/aero.py) | RiceHub-managed, user-local XFCE autostart; no global systemd service |
+| **Session startup** | [aero.py](macrice/aero.py) | RiceBowl-managed, user-local XFCE autostart; no global systemd service |
 | **Backup and restore** | [rice.py](macrice/rice.py) | Explicit preflight, snapshot, apply, restore, preservation of later user edits where possible |
 | **Hub gallery** | [hub.py](macrice/hub.py) | Select either Aero palette; check requirements before applying |
 | **Concept preview** | [windows7_proto.py](macrice/windows7_proto.py) | Separate non-installing visual prototype, distinct from the real shell |
@@ -63,7 +63,7 @@ sudo apt install python3-gi gir1.2-gtk-3.0 gir1.2-wnck-3.0 librsvg2-common
 git clone https://github.com/CopyPasteUser/RiceHub.git
 cd RiceHub
 bash install.sh --dry-run
-bash install.sh                   # Never sudo for RiceHub itself
+bash install.sh                   # Never sudo for RiceBowl itself
 macrice rice plan aero-meadow    # Read-only preflight
 macrice rice apply aero-meadow   # Explicit change + backup
 macrice rice apply aero-cascade  # Alternative palette
@@ -81,7 +81,7 @@ Use `macrice aero-shell` to open/toggle Start and `macrice aero-shell --quit` to
 - **Persistent environment overrides:** Set them in your session environment before XFCE autostart; invoking an existing process with a new environment does not alter that process.
 - **System actions:** Control Panel and Log off launch existing XFCE dialogs. There is no immediate shutdown, no shell execution of untrusted text, and no automatic package installation.
 - **Dependencies:** Optional SNI and Wnck are degraded gracefully if absent. Legacy XEmbed tray icons are **not** implemented.
-- **Coexistence:** RiceHub never force-kills an existing XFCE Panel or MacBar when applying a rice; disable redundant panels yourself only after checking recovery.
+- **Coexistence:** RiceBowl never force-kills an existing XFCE Panel or MacBar when applying a rice; disable redundant panels yourself only after checking recovery.
 
 ## Visual assets — every bundled Aero element
 
