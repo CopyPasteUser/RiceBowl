@@ -89,6 +89,55 @@ def write_autostart(config_root: Path, content: str | None) -> None:
         Path(temp).unlink(missing_ok=True)
 
 
+def _compatible_managed_file(relative: Path, current: bytes, expected: bytes) -> bool:
+    """Only accept unchanged assets or the exact pre-RiceBowl index metadata.
+
+    The strict comparison on every other file protects customized artwork.
+    """
+    return current == expected or (
+        relative == Path("index.theme")
+        and b"RiceBowl" in expected
+        and current == expected.replace(b"RiceBowl", b"RiceHub")
+    )
+
+
+def _migrate_owned_index(target: Path, source: Path) -> None:
+    """Backup and atomically relabel only a verified, old managed index.theme."""
+    old_index = target / "index.theme"
+    new_index = source / "index.theme"
+    if not old_index.is_file() or old_index.is_symlink() or not new_index.is_file():
+        return
+    current, expected = old_index.read_bytes(), new_index.read_bytes()
+    if current == expected:
+        return
+    if not _compatible_managed_file(Path("index.theme"), current, expected):
+        raise AeroAssetError(f"Customized theme metadata cannot be migrated: {target}")
+    backup_dir = target.parent / ".ricebowl-metadata-backups"
+    if backup_dir.is_symlink() or (backup_dir.exists() and not backup_dir.is_dir()):
+        raise AeroAssetError("Unmanaged metadata backup path")
+    backup_dir.mkdir(mode=0o700, exist_ok=True)
+    backup_fd, backup_file = tempfile.mkstemp(prefix=target.name + "-", suffix=".theme", dir=backup_dir)
+    try:
+        with os.fdopen(backup_fd, "wb") as stream:
+            stream.write(current)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.chmod(backup_file, 0o600)
+        fd, temporary = tempfile.mkstemp(prefix=".ricebowl-index-", dir=target.parent)
+        try:
+            with os.fdopen(fd, "wb") as stream:
+                stream.write(expected)
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.chmod(temporary, 0o644)
+            os.replace(temporary, old_index)
+        finally:
+            Path(temporary).unlink(missing_ok=True)
+    except Exception:
+        # Keep a successful backup on disk even when the metadata write fails.
+        raise
+
+
 def preflight(source_root: Path, data_root: Path,
               bundles: tuple[tuple[str, str], ...] = BUNDLES) -> list[tuple[Path, Path]]:
     """Validate whole bundles and destinations before creating a single file."""
@@ -113,7 +162,9 @@ def preflight(source_root: Path, data_root: Path,
             actual = {p.relative_to(target) for p in target.rglob("*") if p.is_file()}
             expected = {p.relative_to(source) for p in files}
             if (actual != expected or any(p.is_symlink() for p in target.rglob("*")) or
-                    any((target / p.relative_to(source)).read_bytes() != p.read_bytes() for p in files)):
+                    any(not _compatible_managed_file(
+                        p.relative_to(source), (target / p.relative_to(source)).read_bytes(), p.read_bytes()
+                    ) for p in files)):
                 raise AeroAssetError(f"Existing customized theme conflicts with RiceBowl: {target}")
         packages.append((source, target))
     return packages
@@ -123,6 +174,7 @@ def install(packages: list[tuple[Path, Path]]) -> None:
     """Stage complete directories then rename them into an unoccupied path."""
     for source, target in packages:
         if target.exists():
+            _migrate_owned_index(target, source)
             continue
         target.parent.mkdir(parents=True, exist_ok=True)
         stage = Path(tempfile.mkdtemp(prefix=".ricehub-aero-", dir=target.parent))
