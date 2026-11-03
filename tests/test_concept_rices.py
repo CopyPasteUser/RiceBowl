@@ -27,6 +27,15 @@ class ConceptTests(unittest.TestCase):
         with self.assertRaises(KeyError):
             search_apps("nonexistent", "")
 
+    def test_concept_wallpapers_match_their_own_rice_not_windows_seven(self):
+        for key in ("winxp", "frutiger"):
+            with self.subTest(key=key):
+                self.assertEqual(CONCEPTS[key].wallpaper, STYLES[key].wallpaper)
+                self.assertNotIn(CONCEPTS[key].wallpaper, (
+                    STYLES["aero-meadow"].wallpaper,
+                    STYLES["aero-cascade"].wallpaper,
+                ))
+
     def test_gtk_css_is_parsable_without_starting_desktop(self):
         try:
             import gi

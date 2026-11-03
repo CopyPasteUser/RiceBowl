@@ -34,7 +34,7 @@ recoverable desktop settings backups.
 | Desktop | Included experience |
 | --- | --- |
 | **macOS · Aurora** | MacBar, MacMenu, Control Center, optional Plank dock, three palettes |
-| **Windows 7 · Aero** | Grouped glass Superbar, previews, Jump Lists, Peek, two-column Start, Aero chrome, control panel |
+| **Windows 7 · Aero** | Classic cobalt-blue Linux-penguin wallpaper, golden folders, smoke-blue glass Superbar, previews, Jump Lists, Peek, two-column Start and Aero chrome |
 | **Windows 10 · Ten** | Dark/light styles, Start tiles, running apps, Action Center |
 | **Windows XP · Luna** | Blue/green taskbar, XP-inspired Start, categorized control panel |
 | **Windows 98 / 2000 · Classic** | Compact gray taskbar, classic Start, square dialogs and controls |

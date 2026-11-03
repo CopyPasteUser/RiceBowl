@@ -44,7 +44,9 @@ class AeroTests(unittest.TestCase):
             self.assertEqual(converted["alignment"], "'center'")
             self.assertEqual(converted["position"], "'left'")
             self.assertEqual(converted["hide-mode"], "'auto'")
-            self.assertTrue(target.name.startswith("aero-meadow-"))
+            # The stable selection key is still aero-meadow; the user-facing
+            # style name now yields the new managed wallpaper target prefix.
+            self.assertTrue(target.name.startswith("aero-seven-blue-"))
             self.assertFalse((root / "data").exists())
             self.assertEqual(fake.calls, [])
 

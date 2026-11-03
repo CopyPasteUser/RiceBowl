@@ -29,7 +29,7 @@ COMMON = (
 CONCEPTS = {
     "winxp": Concept(
         "winxp", "Windows XP Luna", "Blue Luna chrome, meadow and a two-column Start menu",
-        "All Programs", "Start", "aero-meadow.jpg",
+        "All Programs", "Start", "luna-hills.jpg",
         (("My Computer", "computer-symbolic"), ("My Documents", "folder-documents-symbolic"),
          ("Internet", "web-browser-symbolic"), *COMMON),
     ),
@@ -47,7 +47,7 @@ CONCEPTS = {
     ),
     "frutiger": Concept(
         "frutiger", "Y2K / Frutiger Aero", "Bright aqua glass, lush landscape and Linux penguin",
-        "Applications", "Apps", "aero-cascade.jpg",
+        "Applications", "Apps", "frutiger-future.jpg",
         (("Home", "user-home-symbolic"), ("Web", "web-browser-symbolic"),
          ("Music", "audio-x-generic-symbolic"), *COMMON),
     ),

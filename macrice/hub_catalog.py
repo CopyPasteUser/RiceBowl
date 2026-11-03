@@ -39,8 +39,8 @@ FAMILIES: tuple[RiceFamily, ...] = (
         ("Live Start and taskbar", "Dark/light GTK & XFWM", "Persistent pins & Action Center", "Reversible installation"), True,
     ),
     RiceFamily(
-        "windows7", "Windows 7", "Aero nostalgia",
-        "Aero Meadow and Aero Cascade: original glass window chrome, Linux penguin, icons, Start menu and taskbar.",
+        "windows7", "Windows 7", "Classic Aero on Linux",
+        "Aero Seven Blue and Night: classic cobalt desktop glow, glass Linux penguin, golden folders, Start menu and Superbar.",
         True, ("aero-meadow", "aero-cascade"),
         ("Searchable Aero Start", "GTK/XFWM chrome", "Custom icons and wallpapers", "Glass taskbar"), True,
     ),
