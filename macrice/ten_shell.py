@@ -1,4 +1,4 @@
-"""Windows 10 shell skin for RiceHub's shared event-driven XFCE taskbar."""
+"""Windows 10 shell skin for RiceBowl's shared event-driven XFCE taskbar."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from __future__ import annotations
 APP_ID = "io.github.copypasteuser.RiceHub.TenShell"
 
 CSS = b"""
-/* RiceHub Ten: flat Windows 10-inspired shell, no compositor blur required. */
+/* RiceBowl Ten: flat Windows 10-inspired shell, no compositor blur required. */
 @define-color ten-panel #15191f;
 @define-color ten-surface #20252d;
 @define-color ten-hover #343d49;
