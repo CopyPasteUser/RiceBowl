@@ -632,7 +632,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             except (GLib.Error, OSError):
                 img = self._icon("start-here", Gtk.IconSize.LARGE_TOOLBAR)
             contents.pack_start(img, False, False, 0)
-            if not ten:
+            if not ten and profile != "chromeos":
                 contents.pack_start(Gtk.Label(label=heritage.start_label if heritage else "Start"), False, False, 0)
             start.add(contents)
             start.get_accessible().set_name("Toggle " + (heritage.name if heritage else
@@ -864,6 +864,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _create_ten_menu(self):
             """Real application list and pinned app tiles, with shared search/launch logic."""
+            if profile == "chromeos":
+                self._create_chrome_launcher()
+                return
             menu = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
             menu.set_title("RiceBowl " + (heritage.name if heritage else "Windows 10") + " Launcher")
             menu.set_decorated(False)
@@ -940,6 +943,73 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._render_ten_tiles()
             self._populate("")
 
+        def _create_chrome_launcher(self):
+            """ChromeOS-inspired centered search and app grid, not a Windows tile menu."""
+            menu = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
+            menu.set_title("RiceBowl ChromeOS App Launcher")
+            menu.set_decorated(False)
+            menu.set_resizable(False)
+            menu.set_skip_taskbar_hint(True)
+            menu.set_skip_pager_hint(True)
+            menu.set_type_hint(Gdk.WindowTypeHint.UTILITY)
+            menu.set_transient_for(self.bar)
+            menu.set_keep_above(True)
+            rect = self._desktop_rect()
+            _x, _y, menu_w, menu_h = menu_geometry(
+                rect.x, rect.y, rect.width, rect.height,
+                preferred_width=650, preferred_height=548)
+            menu.set_default_size(menu_w, menu_h)
+            root = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12),
+                               "chrome-launcher")
+            root.get_style_context().add_class("aero-menu-root")
+            root.set_border_width(18)
+            header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=9)
+            emblem = self._icon("start-here", Gtk.IconSize.DIALOG)
+            header.pack_start(emblem, False, False, 0)
+            header.pack_start(self._class(
+                Gtk.Label(label="Apps", xalign=0), "aero-menu-heading"), True, True, 0)
+            settings = self._class(Gtk.Button(), "chrome-launcher-settings")
+            settings.set_image(self._icon("preferences-system", Gtk.IconSize.MENU))
+            settings.set_tooltip_text("Open device settings")
+            settings.get_accessible().set_name("Open device settings")
+            settings.connect("clicked", lambda _button:
+                             self._open_tool("xfce4-settings-manager"))
+            header.pack_end(settings, False, False, 0)
+            root.pack_start(header, False, False, 0)
+
+            search = self._class(Gtk.SearchEntry(), "aero-menu-search")
+            search.set_placeholder_text("Search apps on this device")
+            search.get_accessible().set_name("Search all installed applications")
+            root.pack_start(search, False, False, 0)
+
+            root.pack_start(self._class(
+                Gtk.Label(label="Pinned apps", xalign=0), "aero-menu-sub"),
+                False, False, 0)
+            self.tile_grid = Gtk.Grid(row_spacing=7, column_spacing=8)
+            self.tile_grid.set_halign(Gtk.Align.CENTER)
+            root.pack_start(self.tile_grid, False, False, 0)
+            root.pack_start(self._class(
+                Gtk.Label(label="All apps", xalign=0), "aero-menu-sub"),
+                False, False, 0)
+            scroller = Gtk.ScrolledWindow()
+            scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+            scroller.set_min_content_height(120)
+            self.results = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+            scroller.add(self.results)
+            root.pack_start(scroller, True, True, 0)
+            menu.add(root)
+            menu.connect("focus-in-event", self._menu_focus_in)
+            menu.connect("focus-out-event", self._menu_focus_out)
+            def search_changed(*_args):
+                self._app_page_size = 24
+                self._populate(search.get_text())
+            search.connect("search-changed", search_changed)
+            search.connect("key-press-event", lambda _widget, event: self._search_key(event))
+            menu.connect("key-press-event", lambda _widget, event: self._search_key(event))
+            self.menu, self.search = menu, search
+            self._render_ten_tiles()
+            self._populate("")
+
         def _render_ten_tiles(self):
             if not hasattr(self, "tile_grid"):
                 return
@@ -952,7 +1022,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                                                   "ten-muted"), 0, 0, 2, 1)
             for index, app in enumerate(pinned):
                 button = self._class(Gtk.Button(), "ten-tile")
-                button.set_size_request(116, 87)
+                button.set_size_request(110 if profile == "chromeos" else 116,
+                                        80 if profile == "chromeos" else 87)
                 box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
                 icon = app.get_icon()
                 box.pack_start(Gtk.Image.new_from_gicon(icon, Gtk.IconSize.LARGE_TOOLBAR) if icon else
@@ -965,7 +1036,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 button.add(box)
                 button.get_accessible().set_name("Launch " + name)
                 button.connect("clicked", lambda _button, selected=app: self._launch(selected))
-                self.tile_grid.attach(button, index % 2, index // 2, 1, 1)
+                self.tile_grid.attach(button, index % (4 if profile == "chromeos" else 2),
+                                      index // (4 if profile == "chromeos" else 2), 1, 1)
             self.tile_grid.show_all()
 
         def _create_actions(self):
