@@ -46,7 +46,7 @@ def parser() -> argparse.ArgumentParser:
     p.add_argument("--version", action="version", version=f"MacRice {__version__}")
     commands = p.add_subparsers(dest="command")
     commands.add_parser("gui", help="Open the native GTK settings manager")
-    commands.add_parser("hub", help="Open RiceHub: discover, apply and restore desktop rices")
+    commands.add_parser("hub", help="Open RiceBowl: discover, apply and restore desktop rices")
     commands.add_parser("preview", help="Preview the complete desktop and apply or restore its Rice")
     aero = commands.add_parser("aero-shell", help="Run or toggle the Windows 7-inspired taskbar and Start menu")
     ten_shell = commands.add_parser("windows10-shell", help="Run or quit the Windows 10-inspired taskbar and Start menu")
