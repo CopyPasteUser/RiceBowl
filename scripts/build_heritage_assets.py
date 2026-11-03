@@ -646,9 +646,14 @@ def _icons(name, palette):
 
 
 def main(*, luna_only: bool = False, frutiger_only: bool = False,
-         classic_only: bool = False):
-    if sum((luna_only, frutiger_only, classic_only)) > 1:
+         classic_only: bool = False, chrome_only: bool = False):
+    if sum((luna_only, frutiger_only, classic_only, chrome_only)) > 1:
         raise ValueError("Choose only one targeted art build")
+    if chrome_only:
+        from build_chrome_assets import main as build_chrome
+
+        build_chrome()
+        return
     if classic_only:
         # Never regenerate other rices or overwrite hand-curated Classic SVGs.
         path = ROOT / "assets/themes/RiceHub-Classic"
@@ -688,6 +693,11 @@ def main(*, luna_only: bool = False, frutiger_only: bool = False,
     _classic()
     _chrome()
     _frutiger()
+    # The dedicated Chrome art generator is the canonical owner of its
+    # latest GTK/XFWM/wallpaper assets even during a full historical rebuild.
+    from build_chrome_assets import main as build_chrome
+
+    build_chrome()
     print("Generated four original XFCE window/GTK/icon themes and desktop wallpapers")
 
 
@@ -700,6 +710,8 @@ if __name__ == "__main__":
                         help="Refresh only the reviewed Frutiger XFWM and GTK glass styles")
     parser.add_argument("--classic-only", action="store_true",
                         help="Refresh only Windows 98 square XFWM, GTK and teal wallpaper")
+    parser.add_argument("--chrome-only", action="store_true",
+                        help="Refresh only ChromeOS Material You XFWM, GTK and wallpaper")
     arguments = parser.parse_args()
     main(luna_only=arguments.luna_only, frutiger_only=arguments.frutiger_only,
-         classic_only=arguments.classic_only)
+         classic_only=arguments.classic_only, chrome_only=arguments.chrome_only)

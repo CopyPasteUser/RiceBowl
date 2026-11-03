@@ -1,0 +1,162 @@
+{
+  "schema": 1,
+  "comment": "Verified original ChromeOS managed asset blobs before Material You fidelity refresh; user customizations are not trusted.",
+  "files": {
+    "assets/themes/RiceHub-Chrome/gtk-3.0/gtk.css": [
+      "b3714ee2e8a7ce22a56f8328202f5fd20cc41b26"
+    ],
+    "assets/themes/RiceHub-Chrome/index.theme": [
+      "551e276a8a5e2e2360efbad23579ad979c6c9b41"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/bottom-active.png": [
+      "9cd8a106f7ec1ec0e7ee12bc5984f0c78cce27a4"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/bottom-inactive.png": [
+      "5eb837dc2a3a7fe8fa188fc5f1f1d1008dadcdcd"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/bottom-left-active.png": [
+      "9cd8a106f7ec1ec0e7ee12bc5984f0c78cce27a4"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/bottom-left-inactive.png": [
+      "5eb837dc2a3a7fe8fa188fc5f1f1d1008dadcdcd"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/bottom-right-active.png": [
+      "9cd8a106f7ec1ec0e7ee12bc5984f0c78cce27a4"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/bottom-right-inactive.png": [
+      "5eb837dc2a3a7fe8fa188fc5f1f1d1008dadcdcd"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/close-active.png": [
+      "d787bba72d724257f81f80ebec96097005fb27ab"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/close-inactive.png": [
+      "329cc511730b50cf0affd29273b1bde29965af1e"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/close-prelight.png": [
+      "4dc4ab6b5c99df2772c705dc5fc303c92cf1a32e"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/close-pressed.png": [
+      "4dc4ab6b5c99df2772c705dc5fc303c92cf1a32e"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/hide-active.png": [
+      "9decb270082cfd366016e1ddfc08f4c68d9ed355"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/hide-inactive.png": [
+      "b066c7cfb9a7f27ec45592be612cbc3cf0fe2d68"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/hide-prelight.png": [
+      "9082ea996f55bc0ee84e0292dbbd801c5bf78f07"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/hide-pressed.png": [
+      "9082ea996f55bc0ee84e0292dbbd801c5bf78f07"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/left-active.png": [
+      "a6c6ba339206c891a810ea5a9b9858f6deb63a25"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/left-inactive.png": [
+      "753b84083a705cdf6b945782aa0a96ef42361bc7"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/maximize-active.png": [
+      "d41f1117a8df94e4b573a124fab5a25a9b77d5e4"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/maximize-inactive.png": [
+      "1330d2dc6cbcf3de16514d0ea716e83ae56c3eb3"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/maximize-prelight.png": [
+      "cbfe6b910bb0310a6364edb133f46fd21f3b5b7d"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/maximize-pressed.png": [
+      "cbfe6b910bb0310a6364edb133f46fd21f3b5b7d"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/menu-active.png": [
+      "199f989da28c28faa3b5d1cca30265e9abea4095"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/menu-inactive.png": [
+      "0bb540e0045383727eb6a00a226c1113cae6e2b1"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/menu-prelight.png": [
+      "b3908ade1ec44ce39f7376792e73b30a9715c320"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/menu-pressed.png": [
+      "b3908ade1ec44ce39f7376792e73b30a9715c320"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/right-active.png": [
+      "a6c6ba339206c891a810ea5a9b9858f6deb63a25"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/right-inactive.png": [
+      "753b84083a705cdf6b945782aa0a96ef42361bc7"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/shade-active.png": [
+      "7df5007f2d6848f71c577cc5a55927f47a65c77e"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/shade-inactive.png": [
+      "47426f89b38d76c100377aaaa3cb835708adfab6"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/shade-prelight.png": [
+      "7c003e1afd7eba82ac39151f3783de9b24656728"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/shade-pressed.png": [
+      "7c003e1afd7eba82ac39151f3783de9b24656728"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/stick-active.png": [
+      "b2e1f181cf9cb7118375f99769ee3a5cfc41d222"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/stick-inactive.png": [
+      "99b14fd0fee1b996de5a21106abae0789b4c4e9c"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/stick-prelight.png": [
+      "f53971295ebb3689f20d9b5294f7ce547767697a"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/stick-pressed.png": [
+      "f53971295ebb3689f20d9b5294f7ce547767697a"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/themerc": [
+      "f675a48bc31d589e74471d4bd286bcc1dba70623"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/title-1-active.png": [
+      "6fa67b5047d7c32bb14489a0b7ca2bd0d2e7dee5"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/title-1-inactive.png": [
+      "ff24bde3f30daae80c3be1a4fa4985c2b8c17981"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/title-2-active.png": [
+      "6fa67b5047d7c32bb14489a0b7ca2bd0d2e7dee5"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/title-2-inactive.png": [
+      "ff24bde3f30daae80c3be1a4fa4985c2b8c17981"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/title-3-active.png": [
+      "6fa67b5047d7c32bb14489a0b7ca2bd0d2e7dee5"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/title-3-inactive.png": [
+      "ff24bde3f30daae80c3be1a4fa4985c2b8c17981"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/title-4-active.png": [
+      "6fa67b5047d7c32bb14489a0b7ca2bd0d2e7dee5"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/title-4-inactive.png": [
+      "ff24bde3f30daae80c3be1a4fa4985c2b8c17981"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/title-5-active.png": [
+      "6fa67b5047d7c32bb14489a0b7ca2bd0d2e7dee5"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/title-5-inactive.png": [
+      "ff24bde3f30daae80c3be1a4fa4985c2b8c17981"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/top-left-active.png": [
+      "abeffe513fefaab2c88082295c35bef63f96fddc"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/top-left-inactive.png": [
+      "0b452c4dc715867db1e078904cdf7557d809e0e0"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/top-right-active.png": [
+      "abeffe513fefaab2c88082295c35bef63f96fddc"
+    ],
+    "assets/themes/RiceHub-Chrome/xfwm4/top-right-inactive.png": [
+      "0b452c4dc715867db1e078904cdf7557d809e0e0"
+    ],
+    "assets/wallpapers/chrome-pastel.jpg": [
+      "33de48e92054aef12a3bd4f26aeb39a0785dced3"
+    ]
+  }
+}

@@ -12,8 +12,8 @@ original Linux artwork. Windows 11 and Liquid Glass are out of scope.
 | Catalog names, variants and status | `macrice/hub_catalog.py` |
 | User-visible full-rice presets | `macrice/rice.py` |
 | Native shell lifecycle / keyboard / window list | `macrice/aero_shell.py` |
-| Per-rice taskbar / launcher skin | `macrice/heritage_shell.py` or `macrice/ten_shell.py` |
-| Desktop GTK/XFWM/icons/wallpaper assets | `scripts/build_heritage_assets.py` → checked-in `assets/` |
+| Per-rice taskbar / launcher skin | `macrice/heritage_shell.py`, `macrice/chrome_shell.py` or `macrice/ten_shell.py` |
+| Desktop GTK/XFWM/icons/wallpaper assets | `scripts/build_heritage_assets.py` and targeted `scripts/build_chrome_assets.py` → checked-in `assets/` |
 | Exclusive active shell, Plank, MacBar and XFCE panel | `macrice/shell_session.py` |
 | Recoverable Super_L and Control_R shortcuts | `macrice/session_shortcuts.py` |
 | Backups and partial restore | `macrice/rice.py`, schema 5 |
@@ -77,7 +77,23 @@ original Linux artwork. Windows 11 and Liquid Glass are out of scope.
   curated folder artwork. `assets/trusted-ricebowl-classic-before-fidelity.json`
   enables safe, backup-backed upgrades of byte-identical older managed assets.
   The palette must never use gloss, water, transparency or XP-rounded controls.
-- **ChromeOS:** light pastel background, soft shelf, rounded launcher and quiet blue accents.
+- **ChromeOS / Material You:** independent pastel-indigo `#e7e9f8` and iris
+  `#4b66d7` identity with an original flowing wallpaper, 56px shelf,
+  consistent app circles, window activity underline and accessible status pill.
+  `aero_shell._create_chrome_launcher()` renders a 610px left-anchored rounded
+  app launcher: real Gio apps, four saved/favorite pinned shortcuts, bounded
+  multirow grid, filter, keyboard focus, load-more and actual pin contexts.
+  `macrice/chrome_quick_settings.py` renders a 396px bottom-right settings
+  popup with date, verified Linux volume/mute, real network and battery status
+  and only installed XFCE/NetworkManager utility navigation. It deliberately
+  does not pretend to toggle Wi-Fi, Bluetooth or notifications; XFCE still
+  owns notifications. `macrice/chrome_shell.py` owns Chrome-only selectors and
+  optional X11 rounded popup window shapes even without a compositor.
+  `scripts/build_chrome_assets.py` generates this profile's original wallpaper,
+  35px XFWM4 frames/buttons and light GTK3/Thunar styles. Rebuild with
+  `python3 scripts/build_heritage_assets.py --chrome-only`; all-rice builds
+  call the same generator last. The Chrome historical managed asset manifest
+  allows safe upgrade of matching old installations, retaining user edits.
 - **Frutiger Aero / Aqua World:** independent luminous turquoise/cyan and lime
   eco-futurist identity over original water/grass/blue-sky artwork. The live
   taskbar has a thick pearlescent top light, a recognizable aqua Start orb,

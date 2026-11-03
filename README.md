@@ -26,8 +26,13 @@ water-and-nature identity with pearl-glass taskbar, live Apps / Places / Setting
 launcher, original refractive XFWM artwork and matching GTK/Thunar controls.
 **Windows 10** now has a three-zone Start with genuine pinned app tiles and
 an XFCE-backed right-side Action Center, against original cobalt four-pane
-Linux artwork and flat dark/light window and file-manager themes. The other
-two families retain their distinct designs. All of these operate on actual Linux applications and X11
+Linux artwork and flat dark/light window and file-manager themes.
+**ChromeOS / Material You** now has a distinct lavender 56px shelf, compact
+bottom-left app launcher with pinned applications and a real searchable Gio
+grid, and a bottom-right Quick Settings popup with verified volume/mute,
+network/battery state and direct XFCE settings links. Its original pastel
+abstract wallpaper, rounded window art and GTK/Thunar theme are independent
+of every Windows desktop. All of these operate on actual Linux applications and X11
 windows; they do not emulate Windows or ship proprietary Microsoft assets.
 
 The tagged **v0.9.1** package predates these fidelity improvements. For the
@@ -35,7 +40,8 @@ latest source use `main`; see [Windows 7 engineering notes](WIN7_AERO_ROADMAP.md
 [XP Luna engineering notes](XP_LUNA_ROADMAP.md) and
 [Frutiger Aero implementation roadmap](FRUTIGER_AERO_ROADMAP.md) and
 [Windows 98 implementation roadmap](CLASSIC_98_ROADMAP.md) and
-[Windows 10 implementation roadmap](WINDOWS10_ROADMAP.md). RiceBowl verifies a
+[Windows 10 implementation roadmap](WINDOWS10_ROADMAP.md) and
+[ChromeOS implementation roadmap](CHROMEOS_ROADMAP.md). RiceBowl verifies a
 replacement taskbar is mapped before handing off from XFCE Panel and keeps
 recoverable desktop settings backups.
 
@@ -48,7 +54,7 @@ recoverable desktop settings backups.
 | **Windows 10 · Ten** | 40px charcoal bar, blue four-pane Linux wallpaper, real three-zone Start with alphabetical apps/grouped tiles, compact running windows, tall functional Action Center, Explorer-like dark/light chrome |
 | **Windows XP · Luna** | Blue/green taskbar, XP-inspired Start, categorized control panel |
 | **Windows 98 / 2000 · Classic** | Flat teal wallpaper, 34px embossed taskbar, Linux-penguin Start badge, keyboard-operable classic Programs / Favorites / Documents / Settings cascades, original navy XFWM windows and coordinated GTK/Thunar 3D controls |
-| **ChromeOS · Pastel Shelf** | Centered app launcher, rounded shelf and device settings |
+| **ChromeOS · Material You** | 56px pastel shelf, original flowing lavender wallpaper, real pinned Gio apps, searchable left-side Launcher, rounded Quick Settings with verified output volume/mute, truthful network/battery and XFCE device settings; matching GTK/Thunar and XFWM4 art |
 | **Y2K · Frutiger Aero / Aqua World** | Sky/water/grass wallpaper, glossy cyan-and-lime live taskbar, original pearl-window chrome, large Gio app tiles, Apps / Places / Settings launcher and coordinated GTK/Thunar controls |
 
 All seven families are installable and reversible. The non-macOS menus launch **real applications** from the desktop catalog, with Wnck-based window buttons when the relevant library is present. Control panels open installed system utilities; unavailable tools are disabled rather than simulated. No Microsoft, Google or Apple proprietary assets are bundled.
@@ -70,7 +76,7 @@ revision; superseded release galleries are intentionally excluded.
 
 | ChromeOS | Frutiger Aero |
 | --- | --- |
-| ![ChromeOS app launcher and separated shelf](screenshots/current/chromeos-start.webp) | ![Frutiger Aero apps and places dashboard](screenshots/current/frutiger-start.webp) |
+| ![ChromeOS Material You search and app launcher](screenshots/current/chromeos-start.webp) | ![Frutiger Aero apps and places dashboard](screenshots/current/frutiger-start.webp) |
 
 [Latest Control Panel gallery](screenshots/current/) · [CI tests and full-resolution screenshots](https://github.com/CopyPasteUser/RiceBowl/actions/workflows/ci.yml)
 
