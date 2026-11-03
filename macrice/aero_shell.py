@@ -103,6 +103,12 @@ CSS = b"""
   border-color: #338cd0; }
 .aero-menu-side button { background: transparent; border: 1px solid transparent; color: #194467; box-shadow: none; }
 .aero-menu-side button:hover { background: rgba(255,255,255,.55); border-color: #74a7cb; }
+
+/* Windows 7 Aero right notification cluster. */
+.rice-status { background: rgba(255,255,255,.12); border: 1px solid rgba(245,254,255,.2); border-radius: 4px; color: #fff; padding: 4px 5px; box-shadow: inset 0 1px rgba(255,255,255,.18); }
+.rice-status:hover, .rice-status:focus { background: rgba(230,250,255,.33); border-color: #e3faff; }
+.rice-status label { color: #fff; font-size: 11px; }
+.rice-status-summary { color: #315c7f; font-size: 11px; }
 """
 
 
