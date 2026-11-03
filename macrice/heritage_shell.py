@@ -144,3 +144,200 @@ CSS = {
 .aqua-gear { border-radius: 18px; background: #d8fff4; border: 1px solid #8fdddf; padding: 5px; }
 """,
 }
+
+
+# RiceBowl 0.9: these are complete profile-specific widget designs, rather
+# than recolors of the common Aero shell. Keep the CSS local to each profile;
+# macOS has its own unchanged implementation.
+DETAIL_CSS = {
+    "winxp": b"""
+/* Luna: raised deep-blue taskbar, bright green Start, recessed system tray. */
+.aero-taskbar {
+  background-image: linear-gradient(to bottom, #5fa5ff, #246add 18%, #1144b1 68%, #084099);
+  border-top: 2px solid #a9d7ff; border-bottom: 1px solid #092d84;
+  color: white; padding: 2px 6px; min-height: 43px;
+}
+.aero-start {
+  background-image: linear-gradient(to bottom, #aafa74, #49bc27 37%, #168b20 78%, #107018);
+  border: 1px solid #d2ffc2; border-bottom: 2px solid #085c11;
+  border-radius: 21px 9px 9px 21px; color: white;
+  font-size: 17px; font-weight: bold; padding: 2px 15px 2px 5px;
+  box-shadow: inset 0 1px rgba(255,255,255,.70), 0 1px 3px #043786;
+}
+.aero-task {
+  background-image: linear-gradient(#57a4ef, #1760cd); border: 1px solid #7eb9ff;
+  border-bottom: 2px solid #063f9a; border-radius: 5px; color: white;
+  box-shadow: inset 0 1px rgba(255,255,255,.25);
+}
+.aero-task-active {
+  background-image: linear-gradient(#2c6ac2, #144ba5);
+  border: 1px solid #c5e4ff; border-top: 2px solid #11418d;
+}
+.rice-status, .aero-quick, .aero-time {
+  background-image: linear-gradient(#3892ee, #1761c6);
+  border: 1px solid #72a8ed; color: white; border-radius: 3px;
+}
+.aero-time { font-size: 11px; font-weight: bold; padding: 4px 8px; }
+.luna-menu { background: #f6f6ef; border: 3px solid #245ec4; border-radius: 9px 9px 6px 6px; }
+.luna-user {
+  background-image: linear-gradient(#397fe2, #1261c9 58%, #1042a7);
+  border-bottom: 2px solid #febc5c; padding: 8px 11px; min-height: 52px;
+}
+.luna-user-name { color: #fff; font-size: 20px; font-weight: bold;
+  text-shadow: 0 1px #184085; }
+.luna-avatar { background: #fff; border: 2px solid #e2edff; border-radius: 4px; padding: 2px; }
+.luna-apps { background: #fff; padding: 9px 7px; }
+.luna-apps .aero-menu-search { border: 1px solid #8cb8e4; border-radius: 4px; }
+.luna-apps .aero-menu-app { color: #182c49; border-radius: 4px;
+  padding: 7px 5px; }
+.luna-apps .aero-menu-app:hover, .luna-apps .aero-menu-app:focus {
+  background: #286bd0; color: #fff; border-color: #18519f;
+}
+.luna-places {
+  background-image: linear-gradient(to right, #d3e3ff, #b7cff5);
+  border-left: 1px solid #93b4e4; padding: 10px 8px;
+}
+.luna-places .rice-place {
+  background: transparent; border: 1px solid transparent; box-shadow: none;
+  color: #194282; border-radius: 4px; padding: 6px 5px;
+}
+.luna-places .rice-place:hover, .luna-places .rice-place:focus {
+  background: #eff6ff; border: 1px solid #71a2e2;
+}
+.luna-all-programs {
+  background-image: linear-gradient(#fff, #e7f2ff);
+  border: 1px solid #b2cdeb; border-radius: 4px; color: #174a99;
+  font-weight: bold; padding: 7px; box-shadow: none;
+}
+.luna-footer {
+  background-image: linear-gradient(#3078d6, #1248ae);
+  border-top: 2px solid #f8b45e; min-height: 44px; padding: 6px 12px;
+}
+.luna-power {
+  background-image: linear-gradient(#fb934f, #c94820);
+  border: 1px solid #ffcf9c; border-radius: 4px; color: white;
+  font-weight: bold; padding: 5px 9px;
+}
+.luna-power:hover { background: #ed7045; color: #fff; }
+""",
+    "winclassic": b"""
+/* 98/2000: no gradients, no glass, squared pixel-like geometry. */
+.aero-taskbar { background: #c0c0c0; border-top: 2px solid #fff;
+  border-bottom: 1px solid #4d4d4d; padding: 2px 4px; min-height: 34px; }
+.aero-start { background: #c0c0c0; border: 2px outset #fff; border-radius: 0;
+  color: #101010; box-shadow: none; font-weight: bold; padding: 2px 5px; }
+.aero-task { background: #c0c0c0; border: 2px outset #fff; border-radius: 0;
+  box-shadow: none; color: #151515; }
+.aero-task-active { background: #b0b0b0; border: 2px inset #fff; }
+.aero-pin, .rice-status, .aero-quick { border: 2px outset #fff; border-radius: 0;
+  background: #c0c0c0; box-shadow: none; color: #111; padding: 2px; }
+.aero-time { border: 2px inset #fff; border-radius: 0; background: #c0c0c0;
+  color: #111; font-family: monospace; padding: 2px 6px; }
+.classic-menu { background: #c0c0c0; border: 2px outset #fff; }
+.classic-brand { background: #000080; border-right: 1px solid #6e6e6e; }
+.classic-brand-label { color: white; font-size: 15px; font-weight: bold; }
+.classic-menu-list { background: #c0c0c0; padding: 3px 2px; }
+.classic-menu-item { color: #111; background: #c0c0c0; border: 0;
+  border-radius: 0; box-shadow: none; min-height: 35px;
+  padding: 5px 9px; }
+.classic-menu-item:hover, .classic-menu-item:focus {
+  background: #000080; color: white; border-radius: 0; }
+.classic-menu-list separator { background: #7e7e7e; min-height: 2px; }
+.classic-menu-list .aero-menu-search { background: #fff;
+  border: 2px inset #fff; border-radius: 0; padding: 5px; }
+.classic-menu-list .aero-menu-app { border-radius: 0; }
+.classic-menu-list .aero-menu-app:hover { background: #000080; color: #fff; }
+menu { background: #c0c0c0; border: 2px outset #fff; }
+menu menuitem { color: #111; padding: 5px 11px; }
+menu menuitem:hover { background: #000080; color: #fff; }
+""",
+    "chromeos": b"""
+/* Modern ChromeOS: separated launcher, centered app shelf and status capsule. */
+.aero-taskbar { background: rgba(228,236,252,.94); border-top: 1px solid #e8edff;
+  color: #283852; padding: 5px 13px; min-height: 48px; }
+.aero-start { background: rgba(255,255,255,.78); border: 1px solid #c4d4f0;
+  color: #4568b4; border-radius: 26px; box-shadow: 0 1px 3px rgba(35,64,115,.15);
+  padding: 5px; }
+.chrome-app-shelf { background: rgba(247,249,255,.88); border: 1px solid #c8d7ee;
+  border-radius: 27px; padding: 3px 12px; }
+.chrome-app-shelf .aero-pin, .chrome-app-shelf .aero-task {
+  background: rgba(248,249,255,.6); border: 1px solid transparent;
+  border-radius: 25px; padding: 5px; min-width: 33px; min-height: 30px;
+  color: #3b4c71; box-shadow: none; }
+.chrome-app-shelf .aero-task-active { border-color: #91a9eb;
+  border-bottom: 3px solid #4b82e4; background: #e0e9ff; }
+.chrome-status-pill { border: 1px solid #c3d1ea; border-radius: 25px;
+  background: rgba(248,250,255,.90); padding: 3px 9px; }
+.chrome-status-pill .rice-status, .chrome-status-pill .aero-quick,
+.chrome-status-pill .aero-time, .chrome-status-pill .aero-desktop {
+  background: transparent; border: 1px solid transparent; border-radius: 18px;
+  color: #314365; box-shadow: none; padding: 5px 6px; }
+.chrome-status-pill .rice-status:hover, .chrome-status-pill .aero-quick:hover {
+  background: #d6e3f9; border-color: #bfd1ed; }
+.chrome-status-pill .aero-time { font-size: 11px; font-weight: bold; }
+.chrome-launcher {
+  background-image: linear-gradient(to bottom, rgba(252,253,255,.98), rgba(236,242,255,.98));
+  border: 1px solid #b9c8e9; border-radius: 24px; color: #273b62;
+  box-shadow: 0 4px 16px rgba(40,68,120,.20); }
+.chrome-launcher .aero-menu-heading { color: #2c4276; font-size: 20px; }
+.chrome-launcher .aero-menu-search { background: rgba(248,250,255,.97);
+  border: 2px solid #8caafa; border-radius: 24px; padding: 12px 15px; }
+.chrome-launcher .ten-tile { background: transparent; color: #31456d;
+  border: 1px solid transparent; border-radius: 20px; padding: 6px 3px;
+  box-shadow: none; }
+.chrome-launcher .ten-tile:hover, .chrome-launcher .ten-tile:focus {
+  background: #dbe6ff; border-color: #adc6ef; }
+.chrome-launcher .ten-tile-label { color: #2c3c61; font-size: 11px; }
+.chrome-launcher-settings { background: #e9effd; color: #3453a4;
+  border-radius: 22px; border: 1px solid #d3dff4; }
+""",
+    "frutiger": b"""
+/* Frutiger Aqua: luminous cyan glass, lime controls and rounded wave panels. */
+.aero-taskbar {
+  background-image: linear-gradient(to bottom, rgba(247,255,253,.97),
+    rgba(133,244,228,.92) 42%, rgba(36,177,199,.94));
+  border-top: 2px solid #faffff; border-bottom: 1px solid #218b9c;
+  color: #075676; padding: 5px 10px; min-height: 49px;
+}
+.aero-start { background-image: linear-gradient(#fff, #b8fff0 36%, #22b5ca);
+  color: #07657e; border: 2px solid #f1ffff; border-radius: 30px;
+  box-shadow: 0 2px 5px rgba(10,80,114,.35); padding: 3px 9px; }
+.aero-pin, .aero-task { background-image: linear-gradient(rgba(255,255,255,.7),
+  rgba(93,214,223,.48)); border: 1px solid rgba(246,255,255,.9);
+  border-radius: 17px; color: #08607e; box-shadow: inset 0 1px #fff; }
+.aero-pin:hover, .aero-task:hover, .aero-task-active {
+  background: #d0fff3; border: 1px solid #31a5c4; }
+.rice-status, .aero-quick, .aero-time { background: rgba(219,255,246,.50);
+  border: 1px solid rgba(244,255,255,.9); border-radius: 18px;
+  color: #075c75; padding: 4px 7px; }
+.aqua-dashboard { background-image: linear-gradient(to bottom, #ebfff9,
+  #aef1e8 48%, #7cdae3); border: 2px solid #67d7d8;
+  border-radius: 23px; box-shadow: 0 5px 17px rgba(7,87,120,.32); }
+.aqua-dashboard .aero-menu-heading { color: #096b89; font-size: 23px;
+  font-weight: bold; }
+.aqua-dashboard .aero-menu-search { border: 1px solid #70cddb; color: #075878;
+  background: rgba(253,255,255,.94); border-radius: 22px; padding: 8px 12px; }
+.aqua-tabs { background: rgba(242,255,252,.55); border: 1px solid #8ddde0;
+  border-radius: 18px; padding: 3px; }
+.aqua-tab { background-image: linear-gradient(#fff, #a5eee7); border: 1px solid #73ced4;
+  border-radius: 15px; color: #0c6887; padding: 8px 11px; box-shadow: inset 0 1px #fff; }
+.aqua-tab:checked { background-image: linear-gradient(#e7ff90, #82e633);
+  color: #174d6b; border: 1px solid #6ac63d; font-weight: bold; }
+.aqua-tab:hover { background: #d1fff0; }
+.aqua-place, .aqua-shortcut { background-image: linear-gradient(#f9ffff, #b6f5ee);
+  border: 1px solid #83d7df; border-radius: 16px; color: #075779;
+  padding: 10px; box-shadow: inset 0 1px #fff; }
+.aqua-place:hover, .aqua-place:focus, .aqua-shortcut:hover {
+  background-image: linear-gradient(#fff, #8decde);
+  border-color: #32abc5; color: #075479; }
+.aqua-footer { background: rgba(233,255,251,.70); border-top: 1px solid #82d8da;
+  border-radius: 12px; padding: 5px 8px; }
+.aqua-caption { color: #08718a; font-weight: bold; font-size: 11px; }
+.aqua-footer-action, .aqua-gear {
+  background-image: linear-gradient(#fff, #baf3e6);
+  border: 1px solid #83d8d6; border-radius: 17px; padding: 5px; }
+""",
+}
+
+for _profile, _details in DETAIL_CSS.items():
+    CSS[_profile] += _details
