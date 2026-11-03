@@ -1,7 +1,7 @@
 [project]
-name = "ricehub-xfce"
-version = "0.5.0rc2"
-description = "RiceHub: a lightweight, reversible GTK3 hub for OS-inspired XFCE desktops"
+name = "ricebowl-xfce"
+version = "0.7.0"
+description = "RiceBowl: a lightweight, reversible GTK3 hub for OS-inspired XFCE desktops"
 requires-python = ">=3.10"
 dependencies = []
 license = "MIT"
