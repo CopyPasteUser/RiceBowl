@@ -1,3 +1,5 @@
+> **RiceBowl 0.7 (3 November 2026):** This is the historical RiceHub architecture and rollback document. The current application is named RiceBowl; see [RICEBOWL.md](RICEBOWL.md) for 0.7 changes and [README.md](README.md) for installation. Internal state, legacy commands and D-Bus IDs remain compatible.
+
 # RiceHub · Desktop styles for XFCE
 
 RiceHub is the beginning of a bigger idea: one lightweight home for complete XFCE rices inspired by operating systems we know and love. The project is built around **a working system first, an honest roadmap second**. The macOS implementation comes from the existing MacRice projects. Release 0.6 adds four installable styles with original artwork and shared taskbar behavior; physical Mint/XFCE acceptance toward 1.0 is still open. The separate concept dialogs stay strictly read-only; see [the acceptance plan](CONCEPTS.md).
