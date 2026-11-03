@@ -1,6 +1,6 @@
 # RiceBowl · Project identity and compatibility
 
-RiceBowl 0.8.0 is the public-facing successor to RiceHub 0.6. It manages seven reversible XFCE/X11 desktop families, including the unchanged macOS implementation.
+RiceBowl 0.9.0 is the public-facing successor to RiceHub 0.6. It manages seven reversible XFCE/X11 desktop families, including the unchanged macOS implementation.
 
 ## Highlights
 
@@ -8,6 +8,10 @@ RiceBowl 0.8.0 is the public-facing successor to RiceHub 0.6. It manages seven r
 - Profile-specific, scoped Thunar GTK styling and safer migration from legacy 0.6 CSS blocks.
 - Original scalable rice-bowl application mark and a new user-local ricebowl launcher.
 - Existing ricehub and macrice commands, settings, D-Bus application IDs, shortcuts, internal theme names and backups remain compatible.
+
+## 0.9 — Reference-driven native UI
+
+This release implements the actual code for the four user-selected mockup directions, not screenshots as substitutes for software. XP Luna, Classic 98/2000, ChromeOS and Frutiger Aero have distinct menu structures, taskbar styling, functional volume/mute controls and differentiated Thunar GTK chrome. Thirty-six further icons cover named folders, desktop, disk and network. The reference images include custom file-manager layouts that stock Thunar does not implement; RiceBowl keeps the real Thunar application and skins only its supported GTK controls. Physical Mint acceptance is pending.
 
 ## 0.8 design and recovery additions
 
@@ -27,4 +31,4 @@ Hardware validation of Mint XFCE switching, Plank coexistence, compositing and m
 
 ## Source and project identity
 
-The Python distribution is `ricebowl-xfce` (version 0.8.0); the GTK hub uses the RiceBowl name and rice-bowl icon. Existing user-controlled appearance and backup identifiers are not renamed automatically. The former `ricehub` command and historical documentation stay available solely for migration.
+The Python distribution is `ricebowl-xfce` (version 0.9.0); the GTK hub uses the RiceBowl name and rice-bowl icon. Existing user-controlled appearance and backup identifiers are not renamed automatically. The former `ricehub` command and historical documentation stay available solely for migration.
