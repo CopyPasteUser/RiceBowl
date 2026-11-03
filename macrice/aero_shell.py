@@ -148,6 +148,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._status_pending = False
             self._status_widgets = {}
             self._last_status = None
+            self._volume_programmatic = False
+            self._volume_write_source = 0
+            self._volume_writing = False
+            self._volume_queued = None
             self._pin_count = 0
             self._pinned_ids = ()
             self._pin_config_path = pin_file("windows10" if ten else profile)
@@ -506,7 +510,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 image.set_from_icon_name(fallback, Gtk.IconSize.MENU)
 
         def _status_action(self, name):
-            """Open a real settings tool; never fake an interactive switch."""
+            """Open usable controls for audio/power; network settings for Wi-Fi."""
+            if name in ("audio", "battery"):
+                self._toggle_actions()
+                return
             options = {
                 "network": ("nm-connection-editor", "xfce4-settings-manager"),
                 "audio": ("pavucontrol", "xfce4-settings-manager"),
@@ -559,6 +566,35 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     button.set_tooltip_text("Hardware status temporarily unavailable")
                 return False
             self._last_status = status
+            if hasattr(self, "control_network_label"):
+                self.control_network_label.set_text(
+                    "Network: " + {"wifi": "Wi-Fi", "ethernet": "Ethernet",
+                                   "offline": "No active route"}[status.network])
+                battery = status.battery
+                self.control_battery_label.set_text(
+                    f"Battery: {battery.percent}% — {battery.label}" if battery else
+                    "Battery: not detected")
+                if battery:
+                    self.control_battery_level.set_value(battery.percent)
+                    self.control_battery_level.show()
+                else:
+                    self.control_battery_level.hide()
+                if status.sound.percent is not None:
+                    self.volume_scale.set_sensitive(True)
+                    self.volume_status_label.set_text(
+                        f"Volume: {status.sound.percent}%"
+                        + (" (muted)" if status.sound.muted else ""))
+                    if not self._volume_writing and self._volume_queued is None:
+                        self._volume_programmatic = True
+                        try:
+                            self.volume_scale.set_value(
+                                min(100, status.sound.percent))
+                        finally:
+                            self._volume_programmatic = False
+                else:
+                    self.volume_scale.set_sensitive(False)
+                    self.volume_status_label.set_text(
+                        "Volume backend unavailable")
             battery_button, battery_icon, battery_label = self._status_widgets["battery"]
             battery = status.battery
             if battery is None:
@@ -602,6 +638,50 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     status.network.upper() + " · " +
                     ("Audio unavailable" if sound.percent is None else
                      "Audio " + str(sound.percent) + "%"))
+            return False
+
+        def _queue_volume_change(self, slider):
+            if self._volume_programmatic:
+                return
+            self._volume_queued = int(round(slider.get_value()))
+            if self._volume_write_source:
+                GLib.source_remove(self._volume_write_source)
+            self._volume_write_source = GLib.timeout_add(
+                260, self._commit_volume_change)
+
+        def _commit_volume_change(self):
+            self._volume_write_source = 0
+            if self._volume_writing or self._volume_queued is None:
+                return False
+            value = self._volume_queued
+            self._volume_queued = None
+            self._volume_writing = True
+            self.volume_status_label.set_text(f"Adjusting volume to {value}%…")
+            def worker():
+                from .hardware_status import set_sound_volume
+                try:
+                    state = set_sound_volume(value)
+                    error = None
+                except (OSError, RuntimeError, ValueError) as exc:
+                    state, error = None, str(exc)
+                GLib.idle_add(self._volume_change_complete, state, error)
+            threading.Thread(target=worker, daemon=True,
+                             name="ricebowl-set-volume").start()
+            return False
+
+        def _volume_change_complete(self, state, error):
+            self._volume_writing = False
+            if error:
+                self.volume_status_label.set_text("Volume unavailable — " + error)
+            elif state is not None:
+                self.volume_status_label.set_text(
+                    f"Volume {state.percent}%"
+                    + (" (muted)" if state.muted else ""))
+            if self._volume_queued is not None and not self._volume_write_source:
+                self._volume_write_source = GLib.timeout_add(
+                    180, self._commit_volume_change)
+            else:
+                self._refresh_status_async()
             return False
 
         def _create_taskbar(self):
@@ -1578,11 +1658,51 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                         grid.attach(button, index % 2, index // 2, 1, 1)
                 root.pack_start(grid, False, False, 0)
 
-            self.status_summary = self._class(Gtk.Label(label="Reading hardware status…", xalign=0),
-                                              "rice-status-summary")
+            # Actual hardware information and a VERIFIED volume slider make
+            # this a usable control panel rather than decorative quick tiles.
+            hardware = self._class(
+                Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=7),
+                "rice-hardware-panel")
+            hardware.pack_start(self._class(
+                Gtk.Label(label="Device status", xalign=0), "aero-menu-sub"),
+                False, False, 0)
+            self.control_network_label = self._class(
+                Gtk.Label(label="Network: reading…", xalign=0),
+                "rice-control-detail")
+            self.control_network_label.set_line_wrap(True)
+            hardware.pack_start(self.control_network_label, False, False, 0)
+            self.control_battery_label = self._class(
+                Gtk.Label(label="Battery: reading…", xalign=0),
+                "rice-control-detail")
+            hardware.pack_start(self.control_battery_label, False, False, 0)
+            self.control_battery_level = Gtk.LevelBar.new_for_interval(0, 100)
+            self.control_battery_level.set_value(0)
+            self.control_battery_level.set_no_show_all(True)
+            hardware.pack_start(self.control_battery_level, False, False, 0)
+            self.volume_status_label = self._class(
+                Gtk.Label(label="Volume: reading…", xalign=0),
+                "rice-control-detail")
+            hardware.pack_start(self.volume_status_label, False, False, 0)
+            self.volume_scale = Gtk.Scale.new_with_range(
+                Gtk.Orientation.HORIZONTAL, 0, 100, 5)
+            self.volume_scale.set_draw_value(False)
+            self.volume_scale.set_sensitive(False)
+            self.volume_scale.get_accessible().set_name("System output volume")
+            self.volume_scale.set_tooltip_text(
+                "Adjust actual PipeWire/PulseAudio output volume, verified after changing")
+            self.volume_scale.connect("value-changed", self._queue_volume_change)
+            hardware.pack_start(self.volume_scale, False, False, 0)
+            root.pack_end(hardware, False, False, 4)
+
+            self.status_summary = self._class(
+                Gtk.Label(label="Reading hardware status…", xalign=0),
+                "rice-status-summary")
             self.status_summary.set_line_wrap(True)
             root.pack_end(self.status_summary, False, False, 2)
-            actions.add(root)
+            actions_scroll = Gtk.ScrolledWindow()
+            actions_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+            actions_scroll.add(root)
+            actions.add(actions_scroll)
             actions.connect("focus-out-event", lambda *_args: self._schedule_popup_hide("control"))
             actions.connect("key-press-event", lambda _widget, event: self._action_key(event))
             self.actions = actions
