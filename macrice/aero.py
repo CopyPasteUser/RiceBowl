@@ -1,4 +1,4 @@
-"""Safe, user-local installation of RiceHub's own Aero GTK/XFWM/icon artwork.
+"""Safe, user-local installation of RiceBowl's own Aero GTK/XFWM/icon artwork.
 
 Never touch /usr/share or replace an existing (possibly user-edited) theme.
 The desktop restore engine reverts theme *selection* while retaining these
@@ -43,8 +43,8 @@ def read_autostart(config_root: Path) -> str | None:
         raise AeroAssetError("Unexpected file at Aero autostart path")
     content = target.read_text(encoding="utf-8")
     from .installer import project_root
-    if content != autostart_content(project_root()):
-        raise AeroAssetError("Existing Aero autostart is not managed by RiceHub or was customized")
+    if content not in (autostart_content(project_root()), legacy_autostart_content(project_root())):
+        raise AeroAssetError("Existing Aero autostart is not managed by RiceBowl or was customized")
     return content
 
 
@@ -53,10 +53,17 @@ def autostart_content(source_root: Path) -> str:
     icon = str(source_root / "assets/aero-penguin.svg").replace('"', '\\"')
     return (
         "[Desktop Entry]\nType=Application\nVersion=1.0\n"
-        "Name=RiceHub Aero Taskbar\nComment=Lightweight Windows 7-inspired Start menu and taskbar\n"
+        "Name=RiceBowl Aero Taskbar\nComment=Lightweight Windows 7-inspired Start menu and taskbar\n"
         f'Exec="{executable}" aero-shell\nIcon={icon}\n'
         "Terminal=false\nOnlyShowIn=XFCE;\nX-GNOME-Autostart-enabled=true\n"
         f"{AUTOSTART_MARKER}\n"
+    )
+
+
+def legacy_autostart_content(source_root: Path) -> str:
+    """Exact legacy managed entry, recognized during upgrades and restore."""
+    return autostart_content(source_root).replace(
+        "Name=RiceBowl Aero Taskbar", "Name=RiceHub Aero Taskbar"
     )
 
 
@@ -67,7 +74,7 @@ def write_autostart(config_root: Path, content: str | None) -> None:
         target.unlink(missing_ok=True)
         return
     from .installer import project_root
-    if content != autostart_content(project_root()):
+    if content not in (autostart_content(project_root()), legacy_autostart_content(project_root())):
         raise AeroAssetError("Refusing non-canonical Aero autostart content")
     target.parent.mkdir(parents=True, exist_ok=True)
     fd, temp = tempfile.mkstemp(prefix=".ricehub-aero-start-", dir=target.parent)
@@ -107,7 +114,7 @@ def preflight(source_root: Path, data_root: Path,
             expected = {p.relative_to(source) for p in files}
             if (actual != expected or any(p.is_symlink() for p in target.rglob("*")) or
                     any((target / p.relative_to(source)).read_bytes() != p.read_bytes() for p in files)):
-                raise AeroAssetError(f"Existing customized theme conflicts with RiceHub: {target}")
+                raise AeroAssetError(f"Existing customized theme conflicts with RiceBowl: {target}")
         packages.append((source, target))
     return packages
 
