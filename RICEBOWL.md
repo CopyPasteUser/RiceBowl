@@ -1,6 +1,6 @@
 # RiceBowl · Project identity and compatibility
 
-RiceBowl 0.7.0 is the public-facing successor to RiceHub 0.6. It manages seven reversible XFCE/X11 desktop families, including the unchanged macOS implementation.
+RiceBowl 0.7.1 is the public-facing successor to RiceHub 0.6. It manages seven reversible XFCE/X11 desktop families, including the unchanged macOS implementation.
 
 ## Highlights
 
@@ -19,4 +19,4 @@ Hardware validation of Mint XFCE switching, Plank coexistence, compositing and m
 
 ## Source and project identity
 
-The Python distribution is `ricebowl-xfce` (version 0.7.0); the GTK hub uses the RiceBowl name and rice-bowl icon. Existing user-controlled appearance and backup identifiers are not renamed automatically. The former `ricehub` command and historical documentation stay available solely for migration.
+The Python distribution is `ricebowl-xfce` (version 0.7.1); the GTK hub uses the RiceBowl name and rice-bowl icon. Existing user-controlled appearance and backup identifiers are not renamed automatically. The former `ricehub` command and historical documentation stay available solely for migration.
