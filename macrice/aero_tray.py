@@ -421,7 +421,7 @@ class StatusNotifierTray:
         theme = getattr(self, "theme", "win7")
         dialog = Gtk.Dialog(title="Customize Notification Area Icons",
                             transient_for=parent if isinstance(parent, Gtk.Window) else None,
-                            flags=Gtk.DialogFlags.MODAL)
+                            flags=Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT)
         dialog.get_style_context().add_class(f"{theme}-tray-customize")
         self._preferences_dialog = dialog
         dialog.set_default_size(500, 350)
@@ -575,6 +575,8 @@ class StatusNotifierTray:
         return False
 
     def close(self):
+        if self._preferences_dialog is not None:
+            self._preferences_dialog.response(self.Gtk.ResponseType.CANCEL)
         if self._overflow_menu is not None:
             self._overflow_menu.popdown()
         for subscription in self.subscriptions:
