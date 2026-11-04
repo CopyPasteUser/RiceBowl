@@ -1,5 +1,21 @@
 # RiceBowl changelog
 
+## Unreleased — Verified one-run screenshot refresh (4 November 2026)
+
+- Replaced the six current desktop-style Start/launcher, control and genuine
+  XFWM4/Thunar captures with images from a single green GitHub Actions run.
+  Regenerated the Hub's six JPEG previews from the same source images.
+- Added actual ChromeOS Settings and notification-history screenshots, XP Luna
+  programs/control views, Taskbar Properties, notification-icon settings, Run
+  and five system-tray flyouts, plus standalone dark MacMenu.
+- Store the exact source commit, CI run ID, original PNG hashes, converted WebP
+  hashes and dimensions in the current gallery manifest. The importer refuses
+  missing, duplicate, malformed or visibly empty required captures rather
+  than mixing screenshot revisions. Current preview links and component docs
+  now point to the refreshed images.
+- Only virtual-X11 behavior has been validated: neither integrated MacBar/Plank
+  nor physical Mint hardware testing is claimed by these screenshots.
+
 ## Unreleased — ChromeOS genuine XFCE notification center (4 November 2026)
 
 - Added a dedicated Shelf notification bell with a real unread marker backed

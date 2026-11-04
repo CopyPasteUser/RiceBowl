@@ -122,7 +122,7 @@ def import_gallery(archive: Path, destination: Path, *, run_id: int,
             "run_id": run_id,
             "source_commit": source_commit,
             "source_archive_sha256": archive_digest,
-            "captured_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "imported_at_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
             "desktop_resolution": [1600, 900],
             "images": manifest_images,
         }

@@ -53,8 +53,9 @@ persisted in the existing reversible Aero pin configuration.
 Configure visible icons from the chevron or blank-Superbar context menu. Installed
 [RiceExplorer](https://github.com/CopyPasteUser/riceExplorer) appears as an
 optional Windows 7 preview in Start; Thunar remains the default while file
-operation and mount recovery are validated. Screenshots below show the previous
-verified shell; updated deep-surface captures are pending native X11 CI.
+operation and mount recovery are validated. The gallery below was refreshed
+from a single passing native-X11 CI run on 4 November 2026, with genuine
+Start, Control Panel and Thunar views for all six non-macOS desktop styles.
 Edge-drag Snap, global shortcuts, Shake and real compositor blur are still open.
 
 ChromeOS now has its own **Settings** app with seven navigable categories,
@@ -73,12 +74,13 @@ It uses XFCE's installed daemon and does not intercept notifications;
 unavailable or disabled history is explained rather than invented. Live
 ChromeOS-style toast notifications, Google-only services and
 [RiceExplorer](https://github.com/CopyPasteUser/riceExplorer) integration are
-still separate roadmap work. Updated deep-page screenshots and physical Mint
-XFCE acceptance are pending. [ChromeOS roadmap](CHROMEOS_ROADMAP.md).
+still separate roadmap work. The latest native Settings and notification-history
+screenshots are now captured, but physical Mint XFCE acceptance remains pending.
+[ChromeOS roadmap](CHROMEOS_ROADMAP.md).
 
 ### Current screenshots
 
-Captured from real GTK3 shells on virtual X11—not mockups.
+Captured on **4 November 2026** from one [passing native GTK3/XFWM4 X11 run](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41804502628)—not mockups.
 
 | Windows 7 | Windows 10 |
 | --- | --- |
@@ -88,7 +90,25 @@ Captured from real GTK3 shells on virtual X11—not mockups.
 | **ChromeOS** | **Frutiger Aero** |
 | ![ChromeOS desktop](screenshots/current/chromeos-start.webp) | ![Frutiger Aero desktop](screenshots/current/frutiger-start.webp) |
 
-[More screenshots: Control Panels and real Thunar windows](screenshots/current/)
+[Full current gallery: 32 views including Control Panels, real Thunar and deep menus](screenshots/current/README.md)
+
+<details>
+<summary>See the latest ChromeOS Settings and notification center</summary>
+
+| Settings · Device | Notification history |
+| --- | --- |
+| ![Native ChromeOS Settings](screenshots/current/chromeos-settings.webp) | ![ChromeOS notification history showing honest CI fallback](screenshots/current/chromeos-notifications.webp) |
+
+</details>
+
+<details>
+<summary>See the latest standalone macOS MacMenu</summary>
+
+![Current standalone MacMenu dark GTK application](screenshots/current/macmenu-dark.webp)
+
+The integrated MacBar/Plank desktop composite still needs a fresh capture.
+
+</details>
 
 ## Install
 

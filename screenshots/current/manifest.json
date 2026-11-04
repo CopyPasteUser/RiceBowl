@@ -1,0 +1,334 @@
+{
+  "format": 1,
+  "capture_origin": "RiceBowl GitHub Actions, native GTK3/XFWM4 virtual X11",
+  "run_id": 41804502628,
+  "source_commit": "f95c847c3f1b7faeb6f8241ed173b0e0c569b6ab",
+  "source_archive_sha256": "5525c05e8adfd9b32323e614d7725b1ad31a2365fa34cc1e51d824c115fffe6f",
+  "imported_at_utc": "2026-11-04T09:09:06Z",
+  "desktop_resolution": [
+    1600,
+    900
+  ],
+  "images": [
+    {
+      "file": "aero-start.webp",
+      "capture": "ricebowl-aero-start-0.9.1.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "5aae2f33c98b3cb7ed7dc73b1d4e856f923bce89985339cc88e7005b91502bbd",
+      "webp_sha256": "b7b9edb2442fa32cc0109732c852105e08546f4e98ba0fcdd9ea70ea86a4871c"
+    },
+    {
+      "file": "aero-controls.webp",
+      "capture": "ricebowl-aero-controls-0.9.1.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "1a25b5f31a35aa02b8c93e675ba60c8efcb928979d5f0bcc22383c8bccbdc095",
+      "webp_sha256": "a6ed6178c8c00b1fef50107abbf0e205ecf56f89e368f2a92c20341e55225084"
+    },
+    {
+      "file": "aero-workspace.webp",
+      "capture": "ricebowl-aero-workspace-0.9.1.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "8be41943fe38dde36a625be2e8af6cedddaf36cac7e7247c869c038ea5e0a2bd",
+      "webp_sha256": "92f133f2c7191fc70ad986b1aff385d0fc071f8cce71d4b3f263d974c0093dfc"
+    },
+    {
+      "file": "windows10-start.webp",
+      "capture": "ricebowl-windows10-start-0.9.1.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "65024446d699a882685992dcf4add10be74ab8d92247759212ad24be42eb32f1",
+      "webp_sha256": "2af0b8ab3f2c4123b68acb3733e1074a1b3b009d72cd0ea2bcb2db983d1ccedd"
+    },
+    {
+      "file": "windows10-controls.webp",
+      "capture": "ricebowl-windows10-controls-0.9.1.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "9b8fb4cc6832311996d0264a579231e8bbe40880a9ac56720070ee2e82af6108",
+      "webp_sha256": "a8e484a06dde977e144bc7339fac10475b4385146f87b3789eadfa9e764eba04"
+    },
+    {
+      "file": "windows10-workspace.webp",
+      "capture": "ricebowl-windows10-workspace-0.9.1.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "ca46141e63be0df916b5e8f27c4125ec3a8599f527fa267f7272eef3cc6f6b02",
+      "webp_sha256": "a1398cbee3008457efd32cc90fdc0644e7599411087cac341d6f5a924219c590"
+    },
+    {
+      "file": "winxp-start.webp",
+      "capture": "ricebowl-winxp-start-0.9.1.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "d96fe2bdddbd9c0e7008c60bc173f2444aaf2b08a04628d974632413611c26d2",
+      "webp_sha256": "5afc9d8a218ce8b358c23f9b5d3989fe293d6a309a9f576a965de32e71f48f59"
+    },
+    {
+      "file": "winxp-controls.webp",
+      "capture": "ricebowl-winxp-controls-0.9.1.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "b2d90f073fe61bfce91019c96a951909abefa2de851c311dfaab0e94bce665aa",
+      "webp_sha256": "560ae90d1a87d2c0c6284c438c5b218aac03a52ac11b123673e7720ae58945d9"
+    },
+    {
+      "file": "winxp-workspace.webp",
+      "capture": "ricebowl-winxp-workspace-0.9.1.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "ea3be15ddb44a9c7eca36d5e6549ab24a0247bc09efa135598c10c24e2a9686e",
+      "webp_sha256": "2479735749c574ed59000c8b4d419219e79ba6901aebb29ea8f836b3eb5fa5ec"
+    },
+    {
+      "file": "winclassic-start.webp",
+      "capture": "ricebowl-winclassic-start-0.9.1.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "97519ce7d77d94613adf4c38bd514e6ea028bfc32ef7da43906a07813810b3de",
+      "webp_sha256": "fe03d94fcbc1b90a5255eb14dae7adaacf5589305de4c6d896b101ef6357a90a"
+    },
+    {
+      "file": "winclassic-controls.webp",
+      "capture": "ricebowl-winclassic-controls-0.9.1.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "750c63fb7d5e45a7f8dfb107c103d4485d00606154f3047a4b67e288e4f6b3d3",
+      "webp_sha256": "0c09b8c822d9f8b48555674d5bbce62a20b196e68b8370fa35da47e9707acc94"
+    },
+    {
+      "file": "winclassic-workspace.webp",
+      "capture": "ricebowl-winclassic-workspace-0.9.1.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "6cf28ecf63c7f883b631123741418e27b6020fd967ca5b6ae874d4e597269596",
+      "webp_sha256": "f6841c71d4233a53109e0052d3e0c5e15beae0cc6d89417545b9b096c99b028c"
+    },
+    {
+      "file": "chromeos-start.webp",
+      "capture": "ricebowl-chromeos-start-0.9.1.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "88257cb9eb0cd6ca9421cb6fccff1d5b3bb33c84a73ce176960e939e0394cbc9",
+      "webp_sha256": "e33f7b6a185766f99bb871ea9d3948fc49119126f4ae10d438a3c363a392337f"
+    },
+    {
+      "file": "chromeos-controls.webp",
+      "capture": "ricebowl-chromeos-controls-0.9.1.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "15e569e9ce56be388ea22c6dffb70bc83c4bb8fd0db229e514c2efaad0c0c8c0",
+      "webp_sha256": "e423f7b93fbb02461b19073a75c1cc72ced8e8c8e43115532f0343efd798de02"
+    },
+    {
+      "file": "chromeos-workspace.webp",
+      "capture": "ricebowl-chromeos-workspace-0.9.1.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "0eafb62920d39a4925cb53dd30e109fd70c54e601d75f24c40ccd92cd342df04",
+      "webp_sha256": "414896141aeae4ed554207b39e1e05fbfd218e9632006efdaa4996cf4e12d218"
+    },
+    {
+      "file": "frutiger-start.webp",
+      "capture": "ricebowl-frutiger-start-0.9.1.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "ea958226561fe926e4ad2138c1c5ffe742581f5a0d9d3c1fb3f9ce118c1024ad",
+      "webp_sha256": "c0f46def002efd45e058677a5cb0c57023c923bd0c61dd913e285d84f14c6416"
+    },
+    {
+      "file": "frutiger-controls.webp",
+      "capture": "ricebowl-frutiger-controls-0.9.1.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "77fdbf7d05d182a4c55d4015427c7f2c57f2c563b248c32c68845b684775daf1",
+      "webp_sha256": "2abcf22abdda54257314cd5521718073d2a4fdec716e6301674c119e31ff49c7"
+    },
+    {
+      "file": "frutiger-workspace.webp",
+      "capture": "ricebowl-frutiger-workspace-0.9.1.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "df1a0164f45ef6f3e6c0d5eeb2113206890feb367aef273b24332a17b75db243",
+      "webp_sha256": "cb105401a95779e577d585efbedc40abf104e3e73fd3c0527283afca8a08d141"
+    },
+    {
+      "file": "winxp-programs.webp",
+      "capture": "ricebowl-winxp-programs-0.9.1.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "8f1ea29b65e3826e63e79ce5de3b794e3d7695c3401488123d26ea552903a759",
+      "webp_sha256": "5027e3d62f52a0a1a2a9b04dd4144d39a62ad958cfb5b35f376b30c9c9f42153"
+    },
+    {
+      "file": "winxp-detail.webp",
+      "capture": "ricebowl-winxp-detail-0.9.1.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "ffc38a548f858c012cb5fc1197e562b9fac432ce3b5b183256faac5d0940bd64",
+      "webp_sha256": "091ed5cd44fef9d5a00e90d2159429c7b8160c65ce757d61082c7936386a4fb5"
+    },
+    {
+      "file": "winxp-classic.webp",
+      "capture": "ricebowl-winxp-classic-0.9.1.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "186f60a825cc107e7d89081ce4b1d621a3104850c831bff66daad2b232162a9c",
+      "webp_sha256": "e656c2e4f9aa9a3cb2bff7ee398ff62d57356967354060b51acb236fbcb9de18"
+    },
+    {
+      "file": "winxp-tray-audio.webp",
+      "capture": "ricebowl-winxp-tray-audio-0.9.1.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "842a185409b9d3b857f0bf346bcb512d2ff596c1c24a733d10017c6ed6e3b511",
+      "webp_sha256": "71be30bdc9d8fe77a12ff3a6528485cf0e37654eb5f73149e84b50dbf04f0ce9"
+    },
+    {
+      "file": "winxp-tray-network.webp",
+      "capture": "ricebowl-winxp-tray-network-0.9.1.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "0043372431519ef40f6aa403fbd846194868d9c99017e7cf4c6f883f2ec3e81b",
+      "webp_sha256": "759154e7e1cf65bc33a0f9f74d23190bea8fc8bd1167111fe3b05bb1e71b7065"
+    },
+    {
+      "file": "winxp-tray-battery.webp",
+      "capture": "ricebowl-winxp-tray-battery-0.9.1.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "e9ef6fe88ce72de3e98a029b9a781aee7008670dd193e601539bf83af52f8931",
+      "webp_sha256": "86c031bcd40b8c5484bacd15e667a9d9e0060fdb21cd146fe07ad61f0793c08a"
+    },
+    {
+      "file": "winxp-tray-bluetooth.webp",
+      "capture": "ricebowl-winxp-tray-bluetooth-0.9.1.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "d7aead081806224cdde095e898cac354a0335e7e4df981edfe058f2f65643a22",
+      "webp_sha256": "4393fc16e46d53d60b242943703aaaab8bd5a03975f36e22c18b1b77a8d94efb"
+    },
+    {
+      "file": "winxp-tray-clock.webp",
+      "capture": "ricebowl-winxp-tray-clock-0.9.1.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "7fb48d7397ee2f391d739689f2bc252ca47f0cc1c45b415e64865a5a1a230723",
+      "webp_sha256": "5f44e88da6d48709a5457ee4fba231d4fcae3c876137a4ce40b1db0ca5aec317"
+    },
+    {
+      "file": "winxp-properties.webp",
+      "capture": "ricebowl-winxp-properties-0.9.1-extra.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "dde0626de867161d40dab90e39b062026831014a77a861b08e40db27ba4e3043",
+      "webp_sha256": "706fc87ecaba4d4764f03839a0eafd1f4aa6baa211dfe945467559575b760ae4"
+    },
+    {
+      "file": "winxp-notification-icons.webp",
+      "capture": "ricebowl-winxp-notification-icons-0.9.1-extra.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "5e28495378fbc6bd98d5c7c138167d52bf656dd4ec4a0f5938bf7df527d1bae4",
+      "webp_sha256": "e89fc179bd730207349119586e8f346e116132fb3f3b60ca645846cc5f10d2bc"
+    },
+    {
+      "file": "winxp-run.webp",
+      "capture": "ricebowl-winxp-run-0.9.1-extra.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "8e5d8ab778207eb79a7aa64533f4d64e1121ed57d033a3c17b9eba0c18e3b466",
+      "webp_sha256": "85f02feee2b7a517d49079aa36f061ea2b5f68eef5d5d8247954007af4d78e31"
+    },
+    {
+      "file": "chromeos-notifications.webp",
+      "capture": "ricebowl-chromeos-notifications-0.9.1-extra.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "68bbf5c2ef1da1d7e51f18f788b7b1e9696e5b9008c85d1ba9ba7a5971db5828",
+      "webp_sha256": "5b1769e622b6999fd48c4322a052579c93b94084027748ad63348df39fe0e458"
+    },
+    {
+      "file": "chromeos-settings.webp",
+      "capture": "ricebowl-chromeos-settings-0.9.1-extra.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "be9776b1e6a222d14530717a8739f78b436e5dfb3f52ccde3c0cb85433923c55",
+      "webp_sha256": "669a3a719bc5c04e6517754512ac98c9e8b471d5e812233a54ec7718edb0edea"
+    },
+    {
+      "file": "macmenu-dark.webp",
+      "capture": "ricebowl-macmenu-dark-current.png",
+      "pixels": [
+        572,
+        486
+      ],
+      "png_sha256": "4f002aa52afcf1a8197ffa5b054a34de6b9d70bd6835355129cb92e38e1f946f",
+      "webp_sha256": "6d8c3dd7529211b3cfc0f63f20eed0489362936d88cbdb9ffeddc21b9c6dc2a6"
+    }
+  ]
+}

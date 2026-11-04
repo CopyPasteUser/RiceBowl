@@ -51,16 +51,19 @@ The Aero taskbar includes persistent right-click pins, a two-line clock, bounded
 ![Latest Windows 7 Aero Start and Superbar](screenshots/current/aero-start.webp)
 
 The [Windows 7 gallery](WINDOWS7.md#screenshots--coverage) and current
-[README](README.md#latest-screenshots-from-main) contain only current native
-virtual-X11 captures. Old release illustrations have been removed.
+[README](README.md#current-screenshots) show native virtual-X11 captures from
+the same passing 4 November 2026 CI run. Earlier release illustrations are
+not presented as current screenshots.
 
 ![Latest Windows 10 GTK3 Start](screenshots/current/windows10-start.webp)
 
 The [Windows 10 release gallery and completion roadmap](WINDOWS10.md#release-roadmap-and-acceptance) includes Action Center and the installable theme selection. These are genuine live GTK screenshots in a disposable X11 desktop fixture, **not** physical Linux Mint hardware acceptance.
 
-The other desktop styles appear in the [current README gallery](README.md#latest-screenshots-from-main),
-with corresponding controls in `screenshots/current/`. All captures use GTK3
-under isolated X11; no physical machine was modified.
+The other desktop styles and the standalone dark MacMenu appear in the
+[current README gallery](README.md#current-screenshots). The [full 32-image
+gallery](screenshots/current/README.md) also covers Control Panels, genuine
+Thunar windows, ChromeOS Settings/Notifications and XP Luna deep interactions.
+All captures use GTK3 under isolated X11; no physical machine was modified.
 
 ## Product roadmap
 

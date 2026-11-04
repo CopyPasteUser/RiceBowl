@@ -17,6 +17,12 @@ one wallpaper.
 MacMenu has Midnight and Light appearances, both using the monochrome Linux
 penguin icon. The compact launcher has no duplicate power or logout buttons.
 
+![MacMenu's actual dark GTK launcher, captured by RiceBowl CI](../../screenshots/current/macmenu-dark.webp)
+
+The image is a genuine standalone GTK3 window from RiceBowl's [passing native-X11
+capture run](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41804502628)
+on 4 November 2026. It does not depict an integrated macOS desktop or dock.
+
 ## The idea
 
 MacMenu does one job: **find and launch your apps**.

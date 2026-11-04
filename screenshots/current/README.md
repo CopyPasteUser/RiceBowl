@@ -1,58 +1,77 @@
-# Current RiceBowl screenshot gallery
+# Current RiceBowl screenshots
 
-Only the latest verified **actual** virtual-X11 captures are retained in this directory.
-All are WebP-optimized from genuine **1600×900** GTK/XFWM4 captures, not mockups.
+All **32 images** in this gallery are WebP conversions of genuine, running
+GTK3 applications on virtual X11—not designs or simulated operating-system
+screenshots. The wallpaper, taskbars, menus, device-state fallbacks and visible
+application windows were rendered by the tested RiceBowl code.
 
-Capture provenance (3 November 2026):
+**Single-run provenance (4 November 2026):**
 
-- **Windows 7 Aero workspace (`aero-workspace.webp`)**: passing native
-  XFWM4/Thunar GitHub Actions run
-  [`41686544328`](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41686544328),
-  branch `feat/win7-explorer-fidelity`, source
-  `3392f0c50a8e134d388cef28a51c3271f6864d7a`. This shows the **new**
-  Seven Explorer Thunar CSS and MIME-icon refinements. The same passing run
-  also captured a real 1024×768 Thunar workspace in its artifact.
-- **Windows 7 Aero Start and Control Panel (`aero-start.webp`,
-  `aero-controls.webp`)**: passing GitHub Actions run
-  [`41678284256`](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41678284256),
-  branch `feat/win7-fidelity-round2`, source
-  `6bb1b6d0c6546a698efdc8207da7394941b4ecd7`. This includes the actual
-  48px Superbar, new category Control Panel and all eight original Aero icons.
-- **Windows XP Luna Start, Control Panel and real XFWM4/Thunar**
-  (`winxp-start.webp`, `winxp-controls.webp`, `winxp-workspace.webp`): passing
-  GitHub Actions run [`41691336596`](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41691336596),
-  source `6e8fea9c6dccf3b03348bca07150205ee8698ea0`. The rebuilt category
-  panel, XDG-aware Start links, warm Explorer command bar and exact applied
-  three-button XFWM4 layout are represented. The same artifact includes all
-  three XP views at **1024×768**, including an actual Thunar process.
-- **Frutiger Aero launcher, Quick Settings and genuine Thunar**
-  (`frutiger-start.webp`, `frutiger-controls.webp`, `frutiger-workspace.webp`):
-  passing GitHub Actions run
-  [`41697201551`](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41697201551),
-  branch `feat/frutiger-refine`, source
-  `31551b0876eb2adbe35a0e4759573ea6465097ba`. These captures show the
-  pearl-glass/X11-rounded popups, pin-first real apps, the themed Thunar icon
-  and the new continuous Thunar breadcrumb/mint navigation; all three views
-  were also exercised at **1024×768**, including a genuine Thunar process.
-- **Windows 10, Classic 98 and ChromeOS**: passing Actions run
-  [`41666644729`](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41666644729),
-  source `c3406bc572f6f314d3acacb1f5572c6b08c5508d`.
+- [Passing GitHub Actions capture run **41804502628**](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41804502628)
+- Exact tested source commit: [`f95c847c3f1b7faeb6f8241ed173b0e0c569b6ab`](https://github.com/CopyPasteUser/RiceBowl/commit/f95c847c3f1b7faeb6f8241ed173b0e0c569b6ab)
+- Authentic **1600×900** XFWM4/GTK/Thunar screenshots for six non-macOS rices;
+  the CI artifact also retains genuine **1024×768** compact-layout captures.
+- [Machine-readable manifest with original PNG and WebP SHA-256 hashes](manifest.json)
 
-Uncompressed PNG sources, including the 1024×768 tests, remain in their
-respective CI run artifacts. The Frutiger review does not change the other
-desktop families' visual styles.
+The historical `0.9.1` portion of the CI PNG filenames is a capture-script
+compatibility name; **the content comes from the exact source revision above**,
+not the older tagged 0.9.1 release.
 
-The `workspace` images display a real Thunar process under a real XFWM4 window
-manager, using the same GTK/icon theme and Thunar view preferences that RiceBowl
-applies. It opens a disposable folder with five sample directories and a text
-file; no user's files or desktop settings are read or changed for capture.
-These images are neither mockups nor proof of physical Linux Mint hardware
-acceptance. The `macOS` rice is intentionally absent: its MacBar/Plank composite
-has not yet been freshly captured under an equivalent test. Stale images remain
-recoverable from Git history, not in the current gallery.
+## Six desktop styles
 
-CI also verifies **1024×768** Start and settings capture for XP Luna, Windows 7,
-Frutiger Aero, Classic 98, Windows 10 and ChromeOS; the compact test screenshots
-remain CI artifacts rather than duplicates in this gallery.
-Windows 7, XP and Frutiger artifacts additionally include 1024×768 genuine
-Thunar windows.
+| Style | Start / Launcher | More genuine windows |
+| --- | --- | --- |
+| **Windows 7 Aero** | ![Current Aero Start](aero-start.webp) | [Control Panel](aero-controls.webp) · [Thunar + XFWM4](aero-workspace.webp) |
+| **Windows 10** | ![Current Windows 10 Start](windows10-start.webp) | [Action Center](windows10-controls.webp) · [Thunar + XFWM4](windows10-workspace.webp) |
+| **Windows XP Luna** | ![Current XP Luna Start](winxp-start.webp) | [Control Panel](winxp-controls.webp) · [Thunar + XFWM4](winxp-workspace.webp) |
+| **Windows 98 Classic** | ![Current Classic Start](winclassic-start.webp) | [Control Panel](winclassic-controls.webp) · [Thunar + XFWM4](winclassic-workspace.webp) |
+| **ChromeOS** | ![Current ChromeOS Launcher](chromeos-start.webp) | [Quick Settings](chromeos-controls.webp) · [Thunar + XFWM4](chromeos-workspace.webp) |
+| **Frutiger Aero** | ![Current Frutiger launcher](frutiger-start.webp) | [Quick Settings](frutiger-controls.webp) · [Thunar + XFWM4](frutiger-workspace.webp) |
+
+## Deeper interactions captured in the same run
+
+### ChromeOS
+
+| Real notification-history fallback | Native Settings: Device |
+| --- | --- |
+| ![ChromeOS notification history in the CI fixture](chromeos-notifications.webp) | ![ChromeOS device settings](chromeos-settings.webp) |
+
+The capture environment has no installed XFCE notification-history daemon;
+RiceBowl accurately displays its **unavailable** state instead of inventing
+notifications, unread counts or Do Not Disturb support.
+
+### XP Luna
+
+| Start navigation | Control Panel and session dialogs |
+| --- | --- |
+| [All Programs](winxp-programs.webp) · [Control Panel detail](winxp-detail.webp) · [Classic view](winxp-classic.webp) | [Taskbar Properties](winxp-properties.webp) · [Notification icons](winxp-notification-icons.webp) · [Run…](winxp-run.webp) |
+
+All five XP tray controls are also captured: [Audio](winxp-tray-audio.webp) ·
+[Network](winxp-tray-network.webp) · [Battery](winxp-tray-battery.webp) ·
+[Bluetooth](winxp-tray-bluetooth.webp) · [Clock](winxp-tray-clock.webp).
+These captures record the actual capabilities or unavailable fallbacks of the
+CI fixture; they are not proof that the owner's hardware exposes every service.
+
+### macOS component
+
+![Live standalone MacMenu dark theme](macmenu-dark.webp)
+
+This is a **real standalone MacMenu GTK window** captured in the same CI run.
+It is *not* a fully integrated macOS desktop. A current composite of MacBar,
+Control Center, dock/Plank and actual file window is still outstanding; older
+component-specific release screenshots are kept in their historical locations
+and are not misrepresented as current captures.
+
+## Capture scope
+
+The `workspace` screenshots show a **real Thunar process under XFWM4**, with
+the GTK/icon theme and Thunar preferences RiceBowl applies. Each process opens
+a disposable fixture folder containing sample files; user files and desktop
+settings are not touched. The screenshot importer checks all 32 images and
+their size, resolution, distinctness and control-window presence before
+replacing the gallery, then records their hashes in the manifest.
+
+These images validate a disposable CI desktop, **not physical Linux Mint
+hardware acceptance**, multi-monitor behavior, Bluetooth hardware or
+login/suspend recovery. The original full-resolution PNGs and compact-layout
+captures can be retrieved from the linked CI run artifact.
