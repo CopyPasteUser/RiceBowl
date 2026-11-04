@@ -18,11 +18,7 @@ QUICK_ACTIONS = (
 
 
 def build(shell, Gtk, Gdk):
-    """Use the shared shell's status/volume callbacks; no pretend toggles.
-
-    Notifications remain the job of xfce4-notifyd until RiceBowl has its own
-    notification backend. This flyout explicitly reports that boundary.
-    """
+    """Native-looking Win10 flyout using XFCE-owned Riceware capabilities."""
     actions = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
     actions.set_title("RiceBowl Windows 10 Action Center")
     actions.set_decorated(False)
@@ -53,14 +49,17 @@ def build(shell, Gtk, Gdk):
     notifications.pack_start(shell._class(
         Gtk.Label(label="Notifications", xalign=0), "ten-section-heading"),
         False, False, 0)
-    notifications.pack_start(shell._class(
-        Gtk.Label(label="No RiceBowl notifications", xalign=0),
-        "ten-notification-empty"), False, False, 0)
-    note = shell._class(Gtk.Label(
-        label="Other desktop notifications appear through the XFCE "
-              "notification service.", xalign=0), "ten-muted")
-    note.set_line_wrap(True)
-    notifications.pack_start(note, False, False, 0)
+    history_message = shell._class(Gtk.Label(label="Open to load notifications", xalign=0),
+                                   "ten-notification-empty")
+    notifications.pack_start(history_message, False, False, 0)
+    history_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=7)
+    notifications.pack_start(history_box, False, False, 0)
+    notification_tools = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+    mark_read = shell._class(Gtk.Button(label="Mark all as read"),
+                             "ten-notification-dismiss")
+    mark_read.set_sensitive(False)
+    mark_read.get_accessible().set_name("Mark unread notifications as read")
+    notification_tools.pack_start(mark_read, False, False, 0)
     notify_command = ("xfce4-notifyd-config"
                       if shutil.which("xfce4-notifyd-config") else None)
     notification_settings = shell._class(
@@ -74,8 +73,8 @@ def build(shell, Gtk, Gdk):
     if notify_command:
         notification_settings.connect(
             "clicked", lambda _button, cmd=notify_command: shell._open_tool(cmd))
-    notifications.pack_start(notification_settings, False, False, 0)
-    notifications.pack_start(Gtk.Box(), True, True, 0)
+    notification_tools.pack_end(notification_settings, False, False, 0)
+    notifications.pack_start(notification_tools, False, False, 0)
     scroll.add(notifications)
     root.pack_start(scroll, True, True, 0)
 
@@ -84,6 +83,19 @@ def build(shell, Gtk, Gdk):
     bottom.pack_start(shell._class(
         Gtk.Label(label="Quick actions", xalign=0), "ten-section-heading"),
         False, False, 0)
+    live = Gtk.Grid(row_spacing=5, column_spacing=5)
+    live.set_column_homogeneous(True)
+    live_switches = {}
+    for index, (key, caption) in enumerate((
+            ("wifi", "Wi-Fi"), ("bluetooth", "Bluetooth"),
+            ("quiet", "Focus assist"))):
+        button = shell._class(Gtk.ToggleButton(label=caption), "ten-live-switch")
+        button.set_sensitive(False)
+        button.set_tooltip_text("Checking system support…")
+        button.get_accessible().set_name("Toggle " + caption)
+        live.attach(button, index, 0, 1, 1)
+        live_switches[key] = button
+    bottom.pack_start(live, False, False, 0)
     grid = Gtk.Grid(row_spacing=5, column_spacing=5)
     grid.set_column_homogeneous(True)
     for index, (name, icon_name, command) in enumerate(QUICK_ACTIONS):
@@ -140,6 +152,9 @@ def build(shell, Gtk, Gdk):
     shell.mute_button.connect("clicked", shell._toggle_output_mute)
     hardware.pack_start(shell.mute_button, False, False, 0)
     bottom.pack_start(hardware, False, False, 1)
+    feedback = shell._class(Gtk.Label(label="", xalign=0), "ten-action-feedback")
+    feedback.set_line_wrap(True)
+    bottom.pack_start(feedback, False, False, 0)
     shell.status_summary = shell._class(
         Gtk.Label(label="Reading hardware status…", xalign=0), "ten-muted")
     shell.status_summary.set_line_wrap(True)
@@ -150,4 +165,7 @@ def build(shell, Gtk, Gdk):
                     lambda *_args: shell._schedule_popup_hide("control"))
     actions.connect("key-press-event",
                     lambda _widget, event: shell._action_key(event))
+    shell.ten_controller.bind(switches=live_switches, history_box=history_box,
+                              history_message=history_message, mark_button=mark_read,
+                              feedback=feedback)
     return actions

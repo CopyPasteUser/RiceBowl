@@ -58,6 +58,28 @@ are independently drawn, Linux-specific, and do not imply Microsoft branding.
   in the current README gallery. This does **not** constitute acceptance on a
   physical Linux Mint desktop, which remains a separate user-side check.
 
+## Riceware migration checkpoint — 4 November 2026
+
+- [x] Taskbar network/battery/audio status uses bounded `riceSpice` reads;
+  verified volume and mute writes no longer start ad-hoc Win10 threads.
+- [x] Own Win10 Action Center reads real `ricePop` XFCE history, with loading,
+  empty, unavailable, mark-read and per-notification dismiss states. Only the
+  user can dismiss; third-party actions are never replayed.
+- [x] Real Wi-Fi, Bluetooth and Focus Assist toggles use their actual providers,
+  disable themselves when unavailable, reconcile readback after mutation and
+  refresh while the drawer stays open; in-flight switches stay disabled.
+- [x] Stale notification callbacks are discarded on close and all workers/
+  XFCE notification observers are released on shell shutdown.
+- [x] Hermetic adapter tests and existing seven-rice Python regression suite.
+- [ ] Native-X11 CI smoke/screenshots and physical Mint audio/network/Bluetooth
+  + notification acceptance; these are not implied by Python unit tests.
+- [ ] Full 22H2 fidelity gates below, including separate Win10 network flyout,
+  richer Settings, app grouping/clear-all with confirmation, projection,
+  battery saver, VPN, Airplane mode, Task View and riceExplorer integration.
+
+The completed checkpoints are distinct from the broader uncompleted 22H2
+criteria below. XFCE Notifyd remains the only notification service.
+
 
 ---
 

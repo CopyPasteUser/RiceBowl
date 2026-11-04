@@ -113,6 +113,20 @@ device events. It does not replace XFCE Notifyd or replay third-party actions.
 Physical hardware and
 full seven-rice switch testing are not claimed.
 
+**Windows 10 checkpoint (4 November 2026):** The flat Win10 taskbar now
+receives its device status from `riceSpice`, and Action Center volume/mute
+mutations use verified shared readback rather than new ad-hoc threads. The
+distinct Win10 dark Action Center renders XFCE's real `ricePop` notification
+history, explicit per-item dismiss and mark-unread-as-read controls, plus
+independently read and verified Wi-Fi/Bluetooth/Focus Assist switches. Missing
+providers disable controls honestly; all blocking work is dispatched through
+one bounded, closeable per-shell worker and notification content is discarded
+when the flyout closes. Other settings tiles remain advanced-tool launchers,
+not fake toggles. This is **a migration checkpoint**, not full Windows 10
+22H2 or physical Mint acceptance: the network list, complete Settings app,
+Airplane/VPN/Project modes, Explorer UI, touch/scaling and multi-monitor gates
+remain open.
+
 The family mapping changes **selection only**; per-rice windows, menu flows,
 icons, keyboard shortcuts, layouts and styling must remain independent.
 Do not substitute a generic themed Settings page for any of the seven.

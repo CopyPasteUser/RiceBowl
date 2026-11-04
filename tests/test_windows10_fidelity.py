@@ -87,7 +87,9 @@ class Windows10FidelityTests(unittest.TestCase):
             self.assertIn(executable, shell)
         action_code = (ROOT / "macrice/ten_action_center.py").read_text(encoding="utf-8")
         self.assertIn("set_sensitive(available)", action_code)
-        self.assertIn("Other desktop notifications", action_code)
+        self.assertIn("history_box=history_box", action_code)
+        self.assertIn("Focus assist", action_code)
+        self.assertNotIn("No RiceBowl notifications", action_code)
         self.assertIn("Gtk.Scale.new_with_range", action_code)
 
     def test_win10_chrome_and_thunar_are_square_and_light_dark_distinct(self):

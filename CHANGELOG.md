@@ -1,5 +1,19 @@
 # RiceBowl changelog
 
+## Unreleased — Windows 10 Riceware Action Center migration (4 November 2026)
+
+- Migrated Windows 10 taskbar hardware status and Action Center volume/mute
+  controls to shared, verified riceSpice backends with a bounded worker.
+- Replaced static Action Center notification placeholders with live XFCE
+  ricePop history, explicit mark-read and individual dismiss; release private
+  notification text when the drawer is hidden, and keep XFCE as sole host.
+- Added truthful radio switches for Wi-Fi and Bluetooth plus Focus Assist via
+  XFCE Do Not Disturb; unavailable hardware leaves switches disabled and failed
+  writes never show optimistic success.
+- Preserved Windows 10's own square, charcoal 22H2 UI and settings launchers;
+  added hermetic adapter tests. Physical hardware and full Fidelity roadmap
+  acceptance remain open.
+
 ## Unreleased — Windows 7 Action Center and native Control Panel devices (4 November 2026)
 
 - Added the independent Windows 7 white-flag Action Center flyout that reads
