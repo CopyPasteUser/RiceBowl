@@ -1981,12 +1981,14 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.overflow_button.get_accessible().set_name("Show other running windows")
             self.overflow_button.connect("clicked", self._show_overflow)
             shelf_box.pack_start(self.tasks, False, False, 4)
-            if profile == "winclassic":
+            if profile in ("winclassic", "winxp"):
                 # Only blank taskbar space owns this menu; right-clicks on
                 # tray controls and task buttons retain their own semantics.
                 taskbar_spacer = Gtk.EventBox()
                 taskbar_spacer.set_visible_window(False)
-                taskbar_spacer.connect("button-press-event", self._classic98_taskbar_context)
+                taskbar_spacer.connect("button-press-event",
+                                        self._classic98_taskbar_context if profile == "winclassic"
+                                        else self._luna_taskbar_context)
             else:
                 taskbar_spacer = Gtk.Box()
             row.pack_start(taskbar_spacer, True, True, 0)
@@ -2111,6 +2113,65 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             menu.show_all()
             menu.popup_at_pointer(event)
             return True
+
+        def _luna_taskbar_context(self, _widget, event):
+            """XP blank-taskbar menu; actions touch no XFCE state without consent."""
+            if profile != "winxp" or event.button != 3:
+                return False
+            menu = Gtk.Menu()
+            self._track_luna_popup(menu)
+            for title, action in (
+                ("Show Desktop", self._show_desktop),
+                ("Add XP desktop icons…", lambda: self._luna_manage_desktop("install")),
+                ("Remove XP desktop icons…", lambda: self._luna_manage_desktop("remove")),
+                ("Desktop Properties…", lambda: self._open_tool("xfdesktop-settings")),
+            ):
+                if title == "Desktop Properties…":
+                    menu.append(Gtk.SeparatorMenuItem())
+                item = Gtk.MenuItem(label=title)
+                if title == "Desktop Properties…":
+                    item.set_sensitive(shutil.which("xfdesktop-settings") is not None)
+                item.connect("activate", lambda _item, callback=action: callback())
+                menu.append(item)
+            menu.show_all()
+            menu.popup_at_pointer(event)
+            return True
+
+        def _luna_manage_desktop(self, action):
+            """Explicit opt-in with confirmation; untouched user icons remain safe."""
+            if profile != "winxp":
+                return
+            from .luna_desktop import manage
+
+            title = ("Add XP desktop icons?" if action == "install" else
+                     "Remove RiceBowl XP desktop icons?")
+            dialog = Gtk.MessageDialog(
+                transient_for=self.bar, flags=Gtk.DialogFlags.MODAL,
+                message_type=Gtk.MessageType.QUESTION,
+                buttons=Gtk.ButtonsType.YES_NO, text=title)
+            dialog.format_secondary_text(
+                "Only RiceBowl-owned shortcuts are changed. Existing files and edited shortcuts "
+                "are always preserved. XFDesktop manages icons and trash using real Linux backends.")
+            answer = dialog.run()
+            dialog.destroy()
+            if answer != Gtk.ResponseType.YES:
+                return
+            try:
+                changed, kept = manage(action)
+            except (OSError, RuntimeError, ValueError) as exc:
+                self._error(str(exc), title="XP desktop icons")
+                return
+            info = (str(len(changed)) + " shortcuts " +
+                    ("installed" if action == "install" else "removed") + ".")
+            if kept:
+                info += " Preserved: " + ", ".join(kept)
+            result = Gtk.MessageDialog(
+                transient_for=self.bar, flags=Gtk.DialogFlags.MODAL,
+                message_type=Gtk.MessageType.INFO,
+                buttons=Gtk.ButtonsType.CLOSE, text="XP desktop icons")
+            result.format_secondary_text(info)
+            result.run()
+            result.destroy()
 
         def _windows_changed(self, windows, active):
             """Render copied task data without retaining native WnckWindow objects."""

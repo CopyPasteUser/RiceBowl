@@ -195,7 +195,10 @@ unavailable Linux backends or replacing core XFCE applications:
   My Computer, My Documents, My Network Places and Recycle Bin XFDesktop icons.
   The launchers open real GVfs locations and use native XFDesktop selection,
   arrange/drag, refresh, file menu and trash behavior. Existing/edited user
-  desktop files and symlinks are preserved. Installation is never implicit.
+  desktop files and symlinks are preserved. Installation is never implicit;
+  the XP taskbar's blank-area right-click menu also offers a confirmation
+  dialog for installing or removing those shortcuts and opens native XFDesktop
+  Properties, without touching the other rice profiles.
 - [x] Small dismissible XP balloons announce *observed* network connect/loss
   and low-battery threshold crossings only; no startup notifications or fake
   device events. No separate long-running status daemon or interval is added.
