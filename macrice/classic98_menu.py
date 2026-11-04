@@ -597,6 +597,35 @@ def build(shell, Gtk, Gdk, Gio, GLib, Pango):
                 name = app.get_display_name() or app.get_name() or "Application"
                 entry = Gtk.MenuItem(label=name)
                 entry.connect("activate", lambda _widget, selected=app: shell._launch(selected))
+                entry.set_tooltip_text(name + " · Right-click to manage Quick Launch")
+                def program_context(widget, selected, event=None):
+                    if event is not None and event.button != 3:
+                        return False
+                    identifier = selected.get_id()
+                    context = Gtk.Menu()
+                    open_item = Gtk.MenuItem(label="Open")
+                    open_item.connect("activate", lambda _item: shell._launch(selected))
+                    context.append(open_item)
+                    if identifier:
+                        pinned = identifier in shell._pinned_ids
+                        pin_item = Gtk.MenuItem(
+                            label="Remove from Quick Launch" if pinned else "Add to Quick Launch")
+                        from .aero_pins import PIN_LIMIT
+                        pin_item.set_sensitive(pinned or len(shell._pinned_ids) < PIN_LIMIT)
+                        pin_item.connect("activate", lambda _item:
+                                         shell._change_pin(identifier, not pinned))
+                        context.append(pin_item)
+                    context.show_all()
+                    if event is not None:
+                        context.popup_at_pointer(event)
+                    else:
+                        context.popup_at_widget(widget, Gdk.Gravity.SOUTH_WEST,
+                                                Gdk.Gravity.NORTH_WEST, None)
+                    return True
+                entry.connect("button-press-event", lambda widget, event, selected=app:
+                              program_context(widget, selected, event))
+                entry.connect("popup-menu", lambda widget, selected=app:
+                              program_context(widget, selected))
                 children.append(entry)
             replace_children(submenu, children)
             parent = Gtk.MenuItem(label=group)
