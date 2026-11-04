@@ -236,6 +236,11 @@ acceptance checklist above is not yet fully satisfied.
   real XP/RiceBowl feature guidance, Back/Home and a separate refreshable,
   read-only Linux System Properties dialog. The Win98 System Properties
   data collector is reused without changing Win98 text or UI.
+- [x] XP's Start-menu app list navigates via Up/Down without resetting to its
+  first item on every keypress. Typing with a focused app reveals the real
+  program search with the initial character preserved. Search Down/Up focuses
+  the first/last result, while Tab keeps native access to right-side links.
+  Further nested-menu and screen-reader acceptance is still open.
 - [x] Focused unit coverage and XP-native smoke assertions for the new taskbar
   dialog, crowded-window grouping, Help and System Properties. Gallery CI now
   saves actual 1600×900 and 1024×768 Taskbar Properties screenshots alongside

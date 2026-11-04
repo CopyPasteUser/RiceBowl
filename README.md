@@ -143,6 +143,10 @@ application with a stable protocol ID. This uses separate
 panel settings are unchanged. Applications using legacy XEmbed instead of
 StatusNotifier are not hosted by this tray.
 
+The Luna Start menu also supports **Up/Down** traversal of real application
+results; typing while an application is selected reveals and fills its own
+search field. Tab navigation remains available for the right-side XP links.
+
 The active rice uses **Super** for its app menu and **Right Ctrl** for Control Panel/Quick Settings. RiceBowl backs up previous shortcut bindings and coordinates its taskbar with XFCE Panel and Plank.
 
 ## Recovery

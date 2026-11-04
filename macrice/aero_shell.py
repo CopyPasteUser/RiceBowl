@@ -770,6 +770,23 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 assert self.menu.get_visible()
                 self.search.set_text("unlikely-app-id-ricehub-smoke-39083")
                 assert self.results.get_children()
+                if profile == "winxp":
+                    self.search.set_text("")
+                    self._reveal_luna_search()
+                    self.search.grab_focus()
+                    buttons = [child for child in self.results.get_children()
+                               if isinstance(child, Gtk.Button) and child.get_visible()]
+                    if buttons:
+                        down = type("Key", (), {"keyval": Gdk.KEY_Down, "state": 0})()
+                        assert self._search_key(down)
+                        assert buttons[0].is_focus()
+                        if len(buttons) > 1:
+                            assert self._search_key(down)
+                            assert buttons[1].is_focus()
+                        letter = type("Key", (), {"keyval": Gdk.KEY_z, "state": 0})()
+                        assert self._search_key(letter)
+                        assert self.search.is_focus()
+                        assert self.search.get_text() == "z"
                 self._hide_menu()
                 assert not self.menu.get_visible()
                 assert self.lookup_action("toggle-menu") is not None
@@ -5056,13 +5073,51 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             if event.keyval == Gdk.KEY_Escape:
                 self._hide_menu()
                 return True
+            if profile == "winxp":
+                buttons = [child for child in self.results.get_children()
+                           if isinstance(child, Gtk.Button) and child.get_visible()
+                           and child.get_sensitive()]
+                if event.keyval in (Gdk.KEY_Down, Gdk.KEY_Up):
+                    step = 1 if event.keyval == Gdk.KEY_Down else -1
+                    if self.search.is_focus():
+                        if buttons:
+                            buttons[0 if step > 0 else -1].grab_focus()
+                            return True
+                    else:
+                        # Only intercept navigation inside XP's left app list.
+                        # Right-column links retain their normal GTK keyboard
+                        # handling; never jump back to the first app on Down.
+                        focus = self.menu.get_focus()
+                        if focus in buttons:
+                            destination = buttons[(buttons.index(focus) + step) % len(buttons)]
+                            destination.grab_focus()
+                            return True
+                elif not self.search.is_focus():
+                    # Typing with a selected app should open the *real* XP
+                    # search field, not silently discard the keystroke.
+                    modifiers = (Gdk.ModifierType.CONTROL_MASK | Gdk.ModifierType.MOD1_MASK |
+                                 Gdk.ModifierType.SUPER_MASK)
+                    char = Gdk.keyval_to_unicode(event.keyval)
+                    if not (event.state & modifiers) and char:
+                        typed = chr(char)
+                        if typed.isprintable() and not typed.isspace():
+                            previous = self.search.get_text() if self.search.get_visible() else ""
+                            self._reveal_luna_search()
+                            self.search.set_text(previous + typed)
+                            self.search.set_position(-1)
+                            return True
             if self.search.is_focus() and event.keyval in (Gdk.KEY_Return, Gdk.KEY_KP_Enter):
                 apps = matching_apps(self.apps, self.search.get_text())
                 if apps:
                     self._launch(apps[0])
                     return True
-            if event.keyval == Gdk.KEY_Down and self.results.get_children():
-                first = self.results.get_children()[0]
+            if (event.keyval == Gdk.KEY_Down and self.search.is_focus()
+                    and self.results.get_children()):
+                first = next((child for child in self.results.get_children()
+                              if isinstance(child, (Gtk.Button, Gtk.FlowBoxChild))
+                              and child.get_visible() and child.get_sensitive()), None)
+                if first is None:
+                    return False
                 if profile == "frutiger" and isinstance(first, Gtk.FlowBoxChild):
                     first = first.get_child()
                 first.grab_focus()
