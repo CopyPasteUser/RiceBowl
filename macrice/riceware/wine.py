@@ -6,9 +6,11 @@ background process. This foundation is deliberately independent of rice themes.
 
 from __future__ import annotations
 
+import fcntl
 import os
 import re
 import shutil
+import signal
 import stat
 import subprocess
 from dataclasses import dataclass
@@ -17,6 +19,8 @@ from pathlib import Path
 
 NAME = re.compile(r"[a-z0-9][a-z0-9_-]{0,47}\Z")
 MARKER = ".ricewine-ready"
+INIT_LOG = ".ricewine-init.log"
+INIT_LOCK = ".ricewine-init.lock"
 
 
 @dataclass(frozen=True)
@@ -24,6 +28,7 @@ class Prefix:
     name: str
     path: str
     ready: bool
+    issue: str | None = None
 
 
 def default_store() -> Path:
@@ -64,9 +69,12 @@ def list_prefixes(*, store: Path | None = None) -> tuple[Prefix, ...]:
     for entry in sorted(folder.iterdir(), key=lambda item: item.name):
         if not NAME.fullmatch(entry.name) or entry.is_symlink() or not entry.is_dir():
             continue
-        _check_dir(entry)
-        prefixes.append(Prefix(entry.name, str(entry), (entry / MARKER).is_file()
-                               and not (entry / MARKER).is_symlink()))
+        try:
+            _check_dir(entry)
+        except RuntimeError as exc:
+            prefixes.append(Prefix(entry.name, str(entry), False, str(exc)))
+            continue
+        prefixes.append(Prefix(entry.name, str(entry), _is_ready(entry)))
     return tuple(prefixes)
 
 
@@ -82,12 +90,81 @@ def wine_version() -> str | None:
     return result.stdout.strip()[:120] if result.returncode == 0 else None
 
 
-def create_prefix(name: str, *, store: Path | None = None, timeout: float = 120) -> Prefix:
-    """Initialize one new managed prefix. Failed attempts remain for diagnosis.
+def _is_ready(prefix: Path) -> bool:
+    marker, registry = prefix / MARKER, prefix / "system.reg"
+    try:
+        return (not marker.is_symlink() and marker.is_file() and
+                not registry.is_symlink() and registry.is_file() and
+                registry.stat().st_size > 0)
+    except OSError:
+        return False
 
-    Never adopt or overwrite a user-owned Wine prefix, even when incomplete.
-    """
+
+def _private_file(path: Path, flags: int) -> int:
+    """Open only an owned, private regular file; never follow a symlink."""
+    fd = os.open(path, flags | os.O_NOFOLLOW | os.O_CLOEXEC, 0o600)
+    info = os.fstat(fd)
+    if (not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid() or
+            info.st_mode & (stat.S_IRWXG | stat.S_IRWXO)):
+        os.close(fd)
+        raise RuntimeError(f"Unsafe riceWine managed file: {path}")
+    return fd
+
+
+def _validate_timeout(timeout: float) -> None:
+    if isinstance(timeout, bool) or not isinstance(timeout, (int, float)) or not 5 <= timeout <= 600:
+        raise ValueError("Wine initialization timeout must be 5–600 seconds")
+
+
+def _initialize(prefix: Path, wineboot: str, timeout: float) -> Prefix:
+    lock = prefix / INIT_LOCK
+    log = prefix / INIT_LOG
+    with os.fdopen(_private_file(lock, os.O_CREAT | os.O_RDWR), "rb+") as guard:
+        try:
+            fcntl.flock(guard, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError as exc:
+            raise RuntimeError("Wine prefix initialization is already running") from exc
+        if _is_ready(prefix):
+            raise RuntimeError("Prefix is already initialized")
+        environment = os.environ.copy()
+        environment["WINEPREFIX"] = str(prefix.absolute())
+        with os.fdopen(_private_file(log, os.O_CREAT | os.O_WRONLY | os.O_APPEND), "ab") as output:
+            try:
+                process = subprocess.Popen([wineboot, "--init"], env=environment,
+                                           stdin=subprocess.DEVNULL, stdout=output,
+                                           stderr=subprocess.STDOUT, close_fds=True,
+                                           start_new_session=True)
+                try:
+                    code = process.wait(timeout=timeout)
+                except (subprocess.TimeoutExpired, KeyboardInterrupt) as exc:
+                    # Kill only the process group we started, never another Wine prefix.
+                    try:
+                        os.killpg(process.pid, signal.SIGKILL)
+                    except ProcessLookupError:
+                        pass
+                    process.wait(timeout=5)
+                    if isinstance(exc, KeyboardInterrupt):
+                        raise RuntimeError(f"Wine initialization cancelled; inspect {log}") from exc
+                    raise RuntimeError(f"Wine initialization timed out; inspect {log}") from exc
+            except OSError as exc:
+                raise RuntimeError(f"Wine initialization failed; inspect {log}") from exc
+        if code:
+            raise RuntimeError(f"Wine initialization exited {code}; inspect {log}")
+        # A zero exit code is not proof that Wine actually initialized a prefix.
+        registry = prefix / "system.reg"
+        if registry.is_symlink() or not registry.is_file() or registry.stat().st_size == 0:
+            raise RuntimeError(f"Wine returned success but created no registry; inspect {log}")
+        marker = prefix / MARKER
+        with os.fdopen(_private_file(marker, os.O_CREAT | os.O_EXCL | os.O_WRONLY),
+                       "w", encoding="utf-8") as output:
+            output.write("Managed by riceWine; initialization completed.\n")
+    return Prefix(prefix.name, str(prefix), True)
+
+
+def create_prefix(name: str, *, store: Path | None = None, timeout: float = 120) -> Prefix:
+    """Create only a new prefix; leave any failed initialization available for repair."""
     _name(name)
+    _validate_timeout(timeout)
     if os.geteuid() == 0:
         raise RuntimeError("Do not initialize Wine prefixes as root")
     wineboot = shutil.which("wineboot")
@@ -99,24 +176,38 @@ def create_prefix(name: str, *, store: Path | None = None, timeout: float = 120)
         prefix.mkdir(mode=0o700)
     except FileExistsError as exc:
         raise RuntimeError("Prefix already exists; it will not be overwritten") from exc
-    environment = os.environ.copy()
-    environment["WINEPREFIX"] = str(prefix.absolute())
-    log = prefix / ".ricewine-init.log"
-    try:
-        with log.open("xb") as output:
-            os.chmod(log, 0o600)
-            result = subprocess.run([wineboot, "--init"], env=environment,
-                                    stdout=output, stderr=subprocess.STDOUT,
-                                    timeout=timeout, check=False)
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        raise RuntimeError(f"Wine initialization failed; inspect {log}") from exc
-    if result.returncode:
-        raise RuntimeError(f"Wine initialization exited {result.returncode}; inspect {log}")
-    marker = prefix / MARKER
-    with marker.open("x", encoding="utf-8") as output:
-        output.write("Managed by riceWine; initialization completed.\n")
-    os.chmod(marker, 0o600)
-    return Prefix(name, str(prefix), True)
+    return _initialize(prefix, wineboot, timeout)
+
+
+def resume_prefix(name: str, *, store: Path | None = None, timeout: float = 120) -> Prefix:
+    """Retry only an incomplete prefix previously started by riceWine."""
+    _name(name)
+    _validate_timeout(timeout)
+    if os.geteuid() == 0:
+        raise RuntimeError("Do not initialize Wine prefixes as root")
+    wineboot = shutil.which("wineboot")
+    if wineboot is None:
+        raise RuntimeError("wineboot is not installed; install Wine first")
+    prefix = _store(store) / name
+    _check_dir(prefix)
+    log = prefix / INIT_LOG
+    if log.is_symlink() or not log.is_file() or (prefix / MARKER).exists():
+        raise RuntimeError("This is not an incomplete riceWine-managed prefix")
+    return _initialize(prefix, wineboot, timeout)
+
+
+def read_init_log(name: str, *, store: Path | None = None, limit: int = 4096) -> str:
+    """Read a bounded diagnostic tail; never expose the log automatically."""
+    _name(name)
+    if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 65536:
+        raise ValueError("Diagnostic limit must be 1–65536 bytes")
+    prefix = _store(store) / name
+    _check_dir(prefix)
+    with os.fdopen(_private_file(prefix / INIT_LOG, os.O_RDONLY), "rb") as source:
+        source.seek(0, os.SEEK_END)
+        source.seek(max(0, source.tell() - limit))
+        content = source.read().decode("utf-8", errors="replace")
+        return "".join(char for char in content if char.isprintable() or char in "\n\t")
 
 
 def launch(name: str, executable: str, arguments: tuple[str, ...] = (), *,
@@ -134,8 +225,7 @@ def launch(name: str, executable: str, arguments: tuple[str, ...] = (), *,
         raise RuntimeError("wine is not installed")
     prefix = _store(store) / name
     _check_dir(prefix)
-    marker = prefix / MARKER
-    if marker.is_symlink() or not marker.is_file():
+    if not _is_ready(prefix):
         raise RuntimeError("Prefix is not initialized by riceWine; refusing to launch")
     environment = os.environ.copy()
     environment["WINEPREFIX"] = str(prefix.absolute())
@@ -146,4 +236,11 @@ def launch(name: str, executable: str, arguments: tuple[str, ...] = (), *,
                                    start_new_session=True)
     except OSError as exc:
         raise RuntimeError("Could not start Wine") from exc
+    try:
+        code = process.wait(timeout=0.15)
+    except subprocess.TimeoutExpired:
+        return process.pid
+    if code != 0:
+        raise RuntimeError(f"Wine exited immediately with status {code}")
+    # Zero only confirms that the Wine launcher exited, not the GUI app's health.
     return process.pid

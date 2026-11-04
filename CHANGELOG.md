@@ -1,5 +1,21 @@
 # RiceBowl changelog
 
+## Unreleased — Riceware backend reliability hardening (4 November 2026)
+
+- riceSpice now checks each requested mutation against actual device readback,
+  serializes conflicting in-process device writes and surfaces malformed or
+  unavailable provider responses without reporting false success.
+- ricePop now exposes truthful host capabilities and validates history IDs;
+  clearing notification history through the CLI requires explicit `--yes`.
+- ricePlate now bounds desktop inventory memory, reports truncation and treats
+  special filesystem entries honestly instead of pretending they are files.
+- riceWine now requires a real registry before marking a prefix initialized,
+  locks concurrent init/recovery, supports explicit retries and private bounded
+  diagnostic reads, kills only its own timed-out init process group, rejects
+  immediate failed launches and reports unsafe prefix permissions.
+- Added isolated concurrency/fault-injection checks. This hardens the core API;
+  it is **not** physical hardware, cross-rice UI or full Wine-app certification.
+
 ## Unreleased — Shared Riceware backend foundations (4 November 2026)
 
 - Added on-demand `macrice.riceware` backends for riceSpice (real hardware reads,
