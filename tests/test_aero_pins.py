@@ -4,10 +4,27 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from macrice.aero_pins import PIN_LIMIT, PinConfigError, load_pins, pin_file, save_pins, validate_ids
+from macrice.aero_pins import (PIN_LIMIT, PinConfigError, load_pins, pin_file,
+                              reorder_pins, save_pins, validate_ids)
 
 
 class AeroPinsTests(unittest.TestCase):
+    def test_reorder_pins_before_after_and_noop(self):
+        entries = ("first.desktop", "second.desktop", "third.desktop")
+        self.assertEqual(reorder_pins(entries, "first.desktop", "third.desktop"),
+                         ("second.desktop", "first.desktop", "third.desktop"))
+        self.assertEqual(reorder_pins(entries, "first.desktop", "third.desktop", after=True),
+                         ("second.desktop", "third.desktop", "first.desktop"))
+        self.assertEqual(reorder_pins(entries, "third.desktop", "first.desktop"),
+                         ("third.desktop", "first.desktop", "second.desktop"))
+        self.assertEqual(reorder_pins(entries, "unknown.desktop", "first.desktop"), entries)
+        self.assertEqual(reorder_pins(entries, "first.desktop", "first.desktop"), entries)
+        self.assertEqual(reorder_pins(entries, "first.desktop", "not-a-target"), entries)
+
+    def test_reorder_rejects_invalid_or_duplicate_preferences(self):
+        with self.assertRaises(PinConfigError):
+            reorder_pins(("first.desktop", "first.desktop"), "first.desktop", "first.desktop")
+
     def test_all_installable_shells_have_isolated_pin_files(self):
         profiles = ("aero", "windows10", "winxp", "winclassic", "chromeos", "frutiger")
         paths = [pin_file(profile) for profile in profiles]

@@ -800,6 +800,21 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self._toggle_actions()
                 assert not self.actions.get_visible()
                 if profile == "winxp":
+                    if self._tray is not None:
+                        assert self._tray.theme == "luna"
+                        assert self._tray.preferences is not None
+                        assert self._tray.overflow_button.get_style_context().has_class(
+                            "luna-tray-chevron")
+                        saved_dialog_run = Gtk.Dialog.run
+                        def cancel_luna_tray_preferences(dialog):
+                            assert dialog.get_style_context().has_class(
+                                "luna-tray-customize")
+                            return Gtk.ResponseType.CANCEL
+                        try:
+                            Gtk.Dialog.run = cancel_luna_tray_preferences
+                            self._tray._open_preferences()
+                        finally:
+                            Gtk.Dialog.run = saved_dialog_run
                     self.luna_open_taskbar_properties()
                     assert self._luna_taskbar_dialog is not None
                     assert self._luna_taskbar_dialog.get_style_context().has_class(
@@ -944,6 +959,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                             "Show windows side by side", "Undo window arrangement",
                             "Start Task Manager"} <= taskbar_labels
                     taskbar_menu.destroy()
+                    if self.pinned_box.get_children():
+                        pinned_button = self.pinned_box.get_children()[0]
+                        assert pinned_button.drag_source_get_target_list() is not None
+                        assert pinned_button.drag_dest_get_target_list() is not None
                     self._win7_show_preview("app:ricebowl-ci", button)
                     assert self._win7_preview is not None
                     self._win7_stop_preview()
@@ -1233,11 +1252,36 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self._capture_screen(
                     f"ricebowl-winxp-properties-0.9.1{self._capture_variant}-extra.png")
                 dialog.response(Gtk.ResponseType.CANCEL)
+                if self._tray is not None:
+                    GLib.timeout_add(440, self._capture_luna_tray_preferences)
+                    self._tray._open_preferences()
             except Exception:
                 import traceback
                 traceback.print_exc()
                 self._smoke_failed = True
             self.quit()
+            return False
+
+        def _capture_luna_tray_preferences(self):
+            try:
+                dialog = self._tray._preferences_dialog
+                assert dialog is not None and dialog.get_mapped()
+                rect = self._desktop_rect()
+                x, y = dialog.get_window().get_root_origin()
+                width, height = dialog.get_size()
+                assert (rect.x <= x and rect.y <= y and
+                        x + width <= rect.x + rect.width and
+                        y + height <= rect.y + rect.height - panel_height), (
+                    f"XP notification preferences offscreen: {x},{y} {width}x{height}")
+                self._capture_screen(
+                    f"ricebowl-winxp-notification-icons-0.9.1{self._capture_variant}-extra.png")
+                dialog.response(Gtk.ResponseType.CANCEL)
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._smoke_failed = True
+                if self._tray is not None and self._tray._preferences_dialog is not None:
+                    self._tray._preferences_dialog.response(Gtk.ResponseType.CANCEL)
             return False
 
         def _capture_workspace_start(self):
@@ -1454,8 +1498,50 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 btn.connect("clicked", lambda _btn, selected=app: self._launch(selected))
                 btn.connect("button-press-event", lambda widget, event, selected=app:
                             self._pin_context(widget, selected, event))
+                if profile == "aero":
+                    target = Gtk.TargetEntry.new("application/x-ricebowl-win7-pin",
+                                                 Gtk.TargetFlags.SAME_APP, 0)
+                    btn.drag_source_set(Gdk.ModifierType.BUTTON1_MASK,
+                                        [target], Gdk.DragAction.MOVE)
+                    btn.drag_dest_set(Gtk.DestDefaults.ALL, [target], Gdk.DragAction.MOVE)
+                    btn.connect("drag-data-get", lambda _button, _context, selection, _info, _time,
+                                source=identifier: selection.set(
+                                    selection.get_target(), 8, source.encode("utf-8")))
+                    btn.connect("drag-data-received", lambda button, context, x, _y, selection,
+                                _info, time, target_id=identifier:
+                                self._win7_pin_dropped(button, context, x, selection, time, target_id))
                 self.pinned_box.pack_start(btn, False, False, 0)
             self.pinned_box.show_all()
+
+        def _win7_pin_dropped(self, button, context, x, selection, time, target):
+            """Accept only local validated desktop IDs; persist before redraw."""
+            data = selection.get_data()
+            try:
+                source = data.decode("utf-8").rstrip("\x00") if data is not None else ""
+            except UnicodeDecodeError:
+                source = ""
+            success = self._win7_reorder_pin(source, target,
+                                             after=x >= button.get_allocated_width() / 2)
+            Gtk.drag_finish(context, success, False, time)
+
+        def _win7_reorder_pin(self, source, target, *, after=False):
+            if profile != "aero":
+                return False
+            from .aero_pins import reorder_pins
+
+            if source not in self._pinned_ids or target not in self._pinned_ids:
+                return False
+            candidate = reorder_pins(self._pinned_ids, source, target, after=after)
+            if candidate == self._pinned_ids:
+                return True
+            try:
+                save_pins(self._pin_config_path, candidate)
+            except (PinConfigError, OSError) as exc:
+                self._error("Unable to save taskbar pin order: " + str(exc))
+                return False
+            self._pinned_ids = candidate
+            self._render_pins()
+            return True
 
         def _pin_context(self, widget, app, event=None):
             if event is not None and event.button != 3:
@@ -1484,6 +1570,18 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                                      self._win7_launch_recent(selected, address))
                         menu.append(item)
                 menu.append(Gtk.SeparatorMenuItem())
+                if pinned and len(self._pinned_ids) > 1:
+                    index = self._pinned_ids.index(identifier)
+                    for title, delta in (("Move pin left", -1), ("Move pin right", 1)):
+                        item = Gtk.MenuItem(label=title)
+                        destination = index + delta
+                        item.set_sensitive(0 <= destination < len(self._pinned_ids))
+                        if 0 <= destination < len(self._pinned_ids):
+                            adjacent = self._pinned_ids[destination]
+                            item.connect("activate", lambda _item, target=adjacent, kind=delta:
+                                         self._win7_reorder_pin(identifier, target, after=kind > 0))
+                        menu.append(item)
+                    menu.append(Gtk.SeparatorMenuItem())
             elif profile == "winxp":
                 launch = self._luna_menu_item("Open " + (app.get_display_name() or app.get_name()),
                                               app.get_icon() or "application-x-executable")
@@ -2250,7 +2348,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     from .aero_tray import StatusNotifierTray
                     self._tray = StatusNotifierTray(
                         tray_box, Gtk, Gio, GLib, GdkPixbuf,
-                        visible_limit=3 if profile == "aero" else None)
+                        visible_limit=3 if profile in ("aero", "winxp") else None,
+                        theme="luna" if profile == "winxp" else "win7")
                 except (GLib.Error, RuntimeError, OSError) as exc:
                     logging.getLogger(__name__).warning("Optional Aero tray unavailable: %s", exc)
             def update_clock():
@@ -2375,6 +2474,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._track_luna_popup(menu)
             for title, action in (
                 ("Taskbar and Start Menu Properties…", self.luna_open_taskbar_properties),
+                ("Customize notification icons…", lambda: self._tray.open_preferences()
+                 if self._tray is not None else None),
                 ("Show Desktop", self._show_desktop),
                 ("Add XP desktop icons…", lambda: self._luna_manage_desktop("install")),
                 ("Remove XP desktop icons…", lambda: self._luna_manage_desktop("remove")),
@@ -2385,6 +2486,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 item = Gtk.MenuItem(label=title)
                 if title == "Desktop Properties…":
                     item.set_sensitive(shutil.which("xfdesktop-settings") is not None)
+                elif title == "Customize notification icons…":
+                    item.set_sensitive(self._tray is not None)
                 item.connect("activate", lambda _item, callback=action: callback())
                 menu.append(item)
             menu.show_all()

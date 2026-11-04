@@ -47,6 +47,9 @@ menus can tile individual windows left/right, maximize and restore their
 original position using the monitor's available workarea.
 Right-click empty Superbar space for real Cascade/Stacked/Side-by-side window
 layouts, Undo window arrangement and an installed Linux Task Manager.
+Pinned Windows 7 launcher icons can now be reordered using drag and drop or
+keyboard-accessible **Move pin left/right** Jump List actions; each change is
+persisted in the existing reversible Aero pin configuration.
 Configure visible icons from the chevron or blank-Superbar context menu. Installed
 [RiceExplorer](https://github.com/CopyPasteUser/riceExplorer) appears as an
 optional Windows 7 preview in Start; Thunar remains the default while file
@@ -131,6 +134,15 @@ read-only, refreshable Linux **System Properties** view instead of depending on
 external documentation software. Notification balloons additionally report
 real removable-drive mount/unmount events through Gio. Auto-hide and taskbar
 locking remain disabled until monitor-safe handling is verified.
+The XP notification area also provides a **hidden-icon chevron** whenever
+active StatusNotifier applications exceed the visible icon limit. Right-click
+the taskbar or open that menu to choose **Customize notification icons…**:
+set the number of visible icons (0–8) and persist Show/Hide/Automatic per
+application with a stable protocol ID. This uses separate
+`~/.config/ricehub/winxp-tray.json` preferences; the Windows 7 tray and XFCE
+panel settings are unchanged. Applications using legacy XEmbed instead of
+StatusNotifier are not hosted by this tray.
+
 The Luna Start menu also supports **Up/Down** traversal of real application
 results; typing while an application is selected reveals and fills its own
 search field. Tab navigation remains available for the right-side XP links.

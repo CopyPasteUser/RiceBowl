@@ -245,12 +245,19 @@ acceptance checklist above is not yet fully satisfied.
   dialog, crowded-window grouping, Help and System Properties. Gallery CI now
   saves actual 1600×900 and 1024×768 Taskbar Properties screenshots alongside
   the existing XP interaction gallery.
+- [x] Native Luna **hidden notification icons** chevron and keyboard-operable
+  overflow menu for real StatusNotifier applications. The customization dialog
+  sets 0–8 visible icons and individual Show/Hide/Automatic rules by stable
+  protocol ID. Preferences use their own atomic, validated
+  `winxp-tray.json`; Win7 settings and XFCE are untouched. Missing stable IDs
+  are honestly nonpersistent; passive icons remain hidden and legacy XEmbed
+  is not claimed as supported. Actual Linux Mint tray apps still need QA.
 - [ ] Owner acceptance: real X1 Yoga with battery/Wi-Fi/Bluetooth/backlight,
   suspend/resume, multimonitor, Gtk keyboard traversal, auto-hide edge UX.
 
 **Still open and intentionally not misrepresented as finished:** independent
 desktop icon grid/label styles and contextual New/Arrange menus beyond
-XFDesktop, full taskbar auto-hide and lock, tray-overflow personalization,
+XFDesktop, full taskbar auto-hide and lock, legacy XEmbed tray support,
 complete third-party dialog fidelity, comprehensive keyboard/accessibility
 validation, optional login/logout/session effects, original soundscape and
 hardware measurements. riceExplorer remains a separate, unaccepted dependency
