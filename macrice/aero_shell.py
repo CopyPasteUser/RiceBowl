@@ -1550,6 +1550,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self._tray = None
             if self.luna_balloon is not None:
                 self.luna_balloon.close()
+            if profile == "winxp" and self.luna_tray is not None:
+                self.luna_tray.close()
+            if self._volume_write_source:
+                GLib.source_remove(self._volume_write_source)
+                self._volume_write_source = 0
             if self._luna_volume_monitor is not None:
                 for handler in self._luna_volume_signals:
                     self._luna_volume_monitor.disconnect(handler)
@@ -2028,6 +2033,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             if self._status_pending:
                 return True
             self._status_pending = True
+            if profile == "winxp" and self.luna_tray is not None:
+                self.luna_tray.refresh_status(self._apply_status)
+                return True
             def worker():
                 try:
                     from .hardware_status import read_status
@@ -2202,16 +2210,19 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.volume_status_label.set_text(f"Adjusting volume to {value}%…")
             if self.luna_tray is not None:
                 self.luna_tray.volume_pending(value)
-            def worker():
-                from .hardware_status import set_sound_volume
-                try:
-                    state = set_sound_volume(value)
-                    error = None
-                except (OSError, RuntimeError, ValueError) as exc:
-                    state, error = None, str(exc)
-                GLib.idle_add(self._volume_change_complete, state, error)
-            threading.Thread(target=worker, daemon=True,
-                             name="ricebowl-set-volume").start()
+            if profile == "winxp" and self.luna_tray is not None:
+                self.luna_tray.change_audio("audio_volume", value, self._volume_change_complete)
+            else:
+                def worker():
+                    from .hardware_status import set_sound_volume
+                    try:
+                        state = set_sound_volume(value)
+                        error = None
+                    except (OSError, RuntimeError, ValueError) as exc:
+                        state, error = None, str(exc)
+                    GLib.idle_add(self._volume_change_complete, state, error)
+                threading.Thread(target=worker, daemon=True,
+                                 name="ricebowl-set-volume").start()
             return False
 
         def _volume_change_complete(self, state, error):
@@ -2246,17 +2257,20 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self.luna_tray.audio_mute.set_sensitive(False)
             self._mute_writing = True
 
-            def worker():
-                from .hardware_status import set_sound_mute
-                try:
-                    state = set_sound_mute(requested)
-                    error = None
-                except (OSError, ValueError, RuntimeError) as exc:
-                    state, error = None, str(exc)
-                GLib.idle_add(self._mute_change_complete, state, error)
+            if profile == "winxp" and self.luna_tray is not None:
+                self.luna_tray.change_audio("audio_mute", requested, self._mute_change_complete)
+            else:
+                def worker():
+                    from .hardware_status import set_sound_mute
+                    try:
+                        state = set_sound_mute(requested)
+                        error = None
+                    except (OSError, ValueError, RuntimeError) as exc:
+                        state, error = None, str(exc)
+                    GLib.idle_add(self._mute_change_complete, state, error)
 
-            threading.Thread(target=worker, daemon=True,
-                             name="ricebowl-set-mute").start()
+                threading.Thread(target=worker, daemon=True,
+                                 name="ricebowl-set-mute").start()
 
         def _mute_change_complete(self, state, error):
             self._mute_writing = False
@@ -2739,7 +2753,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 from .win7_desktop import manage
                 era = "Windows 7"
             else:
-                from .luna_desktop import manage
+                from .riceware.plate import manage_shortcuts
+                def manage(selected):
+                    return manage_shortcuts("xp", selected)
                 era = "XP"
 
             title = ("Add " + era + " desktop icons?" if action == "install" else

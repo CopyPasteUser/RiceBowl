@@ -84,7 +84,7 @@ The active rice uses **Super** for its launcher and **Right Ctrl** for Control P
 
 - **XFCE/X11** is the supported target; Wayland and full Windows DWM-style blur are outside current support.
 - **Thunar stays available.** [riceExplorer](https://github.com/CopyPasteUser/riceExplorer) is a separate, still-developing Rust file manager and is not yet the default.
-- **Riceware migration API 1.0** provides versioned, testable backends for riceSpice, ricePop, ricePlate and optional riceWine. The seven existing UIs are not yet migrated; real-hardware acceptance remains open. [API](RICEWARE_FOUNDATIONS.md) · [Migration guide](RICEWARE_MIGRATION_GUIDE.md).
+- **Riceware migration API 1.0** provides versioned shared backends for riceSpice, ricePop, ricePlate and optional riceWine. **XP Luna's hardware status, device flyouts and managed desktop shortcuts now use riceSpice/ricePlate**, with readback-verified changes and bounded GTK workers. Other Rice UIs, XP's deeper native applets and physical Mint acceptance remain open. [API](RICEWARE_FOUNDATIONS.md) · [Migration guide](RICEWARE_MIGRATION_GUIDE.md).
 - Linux hardware availability and permissions determine which real actions are enabled. Missing capabilities are explained instead of simulated.
 - All artwork is original. RiceBowl is not affiliated with Apple, Google or Microsoft.
 

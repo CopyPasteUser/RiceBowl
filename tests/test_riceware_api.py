@@ -43,6 +43,24 @@ class RicewareApiTests(unittest.TestCase):
                 self.assertEqual(spice.change(action, value).status, "error")
         self.assertEqual(spice.ACTION_SPECS["brightness"].minimum, 1)
 
+    def test_wifi_scan_refresh_is_an_explicit_spice_operation(self):
+        from unittest.mock import patch
+
+        with patch.object(spice.hardware, "read_wifi_networks", return_value=("wifi",)) as read:
+            result = spice.scan_wifi(rescan=True)
+        self.assertEqual((result.status, result.value), ("ok", ("wifi",)))
+        read.assert_called_once_with(rescan=True)
+        with self.assertRaises(ValueError):
+            spice.scan_wifi(rescan="yes")
+
+    def test_aggregate_desktop_status_does_not_duplicate_snapshot_probes(self):
+        from unittest.mock import patch
+
+        with patch.object(spice, "read", return_value=spice.Result("test", "ok")) as read:
+            spice.snapshot()
+        self.assertNotIn("desktop_status", [call.args[0] for call in read.call_args_list])
+        self.assertIn("desktop_status", spice.READERS)
+
     def test_runner_dispatches_to_ui_and_drops_stale_results(self):
         scheduled = queue.Queue()
         delivered = []
