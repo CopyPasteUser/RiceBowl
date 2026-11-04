@@ -156,7 +156,7 @@ adds fake filesystem operations or replaces its file-management engine.
   3D Luna Control Panel category devices and individually badged applet SVGs.
 - [x] Keep artwork reproducible through `scripts/build_luna_control_icons.py`;
   install it only into XP's icon theme, preserving all other rices.
-- [x] Audio icon: small native popover with verified volume slider, mute,
+- [x] Audio icon: small native GTK flyout with verified volume slider, mute,
   selection among real PulseAudio/PipeWire output devices, and settings link;
   Control Panel uses the same output backend.
 - [x] WLAN icon: real NetworkManager radio state, sorted nearby SSIDs, refresh,

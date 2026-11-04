@@ -82,6 +82,10 @@ class LunaTray:
         popup.set_keep_above(True)
         popup.connect("focus-out-event", lambda window, _event: window.hide())
         popup.connect("key-press-event", self._key_press, Gdk)
+        # Device discovery updates rows asynchronously after the first map.
+        # Re-anchor to the *new* height so the bottom never overlaps the bar.
+        popup.connect("size-allocate", lambda _window, _allocation, kind=name:
+                      self.GLib.idle_add(self._place, kind))
         body = self.shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8),
                                   "luna-tray-card")
         # Small displays get an outer scroller; Wi-Fi's own network list keeps
@@ -130,7 +134,8 @@ class LunaTray:
             rect.x, rect.y, rect.width, rect.height,
             bar_x + offset[0] + self.anchors[name].get_allocated_width() // 2,
             bar_y, width, height)
-        pop.move(x, y)
+        if pop.get_window() is not None and pop.get_window().get_root_origin() != (x, y):
+            pop.move(x, y)
         return False
 
     def _heading(self, body, name, icon):
