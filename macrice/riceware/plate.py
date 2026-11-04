@@ -6,6 +6,7 @@ This module never replaces XFDesktop or modifies wallpaper and icon positions.
 
 from __future__ import annotations
 
+import configparser
 import heapq
 from dataclasses import dataclass
 from pathlib import Path
@@ -18,6 +19,9 @@ class DesktopItem:
     filename: str
     path: str
     kind: str  # launcher, directory, file, link
+    display_name: str | None = None
+    icon_name: str | None = None
+    hidden: bool = False
 
 
 @dataclass(frozen=True)
@@ -26,6 +30,34 @@ class DesktopSnapshot:
     exists: bool
     items: tuple[DesktopItem, ...]
     truncated: bool = False
+
+
+def _clean(value: str | None, limit: int) -> str | None:
+    if not value:
+        return None
+    value = "".join(char for char in value if char.isprintable()).strip()
+    return value[:limit] or None
+
+
+def _launcher_metadata(path: Path) -> tuple[str | None, str | None, bool]:
+    """Read bounded desktop-entry metadata only; never evaluate Exec lines."""
+    try:
+        if path.is_symlink() or path.stat().st_size > 128 * 1024:
+            return None, None, False
+        with path.open("r", encoding="utf-8") as stream:
+            content = stream.read(128 * 1024 + 1)
+        if len(content) > 128 * 1024:
+            return None, None, False
+        config = configparser.ConfigParser(interpolation=None, strict=False)
+        config.optionxform = str
+        config.read_string(content)
+        if not config.has_section("Desktop Entry"):
+            return None, None, False
+        entry = config["Desktop Entry"]
+        return (_clean(entry.get("Name"), 120), _clean(entry.get("Icon"), 256),
+                entry.getboolean("Hidden", fallback=False))
+    except (OSError, UnicodeError, configparser.Error, ValueError):
+        return None, None, False
 
 
 def snapshot(folder: Path | None = None, *, limit: int = 512) -> DesktopSnapshot:
@@ -44,7 +76,8 @@ def snapshot(folder: Path | None = None, *, limit: int = 512) -> DesktopSnapshot
         kind = ("link" if path.is_symlink() else "directory" if path.is_dir()
                 else "launcher" if path.suffix == ".desktop" and path.is_file()
                 else "file" if path.is_file() else "other")
-        items.append(DesktopItem(path.name, str(path), kind))
+        name, icon, hidden = _launcher_metadata(path) if kind == "launcher" else (None, None, False)
+        items.append(DesktopItem(path.name, str(path), kind, name, icon, hidden))
     return DesktopSnapshot(str(folder), True, tuple(items), len(selected) > limit)
 
 

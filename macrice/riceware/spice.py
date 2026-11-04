@@ -7,6 +7,7 @@ backends; later rice-specific interfaces can consume the same results.
 from __future__ import annotations
 
 import threading
+import re
 from dataclasses import dataclass
 from typing import Any, Callable
 
@@ -19,6 +20,63 @@ class Result:
     status: str  # ok, unavailable, error
     value: Any = None
     reason: str | None = None
+
+
+@dataclass(frozen=True)
+class ActionSpec:
+    name: str
+    kind: str  # boolean, integer, selection, address, ssid, none
+    minimum: int | None = None
+    maximum: int | None = None
+
+
+ACTION_SPECS = {
+    "audio_volume": ActionSpec("audio_volume", "integer", 0, 100),
+    "audio_mute": ActionSpec("audio_mute", "boolean"),
+    "audio_output": ActionSpec("audio_output", "selection"),
+    "bluetooth_power": ActionSpec("bluetooth_power", "boolean"),
+    "bluetooth_connect": ActionSpec("bluetooth_connect", "address"),
+    "bluetooth_disconnect": ActionSpec("bluetooth_disconnect", "address"),
+    "brightness": ActionSpec("brightness", "integer", 1, 100),
+    "microphone_volume": ActionSpec("microphone_volume", "integer", 0, 100),
+    "microphone_mute": ActionSpec("microphone_mute", "boolean"),
+    "power_profile": ActionSpec("power_profile", "selection"),
+    "wifi": ActionSpec("wifi", "boolean"),
+    "wifi_connect": ActionSpec("wifi_connect", "ssid"),
+    "wifi_disconnect": ActionSpec("wifi_disconnect", "none"),
+}
+
+
+def action_specs() -> tuple[ActionSpec, ...]:
+    """Renderer control metadata; no hardware probing or UI layout policy."""
+    return tuple(ACTION_SPECS.values())
+
+
+def _validate(action: str, value: Any) -> None:
+    spec = ACTION_SPECS[action]
+    if spec.kind == "none":
+        if value is not None:
+            raise ValueError(f"{action} takes no value")
+        return
+    if spec.kind == "boolean":
+        if type(value) is not bool:
+            raise ValueError(f"{action} requires a boolean")
+        return
+    if spec.kind == "integer":
+        if type(value) is not int or not spec.minimum <= value <= spec.maximum:
+            raise ValueError(f"{action} requires {spec.minimum}–{spec.maximum}")
+        return
+    if not isinstance(value, str) or not value.strip() or "\x00" in value or len(value) > 256:
+        raise ValueError(f"{action} requires a valid text selection")
+    if spec.kind == "address" and not re.fullmatch(r"[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5}", value):
+        raise ValueError("Select a valid Bluetooth device address")
+    if spec.kind == "ssid":
+        try:
+            size = len(value.encode("utf-8"))
+        except UnicodeEncodeError as exc:
+            raise ValueError("Wi-Fi SSID is not valid UTF-8") from exc
+        if size > 32:
+            raise ValueError("Wi-Fi SSIDs must not exceed 32 bytes")
 
 
 READERS: dict[str, Callable[[], Any]] = {
@@ -140,15 +198,15 @@ def change(action: str, value: Any = None) -> Result:
     if action not in WRITERS:
         raise ValueError(f"Unknown riceSpice action: {action}")
     writer, capability = WRITERS[action]
+    try:
+        _validate(action, value)
+    except ValueError as exc:
+        return Result(action, "error", reason=str(exc))
     with _LOCKS[_family(action)]:
         try:
             if action == "wifi_disconnect":
-                if value is not None:
-                    raise ValueError("wifi_disconnect takes no value")
                 outcome = writer()
             else:
-                if value is None:
-                    raise ValueError(f"{action} requires a value")
                 outcome = writer(value)
             if action in ("wifi_connect", "wifi_disconnect") and outcome is not True:
                 raise RuntimeError("NetworkManager could not verify the connection state")

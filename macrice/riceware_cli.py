@@ -10,6 +10,7 @@ from dataclasses import asdict, is_dataclass
 def add_commands(commands) -> None:
     riceware = commands.add_parser("riceware", help="Inspect and use opt-in riceware backends")
     backends = riceware.add_subparsers(dest="riceware_backend", required=True)
+    backends.add_parser("manifest", help="Inspect the versioned renderer API without probing hardware")
     spice = backends.add_parser("spice", help="Read real hardware state or request an explicit change")
     spice.add_argument("action", choices=("status", "get", "set"))
     spice.add_argument("name", nargs="?")
@@ -24,10 +25,25 @@ def add_commands(commands) -> None:
     plate.add_argument("action", choices=("status", "install", "remove"))
     plate.add_argument("--profile", choices=("xp", "win7"))
     wine = backends.add_parser("wine", help="Manage private Wine prefixes without system changes")
-    wine.add_argument("action", choices=("status", "list", "create", "resume", "run", "log"))
-    wine.add_argument("name", nargs="?")
-    wine.add_argument("executable", nargs="?")
-    wine.add_argument("arguments", nargs=argparse.REMAINDER)
+    wine_actions = wine.add_subparsers(dest="action", required=True)
+    for action in ("status", "list", "apps"):
+        wine_actions.add_parser(action)
+    for action in ("create", "resume", "log"):
+        wine_actions.add_parser(action).add_argument("name")
+    for action in ("run", "register"):
+        entry = wine_actions.add_parser(action)
+        entry.add_argument("name", help="Managed prefix")
+        if action == "register":
+            entry.add_argument("identifier", help="Stable application ID")
+            entry.add_argument("title", help="Display name")
+        entry.add_argument("executable")
+        entry.add_argument("arguments", nargs=argparse.REMAINDER)
+    for action in ("unregister", "run-app"):
+        entry = wine_actions.add_parser(action)
+        entry.add_argument("name", help="Managed prefix")
+        entry.add_argument("identifier", help="Application ID")
+        if action == "unregister":
+            entry.add_argument("--yes", action="store_true", help="Confirm removing this registration")
 
 
 def _dump(value) -> None:
@@ -37,17 +53,22 @@ def _dump(value) -> None:
 
 
 def _parse_value(name: str, value: str | None):
-    if name == "wifi_disconnect":
+    from .riceware.spice import ACTION_SPECS
+
+    if name not in ACTION_SPECS:
+        raise ValueError(f"Unknown riceSpice action: {name}")
+    kind = ACTION_SPECS[name].kind
+    if kind == "none":
         if value is not None:
-            raise ValueError("wifi_disconnect does not take a value")
+            raise ValueError(f"{name} does not take a value")
         return None
     if value is None:
         raise ValueError(f"{name} requires a value")
-    if name in ("wifi", "bluetooth_power", "audio_mute", "microphone_mute"):
+    if kind == "boolean":
         if value not in ("on", "off"):
             raise ValueError("Use on or off for boolean controls")
         return value == "on"
-    if name in ("audio_volume", "microphone_volume", "brightness"):
+    if kind == "integer":
         try:
             return int(value)
         except ValueError as exc:
@@ -56,6 +77,11 @@ def _parse_value(name: str, value: str | None):
 
 
 def run(args) -> int:
+    if args.riceware_backend == "manifest":
+        from .riceware import manifest
+
+        _dump(manifest())
+        return 0
     if args.riceware_backend == "spice":
         from .riceware import spice
 
@@ -118,23 +144,29 @@ def run(args) -> int:
         return 0
     if args.riceware_backend == "wine":
         from .riceware import wine
+        from .riceware import wine_apps
 
         if args.action == "status":
             _dump({"wine_version": wine.wine_version(), "prefixes": wine.list_prefixes()})
         elif args.action == "list":
             _dump(wine.list_prefixes())
+        elif args.action == "apps":
+            _dump(wine_apps.list_apps())
         elif args.action in ("create", "resume"):
-            if args.name is None or args.executable is not None:
-                raise ValueError("Usage: riceware wine create|resume NAME")
             _dump(wine.create_prefix(args.name) if args.action == "create"
                   else wine.resume_prefix(args.name))
         elif args.action == "log":
-            if args.name is None or args.executable is not None:
-                raise ValueError("Usage: riceware wine log NAME")
             print(wine.read_init_log(args.name))
-        else:
-            if args.name is None or args.executable is None:
-                raise ValueError("Usage: riceware wine run NAME EXECUTABLE [ARGS...]")
+        elif args.action == "register":
+            _dump(wine_apps.register(args.name, args.identifier, args.title,
+                                     args.executable, tuple(args.arguments)))
+        elif args.action == "unregister":
+            if not args.yes:
+                raise ValueError("Unregistering an app requires --yes")
+            wine_apps.unregister(args.name, args.identifier)
+        elif args.action == "run-app":
+            _dump({"pid": wine_apps.launch_app(args.name, args.identifier)})
+        elif args.action == "run":
             _dump({"pid": wine.launch(args.name, args.executable, tuple(args.arguments))})
         return 0
     raise ValueError("Unknown riceware backend")

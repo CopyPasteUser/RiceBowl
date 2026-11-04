@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import shutil
 import subprocess
+import logging
 from dataclasses import dataclass
+from typing import Callable
 
 from .. import chrome_notification_backend as xfce
 
@@ -87,3 +89,64 @@ def send(summary: str, body: str = "") -> None:
         raise NotificationUnavailable("Native notification delivery failed") from exc
     if result.returncode:
         raise NotificationUnavailable("Native notification service rejected the message")
+
+
+class NotificationWatch:
+    """Event-driven XFCE log change signal, with explicit lifecycle cleanup.
+
+    Create on the GTK/GLib main thread; callbacks run there. The XFCE service
+    remains the sole notification owner and no worker/polling loop is started.
+    """
+
+    def __init__(self, callback: Callable[[], None], *, Gio=None):
+        if not callable(callback):
+            raise ValueError("Notification callback must be callable")
+        if Gio is None:
+            try:
+                from gi.repository import Gio
+            except ImportError as exc:
+                raise NotificationUnavailable("Gio is not available") from exc
+        self._gio = Gio
+        self._callback = callback
+        self._connection = None
+        self._subscription = 0
+        self._closed = False
+        self.error: str | None = None
+        try:
+            Gio.bus_get(Gio.BusType.SESSION, None, self._ready)
+        except (OSError, RuntimeError) as exc:
+            raise NotificationUnavailable("Could not request the XFCE session bus") from exc
+
+    def _ready(self, _source, result):
+        if self._closed:
+            return
+        try:
+            self._connection = self._gio.bus_get_finish(result)
+            if self._closed:
+                return
+            self._subscription = self._connection.signal_subscribe(
+                xfce.BUS_NAME, xfce.LOG_INTERFACE, None, xfce.OBJECT_PATH,
+                None, self._gio.DBusSignalFlags.NONE, self._changed)
+        except Exception as exc:
+            self.error = f"XFCE notification signals unavailable: {type(exc).__name__}"
+            logging.getLogger(__name__).debug(self.error)
+
+    def _changed(self, *_args):
+        if self._closed:
+            return
+        try:
+            self._callback()
+        except Exception:
+            logging.getLogger(__name__).exception("Riceware notification observer failed")
+
+    def close(self) -> None:
+        if self._closed:
+            return
+        self._closed = True
+        if self._connection is not None and self._subscription:
+            self._connection.signal_unsubscribe(self._subscription)
+            self._subscription = 0
+
+
+def watch(callback: Callable[[], None], *, Gio=None) -> NotificationWatch:
+    return NotificationWatch(callback, Gio=Gio)
