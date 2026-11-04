@@ -5,6 +5,7 @@ Scope: the live `winxp` GTK/XFWM/X11 rice, not the read-only preview or other de
 ## Visual reference and non-negotiable behavior
 
 - Windows XP Visual Guidelines: [Start menu](https://www.retrospace.net/download/WebApplications/WindowsXPDesignGuidelines/whatsnew.htm), [controls](https://www.retrospace.net/download/WebApplications/WindowsXPDesignGuidelines/controls.htm), [colors](https://www.retrospace.net/download/WebApplications/WindowsXPDesignGuidelines/colors.htm).
+- Microsoft's [Control Panel category registry](https://learn.microsoft.com/en-us/windows/win32/shell/assigning-control-panel-categories) confirms the nine XP-era categories, including Accessibility Options.
 - 2001 structure: cobalt account/header band, two-column ivory/soft-blue menu, pinned Internet/e-mail and recent programs, All Programs flyout, common folders plus Control Panel/Help/Search/Run, separate yellow Log Off and red power actions.
 - Compact molded cobalt taskbar with green Start button, darker active tasks and one brighter blue notification area; rounded blue title bar, individually colored minimize/maximize/close controls, readable classic file-manager controls.
 - Every enabled menu entry launches a real installed application, folder or XFCE utility; missing backends are disabled with an explanation. Preserve app search, keyboard access, pinning, Wnck tasks, volume/battery/network reporting, session restore and the verified 0.9.1 handoff.
@@ -61,7 +62,7 @@ folders produced unexpectedly inert Start links. These improvements are scoped
 to `winxp` only:
 
 - [x] Build a centered XP-like category Control Panel window with an actual
-  category / classic switch and eight real settings launch targets. The blue
+  category / classic switch and real Linux settings tasks. The blue
   sidebar retains accurate network/battery information and verifiable output
   volume/mute controls, even when an external sound backend is unavailable.
 - [x] Make Start > Control Panel open that same native panel, eliminating two
@@ -83,3 +84,33 @@ Remaining fidelity limit: Thunar's functional GTK shortcuts pane cannot be
 turned into Windows Explorer's proprietary context-sensitive *File and Folder
 Tasks* pane with CSS alone. The current UI styles real Thunar actions, never
 adds fake filesystem operations or replaces its file-management engine.
+
+## Deep interaction pass — November 2026
+
+- [x] Style the actual detached GTK flyout windows, nested program categories,
+  recent files and app pin contexts consistently in Luna blue/ivory.
+- [x] Keep Start open while a nested menu owns focus; reset stale program search
+  results on next open and expose all Gio programs, including uncategorized apps.
+- [x] Restore XP's ninth Accessibility Options category and replace direct-launch cards with category/task navigation,
+  Classic applet view, searchable tasks, back navigation and visible unavailable states.
+- [x] Extend the central approved utility launch set so installed XP applets
+  cannot silently fail after their first click.
+- [x] Cover the deeper interaction states in the native GTK smoke and virtual-X11
+  capture workflow; retain 1024×768 coverage and all six non-macOS profiles.
+- [ ] Physically verify nested flyout placement, keyboard/mouse focus and applet
+  launch paths on the owner's Mint XFCE laptop after the CI build passes.
+
+### Gaps that require a separate component
+
+- **riceExplorer integration**: true XP Explorer navigation/task pane, file copy
+  dialogs, multi-drive *My Computer*, property sheets, shared folder context menus,
+  thumbnails and real file-management operations cannot be delivered reliably by
+  changing Thunar's GTK stylesheet. Keep Thunar as a fallback until riceExplorer
+  has passed real transfer, mount and recovery acceptance.
+- **Optional desktop integrations**: a fully authentic XP notification balloon,
+  logon/logoff experience or Windows-style desktop icon grid would need a
+  dedicated session/desktop component. Do not hijack XFCE's existing session
+  controls or fabricate state for appearance's sake.
+- **Normal RiceBowl work, no side project needed**: usage-based recently launched
+  programs, better pinned Start favorites and context actions, fuller keyboard
+  traversal, date/time settings discovery and user-configurable Start menu layout.
