@@ -180,6 +180,16 @@ readback, missing providers, lifecycle cleanup and notification preview bounds.
 Physical Mint device, suspend/resume and full Aqua fidelity acceptance are
 **still open**.
 
+**Frutiger tray hardening (4 November 2026):** Aqua's compact status popovers
+now read actual NetworkManager SSIDs and Wi-Fi radio, paired BlueZ Bluetooth
+devices, audio sinks and supported power profiles using the same shared
+verified facade and bounded runner as the Control Center. Explicit Connect,
+Disconnect and Use actions verify changes through Riceware; radio shutdowns
+need a second click. Missing providers and errors are visible; popovers clear
+their device rows and suppress late results when closed. Unpaired Bluetooth
+discovery, pairing and Wi-Fi password entry still need dedicated UX. The
+macOS renderer and XFCE notification ownership remain unchanged.
+
 The family mapping changes **selection only**; per-rice windows, menu flows,
 icons, keyboard shortcuts, layouts and styling must remain independent.
 Do not substitute a generic themed Settings page for any of the seven.

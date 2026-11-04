@@ -13,7 +13,15 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .environment import config_home, data_home, private_state_root
+from .shell_session import SHELLS
 from .themes import _read_preferences, _stage_json
+
+
+RICEBOWL_NAMES = {
+    "aero": "RiceBowl Windows 7", "ten": "RiceBowl Windows 10",
+    "winxp": "RiceBowl XP Luna", "winclassic": "RiceBowl Windows 98 SE",
+    "chromeos": "RiceBowl ChromeOS", "frutiger": "RiceBowl Frutiger Aero",
+}
 
 
 PROFILES = {
@@ -33,6 +41,10 @@ PROFILES = {
 
 
 def _component(argv: list[str]) -> str | None:
+    if any(Path(arg).name == "launcher.py" for arg in argv[:3]):
+        for profile, title in RICEBOWL_NAMES.items():
+            if SHELLS[profile] in argv[2:5]:
+                return title
     if any(argv[i:i + 2] == ["-m", "macmenu"] for i in range(len(argv) - 1)):
         return "MacMenu"
     names = {Path(arg).name for arg in argv[:4]}
@@ -52,6 +64,16 @@ def _process_ticks(process: Path) -> int | None:
         return int(fields[11]) + int(fields[12])
     except (IndexError, OSError, ValueError):
         return None
+
+
+def _process_threads(process: Path) -> int | None:
+    try:
+        for line in (process / "status").read_text().splitlines():
+            if line.startswith("Threads:"):
+                return int(line.split()[1])
+    except (IndexError, OSError, ValueError):
+        pass
+    return None
 
 
 def measure_processes(*, proc_root: Path = Path("/proc"), sample_ms: int = 200) -> list[dict]:
@@ -77,7 +99,8 @@ def measure_processes(*, proc_root: Path = Path("/proc"), sample_ms: int = 200) 
             except (OSError, ValueError):
                 pass
             processes.append({"name": name, "pid": int(process.name), "pss_kib": pss,
-                              "ticks": _process_ticks(process), "path": process})
+                              "ticks": _process_ticks(process), "threads": _process_threads(process),
+                              "path": process})
         except (OSError, ValueError):
             continue
     if not processes:
@@ -91,6 +114,7 @@ def measure_processes(*, proc_root: Path = Path("/proc"), sample_ms: int = 200) 
         latest = _process_ticks(item["path"])
         delta = max(0, latest - item["ticks"]) if latest is not None and item["ticks"] is not None else None
         result.append({"name": item["name"], "pid": item["pid"], "pss_kib": item["pss_kib"],
+                       "threads": item["threads"],
                        "cpu_percent": round(100 * delta / (elapsed * ticks_per_second), 1) if delta is not None else None})
     return result
 

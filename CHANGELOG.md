@@ -1,5 +1,22 @@
 # RiceBowl changelog
 
+## Unreleased — session fallback, resource reporting and Aqua quick controls (4 November 2026)
+
+- Fixed the session synchronization escape hatch: returning to a stock XFCE
+  theme recovers XFCE Panel and original shortcuts; failed shell starts,
+  shutdowns and handoffs also attempt stock-panel recovery.
+- Extended the existing **on-demand** `macrice performance report` to recognize
+  all six RiceBowl non-macOS shells and display per-process PSS, sampled CPU and
+  thread count, without introducing an idle monitor or extra worker.
+- Added Frutiger-only pearl-glass tray flyouts for actual Wi-Fi networks,
+  paired Bluetooth connections, audio output devices and power profiles.
+  Actions go through the shared verified Riceware facade; disabling either
+  wireless radio needs a second confirmation click. Missing backends and
+  failed writes show errors, and hidden popups discard stale results.
+- Extended lifecycle, error-path and session-recovery regressions plus the
+  native Frutiger GTK smoke scenario. On-device Mint acceptance remains open.
+  The macOS Aurora UI is unchanged.
+
 ## Unreleased — Frutiger Aero shared Riceware integration (4 November 2026)
 
 - Migrated Aqua World taskbar hardware status, volume and mute controls to one

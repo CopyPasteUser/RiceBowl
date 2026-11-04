@@ -14,7 +14,7 @@ A lightweight, native Python/GTK3 desktop customization hub for **Linux Mint XFC
 
 RiceBowl changes real Linux desktop elements—taskbar, Start/launcher, menus, system controls, wallpaper, GTK/XFWM4 themes, icons and Thunar styling. Applications and device controls use real Linux backends. No Electron, telemetry or proprietary OS assets.
 
-> **Development status:** `main` is ahead of the [v0.9.1 pre-release](https://github.com/CopyPasteUser/RiceBowl/releases/tag/v0.9.1). XP Luna, Windows 7 Aero, Windows 10, Windows 98 SE, ChromeOS and Frutiger Aero integrate shared Riceware 1.0 backends. Every rice retains its own shell: Windows 10 Settings/Task View, Windows 98 applets, ChromeOS Material You and Frutiger's Aqua Control Center. Physical Mint device, multi-monitor and suspend acceptance remain open.
+> **Development status:** `main` is ahead of the [v0.9.1 pre-release](https://github.com/CopyPasteUser/RiceBowl/releases/tag/v0.9.1). XP Luna, Windows 7 Aero, Windows 10, Windows 98 SE, ChromeOS and Frutiger Aero integrate shared Riceware 1.0 backends. Every rice retains its own shell: Windows 10 Settings/Task View, Windows 98 applets, ChromeOS Material You and Frutiger's Aqua Control Center. Recovery to the stock XFCE panel is covered by regression tests. Physical Mint device, multi-monitor and suspend acceptance remain open.
 
 ## Styles
 
@@ -76,16 +76,18 @@ macrice rice apply frutiger    # Switch to Aqua World
 macrice rice restore           # Restore the previous desktop settings
 macrice session-sync           # Reconcile the current session after login
 macrice session-keys-restore   # Restore prior keyboard shortcuts
+macrice performance report     # On-demand PSS, CPU and thread report
 ```
 
 The active rice uses **Super** for its launcher and **Right Ctrl** for Control Panel / Quick Settings. Managed assets and keyboard shortcuts are backed up; later user edits are not silently overwritten.
+The resource report includes the six non-macOS RiceBowl shells when running and does not install an always-on monitor. A failed shell startup or panel handoff attempts to recover the original XFCE panel and shortcuts. Check recovery on your real XFCE machine before relying on it unattended.
 
 ## Scope
 
 - **XFCE/X11** is the supported target; Wayland and full Windows DWM-style blur are outside current support.
 - **Thunar stays available.** [riceExplorer](https://github.com/CopyPasteUser/riceExplorer) is a separate, still-developing Rust file manager and is not yet the default.
 - **Riceware API 1.0:** shared, opt-in Linux backends for [riceSpice, ricePop, ricePlate and riceWine](RICEWARE_FOUNDATIONS.md). These are internal modules, not four additional background daemons.
-- **Migration status:** XP Luna and Windows 7 Aero use riceSpice for taskbar status, real device flyouts and ricePlate desktop shortcuts; Windows 7 also reads ricePop history. **Windows 98 SE** has distinct classic device dialogs and a read-only ricePlate inspector. **Windows 10** has verified hardware controls and ricePop history in Action Center. **ChromeOS** uses bounded riceSpice/ricePop for its Material You Shelf, Settings and notifications. **Frutiger Aero** now uses the same verified worker for its original Aqua Control Center, tray and device pages, with an Aqua notification flyout reading XFCE's real ricePop history. [Migration checklist](RICEWARE_MIGRATION_GUIDE.md). No default file manager or notification owner is replaced.
+- **Migration status:** XP Luna and Windows 7 Aero use riceSpice for taskbar status, real device flyouts and ricePlate desktop shortcuts; Windows 7 also reads ricePop history. **Windows 98 SE** has distinct classic device dialogs and a read-only ricePlate inspector. **Windows 10** has verified hardware controls and ricePop history in Action Center. **ChromeOS** uses bounded riceSpice/ricePop for its Material You Shelf, Settings and notifications. **Frutiger Aero** uses the same verified worker for its Aqua Control Center, tray and compact Wi-Fi, paired Bluetooth, audio-output and power-profile flyouts; an Aqua notification flyout reads XFCE's real ricePop history. [Migration checklist](RICEWARE_MIGRATION_GUIDE.md). No default file manager or notification owner is replaced.
 - **Windows 10 next-stage UI:** Its Start Settings entry opens a **separate Windows-10-styled Settings shell** with category search, back navigation, Sound/Display/Notifications pages and verified hardware controls. The taskbar network icon opens a real NetworkManager Wi-Fi list with rescan, connect/disconnect and truthful credential errors; Task View switches actual X11 windows and XFCE workspaces, with user-triggered create/move/safe-last-desktop removal. Where installed, Start offers an **opt-in RiceExplorer preview** using `rice-explorer --theme win10`, with Thunar left as the default. Global Win+I/Win+Tab bindings, deep per-category Settings features and physical hardware acceptance are **not complete**.
 - Linux hardware availability and permissions determine which real actions are enabled. Missing capabilities are explained instead of simulated.
 - All artwork is original. RiceBowl is not affiliated with Apple, Google or Microsoft.
