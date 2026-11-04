@@ -1577,6 +1577,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 desktop_quick.get_accessible().set_name("Show Desktop")
                 desktop_quick.connect("clicked", self._show_desktop)
                 quick_launch.pack_start(desktop_quick, False, False, 0)
+                self.classic98_quick_launch = quick_launch
                 shelf_box.pack_start(quick_launch, False, False, 2)
                 shelf_box.pack_start(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL),
                                      False, False, 2)
@@ -1623,6 +1624,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 clock_button.get_accessible().set_name("Open date and time")
                 clock_button.connect("clicked", lambda _button:
                                      self.classic98_tray_show("clock"))
+                self.classic98_clock_button = clock_button
                 right_area.pack_end(clock_button, False, False, 4)
             elif profile == "chromeos":
                 clock_button = self._class(Gtk.Button(), "chrome-clock-button")
@@ -1675,6 +1677,22 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             win.show_all()
             win.move(rect.x, rect.y + rect.height - panel_height)
             self.bar = win
+            if profile == "winclassic":
+                from .classic98_properties import apply_settings, load_settings, show_properties
+                apply_settings(self, load_settings())
+                # Right-click the empty taskbar to configure only our own widgets.
+                def taskbar_properties(_widget, event):
+                    if event.button != 3:
+                        return False
+                    menu = Gtk.Menu()
+                    item = Gtk.MenuItem(label="Properties")
+                    item.connect("activate", lambda _item: show_properties(self, Gtk))
+                    menu.append(item)
+                    menu.show_all()
+                    menu.popup_at_pointer(event)
+                    return True
+                row.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+                row.connect("button-press-event", taskbar_properties)
 
         def _windows_changed(self, windows, active):
             """Render copied task data without retaining native WnckWindow objects."""
