@@ -258,8 +258,10 @@ menu.luna-popup menuitem { background: transparent; border: 1px solid transparen
 menu.luna-popup menuitem label { color: #1a345b; font-size: 12px; }
 menu.luna-popup menuitem:hover, menu.luna-popup menuitem:selected,
 menu.luna-popup menuitem:focus { background: #316ac5; border-color: #1a55a0; color: #fff; }
-menu.luna-popup menuitem:hover label, menu.luna-popup menuitem:selected label,
-menu.luna-popup menuitem:focus label { color: #fff; }
+/* Direct children only: selected category labels must not recolor their submenu. */
+menu.luna-popup menuitem:hover > box > label,
+menu.luna-popup menuitem:selected > box > label,
+menu.luna-popup menuitem:focus > box > label { color: #fff; }
 menu.luna-popup menuitem:disabled label { color: #6c7e95; }
 menu.luna-popup separator { background: #b6c9df; min-height: 1px; margin: 3px 5px; }
 menu.luna-popup arrow { color: #315b94; }

@@ -437,6 +437,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._win7_peek_active = False
             self._menu_focused = False
             self._luna_popup_depth = 0
+            self._luna_open_menus = set()
             self._tray = None
             self._status_pending = False
             self._status_widgets = {}
@@ -680,7 +681,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     self._assert_luna_run_link_visible()
                 self._capture_screen(f"ricebowl-{profile}-start-0.9.1{self._capture_variant}.png")
                 if profile == "winxp":
-                    self.luna_browse.set_active(True)
+                    self.luna_browse.clicked()
                     GLib.timeout_add(350, self._capture_luna_flyout)
                 else:
                     self._hide_menu()
@@ -697,6 +698,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
         def _capture_luna_flyout(self):
             try:
                 assert self.luna_programs_popup.get_mapped(), "XP All Programs popup not mapped"
+                self._assert_luna_popup_above_taskbar(self.luna_programs_popup)
                 category = next((item for item in self.luna_programs_popup.get_children()
                                  if isinstance(item, Gtk.MenuItem) and item.get_submenu()), None)
                 if category:
@@ -712,7 +714,6 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
         def _capture_luna_nested(self):
             try:
                 self._capture_screen(f"ricebowl-winxp-programs-0.9.1{self._capture_variant}.png")
-                self.luna_browse.set_active(False)
                 self._hide_menu()
                 self._toggle_actions()
                 GLib.timeout_add(400, self._capture_actions)
@@ -865,6 +866,14 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     f"{profile} popup outside usable monitor: "
                     f"{actual_x},{actual_y} {actual_w}x{actual_h}, "
                     f"monitor={rect.x},{rect.y} {rect.width}x{rect.height}")
+
+        def _assert_luna_popup_above_taskbar(self, popup):
+            rect = self._desktop_rect()
+            x, y = popup.get_window().get_root_origin()
+            width, height = popup.get_allocated_width(), popup.get_allocated_height()
+            if (x < rect.x or y < rect.y or x + width > rect.x + rect.width or
+                    y + height > rect.y + rect.height - panel_height):
+                raise AssertionError(f"XP submenu overlaps workarea: {x},{y} {width}x{height}")
 
         def _assert_luna_run_link_visible(self):
             """The final XP system action must not disappear beneath the footer."""
@@ -2172,11 +2181,13 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             menu.get_style_context().add_class("luna-popup")
 
             def mapped(_menu):
-                self._luna_popup_depth += 1
+                self._luna_open_menus.add(_menu)
+                self._luna_popup_depth = len(self._luna_open_menus)
                 self._cancel_popup_hide("menu")
 
             def unmapped(_menu):
-                self._luna_popup_depth = max(0, self._luna_popup_depth - 1)
+                self._luna_open_menus.discard(_menu)
+                self._luna_popup_depth = len(self._luna_open_menus)
                 if not self._luna_popup_depth and not self.menu.is_active():
                     self._schedule_popup_hide("menu")
 
@@ -2386,10 +2397,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.results = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1)
             scroll.add(self.results)
             apps.pack_start(scroll, True, True, 0)
-            browse = self._class(Gtk.MenuButton(label="All Programs  ▸"), "luna-all-programs")
-            browse.set_direction(Gtk.ArrowType.RIGHT)
+            browse = self._class(Gtk.Button(label="All Programs  ▸"), "luna-all-programs")
             self.luna_programs_popup = self._programs_cascade(self._reveal_luna_search)
-            browse.set_popup(self.luna_programs_popup)
+            browse.connect("clicked", lambda widget: self.luna_programs_popup.popup_at_widget(
+                widget, Gdk.Gravity.SOUTH_EAST, Gdk.Gravity.SOUTH_WEST, None))
             self.luna_browse = browse
             browse.get_accessible().set_name("Browse all installed programs")
             apps.pack_end(browse, False, False, 3)
@@ -3731,6 +3742,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             return False
 
         def _hide_menu(self):
+            if profile == "winxp":
+                # Native Gtk.Menu flyouts are separate X11 popup surfaces: hiding
+                # the Start Gtk.Window alone does not release their pointer grab.
+                for popup in tuple(self._luna_open_menus):
+                    popup.popdown()
             self._cancel_popup_hide("menu")
             self._menu_focused = False
             if self.menu:

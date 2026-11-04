@@ -103,7 +103,7 @@ secondary pages; prototypes and the release roadmap do not crowd the selector.
   `scripts/build_heritage_assets.py --luna-only` refreshes the original drawn
   XFWM4 titlebar/button states and layered GTK/Thunar controls without touching
   other reviewed themes. `macrice/luna_control_panel.py` is a centered XP category
-  window with an actual Classic View switch, eight Linux-equivalent settings
+  window with an actual Classic View switch, nine XP-era settings
   categories and a pale-blue sidebar with truthful network, battery and verified
   output-volume controls. `macrice/thunar.py:LUNA_EXPLORER_CSS` confines XP Explorer's
   warm beige toolbar, flatter path controls and blue tasks-pane treatment to

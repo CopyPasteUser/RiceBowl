@@ -82,7 +82,7 @@ class LunaGeometryTests(unittest.TestCase):
         self.assertIn('height = min(536, max(0, rect.height - panel_height - 24))', shell)
 
     def test_control_panel_categories_never_launch_fake_or_unavailable_applets(self):
-        self.assertEqual(len(LUNA_CATEGORIES), 8)
+        self.assertEqual(len(LUNA_CATEGORIES), 9)
         self.assertEqual(available_program(("missing", "installed"),
                                            lambda program: "/usr/bin/" + program
                                            if program == "installed" else None), "installed")

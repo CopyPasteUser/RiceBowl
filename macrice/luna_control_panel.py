@@ -26,6 +26,8 @@ LUNA_CATEGORIES = (
      ("users-admin", "gnome-control-center"), "Manage local accounts"),
     ("Date, Time, Language, and Regional Options", "preferences-system-time",
      ("time-admin", "xfce4-settings-manager"), "Open regional and time settings"),
+    ("Accessibility Options", "preferences-desktop-accessibility",
+     ("xfce4-accessibility-settings",), "Make input and display easier to use"),
 )
 
 # Windows XP's categories lead to task pages; only leaf actions launch Linux
@@ -86,8 +88,12 @@ LUNA_TASKS = {
          "Available date and time utility"),
         ("Keyboard and language settings", "input-keyboard", ("xfce4-keyboard-settings",),
          "Keyboard layouts and shortcuts"),
-        ("Accessibility options", "preferences-desktop-accessibility",
-         ("xfce4-accessibility-settings",), "Assistive input and display options"),
+    ),
+    "Accessibility Options": (
+        ("Accessibility settings", "preferences-desktop-accessibility",
+         ("xfce4-accessibility-settings",), "Keyboard, contrast and assistive options"),
+        ("Mouse and pointer accessibility", "input-mouse", ("xfce4-mouse-settings",),
+         "Pointer size, speed and button configuration"),
     ),
 }
 

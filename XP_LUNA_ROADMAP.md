@@ -5,6 +5,7 @@ Scope: the live `winxp` GTK/XFWM/X11 rice, not the read-only preview or other de
 ## Visual reference and non-negotiable behavior
 
 - Windows XP Visual Guidelines: [Start menu](https://www.retrospace.net/download/WebApplications/WindowsXPDesignGuidelines/whatsnew.htm), [controls](https://www.retrospace.net/download/WebApplications/WindowsXPDesignGuidelines/controls.htm), [colors](https://www.retrospace.net/download/WebApplications/WindowsXPDesignGuidelines/colors.htm).
+- Microsoft's [Control Panel category registry](https://learn.microsoft.com/en-us/windows/win32/shell/assigning-control-panel-categories) confirms the nine XP-era categories, including Accessibility Options.
 - 2001 structure: cobalt account/header band, two-column ivory/soft-blue menu, pinned Internet/e-mail and recent programs, All Programs flyout, common folders plus Control Panel/Help/Search/Run, separate yellow Log Off and red power actions.
 - Compact molded cobalt taskbar with green Start button, darker active tasks and one brighter blue notification area; rounded blue title bar, individually colored minimize/maximize/close controls, readable classic file-manager controls.
 - Every enabled menu entry launches a real installed application, folder or XFCE utility; missing backends are disabled with an explanation. Preserve app search, keyboard access, pinning, Wnck tasks, volume/battery/network reporting, session restore and the verified 0.9.1 handoff.
@@ -90,7 +91,7 @@ adds fake filesystem operations or replaces its file-management engine.
   recent files and app pin contexts consistently in Luna blue/ivory.
 - [x] Keep Start open while a nested menu owns focus; reset stale program search
   results on next open and expose all Gio programs, including uncategorized apps.
-- [x] Replace direct-launch category cards with real category/task navigation,
+- [x] Restore XP's ninth Accessibility Options category and replace direct-launch cards with category/task navigation,
   Classic applet view, searchable tasks, back navigation and visible unavailable states.
 - [x] Extend the central approved utility launch set so installed XP applets
   cannot silently fail after their first click.
