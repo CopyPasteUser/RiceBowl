@@ -452,6 +452,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._pin_config_path = pin_file("windows10" if ten else profile)
             self._task_capacity = 0
             self.show_desktop_button = None
+            self._classic98_taskbar_options = None
+            self._classic98_taskbar_dialog = None
+            self.classic98_quick_launch = None
+            self.classic98_clock_button = None
             self._app_page_size = 24
             self._smoke = False
             self._smoke_failed = False
@@ -536,6 +540,16 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 logging.getLogger(__name__).warning("Aero pins are unavailable: %s", exc)
                 saved = None
             self._pinned_ids = default_pins(self.apps) if saved is None else saved
+            if profile == "winclassic":
+                from .classic98_taskbar_settings import (
+                    DEFAULT_OPTIONS, TaskbarSettingsError, load_options,
+                )
+                try:
+                    self._classic98_taskbar_options = load_options()
+                except (OSError, TaskbarSettingsError) as exc:
+                    logging.getLogger(__name__).warning(
+                        "Windows 98 taskbar settings unavailable: %s", exc)
+                    self._classic98_taskbar_options = dict(DEFAULT_OPTIONS)
             if self._capture_gallery or self._capture_workspace:
                 self._capture_background()
             self._create_taskbar()
@@ -1570,6 +1584,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 quick_launch = self._class(
                     Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2),
                     "classic98-quicklaunch")
+                self.classic98_quick_launch = quick_launch
                 quick_launch.pack_start(self.pinned_box, False, False, 0)
                 desktop_quick = self._class(Gtk.Button(), "classic98-desktop-quick")
                 desktop_quick.set_image(self._icon("user-desktop", Gtk.IconSize.MENU))
@@ -1618,6 +1633,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             clock.set_justify(Gtk.Justification.CENTER)
             if profile == "winclassic":
                 clock_button = self._class(Gtk.Button(), "classic98-clock-button")
+                self.classic98_clock_button = clock_button
                 clock_button.add(clock)
                 clock_button.set_tooltip_text("Open date and time")
                 clock_button.get_accessible().set_name("Open date and time")
@@ -1673,8 +1689,41 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             win.connect("realize", self._reserve_workarea)
             win.connect("map-event", self._publish_ready)
             win.show_all()
+            if profile == "winclassic":
+                self._classic98_apply_taskbar_options()
+                win.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
+                win.connect("button-press-event", self._classic98_taskbar_context)
             win.move(rect.x, rect.y + rect.height - panel_height)
             self.bar = win
+
+        def _classic98_apply_taskbar_options(self):
+            if profile != "winclassic" or self._classic98_taskbar_options is None:
+                return
+            for widget, key in (
+                (self.classic98_quick_launch, "show_quick_launch"),
+                (self.classic98_clock_button, "show_clock"),
+            ):
+                if widget is not None:
+                    widget.set_visible(self._classic98_taskbar_options[key])
+
+        def classic98_open_taskbar_properties(self):
+            if profile != "winclassic":
+                return
+            from .classic98_taskbar_settings import show
+            show(self, Gtk)
+
+        def _classic98_taskbar_context(self, _widget, event):
+            if profile != "winclassic" or event.button != 3:
+                return False
+            menu = Gtk.Menu()
+            menu.get_style_context().add_class("classic98-window-menu")
+            properties = Gtk.MenuItem(label="Properties")
+            properties.connect("activate", lambda *_args:
+                               self.classic98_open_taskbar_properties())
+            menu.append(properties)
+            menu.show_all()
+            menu.popup_at_pointer(event)
+            return True
 
         def _windows_changed(self, windows, active):
             """Render copied task data without retaining native WnckWindow objects."""

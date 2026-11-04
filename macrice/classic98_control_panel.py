@@ -49,8 +49,8 @@ APPLETS: tuple[Applet, ...] = (
            "Adjust system output, input devices and volume."),
     Applet("System", "computer", ("xfce4-about", "gnome-system-monitor", "xfce4-taskmanager"),
            "View real Linux hardware and system information."),
-    Applet("Taskbar & Start Menu", "preferences-desktop", ("xfce4-settings-manager",),
-           "Open desktop settings; dedicated classic taskbar options are being developed."),
+    Applet("Taskbar & Start Menu", "preferences-desktop", (),
+           "Configure RiceBowl Windows 98 Quick Launch and taskbar clock."),
 )
 
 
@@ -125,7 +125,8 @@ def build(shell, Gtk, Gdk):
     available = 0
     for applet in APPLETS:
         command = executable(applet)
-        if command:
+        native = applet.name == "Taskbar & Start Menu"
+        if command or native:
             available += 1
         content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         image = shell._icon(applet.icon, Gtk.IconSize.DIALOG)
@@ -138,15 +139,18 @@ def build(shell, Gtk, Gdk):
         content.pack_start(label, False, False, 0)
         child = shell._class(Gtk.FlowBoxChild(), "classic98-cp-item")
         child.add(content)
-        child.set_tooltip_text(applet.description if command else
+        child.set_tooltip_text(applet.description if command or native else
                                "Unavailable: " + " / ".join(applet.commands))
         child.get_accessible().set_name(applet.name)
-        child.set_sensitive(command is not None)
+        child.set_sensitive(command is not None or native)
         child._rice_command = command
+        child._rice_applet = applet.name
         flow.add(child)
 
     def launch(_flow, child):
-        if child._rice_command:
+        if child._rice_applet == "Taskbar & Start Menu":
+            shell.classic98_open_taskbar_properties()
+        elif child._rice_command:
             shell._open_tool(child._rice_command)
 
     flow.connect("child-activated", launch)

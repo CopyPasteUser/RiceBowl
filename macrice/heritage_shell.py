@@ -813,6 +813,14 @@ CONTROL_DETAIL_CSS = {
 .classic98-window-menu menuitem { border-radius: 0; padding: 3px 15px; color: #111; }
 .classic98-window-menu menuitem:hover { background: #000080; color: white; }
 .classic98-window-menu menuitem:disabled { color: #888; }
+.classic98-taskbar-properties { background: #c0c0c0; color: #111; }
+.classic98-taskbar-properties button { border: 2px outset #fff; border-radius: 0;
+  background: #c0c0c0; min-height: 23px; padding: 2px 9px; box-shadow: none; }
+.classic98-taskbar-properties button:active { border: 2px inset #fff; background: #aaa; }
+.classic98-taskbar-properties frame { border: 2px groove #fff; border-radius: 0; }
+.classic98-taskbar-properties checkbutton:disabled { color: #777; }
+.classic98-properties-heading { font-weight: bold; }
+.classic98-properties-error { color: #800000; font-weight: bold; }
 """,
     "chromeos": b"""
 .rice-hardware-panel { background: #edf2ff; border: 1px solid #d4ddf1;
