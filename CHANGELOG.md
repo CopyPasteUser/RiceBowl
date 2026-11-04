@@ -1,5 +1,16 @@
 # RiceBowl changelog
 
+## Unreleased — Windows 7 Aero Riceware integration (4 November 2026)
+
+- Reused the verified LunaTray riceSpice device API and bounded GTK worker
+  behind Win7Tray's independently styled Aero flyouts.
+- Migrated Windows 7's taskbar status and shared Control Panel volume/mute
+  actions away from per-action backend threads; close the worker on shutdown.
+- Routed opt-in Windows 7 desktop shortcuts through ricePlate, preserving
+  byte-identical/user-edited-file safety and XFDesktop ownership.
+- Added Win7-specific regressions and maintained virtual-X11 smoke coverage;
+  physical Mint tests and deeper applet/notification migration remain open.
+
 ## Unreleased — Windows XP Luna shared Riceware migration (4 November 2026)
 
 - Migrated XP Luna's live taskbar hardware status, audio volume/mute/output,
