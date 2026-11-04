@@ -146,3 +146,324 @@ Keep the prior release/tag intact. Switch back via RiceBowl's backed-up rice res
 - Do not call Windows 7 **fully finished or 1.0-stable** until the above required checks pass. Original RiceBowl artwork and functional Linux equivalence remain mandatory; binary/pixel identity with proprietary Windows DWM is not promised.
 
 **Scope:** Windows 7 Aero only. Do not compromise the separate Frutiger Aero identity or alter other rices without cross-rice regression tests.
+
+
+---
+
+## Windows 7 SP1 Aero — vollständiger Sollkatalog und Abnahmeplan (2026-11-04)
+
+> **Zielbild:** Ein Benutzer soll nach dem Login, nach fünf Klicks und nach einer
+> Stunde echter Arbeit eine Windows-7-SP1-Aero-Desktop-Sitzung wiedererkennen.
+> Nicht nur ein passendes Hintergrundbild: Informationsarchitektur, Größen,
+> Beschriftungen, Popup-Geometrie, Interaktionsmodelle und Zustandswechsel müssen
+> als zusammenhängende Shell stimmig sein. Der Linux-Unterbau bleibt echt,
+> sicher und bedienbar.
+>
+> **Statusregel:** Alle Kästchen dieses Sollkatalogs sind offene
+> Abnahmepunkte, sofern nicht ausdrücklich auf eine bereits bestandene
+> historische Prüfung weiter oben verwiesen wird. Bestehende [x]-Milestones
+> sind Implementierungsbelege für frühere Teilziele und **keine**
+> Freigabe für die nachfolgenden Detailkriterien.
+
+### 0. Historische Referenz und Abgrenzung (P0)
+
+- [ ] **Version eindeutig fixieren:** Windows 7 SP1 mit aktivem Aero Glass,
+  Standard-DPI 100 %, Standardtaskleiste unten; Windows 7 Basic und Classic
+  als explizite Varianten, falls überhaupt implementiert. Keine Komponenten
+  aus Windows 8, 10, 11 oder dem separaten Frutiger-Aero-Rice hineinmischen.
+- [ ] **Referenzsatz anlegen:** Lizenzrechtlich zulässige Referenzbilder von
+  Desktop, geöffnetem Startmenü, All Programs, Taskleistenvorschau, Jump List,
+  Rechtsklick-Taskbar, Infobereich, Uhr, Explorer, Eigenschaften,
+  Kopierdialog, Systemsteuerung, Personalisierung, Netzwerk/Batterie und
+  Aero-Snap; Messwerte für Abstände, Radien, Farbverläufe, Icons und
+  Schrifthierarchie hinterlegen.
+- [ ] **Zustandsvergleich:** Für jedes Element Idle / Hover / Pressed / Focus /
+  Open / Disabled / Busy / Error / Empty / Overflow / Keyboard definieren;
+  nicht nur die schöne geschlossene Ausgangsansicht beurteilen.
+- [ ] **Stimmigkeit:** Das Windows-7-typische blaue Licht-/Reflexionsbild
+  mit Linux-Eigenständigkeit statt des frutiger-aero-eigenen Naturmotivs;
+  keine Linux-Mint-Fremdfenster im Hauptfluss außer bewusst weitergeleitete
+  Anwendungen.
+
+### 1. Aero-Designsystem und Fensterdekor (P0–P1)
+
+- [ ] **Farb- und Metrik-Tokens:** Blue-Glass, Border, Highlight, Shadow,
+  Active/Inactive, Taskbar-Tint, Menü-Selektion, Status-Grün,
+  Warnungs-Gelb, Fehler-Rot, Radius, Abstand und Animation definieren.
+- [ ] **Aero-Glass-Material:** Transparenz, Hintergrundunschärfe sofern
+  technisch zuverlässig verfügbar, mehrstufiger Glasrand/Reflexion,
+  Textglow, richtiges Fensterschattenverhalten und maximierter Randzustand;
+  klaren performanten Fallback ohne behaupteten Blur.
+- [ ] **Fensterrahmen:** Titelleiste, App-Icon links, aktiver/inaktiver Titel,
+  Minimize, Maximize/Restore, Close in Windows-7-artiger Größe/Position,
+  Hover- und Press-Grafiken; maximiert vs. normal vs. Dialog.
+- [ ] **Fensterinhalt:** Menüleisten, Toolbar, Breadcrumb, Treeview, Listen,
+  Reiter, Buttons, Linklabels, Auswahlmarkierung, Scrollbar, Tooltip,
+  Kontextmenü, Modalfenster, Dateidialog in konsistentem Windows-7-Look.
+- [ ] **Typografie/Iconografie:** Segoe-UI-artige rechtmäßig verfügbare
+  Schrift mit passenden Fallbacks, Textgrößen und Zeilenhöhen;
+  Windows-7-Farbtiefe, Glanz und Perspektive für Icons; eigene/rechtlich
+  sichere Assets, scharfe 16/24/32/48/256px-Varianten, keine Platzhalter.
+- [ ] **Cursor/Sounds/Feedback:** originalnahe Mauszeiger, Busy/Working,
+  Resize, Auswahlrahmen, Hover-Klangoption und kontextuelle Systemklänge;
+  vollständig abschaltbar und ohne fremde Systemdateien zu übernehmen.
+
+### 2. Superbar — ausnahmslos alle sichtbaren Zustände (P0)
+
+- [ ] **Grundlayout:** Start-Orb links, große zusammengeführte Pin-/Running-
+  Buttons, optische Glastrennlinien, rechter Systembereich, Show-Desktop-
+  Streifen; Höhen und Icon-Baselines bei 100/125/150 % Skalierung prüfen.
+- [ ] **Fensteridentität:** Laufende Apps anhand stabiler Desktop-ID/WM_CLASS
+  gruppieren; mehrere Fenster mit Count/Stack erkennen; getrennte
+  Fenster als Gruppe wie Win7 öffnen, minimieren, aktivieren.
+- [ ] **Pins:** pin/unpin, Reihenfolge per Drag & Drop, Positionspersistenz,
+  Start aus Pin, unterschiedliche Idle-/Running-/Attention-Zustände,
+  fehlende Apps robust behandeln.
+- [ ] **Hover-Vorschauen:** Fenstergruppen-Thumbnails in Live/Static-
+  Fallbacks, App-Namen, Fenster-Close-Button, Klick zum Aktivieren,
+  Hover auf Thumbnail für Peek, bei Mausabgang sauber schließen;
+  null Fenster, ein Fenster und vier Fenster abnehmen.
+- [ ] **Aero Peek:** rechter Show-Desktop-Schlitz als Hover-Vorschau,
+  Klick minimiert/zeigt Fenster wieder; kein irreversibles Verstecken,
+  keine Flackerschleife bei Autohide, korrekt auf mehreren Monitoren.
+- [ ] **Jump Lists:** Rechtsklick auf Pin/aktive App für echte zuletzt
+  verwendete Dokumente, häufige Ziele und app-spezifische Aktionen;
+  'Pin to this list', Remove, Close Window, Unpin; keine toten Einträge.
+- [ ] **Aufmerksamkeitszustände:** Fenster meldet Bedarf -> Button pulsiert/
+  farbig markiert, Fokuswechsel löscht Zustand; optional App-Fortschritt
+  und Overlay-Badge aus realen Ereignissen.
+- [ ] **Taskbar-Kontext:** Toolbars soweit sinnvoll, Lock the taskbar,
+  Task Manager starten, Properties/Preferences, Show Desktop, Cascade /
+  Stacked / Side by side (technisch vorhandene Aktionen oder transparent
+  begrenzte Optionen); Autohide/Höhenoptionen mit Restore.
+- [ ] **Bildschirmkanten:** Taskbar unten/links/rechts/oben oder
+  dokumentierte Win7-nahe Untermenge; Exklusivzonen respektieren,
+  XFCE-Panel-/Plank-Doppelleisten vermeiden, Hotplug & Reconnect.
+
+### 3. Startmenü — jede Ebene bis zur Zielaktion (P0)
+
+- [ ] **Zwei-Spalten-Geometrie:** gläserner äußerer Frame,
+  linke Favoriten-/Recent-Seite, rechte Systemziele, Benutzerbild oben,
+  Search-Box unten, Power-Button mit Pfeil und korrektes Focus-Handling.
+- [ ] **Linke Spalte:** pinned/recent Programme nach echten Nutzungsdaten,
+  Trennlinien, Hover-States, 'All Programs' und Zurück;
+  konfigurierbare Eintragszahl und ohne Duplikate.
+- [ ] **All Programs:** verschachtelte echte Anwendungsgruppen,
+  aufklappbar wie Windows 7, Tastatur-/Mausauswahl und Scrollposition;
+  Fallback für riesige Linux-Anwendungskataloge.
+- [ ] **Rechte Spalte:** Documents, Pictures, Music, Games (wenn vorhanden),
+  Computer, Control Panel, Devices and Printers, Default Programs,
+  Help and Support, User Folder; realen Zielpfad/Programmaufruf prüfen.
+- [ ] **Suchen:** Programmnamen, Desktop-Entries, Dateien/Ordner und
+  Systemsteuerungsziele per Tastatur; Sofortergebnisse mit
+  Icon/Kategorie, Enter öffnet, Escape schließt; keine irreführenden
+  globalen Dateitreffer ohne Index/Erreichbarkeit.
+- [ ] **Kontextmenüs:** Programmpin, Unpin, Open file location,
+  Run as administrator ausschließlich via polkit-konforme Wege,
+  Properties, kürzlich benutzt; echte Semantik statt Label-Deko.
+- [ ] **Power-Untermenü:** Shut down, Restart, Sleep, Hibernate (nur wenn
+  unterstützt), Lock, Log off, Switch user (nur mit funktionierendem
+  Backend); bei nicht unterstützten Aktionen sichtbar deaktivieren.
+- [ ] **Interaktionsmatrix:** Start-Orb klicken; Win/Super; Tippen;
+  Pfeiltasten; Tab; Shift+Tab; Enter; Escape; Rechtsklick; Maus aus
+  Menü heraus; Vollbild-App; zweiter Monitor; Start nach Session-Wechsel.
+
+### 4. Windows Explorer — RiceExplorer als eigenständiger Win7-Renderer (P0)
+
+**Architekturvertrag:** File-I/O, Mounts, Kopierjobs, Undo, Papierkorb,
+Preview-Backends und Such-Index kommen aus dem gemeinsamen Rust-RiceExplorer.
+Der **Win7-Renderer** kontrolliert jedoch eigenständig Aufbau, Navigation,
+Toolbar, Aktionsnamen und Zustände; er darf nicht nur Farben/Icons eines
+Windows-10-/XP-Layouts überschreiben.
+
+- [ ] **Navigationsbaum:** Favorites/Desktop/Downloads/Recent Places,
+  Libraries/Documents/Music/Pictures/Videos, Computer/Volumes,
+  Network/SMB/SFTP; HomeGroup nur mit technisch ehrlicher
+  Ersatzfunktion oder klar als nicht verfügbar.
+- [ ] **Libraries:** virtuelle Aggregation mehrerer Verzeichnisse,
+  aufrufbare Standardbibliotheken, Include/Remove Folder,
+  Save Location sowie abgrenzbare Such- und Sortierregeln; keine
+  unbemerkten Dateidubletten.
+- [ ] **Command Bar:** Organize, Include in Library, Share with,
+  Burn (nur unterstütztes optisches Backend), New folder;
+  kontextabhängige Optionen samt geöffneten Untermenüs.
+- [ ] **Adress-/Suchelemente:** Back/Forward, Up sinnvoll,
+  Breadcrumb mit aufklappbaren Pfadsegmenten, editierbare Adresszeile,
+  Suchfeld mit aktuellem Ordner-Scope und Ergebnis-/Fehlerzuständen.
+- [ ] **Ansichten:** Extra large/Large/Medium/Small Icons, List,
+  Details, Tiles, Content; Icons richtig skaliert, Column sort, Group by,
+  Hidden files, File extensions, Preview/Details pane und Statusleiste.
+- [ ] **Filejobs:** Copy/Cut/Paste/Drag/Move, Rename, Recycle Bin,
+  permanent delete mit Bestätigung, collision resolution (overwrite/
+  keep both/skip), Merge Directory, Undo/Redo falls möglich,
+  multi-select, progress, speed, cancel, retry und Fehlermeldungen.
+- [ ] **Properties:** General/Details/Permissions/Sharing/Previous versions
+  nur mit echten Linux-Funktionen; chmod/chown, Größe, Ziel für Symlinks,
+  Dateityp, Datumswerte; ADS/NTFS-spezifische Dinge nicht vortäuschen.
+- [ ] **Systemzugriff:** USB-Mount/Eject, verschlüsselte Datenträger,
+  Netzwerkfreigaben SMB/SFTP/NFS über systemtaugliche Wege,
+  Zugangsfehler, Offline/Timeout, Mount-Verlust und Wiederverbindung.
+- [ ] **Performance:** Lazy Virtualization großer Ordner, thumbnails async
+  und limitiert, watcher debounced, Thumbnail-Cache begrenzt,
+  Abbruch bei Navigation, 100k-Dateien-Fall.
+- [ ] **Dialogintegration:** Öffnen/Speichern nur dort ersetzen, wo
+  Toolkits/Portale es sicher unterstützen; keine globale Shell-Hooks,
+  die andere Anwendungen beschädigen.
+
+### 5. Klassische Systemsteuerung / Windows-7-Dialoge (P0)
+
+- [ ] **Startseite:** Category View mit System and Security; Network
+  and Internet; Hardware and Sound; Programs; User Accounts and Family
+  Safety; Appearance and Personalization; Clock, Language and Region;
+  Ease of Access. Große/kleine Icons als alternative Ansicht.
+- [ ] **Navigation:** Kategorie -> Aufgabe -> Unterseite -> echte
+  Aktion, Breadcrumb/Back/Forward, Suchfunktion, Icon/Label-Konsistenz,
+  ungeöffnete Seiten nicht als implementiert markieren.
+- [ ] **System & Security:** Systeminfo, Power Options, Backups/
+  Firewall-Schnittstellen sofern installiert; sudo/polkit bei Bedarf
+  und klare Unavailable-States.
+- [ ] **Network & Internet:** Active network, Wi-Fi-Liste, Adapterstatus,
+  Connect/Disconnect, Sharing settings; NetworkManager als Quelle.
+- [ ] **Hardware & Sound:** Sound-Devices, Default Output/Mic,
+  Mixer, Bluetooth, Devices/Printers, Mouse/Touchpad, Display,
+  Energieverwaltung; echte Linux-Backends.
+- [ ] **Programs:** Default programs/File associations, installierte
+  Apps/Deinstallieren nur über sichere reale Paketverwaltung,
+  keine gefälschte Windows-Programmliste.
+- [ ] **Personalization:** Windows Color, Window Appearance,
+  Desktop Background, Sounds, Screen Saver (falls Backend), Mouse
+  Pointers; Live Preview, Apply/Cancel/Rollback, per-Rice persistieren.
+- [ ] **User/Locale/Accessibility:** Benutzerbild/Account-Infos,
+  Datum/Uhrzeit/Zeitzone, Tastaturlayout, Kontrast, Skalierung,
+  Barrierefreiheitsfunktionen; Grenzen klar benennen.
+- [ ] **Dialogqualität:** Win7-formgetreue Sliders, Tabs,
+  Dropdowns, Radio/Checkbox, Progressbars, Dateipicker,
+  Lizenz-/Permissions-Dialoge; kein abrupter generischer GTK-
+  Pop-up an jeder zweiten Ebene.
+
+### 6. Notification Area — ausdrücklich *kein* Windows-10-Info-Center (P0)
+
+- [ ] **Icons & Overflow:** Signal, Battery/Charging, Speaker/Mute,
+  Bluetooth, Network, Clock, Safely Remove Hardware, Action Center
+  flag; Chevron mit Hidden-Icons-Flyout und Konfigurierbarkeit.
+- [ ] **Sound:** kompakter Win7-Volume-Flyout mit Slider/Mute,
+  real-time sink/source, Gerätewechsel und Mixer-Link; Hardware-
+  Lautstärketasten und externe Veränderungen bidirektional spiegeln.
+- [ ] **Netzwerk:** Win7-Netzwerkflyout für verfügbare WLANs,
+  Verbindungsstatus, Signalstärke, LAN, VPN, Connect/Disconnect,
+  passwortgeschützte SSIDs, Flugmodus nur wenn Backend.
+- [ ] **Energie:** Akku-Prozent, Ladezustand, Remaining-time nur
+  bei seriöser Quelle, Power-Plan-Selector/Power Options,
+  AC-only-/Kein-Akku-/Wachzustände.
+- [ ] **Uhr & Datum:** Win7-Monatskalender, Uhrzeit,
+  Datumsformat/12h-24h, erster Wochentag/Locale, Settings-Link;
+  korrekter Bildschirmrand und Hotplug.
+- [ ] **Weitere Popups:** Hardware sicher entfernen, Druckaufträge,
+  Update-/Wartungshinweise als echte Ereignisse, klassischer
+  Action-Center-Flag-Flyout mit Wartungs-/Sicherheitsstatus
+  (nicht die Windows-10-Benachrichtigungsseitenleiste).
+- [ ] **Balloon-Tips:** win7-artige Benachrichtigungsblasen mit
+  Timeout, Klickziel, Suppress/Focus, Mehrfach-Queue und
+  begrenztem Overflow; kein leerer Dummy.
+
+### 7. Desktop, Kontexte und Shell-Integration (P1)
+
+- [ ] **Icons:** Computer, Recycle Bin (voll/leer), Network,
+  User's Files, Control Panel optional; echte Pfade, korrekte
+  Verknüpfungsmarker und Textumbruch, Auswahl, Sort by, Align grid.
+- [ ] **Kontextmenüs:** Desktop View/Sort by/Refresh/Paste/New/
+  Screen Resolution/Gadgets/Personalize; Datei-/Ordner-Kontext
+  entsprechend File-I/O und Standard-App-Assoziationen.
+- [ ] **Papierkorb:** GIO/XDG-Trash kompatibel, Restore to original
+  location, Empty Trash mit Bestätigung, verschobene Datenträger,
+  fehlende Originalpfade und Symlink-Sicherheit.
+- [ ] **Anzeige:** Wallpaper span/fit/tile/center, Aero Accent,
+  einzelne/mehrere Displays, Auflösungsänderung mit Confirm + Revert,
+  sinnvoller Lock-Screen-/Screensaver-Link.
+- [ ] **Desktop-Gadgets:** Uhr/Kalender/CPU/Wetter optional in isoliertem
+  nicht-privilegiertem Plugin-Sandbox-Modell; keine fremden
+  unsignierten Win7-Gadget-Pakete ausführen.
+
+### 8. Fenstermanagement und Tastatur (P1)
+
+- [ ] **Snap:** Drag to edges = 50%-Tile; top=maximize;
+  Win+Left/Right/Up/Down, Restore, Schatten-Vorschau, relevante
+  Workarea ohne Taskbar-Überdeckung.
+- [ ] **Shake & Peek:** Aero Shake minimiert andere Fenster und
+  stellt sie wieder her; Peek über Superbar-Thumbnail und
+  Show-Desktop, kein Eingriff in Vollbild-Spiele.
+- [ ] **Switcher:** Alt+Tab in Windows-7-Anordnung;
+  Win+Tab/Flip 3D nur mit realer Implementierung oder expliziter
+  Dokumentation der Compositor-Grenze, kein zweckloser Platzhalter.
+- [ ] **Weitere Hotkeys:** Win+D, Win+E, Win+R, Win+L,
+  Win+Pause, Win+Number, Alt+F4, F2, F5,
+  Ctrl+Shift+N, Delete/Shift+Delete, Kontextmenü-Taste;
+  Konflikte mit XFCE/WM erkennen und reversibel umbelegen.
+- [ ] **Multi-Monitor:** Monitor hinzufügen/entfernen, Monitor-Reihenfolge,
+  Popup-Position, Fokus, HiDPI/DPI-Wechsel und Startmenü im rechten Display
+  ohne Off-Screen-Bereiche.
+
+### 9. Vollständiges Verhalten unter echten Linux-Bedingungen (P0–P2)
+
+- [ ] NetworkManager mit LAN/WLAN/VPN, PipeWire/PulseAudio fallback,
+  upower, UDisks2/GVfs, BlueZ, logind, polkit und X11-WM vor Start
+  entdecken; API-Timeouts, Fehler und Zustandswechsel abfangen.
+- [ ] **Session-Reconcile:** Beim Wechsel Mac/XP/Win7/Win10 alle
+  exklusiven Panel-/Dock-/Toolbar-/Hotkey-Owner korrekt ab- und
+  anmelden; Plank-/XFCE-Autostart-Konflikte nachvollziehbar beheben.
+- [ ] **Session-Recovery:** Crash eines Panels oder eines Popups
+  startet nicht mehrere Kopien, beschädigt keine Autostarts,
+  lässt ein funktionierendes Standard-XFCE-Profil und einen
+  dokumentierten One-Command-Rollback zurück.
+- [ ] **Sicherheit:** Systemaktionen an echte Autorisierung binden,
+  keine sudo-Shell via String-Concatenation, kein Ausspähen von
+  WLAN-Passwörtern, keine remote untrusted Icons ohne Limits.
+- [ ] **Zugänglichkeit:** Screenreader-Semantik, Beschriftungen,
+  Keyboard-only, Fokus-Reihenfolge, hoher Kontrast, 125/150% Zoom,
+  Reduced Motion, präzise Hit-Targets und lesbare Fehlermeldungen.
+- [ ] **Geschwindigkeit:** Zielwerte für Cold start,
+  Idle RSS/CPU, Menü-Latenz, Scroll-Jank und RAM-Spitzen auf dem
+  ThinkPad X1 Yoga 2nd Gen messen; regressionsbasierte Budgets
+  statt erfundener absoluter Benchmarks.
+
+### 10. Szenario-basierte Acceptance Tests (alle Pflicht)
+
+| Test | Ablauf | Erfolg |
+| --- | --- | --- |
+| W7-A01 | Login -> Desktop -> Start -> All Programs -> App -> zurück | Jede Ebene Win7-konsistent und bedienbar |
+| W7-A02 | Zwei Fenster einer App -> Hover-Gruppe -> Close eines Thumbnails | Korrekte Identität, Vorschau, Fensterzahl |
+| W7-A03 | Pin -> Jump List -> Datei öffnen -> Unpin -> Neustart | Reale Aktion und persistenter Pin-Zustand |
+| W7-A04 | Win+E -> Libraries -> zwei Ordner aufnehmen -> Datei suchen | Aggregation ohne Dubletten/Dateiverlust |
+| W7-A05 | USB einstecken -> Mount -> Kopie -> Konflikt -> Eject | Status, Fortschritt, Kollisionsentscheidung |
+| W7-A06 | SMB offline -> Mountfehler -> reconnect -> retry | Kein UI-Freeze, hilfreiche Diagnose |
+| W7-A07 | Ton, WLAN, Akku, Uhr öffnen -> Zustand extern ändern | Bidirektional richtige Backends, nichts offscreen |
+| W7-A08 | Control Panel -> drei Ebenen tief -> Apply/Cancel | Optische und funktionale Vollständigkeit |
+| W7-A09 | Win+Left/Right, Peek, Show Desktop, Alt+Tab | Reversibles Fenstermanagement |
+| W7-A10 | 1024×768, 1600×900, 125% Skalierung, zweiter Monitor | Keine abgeschnittenen Menüs, korrekter Fokus |
+| W7-A11 | Win7 -> Mac -> Win10 -> Win7, danach Restart | Keine Doppelleiste, verlorenen Hotkeys/Autostarts |
+| W7-A12 | Panel hart beenden -> Retry -> Reset to XFCE | Sitzung bleibt reparierbar; echte Logs |
+| W7-A13 | Keyboard-only, Screenreader, Reduced Motion | Alle Kernaktionen erreichbar |
+| W7-A14 | 100k Dateien -> sort/filter/nav, Dateikopie abbrechen | UI reaktionsfähig, keine Datenkorruption |
+
+### 11. Umsetzungsreihenfolge und Definition of Done
+
+1. **P0: Produktwahrheit.** Design-Referenzsatz, reale Hardware-Backends,
+   vollständige Start-/Superbar-/Tray-Interaktion sowie
+   Windows-7-spezifische RiceExplorer-Struktur und Filejobs.
+2. **P1: Tiefenpolitur.** Control Panel mit echten Unterseiten,
+   Aero-Window-Chrome und Snap, Desktop-Kontexte, Dialogdesign,
+   Icons und Zustandsübergänge.
+3. **P2: Komplettheit.** Optionale Gadgets, Sounds/Cursors,
+   erweiterte Power-/Network-/Druckfunktionen,
+   Accessibility und Spezialfälle.
+4. **Release-Gate:** Alle P0-Checkboxen sowie W7-A01–A14
+   durch reproduzierbare Tests/Screenshots nachgewiesen, P1/P2
+   entweder getestet oder explizit mit offenem Issue und
+   realistischem Fallback dokumentiert. Kein 'fertig' aufgrund
+   eines einzelnen Mockups.
+
+**Offizielle historische Gegenchecks:**
+[Windows 7 Desktop Experience](https://learn.microsoft.com/en-us/windows/win32/win7devguide/the-desktop-experience),
+[Taskbar Extensions](https://learn.microsoft.com/en-us/windows/win32/shell/taskbar-extensions),
+[Managing Files and Data](https://learn.microsoft.com/en-us/windows/win32/win7devguide/managing-files-and-data),
+[About Libraries](https://learn.microsoft.com/en-us/windows/win32/shell/library-leverage-to-manage-folders).
