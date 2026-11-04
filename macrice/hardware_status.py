@@ -32,6 +32,27 @@ class DesktopStatus:
     sound: SoundState
 
 
+@dataclass(frozen=True)
+class WifiNetwork:
+    ssid: str
+    signal: int
+    security: str
+    connected: bool
+
+
+@dataclass(frozen=True)
+class SoundOutput:
+    name: str
+    label: str
+    active: bool
+
+
+@dataclass(frozen=True)
+class BluetoothState:
+    powered: bool | None
+    connected: tuple[str, ...]
+
+
 def _read(path: Path) -> str | None:
     try:
         return path.read_text(encoding="utf-8").strip()
@@ -135,10 +156,10 @@ def read_network(root: Path = Path("/sys/class/net"),
     return "offline"
 
 
-def _run(args: list[str]) -> str | None:
+def _run(args: list[str], *, timeout: float = 1.4) -> str | None:
     try:
         result = subprocess.run(args, capture_output=True, text=True,
-                                timeout=1.4, check=False)
+                                timeout=timeout, check=False)
     except (OSError, subprocess.TimeoutExpired):
         return None
     return result.stdout.strip() if result.returncode == 0 else None
@@ -168,6 +189,248 @@ def read_sound() -> SoundState:
 
 def read_status() -> DesktopStatus:
     return DesktopStatus(read_battery(), read_network(), read_sound())
+
+
+def _nmcli_fields(line: str) -> tuple[str, ...]:
+    """Split nmcli terse records, respecting escaped colons and backslashes."""
+    fields, current, escaped = [], [], False
+    for char in line:
+        if escaped:
+            current.append(char)
+            escaped = False
+        elif char == "\\":
+            escaped = True
+        elif char == ":":
+            fields.append("".join(current))
+            current = []
+        else:
+            current.append(char)
+    if escaped:
+        current.append("\\")
+    fields.append("".join(current))
+    return tuple(fields)
+
+
+def read_wifi_radio() -> bool | None:
+    """Return actual NetworkManager Wi-Fi radio state, or unknown."""
+    if not shutil.which("nmcli"):
+        return None
+    state = _run(["nmcli", "radio", "wifi"])
+    return {"enabled": True, "disabled": False}.get((state or "").casefold())
+
+
+def read_wifi_networks(*, rescan: bool = False) -> tuple[WifiNetwork, ...]:
+    """Bounded, read-only Wi-Fi list. Hidden SSIDs are not actionable."""
+    if not shutil.which("nmcli"):
+        return ()
+    raw = _run(["nmcli", "-t", "-f", "IN-USE,SSID,SIGNAL,SECURITY",
+                "device", "wifi", "list", "--rescan", "yes" if rescan else "no"],
+               timeout=7.0 if rescan else 1.8)
+    if raw is None:
+        return ()
+    networks = {}
+    for line in raw.splitlines():
+        fields = _nmcli_fields(line)
+        if len(fields) != 4 or not fields[1].strip():
+            continue
+        try:
+            signal = max(0, min(100, int(fields[2])))
+        except ValueError:
+            continue
+        entry = WifiNetwork(fields[1], signal, fields[3], fields[0] == "*")
+        old = networks.get(entry.ssid)
+        if old is None or (entry.connected, entry.signal) > (old.connected, old.signal):
+            networks[entry.ssid] = entry
+    return tuple(sorted(networks.values(),
+                        key=lambda item: (not item.connected, -item.signal, item.ssid.casefold()))[:12])
+
+
+def set_wifi_radio(enabled: bool) -> bool:
+    """Make an explicit radio change and verify NetworkManager's read-back."""
+    if not isinstance(enabled, bool):
+        raise ValueError("Wi-Fi state must be boolean")
+    if not shutil.which("nmcli"):
+        raise RuntimeError("NetworkManager nmcli is not installed")
+    try:
+        result = subprocess.run(["nmcli", "radio", "wifi", "on" if enabled else "off"],
+                                capture_output=True, text=True, timeout=6, check=False)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise RuntimeError("Wi-Fi radio request timed out or failed") from exc
+    if result.returncode != 0 or read_wifi_radio() is not enabled:
+        raise RuntimeError("NetworkManager could not verify the requested Wi-Fi state")
+    return enabled
+
+
+def disconnect_wifi() -> bool:
+    """Explicitly disconnect the currently connected Wi-Fi device only."""
+    if not shutil.which("nmcli"):
+        raise RuntimeError("NetworkManager nmcli is not installed")
+    raw = _run(["nmcli", "-t", "-f", "DEVICE,TYPE,STATE", "device", "status"])
+    connected = None
+    for line in (raw or "").splitlines():
+        fields = _nmcli_fields(line)
+        if len(fields) == 3 and fields[1] == "wifi" and fields[2].startswith("connected"):
+            connected = fields[0]
+            break
+    if connected is None:
+        raise RuntimeError("There is no connected Wi-Fi interface")
+    try:
+        result = subprocess.run(["nmcli", "device", "disconnect", connected],
+                                capture_output=True, text=True, timeout=8, check=False)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise RuntimeError("Wi-Fi disconnect timed out") from exc
+    if result.returncode != 0:
+        raise RuntimeError("NetworkManager could not disconnect Wi-Fi")
+    return not any(item.connected for item in read_wifi_networks())
+
+
+def connect_wifi(ssid: str) -> bool:
+    """Join a user-selected SSID through NetworkManager, never through a shell.
+
+    Saved credentials work immediately; unknown secured networks may require
+    opening the graphical network editor for password entry.
+    """
+    if not isinstance(ssid, str) or not ssid.strip() or "\x00" in ssid:
+        raise ValueError("Select a visible Wi-Fi network")
+    if not shutil.which("nmcli"):
+        raise RuntimeError("NetworkManager nmcli is not installed")
+    try:
+        result = subprocess.run(["nmcli", "--wait", "18", "device", "wifi", "connect", ssid],
+                                capture_output=True, text=True, timeout=21, check=False)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise RuntimeError("Wi-Fi connection timed out") from exc
+    if result.returncode:
+        raise RuntimeError("Could not join this Wi-Fi network; saved credentials may be missing")
+    return any(item.connected and item.ssid == ssid for item in read_wifi_networks())
+
+
+def read_brightness(root: Path = Path("/sys/class/backlight")) -> int | None:
+    """Read active backlight percentage without privileged commands."""
+    try:
+        paths = sorted(root.iterdir())
+    except OSError:
+        return None
+    for path in paths:
+        try:
+            maximum = int(_read(path / "max_brightness") or "0")
+            actual = int(_read(path / "brightness") or "0")
+        except ValueError:
+            continue
+        if maximum > 0:
+            return max(0, min(100, round(actual / maximum * 100)))
+    return None
+
+
+def set_brightness(percent: int) -> int:
+    """Optional backlight write through existing brightnessctl permissions."""
+    if isinstance(percent, bool) or not isinstance(percent, int) or not 1 <= percent <= 100:
+        raise ValueError("Brightness must be between 1 and 100 percent")
+    if not shutil.which("brightnessctl"):
+        raise RuntimeError("brightnessctl is not installed")
+    try:
+        result = subprocess.run(["brightnessctl", "set", f"{percent}%"],
+                                capture_output=True, text=True, timeout=3, check=False)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise RuntimeError("Brightness adjustment failed") from exc
+    actual = read_brightness()
+    if result.returncode or actual is None or abs(actual - percent) > 5:
+        raise RuntimeError("Brightness change was not verified; check backlight permissions")
+    return actual
+
+
+def read_sound_outputs() -> tuple[SoundOutput, ...]:
+    """List real PulseAudio/PipeWire output sinks; no invented labels."""
+    if not shutil.which("pactl"):
+        return ()
+    raw = _run(["pactl", "list", "short", "sinks"])
+    default = _run(["pactl", "get-default-sink"])
+    if not raw:
+        return ()
+    outputs = []
+    for line in raw.splitlines():
+        fields = line.split("\t")
+        if len(fields) < 2 or not fields[1].strip():
+            continue
+        name = fields[1].strip()
+        # Keep the full identifier available by tooltip; the human readable
+        # suffix is useful even on older pactl without JSON descriptions.
+        label = name.rsplit(".", 1)[-1].replace("_", " ").replace("-", " ")
+        outputs.append(SoundOutput(name, label, name == default))
+    return tuple(outputs[:12])
+
+
+def set_sound_output(name: str) -> SoundOutput:
+    """Select only an enumerated sink and read back the effective default."""
+    outputs = read_sound_outputs()
+    if not name or name not in {entry.name for entry in outputs}:
+        raise ValueError("Select an installed audio output")
+    try:
+        result = subprocess.run(["pactl", "set-default-sink", name],
+                                capture_output=True, text=True, timeout=3, check=False)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise RuntimeError("Audio output selection failed") from exc
+    selected = next((entry for entry in read_sound_outputs() if entry.name == name and
+                     entry.active), None)
+    if result.returncode or selected is None:
+        raise RuntimeError("Audio output could not be verified")
+    return selected
+
+
+def read_power_profiles() -> tuple[str | None, tuple[str, ...]]:
+    """Read optional power-profiles-daemon state (not universal on XFCE)."""
+    if not shutil.which("powerprofilesctl"):
+        return None, ()
+    current = _run(["powerprofilesctl", "get"])
+    listed = _run(["powerprofilesctl", "list"])
+    supported = tuple(name for name in ("power-saver", "balanced", "performance")
+                      if listed and re.search(r"(?m)^\s*\*?\s*" + re.escape(name) + r":", listed))
+    return current if current in supported else None, supported
+
+
+def set_power_profile(name: str) -> str:
+    current, supported = read_power_profiles()
+    if name not in supported:
+        raise ValueError("Power profile is not supported by this device")
+    try:
+        result = subprocess.run(["powerprofilesctl", "set", name],
+                                capture_output=True, text=True, timeout=4, check=False)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise RuntimeError("Power profile change failed") from exc
+    actual, _supported = read_power_profiles()
+    if result.returncode or actual != name:
+        raise RuntimeError("Power profile change could not be verified")
+    return name
+
+
+def read_bluetooth() -> BluetoothState:
+    if not shutil.which("bluetoothctl"):
+        return BluetoothState(None, ())
+    info = _run(["bluetoothctl", "show"], timeout=2.5)
+    if not info:
+        return BluetoothState(None, ())
+    status = re.search(r"(?m)^\s*Powered:\s*(yes|no)\b", info)
+    if not status:
+        return BluetoothState(None, ())
+    raw = _run(["bluetoothctl", "devices", "Connected"], timeout=2.5)
+    devices = tuple(match.group(1).strip() for line in (raw or "").splitlines()
+                    if (match := re.match(r"Device\s+[0-9a-fA-F:]{17}\s+(.+)", line)))[:10]
+    return BluetoothState(status.group(1) == "yes", devices)
+
+
+def set_bluetooth_power(enabled: bool) -> BluetoothState:
+    if not isinstance(enabled, bool):
+        raise ValueError("Bluetooth power must be boolean")
+    if not shutil.which("bluetoothctl"):
+        raise RuntimeError("BlueZ bluetoothctl is not installed")
+    try:
+        result = subprocess.run(["bluetoothctl", "power", "on" if enabled else "off"],
+                                capture_output=True, text=True, timeout=5, check=False)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise RuntimeError("Bluetooth adapter action failed") from exc
+    state = read_bluetooth()
+    if result.returncode or state.powered is not enabled:
+        raise RuntimeError("Bluetooth power change could not be verified")
+    return state
 
 
 def set_sound_volume(percent: int) -> SoundState:

@@ -100,27 +100,39 @@ def frutiger_apps(apps, pins: tuple[str, ...], query: str):
     return tuple(sorted(matches, key=rank))
 
 
-def luna_programs(apps, pins: tuple[str, ...], query: str, limit: int = 8):
+def luna_programs(apps, pins: tuple[str, ...], query: str, limit: int = 8,
+                  *, start_favorites=None, history=None):
     """Pick real installed apps for the XP pin band and the recent-program area."""
     if query.strip():
         return (), matching_apps(apps, query)[:limit]
     featured = []
-    for category in ("WebBrowser", "Email"):
-        for app in apps:
-            classifier = getattr(app, "get_categories", None)
-            categories = (classifier() or "").split(";") if callable(classifier) else ()
-            if category in categories and app not in featured:
-                featured.append(app)
+    if start_favorites is not None:
+        for identifier in start_favorites:
+            featured.extend(app for app in apps if app.get_id() == identifier and
+                            app not in featured)
+    else:
+        for category in ("WebBrowser", "Email"):
+            for app in apps:
+                classifier = getattr(app, "get_categories", None)
+                categories = (classifier() or "").split(";") if callable(classifier) else ()
+                if category in categories and app not in featured:
+                    featured.append(app)
+                    break
+        for identifier in pins:
+            if len(featured) >= 2:
                 break
-    for identifier in pins:
-        if len(featured) >= 2:
-            break
-        for app in apps:
-            if app.get_id() == identifier and app not in featured:
-                featured.append(app)
-                break
-    featured = featured[:2]
-    return tuple(featured), tuple(app for app in apps if app not in featured)[:limit]
+            for app in apps:
+                if app.get_id() == identifier and app not in featured:
+                    featured.append(app)
+                    break
+        featured = featured[:2]
+    regular = tuple(app for app in apps if app not in featured)
+    if history:
+        positions = {app.get_id(): index for index, app in enumerate(regular)}
+        regular = tuple(sorted(regular, key=lambda app: (
+            -history.get(app.get_id(), (0, 0))[1],
+            -history.get(app.get_id(), (0, 0))[0], positions[app.get_id()])))
+    return tuple(featured), regular[:limit]
 
 
 def luna_program_groups(apps):
@@ -442,6 +454,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._status_pending = False
             self._status_widgets = {}
             self._last_status = None
+            self.luna_tray = None
+            self._luna_start_state = None
             self._volume_programmatic = False
             self._volume_write_source = 0
             self._volume_writing = False
@@ -536,6 +550,14 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 logging.getLogger(__name__).warning("Aero pins are unavailable: %s", exc)
                 saved = None
             self._pinned_ids = default_pins(self.apps) if saved is None else saved
+            if profile == "winxp":
+                from .luna_start_state import StartState, load_start_state
+
+                try:
+                    self._luna_start_state = load_start_state()
+                except (OSError, ValueError) as exc:
+                    logging.getLogger(__name__).warning("XP Start preferences unavailable: %s", exc)
+                    self._luna_start_state = StartState()
             if self._capture_gallery or self._capture_workspace:
                 self._capture_background()
             self._create_taskbar()
@@ -580,6 +602,14 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 assert not self.actions.get_visible()
                 if profile == "winxp":
                     assert self.luna_control_stack.get_visible_child_name() == "categories"
+                    assert set(self.luna_tray.popovers) == {
+                        "audio", "network", "battery", "clock", "bluetooth"}
+                    for popup in self.luna_tray.popovers.values():
+                        assert popup.get_style_context().has_class("luna-tray-popup")
+                        # Native GTK windows escape the dock's 40px clipping
+                        # region; Gtk.Popover cannot reliably do so on X11.
+                        assert isinstance(popup, Gtk.Window)
+                        assert popup.get_type_hint() == Gdk.WindowTypeHint.UTILITY
                     assert self.luna_programs_popup.get_style_context().has_class("luna-popup")
                     assert self.luna_recent_popup.get_style_context().has_class("luna-popup")
                     self.luna_control_show_category("Appearance and Themes")
@@ -599,6 +629,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     assert self.luna_control_stack.get_visible_child_name() == "classic"
                     self.luna_control_switch.clicked()
                     assert self.luna_control_stack.get_visible_child_name() == "categories"
+                    for name in ("audio", "network", "battery", "bluetooth", "clock"):
+                        self.luna_tray.toggle(name)
+                        assert self.luna_tray.popovers[name].get_visible()
+                        self.luna_tray.toggle(name)
+                        assert not self.luna_tray.popovers[name].get_visible()
                 if profile == "aero":
                     assert len(self.win7_panel_rows) == 8
                     self.win7_panel_search.set_text("power")
@@ -775,6 +810,83 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             try:
                 assert self.luna_control_stack.get_visible_child_name() == "classic"
                 self._capture_screen(f"ricebowl-winxp-classic-0.9.1{self._capture_variant}.png")
+                self._hide_actions()
+                self.luna_tray.toggle("audio")
+                GLib.timeout_add(460, self._capture_luna_audio)
+                return False
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._smoke_failed = True
+            self.quit()
+            return False
+
+        def _capture_luna_tray(self, name):
+            popup = self.luna_tray.popovers[name]
+            assert popup.get_mapped(), f"XP {name} tray popup did not map"
+            width, height = popup.get_allocated_width(), popup.get_allocated_height()
+            assert width > 150 and height > 80, f"XP {name} tray popup collapsed"
+            # Mapping and GTK allocation are not enough: a DOCK-child popup
+            # can be clipped to the 40px taskbar and look invisible.
+            root_x, root_y = popup.get_window().get_root_origin()
+            rect = self._desktop_rect()
+            assert (rect.x <= root_x and root_x + width <= rect.x + rect.width and
+                    rect.y <= root_y and root_y + height <= rect.y + rect.height - panel_height), (
+                        f"XP {name} popup offscreen: origin=({root_x},{root_y}) "
+                        f"size=({width},{height}) monitor={rect}")
+            self._capture_screen(f"ricebowl-winxp-tray-{name}-0.9.1{self._capture_variant}.png")
+
+        def _capture_luna_audio(self):
+            try:
+                self._capture_luna_tray("audio")
+                self.luna_tray.toggle("network")
+                GLib.timeout_add(520, self._capture_luna_network)
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._smoke_failed = True
+                self.quit()
+            return False
+
+        def _capture_luna_network(self):
+            try:
+                self._capture_luna_tray("network")
+                self.luna_tray.toggle("battery")
+                GLib.timeout_add(480, self._capture_luna_battery)
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._smoke_failed = True
+                self.quit()
+            return False
+
+        def _capture_luna_battery(self):
+            try:
+                self._capture_luna_tray("battery")
+                self.luna_tray.toggle("bluetooth")
+                GLib.timeout_add(460, self._capture_luna_bluetooth)
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._smoke_failed = True
+                self.quit()
+            return False
+
+        def _capture_luna_bluetooth(self):
+            try:
+                self._capture_luna_tray("bluetooth")
+                self.luna_tray.toggle("clock")
+                GLib.timeout_add(460, self._capture_luna_clock)
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._smoke_failed = True
+                self.quit()
+            return False
+
+        def _capture_luna_clock(self):
+            try:
+                self._capture_luna_tray("clock")
             except Exception:
                 import traceback
                 traceback.print_exc()
@@ -1024,6 +1136,26 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 launch.connect("activate", lambda _item: self._launch(app))
                 menu.append(launch)
                 menu.append(Gtk.SeparatorMenuItem())
+                favorites = self._luna_favorites()
+                favorite = identifier in favorites
+                start_item = self._luna_menu_item(
+                    "Unpin from Start menu" if favorite else "Pin to Start menu",
+                    "ricehub-luna-cp-programs")
+                start_item.set_sensitive(favorite or len(favorites) < 4)
+                start_item.connect("activate", lambda _item: self._change_luna_favorite(
+                    identifier, "unpin" if favorite else "pin"))
+                menu.append(start_item)
+                if favorite and len(favorites) > 1:
+                    for title, action in (("Move favorite up", "up"),
+                                          ("Move favorite down", "down")):
+                        item = self._luna_menu_item(title, "ricehub-luna-cp-programs")
+                        index = favorites.index(identifier)
+                        item.set_sensitive(index > 0 if action == "up" else
+                                           index < len(favorites) - 1)
+                        item.connect("activate", lambda _item, kind=action:
+                                     self._change_luna_favorite(identifier, kind))
+                        menu.append(item)
+                menu.append(Gtk.SeparatorMenuItem())
             label = "Unpin from taskbar" if pinned else "Pin to taskbar"
             item = (self._luna_menu_item(label, "list-remove" if pinned else "list-add")
                     if profile == "winxp" else Gtk.MenuItem(label=label))
@@ -1064,6 +1196,29 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self._hide_menu()
             except (GLib.Error, OSError) as exc:
                 self._error("Cannot open recent file: " + str(exc))
+
+        def _luna_favorites(self):
+            if self._luna_start_state.favorites is not None:
+                return self._luna_start_state.favorites
+            featured, _recent = luna_programs(self.apps, self._pinned_ids, "")
+            return tuple(app.get_id() for app in featured if app.get_id())
+
+        def _change_luna_favorite(self, identifier, action):
+            from .luna_start_state import change_favorite, save_start_state
+
+            previous = self._luna_start_state.favorites
+            if not change_favorite(self._luna_start_state, identifier, action,
+                                   defaults=self._luna_favorites()):
+                return
+            try:
+                save_start_state(self._luna_start_state)
+            except (OSError, ValueError) as exc:
+                self._luna_start_state.favorites = previous
+                self._error("Unable to save Start favorites: " + str(exc),
+                            title="Could not update Start menu")
+                return
+            if self.menu and self.menu.get_visible():
+                self._populate(self.search.get_text())
 
         def _change_pin(self, identifier, add):
             candidate = list(self._pinned_ids)
@@ -1268,6 +1423,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._error("No suitable " + name + " settings application was found.")
 
         def _install_status_widgets(self, row):
+            if profile == "winxp":
+                from .luna_tray import LunaTray
+
+                self.luna_tray = LunaTray(self, Gtk, GLib)
             for name in ("battery", "network", "audio"):
                 button = self._class(Gtk.Button(), "rice-status")
                 button.get_style_context().add_class("rice-status-" + name)
@@ -1278,10 +1437,21 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 contents.pack_start(label, False, False, 0)
                 button.add(contents)
                 button.get_accessible().set_name(name.capitalize() + " status")
-                button.connect("clicked", lambda _button, selected=name:
-                               self._status_action(selected))
+                if self.luna_tray is None:
+                    button.connect("clicked", lambda _button, selected=name:
+                                   self._status_action(selected))
                 row.pack_end(button, False, False, 0)
                 self._status_widgets[name] = (button, image, label)
+                if self.luna_tray is not None:
+                    self.luna_tray.install(name, button)
+            if self.luna_tray is not None:
+                bluetooth = self._class(Gtk.Button(), "rice-status")
+                bluetooth.add(self._icon("ricehub-luna-task-bluetooth", Gtk.IconSize.MENU))
+                bluetooth.set_tooltip_text("Bluetooth devices and adapter")
+                bluetooth.get_accessible().set_name("Bluetooth device controls")
+                row.pack_end(bluetooth, False, False, 0)
+                self.luna_tray.install("bluetooth", bluetooth)
+                self.luna_tray.install("clock", self._luna_clock_button)
             self._refresh_status_async()
             GLib.timeout_add_seconds(20, self._refresh_status_async)
 
@@ -1303,6 +1473,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
         def _apply_status(self, status):
             self._status_pending = False
             if status is None:
+                if self.luna_tray is not None:
+                    self.luna_tray.on_status(None)
                 if hasattr(self, "frutiger_status_label"):
                     self.frutiger_status_label.set_text(frutiger_status_summary(None))
                 if profile == "frutiger" and hasattr(self, "control_network_label"):
@@ -1317,10 +1489,14 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 if hasattr(self, "_aqua_flyouts"):
                     self._aqua_flyouts.sync(None)
                 for button, _image, _label in self._status_widgets.values():
-                    button.set_sensitive(False)
+                    # Luna's tray popovers are also the recovery path when a
+                    # transient probe fails; keep them openable for details.
+                    button.set_sensitive(self.luna_tray is not None)
                     button.set_tooltip_text("Hardware status temporarily unavailable")
                 return False
             self._last_status = status
+            if self.luna_tray is not None:
+                self.luna_tray.on_status(status)
             if hasattr(self, "_aqua_flyouts"):
                 self._aqua_flyouts.sync(status)
             if hasattr(self, "frutiger_status_label"):
@@ -1374,7 +1550,14 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             battery_button, battery_icon, battery_label = self._status_widgets["battery"]
             battery = status.battery
             if battery is None:
-                battery_button.hide()
+                if self.luna_tray is None:
+                    battery_button.hide()
+                else:
+                    battery_button.show_all()
+                    self._set_status_icon(battery_icon, "battery-0")
+                    battery_label.set_text("")
+                    battery_button.set_tooltip_text("Power settings · no laptop battery detected")
+                    battery_button.get_accessible().set_name("Power settings, no battery")
             else:
                 battery_button.show_all()
                 level = min(100, (battery.percent + 12) // 25 * 25)
@@ -1433,6 +1616,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._volume_queued = None
             self._volume_writing = True
             self.volume_status_label.set_text(f"Adjusting volume to {value}%…")
+            if self.luna_tray is not None:
+                self.luna_tray.volume_pending(value)
             def worker():
                 from .hardware_status import set_sound_volume
                 try:
@@ -1447,6 +1632,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _volume_change_complete(self, state, error):
             self._volume_writing = False
+            if self.luna_tray is not None:
+                self.luna_tray.volume_done(state, error)
             if error:
                 self.volume_status_label.set_text("Volume unavailable — " + error)
             elif state is not None:
@@ -1471,6 +1658,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             # the backend confirms the change.
             button.set_active(sound.muted)
             button.set_sensitive(False)
+            if self.luna_tray is not None:
+                self.luna_tray.audio_mute.set_sensitive(False)
             self._mute_writing = True
 
             def worker():
@@ -1487,6 +1676,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _mute_change_complete(self, state, error):
             self._mute_writing = False
+            if self.luna_tray is not None:
+                self.luna_tray.mute_done(state, error)
             if error:
                 self.volume_status_label.set_text("Mute action failed: " + error)
             else:
@@ -1631,6 +1822,12 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 clock_button.get_accessible().set_name("Open Quick Settings")
                 clock_button.connect("clicked", lambda _button: self._toggle_actions())
                 right_area.pack_end(clock_button, False, False, 4)
+            elif profile == "winxp":
+                clock_button = self._class(Gtk.Button(), "luna-clock-button")
+                clock_button.add(clock)
+                clock_button.get_accessible().set_name("Show date and calendar")
+                self._luna_clock_button = clock_button
+                right_area.pack_end(clock_button, False, False, 6)
             else:
                 right_area.pack_end(clock, False, False, 6)
             if tiles:
@@ -3479,6 +3676,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _toggle_actions(self):
             self._cancel_popup_hide("control")
+            if self.luna_tray is not None:
+                for popup in self.luna_tray.popovers.values():
+                    popup.hide()
             if self.actions.get_visible():
                 self._hide_actions()
                 return
@@ -3834,7 +4034,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             """XP: 2 prominent favorites, a separator and actual installed apps."""
             featured, regular = luna_programs(
                 self.apps, self._pinned_ids, query,
-                self._app_page_size if query.strip() else 6)
+                self._app_page_size if query.strip() else 6,
+                start_favorites=self._luna_start_state.favorites,
+                history=self._luna_start_state.launches)
 
             def add_app(app, *, large=False):
                 button = self._class(Gtk.Button(), "luna-program")
@@ -3928,6 +4130,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _toggle_menu(self):
             self._cancel_popup_hide("menu")
+            if self.luna_tray is not None:
+                for popup in self.luna_tray.popovers.values():
+                    popup.hide()
             if self.menu.get_visible():
                 self._hide_menu()
                 return
@@ -4023,14 +4228,22 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
         def _launch(self, app):
             try:
                 app.launch([], None)
+                if profile == "winxp" and self._luna_start_state is not None:
+                    from .luna_start_state import record_launch, save_start_state
+
+                    record_launch(self._luna_start_state, app.get_id())
+                    try:
+                        save_start_state(self._luna_start_state)
+                    except (OSError, ValueError) as exc:
+                        logging.getLogger(__name__).warning("Could not save XP recent apps: %s", exc)
                 self._hide_menu()
             except GLib.Error as exc:
                 self._error(str(exc))
 
-        def _error(self, message):
+        def _error(self, message, *, title="Could not launch application"):
             dialog = Gtk.MessageDialog(transient_for=self.bar, flags=Gtk.DialogFlags.MODAL,
                                        message_type=Gtk.MessageType.ERROR, buttons=Gtk.ButtonsType.CLOSE,
-                                       text="Could not launch application")
+                                       text=title)
             dialog.format_secondary_text(message)
             dialog.run()
             dialog.destroy()

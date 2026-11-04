@@ -193,6 +193,59 @@ DETAIL_CSS = {
 .luna-tray .rice-status:hover, .luna-tray .aero-quick:hover,
 .luna-tray .aero-desktop:hover { background: #54b5ed; border-color: #93d8ff; }
 .luna-tray .rice-status label { color: #fff; font-size: 10px; font-weight: normal; }
+.luna-tray .luna-clock-button { background: transparent; border: 1px solid transparent;
+  box-shadow: none; border-radius: 2px; padding: 1px 3px; }
+.luna-tray .luna-clock-button:hover, .luna-tray .luna-clock-button:focus {
+  background: #54b5ed; border-color: #93d8ff; }
+/* An independent GTK utility window escapes GTK3's DOCK-toplevel clipping.
+   XP-style flyouts sit immediately above their notification-area icon. */
+window.luna-tray-popup {
+  background: #f9fbff; color: #1b3764; border: 1px solid #3267b7;
+  border-radius: 5px; box-shadow: 2px 3px 7px rgba(20,45,96,.32); }
+.luna-tray-card { background: #f9fbff; color: #1b3764; padding: 12px 13px;
+  min-width: 290px; }
+.luna-tray-title { color: #164a9b; font-size: 14px; font-weight: bold; }
+.luna-tray-caption { color: #526681; font-size: 11px; }
+.luna-tray-section { color: #1d4d92; font-size: 11px; font-weight: bold;
+  border-bottom: 1px solid #bfcee0; padding-bottom: 3px; }
+.luna-tray-card scale trough { background: #fff; border: 1px solid #8aabc9;
+  border-radius: 2px; min-height: 9px; }
+.luna-tray-card scale highlight { background-image: linear-gradient(#aef47d, #469a2e); }
+.luna-tray-card scale slider { background-image: linear-gradient(#fff, #e3ebf9);
+  border: 1px solid #376ba8; border-radius: 4px; min-width: 15px;
+  min-height: 18px; }
+.luna-tray-card levelbar trough { background: #fff; border: 1px solid #9baebf; }
+.luna-tray-card levelbar block.filled { background-image: linear-gradient(#b6fa76, #3d9f24); }
+.luna-tray-link, .luna-tray-mute, .luna-tray-switch {
+  background-image: linear-gradient(#fff, #dbe8fa); color: #174582;
+  border: 1px solid #9ab5d4; border-radius: 3px; padding: 6px 8px;
+  box-shadow: inset 0 1px #fff; }
+.luna-tray-device { background: #eef5ff; border: 1px solid #c4d8ef;
+  border-radius: 3px; padding: 4px 7px; color: #204a87;
+  box-shadow: none; }
+.luna-tray-device:hover, .luna-tray-device:focus {
+  background: #d7e9ff; border-color: #79a7dd; }
+.luna-tray-device.luna-tray-current, .luna-tray-device.luna-tray-current:disabled {
+  background: #d9efdc; border-color: #9ac3a2; color: #28672e;
+  opacity: 1; }
+.luna-tray-link:hover, .luna-tray-link:focus,
+.luna-tray-mute:hover, .luna-tray-mute:focus,
+.luna-tray-switch:hover, .luna-tray-switch:focus {
+  background: #d2e6ff; border-color: #3978cb; }
+.luna-tray-link:active, .luna-tray-mute:checked,
+.luna-tray-switch:active { background: #b4d3fc; border-color: #316ac5; }
+.luna-tray-card button:disabled { color: #687589; background: #eef1f5;
+  border-color: #d3dce6; box-shadow: none; }
+.luna-tray-network-row { background: #eef4fd; color: #254e87;
+  border-bottom: 1px solid #dce6f6; padding: 5px 7px; }
+.luna-tray-network-row:hover, .luna-tray-network-row:focus {
+  background: #dceafe; border-color: #8db2e4; }
+.luna-tray-network-row:disabled { background: #d7efdb; opacity: 1;
+  border-color: #9bc6a7; }
+.luna-tray-network-name { color: #1a478e; font-size: 11px; }
+.luna-tray-network-mark { color: #358f32; font-size: 13px; }
+.luna-tray-calendar { background: #f9fbff; color: #203b68; }
+.luna-tray-card scrollbar slider { background: #9dbce0; border-radius: 2px; }
 .aero-time { background: transparent; color: #fff; border: 0; box-shadow: none;
   font-size: 12px; font-weight: normal; padding: 2px 5px; }
 .luna-menu { background: #fff; border: 2px solid #1b55bd;
