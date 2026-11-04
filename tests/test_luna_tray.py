@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from macrice.luna_tray import LunaTray
+from macrice.luna_tray import LunaTray, tray_flyout_position
 from macrice.hardware_status import (
     _nmcli_fields, connect_wifi, disconnect_wifi, read_bluetooth, read_brightness,
     read_power_profiles, read_sound_outputs, read_wifi_networks, read_wifi_radio,
@@ -15,6 +15,19 @@ from macrice.hardware_status import (
 
 
 class LunaTrayVisibilityTests(unittest.TestCase):
+    def test_flyout_stays_above_dock_and_inside_monitor(self):
+        self.assertEqual(
+            tray_flyout_position(0, 0, 1024, 768, 790, 729, 346, 283),
+            (617, 438))
+        self.assertEqual(
+            tray_flyout_position(0, 0, 1600, 900, 1555, 860, 346, 283),
+            (1246, 569))
+
+    def test_flyout_clamps_on_offset_monitor(self):
+        self.assertEqual(
+            tray_flyout_position(1920, 160, 800, 600, 1935, 726, 330, 400),
+            (1928, 318))
+
     def test_closing_tray_is_immediate_even_with_gtk_transitions(self):
         class AnimatedPopover:
             visible = True

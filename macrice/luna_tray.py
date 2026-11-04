@@ -20,10 +20,21 @@ from .hardware_status import (
 LOG = logging.getLogger(__name__)
 
 
+def tray_flyout_position(monitor_x, monitor_y, monitor_width, monitor_height,
+                        anchor_center_x, bar_top, width, height, margin=8):
+    """Keep an independent tray window above the dock and inside its monitor."""
+    left = monitor_x + margin
+    right = max(left, monitor_x + monitor_width - width - margin)
+    x = max(left, min(anchor_center_x - width // 2, right))
+    y = max(monitor_y + margin, bar_top - height - margin)
+    return x, y
+
+
 class LunaTray:
     def __init__(self, shell, Gtk, GLib):
         self.shell, self.Gtk, self.GLib = shell, Gtk, GLib
         self.popovers = {}
+        self.anchors = {}
         self._network_request = 0
         self._network_busy = False
         self._network_error = None
@@ -55,17 +66,35 @@ class LunaTray:
 
     def install(self, name, anchor):
         Gtk = self.Gtk
-        popup = self.shell._class(Gtk.Popover.new(anchor), "luna-tray-popup")
-        popup.set_position(Gtk.PositionType.TOP)
-        # The anchor lives inside a DOCK toplevel only panel_height tall.
-        # GTK3 defaults to PopoverConstraint.WINDOW, which clips/repositions
-        # the flyout into that thin taskbar instead of above it.
-        popup.set_constrain_to(Gtk.PopoverConstraint.NONE)
-        popup.set_modal(True)
+        from gi.repository import Gdk
+
+        # Gtk.Popover is clipped to its ancestor toplevel on GTK3/X11, even
+        # with PopoverConstraint.NONE. The ancestor here is a ~40px DOCK;
+        # a separate decorated-free window is required for visible flyouts.
+        popup = self.shell._class(Gtk.Window(type=Gtk.WindowType.TOPLEVEL),
+                                  "luna-tray-popup")
+        popup.set_title("XP Luna " + name.title())
+        popup.set_decorated(False)
+        popup.set_resizable(False)
+        popup.set_skip_taskbar_hint(True)
+        popup.set_skip_pager_hint(True)
+        popup.set_type_hint(Gdk.WindowTypeHint.UTILITY)
+        popup.set_keep_above(True)
+        popup.connect("focus-out-event", lambda window, _event: window.hide())
+        popup.connect("key-press-event", self._key_press, Gdk)
         body = self.shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8),
                                   "luna-tray-card")
-        popup.add(body)
+        # Small displays get an outer scroller; Wi-Fi's own network list keeps
+        # its bounded height without expanding the entire flyout offscreen.
+        scroll = Gtk.ScrolledWindow()
+        scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scroll.set_propagate_natural_height(True)
+        rect = self.shell._desktop_rect()
+        scroll.set_max_content_height(max(180, min(520, rect.height - 90)))
+        scroll.add(body)
+        popup.add(scroll)
         self.popovers[name] = popup
+        self.anchors[name] = anchor
         if name == "audio":
             self._audio(body)
         elif name == "network":
@@ -78,6 +107,31 @@ class LunaTray:
             self._bluetooth(body)
         anchor.connect("clicked", lambda _button, kind=name: self.toggle(kind))
         return popup
+
+    @staticmethod
+    def _key_press(popup, event, Gdk):
+        if event.keyval == Gdk.KEY_Escape:
+            popup.hide()
+            return True
+        return False
+
+    def _place(self, name):
+        pop = self.popovers[name]
+        if not pop.get_visible():
+            return False
+        bar = self.shell.bar
+        offset = self.anchors[name].translate_coordinates(bar, 0, 0)
+        if offset is None or bar.get_window() is None:
+            return False
+        bar_x, bar_y = bar.get_window().get_root_origin()
+        width, height = pop.get_size()
+        rect = self.shell._desktop_rect()
+        x, y = tray_flyout_position(
+            rect.x, rect.y, rect.width, rect.height,
+            bar_x + offset[0] + self.anchors[name].get_allocated_width() // 2,
+            bar_y, width, height)
+        pop.move(x, y)
+        return False
 
     def _heading(self, body, name, icon):
         row = self.Gtk.Box(orientation=self.Gtk.Orientation.HORIZONTAL, spacing=8)
@@ -212,8 +266,14 @@ class LunaTray:
         self.shell._hide_menu()
         self.shell._hide_actions()
         self.shell._refresh_status_async()
+        # The shell assigns self.bar after constructing its status controls.
+        # Attach the transient relationship only once the dock is realized.
+        if pop.get_transient_for() is not self.shell.bar:
+            pop.set_transient_for(self.shell.bar)
         pop.show_all()
-        pop.popup()
+        pop.present()
+        self._place(name)
+        self.GLib.idle_add(self._place, name)
         if name == "network":
             self.refresh_network()
         elif name == "battery":

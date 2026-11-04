@@ -197,12 +197,11 @@ DETAIL_CSS = {
   box-shadow: none; border-radius: 2px; padding: 1px 3px; }
 .luna-tray .luna-clock-button:hover, .luna-tray .luna-clock-button:focus {
   background: #54b5ed; border-color: #93d8ff; }
-/* Each XP tray icon owns a small native anchored GTK popover with consistent
-   dismissal, keyboard focus and collision-safe top placement. */
-popover.luna-tray-popup, popover.luna-tray-popup > contents {
+/* An independent GTK utility window escapes GTK3's DOCK-toplevel clipping.
+   XP-style flyouts sit immediately above their notification-area icon. */
+window.luna-tray-popup {
   background: #f9fbff; color: #1b3764; border: 1px solid #3267b7;
   border-radius: 5px; box-shadow: 2px 3px 7px rgba(20,45,96,.32); }
-popover.luna-tray-popup > arrow { background: #f9fbff; border-color: #3267b7; }
 .luna-tray-card { background: #f9fbff; color: #1b3764; padding: 12px 13px;
   min-width: 290px; }
 .luna-tray-title { color: #164a9b; font-size: 14px; font-weight: bold; }

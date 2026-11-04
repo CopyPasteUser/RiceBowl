@@ -606,9 +606,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                         "audio", "network", "battery", "clock", "bluetooth"}
                     for popup in self.luna_tray.popovers.values():
                         assert popup.get_style_context().has_class("luna-tray-popup")
-                        # GTK defaults to constraining popovers to their
-                        # toplevel: a 40px-high DOCK taskbar cannot contain one.
-                        assert popup.get_constrain_to() == Gtk.PopoverConstraint.NONE
+                        # Native GTK windows escape the dock's 40px clipping
+                        # region; Gtk.Popover cannot reliably do so on X11.
+                        assert isinstance(popup, Gtk.Window)
+                        assert popup.get_type_hint() == Gdk.WindowTypeHint.UTILITY
                     assert self.luna_programs_popup.get_style_context().has_class("luna-popup")
                     assert self.luna_recent_popup.get_style_context().has_class("luna-popup")
                     self.luna_control_show_category("Appearance and Themes")
@@ -825,8 +826,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             assert popup.get_mapped(), f"XP {name} tray popup did not map"
             width, height = popup.get_allocated_width(), popup.get_allocated_height()
             assert width > 150 and height > 80, f"XP {name} tray popup collapsed"
-            # Mapping and GTK allocation are not enough: WINDOW-constrained
-            # popovers can be clipped to the 40px taskbar and look invisible.
+            # Mapping and GTK allocation are not enough: a DOCK-child popup
+            # can be clipped to the 40px taskbar and look invisible.
             root_x, root_y = popup.get_window().get_root_origin()
             rect = self._desktop_rect()
             assert (rect.x <= root_x and root_x + width <= rect.x + rect.width and
