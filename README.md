@@ -30,6 +30,8 @@ RiceBowl changes the actual Linux desktop: GTK and XFWM4 themes, icons, wallpape
 
 The Windows 98 rice is still a work in progress: the new interactive Start descendants, all-icons Control Panel and tray dialogs require virtual-X11 and physical Mint acceptance. A separate historically authentic Windows 2000 preset is planned. [Detailed checklist](CLASSIC_98_ROADMAP.md).
 
+The latest Windows 98 development adds **Taskbar Properties** (clock and Quick Launch visibility with per-rice persistence) and a **Run dialog history** held in memory for the active session only. These features remain subject to CI and physical-device validation.
+
 ### Current screenshots
 
 Captured from real GTK3 shells on virtual X11—not mockups.
