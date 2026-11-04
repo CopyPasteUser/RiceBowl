@@ -702,7 +702,19 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     assert self.menu.get_visible()
                     for name in ("Settings", "Places", "Settings", "Apps"):
                         self._frutiger_tab_buttons[name].clicked()
-                        assert self.aqua_stack.get_visible_child_name() == name
+                        # GTK3 crossfade transitions can defer the visible-child
+                        # property until the next main-context iteration. A
+                        # synchronous artificial click sequence must give GTK
+                        # the same event-loop opportunity as real user clicks.
+                        for _step in range(20):
+                            while Gtk.events_pending():
+                                Gtk.main_iteration_do(False)
+                            if self.aqua_stack.get_visible_child_name() == name:
+                                break
+                            GLib.usleep(15000)
+                        assert self.aqua_stack.get_visible_child_name() == name, (
+                            "Frutiger tab " + name + " selected but stack shows " +
+                            str(self.aqua_stack.get_visible_child_name()))
                     self._frutiger_tab_buttons["Settings"].clicked()
                     self._frutiger_back_to_apps.clicked()
                     assert self.aqua_stack.get_visible_child_name() == "Apps"
