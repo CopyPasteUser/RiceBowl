@@ -348,7 +348,8 @@ def show_favorite_manager(shell, Gtk):
 
 
 def show_file_search(shell, Gtk, GLib):
-    """Cancellable filename search, read-only and bounded to a user folder."""
+    """Read-only, bounded Win98 Find with real content and metadata filters."""
+    from .classic98_find import FindCriteria, search_folder, validate_criteria
     dialog = Gtk.Dialog(title="Find: All Files", transient_for=shell.bar)
     dialog.add_button("Close", Gtk.ResponseType.CLOSE)
     dialog.set_default_size(580, 450)
@@ -363,6 +364,45 @@ def show_file_search(shell, Gtk, GLib):
     chooser = Gtk.FileChooserButton(title="Look in", action=Gtk.FileChooserAction.SELECT_FOLDER)
     chooser.set_filename(str(Path.home()))
     body.pack_start(chooser, False, False, 0)
+    advanced = Gtk.Expander(label="Advanced options: type, date, size and text")
+    grid = Gtk.Grid(column_spacing=8, row_spacing=7)
+    grid.set_border_width(8)
+    file_type = Gtk.ComboBoxText()
+    for key, label in (("both", "Files and folders"), ("files", "Files only"),
+                       ("folders", "Folders only")):
+        file_type.append(key, label)
+    file_type.set_active_id("both")
+    grid.attach(Gtk.Label(label="Type:", xalign=0), 0, 0, 1, 1)
+    grid.attach(file_type, 1, 0, 1, 1)
+    date = Gtk.ComboBoxText()
+    for key, label in (("any", "Any time"), ("1", "Last 24 hours"),
+                       ("7", "Last 7 days"), ("30", "Last 30 days"),
+                       ("365", "Last year")):
+        date.append(key, label)
+    date.set_active_id("any")
+    grid.attach(Gtk.Label(label="Modified:", xalign=0), 0, 1, 1, 1)
+    grid.attach(date, 1, 1, 1, 1)
+    extension = Gtk.Entry(placeholder_text="e.g. txt (optional)")
+    extension.get_accessible().set_name("File extension")
+    grid.attach(Gtk.Label(label="Extension:", xalign=0), 0, 2, 1, 1)
+    grid.attach(extension, 1, 2, 1, 1)
+    contents = Gtk.Entry(placeholder_text="Search text inside files (up to 1 MiB)")
+    contents.get_accessible().set_name("Text within files")
+    grid.attach(Gtk.Label(label="Containing:", xalign=0), 0, 3, 1, 1)
+    grid.attach(contents, 1, 3, 1, 1)
+    minimum = Gtk.Entry(placeholder_text="Minimum MiB (optional)")
+    maximum = Gtk.Entry(placeholder_text="Maximum MiB (optional)")
+    minimum.get_accessible().set_name("Minimum file size in MiB")
+    maximum.get_accessible().set_name("Maximum file size in MiB")
+    grid.attach(Gtk.Label(label="Size in MiB:", xalign=0), 0, 4, 1, 1)
+    limits = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
+    limits.pack_start(minimum, True, True, 0)
+    limits.pack_start(maximum, True, True, 0)
+    grid.attach(limits, 1, 4, 1, 1)
+    hidden = Gtk.CheckButton(label="Include hidden files and folders")
+    grid.attach(hidden, 1, 5, 1, 1)
+    advanced.add(grid)
+    body.pack_start(advanced, False, False, 0)
     controls = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
     start = Gtk.Button(label="Find Now")
     cancel = Gtk.Button(label="Stop")
@@ -370,7 +410,7 @@ def show_file_search(shell, Gtk, GLib):
     controls.pack_start(start, False, False, 0)
     controls.pack_start(cancel, False, False, 0)
     body.pack_start(controls, False, False, 0)
-    info = Gtk.Label(label="Searches filenames; never changes your files.", xalign=0)
+    info = Gtk.Label(label="Read-only search · up to 50,000 entries and 500 results.", xalign=0)
     body.pack_start(info, False, False, 0)
     results = Gtk.ListBox()
     area = Gtk.ScrolledWindow()
@@ -402,11 +442,32 @@ def show_file_search(shell, Gtk, GLib):
             cancel.set_sensitive(False)
         return False
 
+    def size_bytes(widget, name):
+        value = widget.get_text().strip()
+        if not value:
+            return None
+        if len(value) > 7 or not value.isdecimal():
+            raise ValueError(name + " must be a non-negative whole number in MiB.")
+        return int(value) * 1024 * 1024
+
     def perform(_button):
-        name = query.get_text().casefold().strip()
         folder = chooser.get_filename()
-        if not name or not folder or not Path(folder).is_dir():
-            info.set_text("Choose an existing folder and enter part of a filename.")
+        if not folder or not Path(folder).is_dir():
+            info.set_text("Choose an existing folder to search.")
+            return
+        try:
+            days = date.get_active_id()
+            criteria = FindCriteria(
+                name=query.get_text(), text=contents.get_text(),
+                extension=extension.get_text(),
+                kind=file_type.get_active_id(),
+                modified_within_days=None if days == "any" else int(days),
+                min_bytes=size_bytes(minimum, "Minimum size"),
+                max_bytes=size_bytes(maximum, "Maximum size"),
+                include_hidden=hidden.get_active())
+            validate_criteria(criteria)
+        except (ValueError, TypeError) as exc:
+            info.set_text(str(exc))
             return
         current["stop"].set()
         stop = threading.Event()
@@ -420,33 +481,20 @@ def show_file_search(shell, Gtk, GLib):
         info.set_text("Searching…")
 
         def worker():
-            scanned, matches, found = 0, 0, []
-            for root, dirs, files in os.walk(folder, followlinks=False):
-                if stop.is_set() or scanned >= 50000 or matches >= 500:
-                    break
-                dirs[:] = [d for d in dirs if not Path(root, d).is_symlink()]
-                for filename in (*dirs, *files):
-                    if stop.is_set() or scanned >= 50000 or matches >= 500:
-                        break
-                    scanned += 1
-                    if name in filename.casefold():
-                        found.append(Path(root, filename))
-                        matches += 1
-                    if len(found) >= 20:
-                        GLib.idle_add(batch, generation, found, scanned)
-                        found = []
-                    if scanned % 500 == 0 and not found:
-                        GLib.idle_add(batch, generation, [], scanned)
-            reason = ("stopped" if stop.is_set() else
-                      "result limit reached" if matches >= 500 else
-                      "scan limit reached" if scanned >= 50000 else "complete")
-            GLib.idle_add(batch, generation, found, scanned, True, reason)
+            def send(paths, scanned, final, reason):
+                GLib.idle_add(batch, generation, paths, scanned, final, reason)
+            try:
+                search_folder(Path(folder), criteria, stop, send)
+            except (OSError, ValueError) as exc:
+                send([], 0, True, "Search failed: " + str(exc))
 
         threading.Thread(target=worker, name="ricebowl98-find", daemon=True).start()
 
     start.connect("clicked", perform)
     cancel.connect("clicked", lambda _button: current["stop"].set())
     query.connect("activate", perform)
+    contents.connect("activate", perform)
+    extension.connect("activate", perform)
     dialog.show_all()
     dialog.run()
     current["stop"].set()
@@ -459,7 +507,7 @@ def show_help(shell, Gtk):
         "Getting started": "Start > Programs lists applications installed on Linux. Open a folder or launch an application from its submenu.",
         "Favorites": "Add or remove your own folder and website shortcuts through Start > Favorites > Organize Favorites. GTK bookmarks are also displayed.",
         "Recent documents": "Start > Documents reads GTK's actual recent-files history. Your files remain in their original folders.",
-        "Finding files": "Start > Find > Files or Folders searches names within a selected folder. You can stop the search at any time.",
+        "Finding files": "Start > Find > Files or Folders searches names and, under Advanced, extension, type, date, size and limited UTF-8 text contents. Searches run asynchronously, examine at most 50,000 entries and return at most 500 results. Text search only reads regular files up to 1 MiB each (32 MiB total). Stop cancels the search; no file content is changed.",
         "Run": "Run accepts a command and its arguments, a file or folder path, or a supported URL. Commands do not execute through a shell.",
         "Linux compatibility": "The desktop imitates Windows 98 SE, but runs native Linux programs. Windows executable files are not automatically supported.",
     }
