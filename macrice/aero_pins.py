@@ -37,6 +37,18 @@ def validate_ids(ids) -> tuple[str, ...]:
     return tuple(result)
 
 
+def reorder_pins(ids, source: str, target: str, *, after: bool = False) -> tuple[str, ...]:
+    """Move a known pinned app before/after another without adding new IDs."""
+    existing = validate_ids(ids)
+    if source not in existing or target not in existing or source == target:
+        return existing
+    moved = list(existing)
+    moved.remove(source)
+    target_index = moved.index(target)
+    moved.insert(target_index + int(after), source)
+    return tuple(moved)
+
+
 def load_pins(path: Path) -> tuple[str, ...] | None:
     """None means use built-in defaults; () is an intentional empty taskbar."""
     if path.is_symlink():

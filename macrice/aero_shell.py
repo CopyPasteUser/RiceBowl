@@ -927,6 +927,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                             "Show windows side by side", "Undo window arrangement",
                             "Start Task Manager"} <= taskbar_labels
                     taskbar_menu.destroy()
+                    if self.pinned_box.get_children():
+                        pinned_button = self.pinned_box.get_children()[0]
+                        assert pinned_button.drag_source_get_target_list() is not None
+                        assert pinned_button.drag_dest_get_target_list() is not None
                     self._win7_show_preview("app:ricebowl-ci", button)
                     assert self._win7_preview is not None
                     self._win7_stop_preview()
@@ -1437,8 +1441,50 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 btn.connect("clicked", lambda _btn, selected=app: self._launch(selected))
                 btn.connect("button-press-event", lambda widget, event, selected=app:
                             self._pin_context(widget, selected, event))
+                if profile == "aero":
+                    target = Gtk.TargetEntry.new("application/x-ricebowl-win7-pin",
+                                                 Gtk.TargetFlags.SAME_APP, 0)
+                    btn.drag_source_set(Gdk.ModifierType.BUTTON1_MASK,
+                                        [target], Gdk.DragAction.MOVE)
+                    btn.drag_dest_set(Gtk.DestDefaults.ALL, [target], Gdk.DragAction.MOVE)
+                    btn.connect("drag-data-get", lambda _button, _context, selection, _info, _time,
+                                source=identifier: selection.set(
+                                    selection.get_target(), 8, source.encode("utf-8")))
+                    btn.connect("drag-data-received", lambda button, context, x, _y, selection,
+                                _info, time, target_id=identifier:
+                                self._win7_pin_dropped(button, context, x, selection, time, target_id))
                 self.pinned_box.pack_start(btn, False, False, 0)
             self.pinned_box.show_all()
+
+        def _win7_pin_dropped(self, button, context, x, selection, time, target):
+            """Accept only local validated desktop IDs; persist before redraw."""
+            data = selection.get_data()
+            try:
+                source = data.decode("utf-8").rstrip("\x00") if data is not None else ""
+            except UnicodeDecodeError:
+                source = ""
+            success = self._win7_reorder_pin(source, target,
+                                             after=x >= button.get_allocated_width() / 2)
+            Gtk.drag_finish(context, success, False, time)
+
+        def _win7_reorder_pin(self, source, target, *, after=False):
+            if profile != "aero":
+                return False
+            from .aero_pins import reorder_pins
+
+            if source not in self._pinned_ids or target not in self._pinned_ids:
+                return False
+            candidate = reorder_pins(self._pinned_ids, source, target, after=after)
+            if candidate == self._pinned_ids:
+                return True
+            try:
+                save_pins(self._pin_config_path, candidate)
+            except (PinConfigError, OSError) as exc:
+                self._error("Unable to save taskbar pin order: " + str(exc))
+                return False
+            self._pinned_ids = candidate
+            self._render_pins()
+            return True
 
         def _pin_context(self, widget, app, event=None):
             if event is not None and event.button != 3:
@@ -1467,6 +1513,18 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                                      self._win7_launch_recent(selected, address))
                         menu.append(item)
                 menu.append(Gtk.SeparatorMenuItem())
+                if pinned and len(self._pinned_ids) > 1:
+                    index = self._pinned_ids.index(identifier)
+                    for title, delta in (("Move pin left", -1), ("Move pin right", 1)):
+                        item = Gtk.MenuItem(label=title)
+                        destination = index + delta
+                        item.set_sensitive(0 <= destination < len(self._pinned_ids))
+                        if 0 <= destination < len(self._pinned_ids):
+                            adjacent = self._pinned_ids[destination]
+                            item.connect("activate", lambda _item, target=adjacent, kind=delta:
+                                         self._win7_reorder_pin(identifier, target, after=kind > 0))
+                        menu.append(item)
+                    menu.append(Gtk.SeparatorMenuItem())
             elif profile == "winxp":
                 launch = self._luna_menu_item("Open " + (app.get_display_name() or app.get_name()),
                                               app.get_icon() or "application-x-executable")

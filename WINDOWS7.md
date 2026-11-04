@@ -68,6 +68,11 @@ captures and physical Mint verification remain open.
   `gnome-system-monitor` only when installed; otherwise the menu is disabled.
 - Right-click pinned programs to open real MIME-compatible local recent files
   through that program. Empty Jump Lists never invent entries.
+- Pinned app icons can be rearranged by dragging one onto the left/right half
+  of another. The Jump List also offers **Move pin left/right** for keyboard
+  navigation and touchpad users. The existing Aero-only pinned-app JSON is
+  saved atomically; malformed configuration and missing launcher identities
+  are never accepted as drag sources.
 - Hover **Show Desktop** to temporarily reveal the desktop; moving away restores
   the previous state, while clicking commits the Show Desktop action.
 
