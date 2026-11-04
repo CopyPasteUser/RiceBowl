@@ -108,7 +108,18 @@ Current evidence: source files, existing roadmap, current repository screenshot 
 - [x] Refine Win98 Run with a 12-item in-memory history, a Clear history action and inline failure text. Four ordering/bounds tests added; hardware interaction remains to be validated.
 - [x] Add Programs submenu context actions for Open / Add to Quick Launch / Remove from Quick Launch, respecting the existing per-rice pin limit, with three focused menu-state tests. Real pointer/focus acceptance remains open.
 
-**Still open:** complete original hover/cascade keyboard geometry; folders within Favorites; Programs context actions; persistent opt-in Run history and .desktop targeting; Finder content/date/type search and computer discovery; advanced Taskbar options (auto-hide/position), dedicated Folder Options; full Display Properties tabs; independent Quick Launch configuration; comprehensive tray NetworkManager/XEmbed operation; window context menus; desktop virtual folders; structural riceExplorer skin; Win98/2000 preset split; era accessories; and physical Mint acceptance. Do not close a milestone until its full gate passes.
+### Implementation checkpoint — Windows 98 Find filters (4 November 2026)
+
+**Implemented on feature branch; CI and physical Mint acceptance required before closing a full milestone.**
+
+- [x] Extend Find → Files or Folders with real filename, extension, file/folder, modification-period, size and hidden-file filters; preserve the familiar single-window Find flow with an expandable advanced section.
+- [x] Add bounded UTF-8 content search of ordinary files (1 MiB per file / 32 MiB per request). Content search never follows final symlinks or opens non-regular file devices.
+- [x] Keep asynchronous worker scanning, 50,000-entry / 500-result caps, stale-generation protection and explicit Stop behavior; no indexing service or file mutation.
+- [x] Add nine disposable-filesystem regressions for filtering, text matching, symlink avoidance, cancellation and bounded results.
+- [ ] Validate full Find dialog on physical Mint, 640×480 and 1024×768, including keyboard-only operation, missing permissions, network volumes and very large folders.
+- [ ] Integrate future RiceExplorer search backend instead of duplicating engines when its safe search API is ready; add Computer discovery only after GIO/GVfs integration.
+
+**Still open:** complete original hover/cascade keyboard geometry; folders within Favorites; Programs context actions; persistent opt-in Run history and .desktop targeting; Finder Computer discovery, full-text indexing and rich search results; advanced Taskbar options (auto-hide/position), dedicated Folder Options; full Display Properties tabs; independent Quick Launch configuration; comprehensive tray NetworkManager/XEmbed operation; window context menus; desktop virtual folders; structural riceExplorer skin; Win98/2000 preset split; era accessories; and physical Mint acceptance. Do not close a milestone until its full gate passes.
 
 ### Milestone 0 — Freeze references, safe state and test harness (P0)
 
