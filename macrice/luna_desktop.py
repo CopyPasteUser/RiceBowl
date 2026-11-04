@@ -1,4 +1,4 @@
-"""Opt-in XP desktop launchers for XFDesktop, never a replacement desktop daemon.
+"""Opt-in RiceBowl desktop launchers for XFDesktop, not a desktop daemon.
 
 Only RiceBowl-owned, byte-identical desktop entries can be removed. Existing
 user files and even edited RiceBowl entries are always preserved.
@@ -29,13 +29,16 @@ def desktop_path(home: Path | None = None, config: Path | None = None) -> Path:
     return home / "Desktop"
 
 
-def _desktop_entry(label: str, icon: str, uri: str) -> str:
+def _desktop_entry(label: str, icon: str, uri: str, *,
+                   managed_marker: str = "X-RiceBowl-XP-Managed") -> str:
+    if managed_marker not in ("X-RiceBowl-XP-Managed", "X-RiceBowl-Win7-Managed"):
+        raise ValueError("Unsupported RiceBowl desktop marker")
     # Desktop Entry Exec field codes use %, unlike a shell or URL. Escape it.
     escaped = uri.replace("%", "%%").replace("\\", "\\\\").replace('"', '\\"')
     return ("[Desktop Entry]\nType=Application\nVersion=1.0\n"
             f"Name={label}\nComment=Open {label} using the default file manager\n"
             f"Icon={icon}\nExec=gio open \"{escaped}\"\nTerminal=false\n"
-            "StartupNotify=true\nX-RiceBowl-XP-Managed=true\n")
+            f"StartupNotify=true\n{managed_marker}=true\n")
 
 
 def entries(home: Path | None = None) -> dict[str, str]:
@@ -57,7 +60,8 @@ def entries(home: Path | None = None) -> dict[str, str]:
 
 
 def manage(action: str, *, folder: Path | None = None,
-           catalog: dict[str, str] | None = None) -> tuple[tuple[str, ...], tuple[str, ...]]:
+           catalog: dict[str, str] | None = None,
+           prefix: str = "ricebowl-xp") -> tuple[tuple[str, ...], tuple[str, ...]]:
     """Return (changed, preserved); write/create only with explicit install.
 
     `remove` deletes only files exactly matching our generated content. `status`
@@ -65,6 +69,8 @@ def manage(action: str, *, folder: Path | None = None,
     """
     if action not in ("install", "remove", "status"):
         raise ValueError("Expected install, remove or status")
+    if prefix not in ("ricebowl-xp", "ricebowl-win7"):
+        raise ValueError("Unsupported managed desktop prefix")
     folder = folder or desktop_path()
     catalog = catalog if catalog is not None else entries()
     if folder.is_symlink() or (folder.exists() and not folder.is_dir()):
@@ -73,7 +79,7 @@ def manage(action: str, *, folder: Path | None = None,
         raise RuntimeError("Desktop directory does not exist; set it up in XFCE first")
     changed, preserved = [], []
     for filename, content in catalog.items():
-        if not re.fullmatch(r"ricebowl-xp-[a-z-]+\.desktop", filename):
+        if not re.fullmatch(re.escape(prefix) + r"-[a-z-]+\.desktop", filename):
             raise ValueError("Unexpected desktop entry name")
         target = folder / filename
         if target.is_symlink() or (target.exists() and not target.is_file()):
@@ -93,7 +99,7 @@ def manage(action: str, *, folder: Path | None = None,
             else:
                 preserved.append(filename + " (installed)")
         elif action == "install":
-            descriptor, temporary = tempfile.mkstemp(prefix=".ricebowl-xp-", dir=folder)
+            descriptor, temporary = tempfile.mkstemp(prefix="." + prefix + "-", dir=folder)
             try:
                 with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
                     stream.write(content)

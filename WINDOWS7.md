@@ -69,7 +69,8 @@ owner's Linux Mint XFCE acceptance; CI captures are not a physical desktop photo
 | **Control Panel** | [win7_control_panel.py](macrice/win7_control_panel.py) | Eight categories, three views, Back/Forward, applet details, installed Linux actions and unavailable states |
 | **Pinned applications** | [aero_pins.py](macrice/aero_pins.py) | Right-click a Start result to pin, right-click taskbar icon to unpin; 6 persistent launchers maximum |
 | **Show Desktop** | [aero_windows.py](macrice/aero_windows.py) | Wnck Show Desktop with safe reversible hover Peek and click action |
-| **Notification area** | [win7_tray.py](macrice/win7_tray.py) / [aero_tray.py](macrice/aero_tray.py) | Five Aero native-device flyouts, optional D-Bus StatusNotifier icons and context menu |
+| **Notification area** | [win7_tray.py](macrice/win7_tray.py) / [aero_tray.py](macrice/aero_tray.py) | Five native Aero flyouts; SNI chevron hides excess application icons while prioritizing attention and exposing an accessible activation menu |
+| **Desktop icons** | [win7_desktop.py](macrice/win7_desktop.py) | Explicit, reversible XFDesktop shortcuts for Computer, Documents, Network and Recycle Bin; user files and edited entries remain untouched |
 | **Clock / quick links** | [aero_shell.py](macrice/aero_shell.py) | Clickable date/calendar and live volume, Wi-Fi, Bluetooth and battery buttons |
 | **Glass** | [Aero shell CSS](macrice/aero_shell.py) | Glass-inspired gradient, optional translucent variant; no compositor blur guarantee |
 | **Window decoration** | [XFWM4 theme](assets/themes/RiceHub-Aero/xfwm4/) | Real minimize, maximize, close, shading, sticky, border and title button artwork |
@@ -127,6 +128,15 @@ promise currently unsupported remote mounts and complete transfer recovery.
 
 ### Customization and compatibility
 
+- **Notification chevron:** At most three active application SNI icons appear
+  directly beside the clock/system icons. The upward arrow opens the remaining
+  entries; those marked `NeedsAttention` take priority. Right-click the hidden
+  entry to request its application's context menu. This only affects Aero.
+- **Real desktop links:** Right-click a *blank section* of the Windows 7
+  Superbar to add or remove RiceBowl's Computer, Documents, Network and
+  Recycle Bin shortcuts. The action asks permission, uses XFDesktop's actual
+  desktop directory, and preserves existing or user-edited files. The same
+  menu opens real desktop personalization if `xfdesktop-settings` exists.
 - **Taskbar pins:** Right-click a program in the Start search results to **Pin to taskbar**; right-click its taskbar icon to **Unpin**. The list is stored atomically in `${XDG_CONFIG_HOME:-~/.config}/ricehub/aero-pins.json`. No shell commands are read from this file; only validated desktop IDs.
 - **Translucent look:** Relaunch with `RICEHUB_AERO_GLASS=1 macrice aero-shell`. This is translucent styling, **not** true wallpaper blur. A compositor and RGBA support determine its appearance.
 - **Tray opt-out:** Use `RICEHUB_AERO_TRAY=0 macrice aero-shell` if another tray implementation conflicts.

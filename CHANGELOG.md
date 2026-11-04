@@ -7,6 +7,21 @@
 - Added a native read-only System Properties applet with real Linux kernel, CPU, RAM, network, disk and uptime data, plus manual Refresh.
 - Added disposable-file-system and native GTK/Xvfb regression coverage. Physical Mint acceptance and the remaining Classic roadmap remain outstanding.
 
+## Unreleased — Windows 7 Superbar overflow and desktop integration (4 November 2026)
+
+- Added a Windows 7-only StatusNotifier overflow chevron. The Superbar shows up
+  to three active application tray icons, prioritizes urgent attention icons,
+  and opens a keyboard-accessible Aero popup for remaining live SNI entries.
+  Passive icons stay hidden; XP/ChromeOS/Frutiger tray behavior is unchanged.
+- Added opt-in, safely removable Windows 7 desktop shortcuts for Computer,
+  Documents, Network and Recycle Bin via XFDesktop/GIO. Installation/removal
+  requires confirmation, never overwrites existing/edited files, and does not
+  alter default file manager or XFCE configuration.
+- The blank Windows 7 taskbar now has a right-click menu for Show Desktop,
+  managed desktop icon installation/removal, and the actual XFDesktop settings.
+- Added selection, icon-state and filesystem-safety regression tests.
+  Live SNI applets and physical Mint/XFCE acceptance remain outstanding.
+
 ## Unreleased — Windows 7 Aero deep controls (4 November 2026)
 
 - Added distinctly Windows 7-style native tray windows for volume/output
