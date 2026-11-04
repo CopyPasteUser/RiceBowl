@@ -1,5 +1,17 @@
 # RiceBowl changelog
 
+## Unreleased — Windows 7 persistent Superbar pin ordering (4 November 2026)
+
+- Reorder pinned Windows 7 launchers by dragging onto another pin's left/right
+  half. The GTK target accepts drags only from this running application and
+  validates stable existing `.desktop` IDs before writing anything.
+- Add keyboard-accessible **Move pin left/right** actions to pinned launcher
+  Jump Lists, disabled at the corresponding list edge. Persist order through
+  the existing validated, atomic Aero pin file with visible save errors.
+- Add pure before/after/no-op/corruption tests and native GTK/X11 DnD target
+  registration smoke assertions. The other rice families keep their previous
+  pin behavior. Physical DnD acceptance on Mint XFCE is still open.
+
 ## Unreleased — Windows 7 taskbar window layout and Task Manager (4 November 2026)
 
 - Completed native blank-Superbar context actions for **Cascade windows**,

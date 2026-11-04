@@ -62,6 +62,9 @@ secondary pages; prototypes and the release roadmap do not crowd the selector.
   leave XFWM4 shortcuts untouched. The blank taskbar's classic Arrange commands
   cascade, stack or place genuine visible windows side by side on the active
   monitor, with reversible snapshots and an optional installed Task Manager.
+  Aero pins have same-application drag/drop movement with exact left/right drop
+  halves, plus keyboard-accessible context actions; their existing atomic
+  Aero-only preference file is the single authority for persistent order.
   Edge-drag, global Win+Arrow and Shake remain
   open. A 450ms Show Desktop hover provides reversible Peek; it is not full
   compositor transparency. `scripts/build_aero_assets.py` owns generated art;

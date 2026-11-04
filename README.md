@@ -47,6 +47,9 @@ menus can tile individual windows left/right, maximize and restore their
 original position using the monitor's available workarea.
 Right-click empty Superbar space for real Cascade/Stacked/Side-by-side window
 layouts, Undo window arrangement and an installed Linux Task Manager.
+Pinned Windows 7 launcher icons can now be reordered using drag and drop or
+keyboard-accessible **Move pin left/right** Jump List actions; each change is
+persisted in the existing reversible Aero pin configuration.
 Configure visible icons from the chevron or blank-Superbar context menu. Installed
 [RiceExplorer](https://github.com/CopyPasteUser/riceExplorer) appears as an
 optional Windows 7 preview in Start; Thunar remains the default while file

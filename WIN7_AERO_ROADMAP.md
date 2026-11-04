@@ -219,6 +219,21 @@ right-click arrangement is **not** a substitute for edge-drag/keyboard Snap.
 This covers native taskbar arrangement actions but not taskbar locking,
 relocation, autohide, complete Win7 Jump Lists or edge-drag Snap/Shake.
 
+### P1 progress — persistent Superbar pin reordering
+
+- [x] Allow drag/drop reordering of actual Windows 7 pinned app icons with
+  before/after drop targets on each icon; accept only this application's
+  validated existing `.desktop` IDs, never arbitrary files/text/commands.
+- [x] Add keyboard-accessible **Move pin left/right** to each pinned app's
+  Jump List, disabled at edges, without changing pinned entries in other rice
+  families or any desktop file associations.
+- [x] Save changes through the existing atomic, symlink-resistant Aero pin
+  store; keep the previous order on write errors and expose the failure.
+- [x] Add pure reorder/invalid-input tests and native GTK/X11 smoke checks
+  for drag source/target setup.
+- [ ] Physically validate drag threshold, click-vs-drag, context menus, pointer
+  and keyboard behavior on the owner's real XFCE/X11 system (mouse and touchpad).
+
 ### P0 — Close the biggest depth and functionality gaps
 
 - [ ] **Authentic notification area and native-feeling flyouts:** small Aero-style controls anchored to the corresponding Superbar icon. Audio: real volume/mute and output switching; network: actual wired/Wi-Fi status, discovery, connect/disconnect through NetworkManager; power: battery/charge, supported brightness and power profile; clock: date/calendar; Bluetooth: adapter/device view when installed. Display success only after verifying the backend state. Handle absent hardware, offline mode, permission errors, timeouts and unsupported actions honestly. This is Windows 7's notification area, **not Windows 10's Action Center**.
