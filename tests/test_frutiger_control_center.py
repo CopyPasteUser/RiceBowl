@@ -6,7 +6,10 @@ import unittest
 from pathlib import Path
 
 from macrice.frutiger_control_center import (AQUA_CATEGORIES, available_tool,
-                                             search_aqua)
+                                             search_aqua, DETAIL_PROBES)
+from macrice.frutiger_device_details import (split_nmcli_fields, wifi_networks,
+                                             bluetooth_adapter, audio_outputs,
+                                             connected_displays, probe)
 from macrice.heritage_shell import CSS
 
 
@@ -39,6 +42,15 @@ class AquaControlCenterTests(unittest.TestCase):
         self.assertIn("Default applications", [task[0] for _, task in search_aqua("BROWSER")])
         self.assertEqual(search_aqua("no setting could match this string"), ())
 
+    def test_live_detail_probes_cover_real_device_pages(self):
+        for key in (("connections", "Network connections"),
+                    ("connections", "Bluetooth devices"),
+                    ("sound", "Input & output devices"),
+                    ("display", "Display configuration"),
+                    ("system", "System information")):
+            self.assertIn(key, DETAIL_PROBES)
+        self.assertIn("Unsupported", probe("not-an-adapter").error)
+
     def test_external_commands_are_strictly_allowlisted_and_installed(self):
         self.assertEqual(available_tool(("nm-connection-editor",), lambda cmd: "/bin/tool"),
                          "nm-connection-editor")
@@ -55,7 +67,8 @@ class AquaControlCenterTests(unittest.TestCase):
         for selector in (b".aqua-control-category", b".aqua-control-task",
                          b".aqua-control-detail-title", b".aqua-control-search:focus",
                          b".aqua-control-unavailable", b".aqua-control-live",
-                         b".aqua-control-launch:hover"):
+                         b".aqua-control-launch:hover", b"popover.aqua-flyout",
+                         b".aqua-flyout-mute:checked", b".aqua-control-probe-error"):
             self.assertIn(selector, css)
         for profile in ("winxp", "aero", "winclassic", "chromeos", "windows10"):
             if profile in CSS:
@@ -66,9 +79,13 @@ class AquaControlCenterTests(unittest.TestCase):
         self.assertIn('from .frutiger_control_center import build', source)
         self.assertIn('self._show_aqua_control(page)', source)
         self.assertIn('self._show_aqua_control())', source)
-        self.assertIn('"audio": "sound", "network": "connections"', source)
-        self.assertIn('"battery": "power"', source)
         self.assertIn('self.aqua_control_show_category(category)', source)
+        self.assertIn('self._aqua_flyouts.show(name)', source)
+        flyouts = (ROOT / 'macrice/frutiger_flyouts.py').read_text(encoding='utf-8')
+        for marker in ('"network": "connections"', '"audio": "sound"',
+                       '"battery": "power"', 'shell._queue_volume_change',
+                       'shell._toggle_output_mute', 'Gtk.Popover.new(button)'):
+            self.assertIn(marker, flyouts)
 
     def test_places_reads_live_gio_mounts_and_uses_real_trash(self):
         source = (ROOT / "macrice/aero_shell.py").read_text(encoding="utf-8")
@@ -79,6 +96,33 @@ class AquaControlCenterTests(unittest.TestCase):
                            '"mount-added", "mount-removed", "mount-changed"',
                            'self._open_uri("trash:///")', 'DIRECTORY_DESKTOP'):
             self.assertIn(expression, launcher)
+
+    def test_nmcli_escaped_colons_and_sorted_real_networks(self):
+        self.assertEqual(split_nmcli_fields(r"yes:Cafe\:2.4G:90:WPA2"),
+                         ("yes", "Cafe:2.4G", "90", "WPA2"))
+        self.assertEqual(split_nmcli_fields(r"no:Wifi\\Guest:40:"),
+                         ("no", "Wifi\\Guest", "40", ""))
+        result = wifi_networks(run=lambda args: (
+            "no:Other:25:WPA3\nyes:Cafe\\:2.4G:91:WPA2\n"
+            "no:Other:60:WPA3\ninvalid\n", None))
+        self.assertEqual(result.lines, (
+            "Connected · Cafe:2.4G · 91% · WPA2", "Other · 60% · WPA3"))
+        self.assertIn("unavailable", wifi_networks(
+            run=lambda args: (None, "unavailable")).error)
+
+    def test_read_only_bluetooth_audio_and_display_probes(self):
+        self.assertEqual(bluetooth_adapter(run=lambda args: (
+            "Controller 11:22:33\n\tName: Desk Bluetooth\n\tPowered: yes\n", None)).lines,
+            ("Adapter: Desk Bluetooth", "Power: On"))
+        self.assertIn("No Bluetooth", bluetooth_adapter(
+            run=lambda args: ("No default controller available", None)).error)
+        self.assertEqual(audio_outputs(run=lambda args: (
+            "0\talsa_output.usb\tmodule\ts16le\tRUNNING\n", None)).lines,
+            ("alsa_output.usb · RUNNING",))
+        self.assertEqual(connected_displays(run=lambda args: (
+            "Screen 0\nHDMI-1 connected primary 1920x1080+0+0\n"
+            "DP-1 disconnected\neDP-1 connected 1366x768+0+0\n", None)).lines,
+            ("HDMI-1 · 1920x1080", "eDP-1 · 1366x768"))
 
 
 if __name__ == "__main__":

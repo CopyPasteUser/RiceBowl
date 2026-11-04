@@ -625,6 +625,41 @@ menu menuitem:hover { background: #000080; color: #fff; }
 .aqua-control-root .aqua-control-unavailable { color: #924f2f; font-weight: bold;
   padding: 9px; border: 1px solid #eccdb3; border-radius: 10px; background: #fff6ea; }
 .aqua-control-root .aqua-control-live-label { color: #075c7a; font-weight: bold; }
+.aqua-control-root .aqua-control-probe-result {
+  color: #185d6c; background: #f6fffc; border: 1px solid #acd9d7;
+  border-radius: 11px; padding: 10px 12px; font-size: 12px;
+}
+.aqua-control-root .aqua-control-probe-error {
+  color: #8b492e; background: #fff6e9; border-color: #eac7ad;
+}
+popover.aqua-flyout > contents {
+  background-image: linear-gradient(to bottom, #faffff, #e8fff6 44%, #ace6e6);
+  color: #07536e; border: 2px solid #94d4df; border-radius: 20px;
+  box-shadow: inset 0 2px #fff, 0 4px 15px rgba(5,77,113,.26);
+}
+.aqua-flyout .aqua-flyout-root { padding: 12px; }
+.aqua-flyout .aqua-flyout-heading {
+  background-image: linear-gradient(#ffffff, #d8fff4 45%, #99e0e3);
+  border-radius: 13px; border: 1px solid #a1dbe1; padding: 7px;
+  box-shadow: inset 0 1px #fff;
+}
+.aqua-flyout .aqua-flyout-title { color: #076682; font-weight: bold; font-size: 15px; }
+.aqua-flyout .aqua-flyout-status { color: #175e6d; font-size: 12px; padding: 4px 6px; }
+.aqua-flyout .aqua-flyout-more, .aqua-flyout .aqua-flyout-mute {
+  color: #075874; background-image: linear-gradient(#ffffff, #e2fff7 42%, #9ce3dc);
+  border-radius: 12px; border: 1px solid #7dc7d2; padding: 8px;
+  box-shadow: inset 0 1px #fff;
+}
+.aqua-flyout .aqua-flyout-mute:checked { background-image: linear-gradient(#f5ffc5, #9edb69);
+  border-color: #569e76; }
+.aqua-flyout .aqua-flyout-more:hover, .aqua-flyout .aqua-flyout-mute:hover,
+.aqua-flyout .aqua-flyout-more:focus, .aqua-flyout .aqua-flyout-mute:focus {
+  border-color: #158dbb; background-image: linear-gradient(#ffffff, #dcffdb, #87dcc2);
+}
+.aqua-flyout scale trough { background: #d7f3ef; border-radius: 7px;
+  border: 1px solid #8dcbd3; min-height: 8px; }
+.aqua-flyout scale highlight { background-image: linear-gradient(#e5ffb0, #75cd5c);
+  border-radius: 7px; }
 .aqua-control-root .aqua-control-close:hover, .aqua-control-root .aqua-control-back:hover,
 .aqua-control-root .aqua-control-category:hover, .aqua-control-root .aqua-control-task:hover,
 .aqua-control-root .aqua-control-launch:hover { border-color: #249cb8;

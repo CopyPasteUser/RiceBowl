@@ -1138,7 +1138,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 subprocess.Popen([executable], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                                  stderr=subprocess.DEVNULL, close_fds=True, start_new_session=True)
                 self._hide_menu()
-                if ten or profile == "chromeos":
+                if ten or profile in ("chromeos", "frutiger"):
                     self._hide_actions()
             except OSError as exc:
                 self._error(str(exc))
@@ -1240,8 +1240,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
         def _status_action(self, name):
             """Open usable controls for audio/power; network settings for Wi-Fi."""
             if profile == "frutiger":
-                self._show_aqua_control({"audio": "sound", "network": "connections",
-                                         "battery": "power"}[name])
+                if not hasattr(self, "_aqua_flyouts"):
+                    from .frutiger_flyouts import AquaFlyouts
+
+                    self._aqua_flyouts = AquaFlyouts(self, Gtk)
+                self._aqua_flyouts.show(name)
                 return
             if name in ("audio", "battery"):
                 self._toggle_actions()
@@ -1304,11 +1307,15 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     detail = getattr(self, "aqua_control_detail_status", None)
                     if detail is not None:
                         detail.set_text("Device status temporarily unavailable")
+                if hasattr(self, "_aqua_flyouts"):
+                    self._aqua_flyouts.sync(None)
                 for button, _image, _label in self._status_widgets.values():
                     button.set_sensitive(False)
                     button.set_tooltip_text("Hardware status temporarily unavailable")
                 return False
             self._last_status = status
+            if hasattr(self, "_aqua_flyouts"):
+                self._aqua_flyouts.sync(status)
             if hasattr(self, "frutiger_status_label"):
                 self.frutiger_status_label.set_text(frutiger_status_summary(status))
             if hasattr(self, "control_network_label"):
@@ -3518,6 +3525,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             """Open a real Aqua detail page without toggling an open panel shut."""
             if profile != "frutiger":
                 return
+            if hasattr(self, "_aqua_flyouts"):
+                for popover in self._aqua_flyouts.popovers.values():
+                    popover.popdown()
             if not self.actions.get_visible():
                 self._toggle_actions()
             if self.actions.get_visible():

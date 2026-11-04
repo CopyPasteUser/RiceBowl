@@ -8,6 +8,10 @@ and mute are handled by RiceBowl's existing verified hardware backend.
 from __future__ import annotations
 
 import shutil
+import threading
+import logging
+
+from .frutiger_device_details import ProbeResult, probe
 
 
 # id, label, icon, short explanation, (label, icon, utility candidates, purpose)
@@ -82,6 +86,16 @@ AQUA_CATEGORIES = (
     )),
 )
 
+# Device detail views are intentionally read-only; writes remain with the
+# verified audio backend and installed Linux configuration utilities.
+DETAIL_PROBES = {
+    ("connections", "Network connections"): "wifi",
+    ("connections", "Bluetooth devices"): "bluetooth",
+    ("sound", "Input & output devices"): "audio",
+    ("display", "Display configuration"): "display",
+    ("system", "System information"): "system",
+}
+
 
 def available_tool(candidates, which=shutil.which):
     """Return an installed allowlisted utility, or None for a read-only leaf."""
@@ -104,6 +118,8 @@ def search_aqua(query):
 
 def build(shell, Gtk, Gdk):
     """Create the independently styled Aqua dashboard/category/task hierarchy."""
+    from gi.repository import GLib
+
     window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
     window.set_title("Aqua World · Control Center")
     window.set_decorated(False)
@@ -174,12 +190,14 @@ def build(shell, Gtk, Gdk):
         stack.add_named(child, name)
 
     current = ["home", None, None]
+    request_serial = [0]
 
     def clear_box(box):
         for child in tuple(box.get_children()):
             box.remove(child)
 
     def navigate(page, category=None, task=None):
+        request_serial[0] += 1
         current[:] = [page, category, task]
         stack.set_visible_child_name(page)
         back.set_sensitive(page != "home")
@@ -278,8 +296,48 @@ def build(shell, Gtk, Gdk):
                       " to configure this feature.", xalign=0), "aqua-control-unavailable")
             missing.set_line_wrap(True)
             details.pack_start(missing, False, False, 5)
+
+        kind = DETAIL_PROBES.get((category[0], task[0]))
+        if kind:
+            result_heading = shell._class(Gtk.Label(label="Checking live devices…", xalign=0),
+                                           "aqua-control-live-label")
+            result_heading.set_line_wrap(True)
+            details.pack_start(result_heading, False, False, 4)
+            result_body = shell._class(Gtk.Label(label="", xalign=0),
+                                        "aqua-control-probe-result")
+            result_body.set_line_wrap(True)
+            result_body.set_selectable(True)
+            details.pack_start(result_body, False, False, 0)
         details.show_all()
         navigate("detail", category, task)
+        if kind:
+            serial = request_serial[0]
+
+            def worker():
+                try:
+                    result = probe(kind)
+                except Exception as exc:
+                    logging.getLogger(__name__).warning(
+                        "Aqua device probe %s failed: %s", kind, type(exc).__name__)
+                    result = ProbeResult("Device information", (),
+                                         "This device could not be read; try again later")
+
+                def apply():
+                    if (serial != request_serial[0] or current[0] != "detail"
+                            or current[2] != task):
+                        return False
+                    result_heading.set_text(result.title)
+                    if result.error:
+                        result_body.get_style_context().add_class("aqua-control-probe-error")
+                        result_body.set_text(result.error)
+                    else:
+                        result_body.set_text("\n".join(result.lines))
+                    return False
+
+                GLib.idle_add(apply)
+
+            threading.Thread(target=worker, daemon=True,
+                             name="ricebowl-aqua-" + kind).start()
 
     def show_home():
         shell.aqua_control_detail_status = None

@@ -129,6 +129,15 @@ the full P0 requirements below**:
   instead of immediately leaving Aqua for an XFCE utility.
 - The existing backend-verified output volume/mute and live network/battery
   feedback remain; status now refreshes on opening and reports probe failure.
+- Compact `Gtk.Popover` flyouts are attached to the actual taskbar network,
+  sound and battery buttons. Sound has live volume/mute controls using the
+  same verified backend, and every bubble links to its deep Aqua category.
+- Selected detail leaves now read real Linux devices asynchronously with a
+  bounded timeout and explicit errors: nearby NetworkManager Wi-Fi SSIDs,
+  BlueZ controller power, audio outputs, connected XRandR displays and
+  system/kernel/storage metadata. Responses from a previous view are ignored
+  after navigation; no Wi-Fi or Bluetooth setting is simulated or silently
+  changed. Fine-grained connect/pair/device changes still use installed tools.
 - Places adds Desktop, File system, real Trash, mounted removable/network
   volumes and event-driven Gio mount hotplug updates without background polls.
 - CSS scope: only the Frutiger rice receives the deeper Aqua material system.
@@ -137,8 +146,8 @@ the full P0 requirements below**:
   GTK3 CSS parser. **Native X11 screenshot and actual Mint/XFCE acceptance
   remain unverified in this runtime**.
 
-**Still open:** full NetworkManager and BlueZ control backends, device and
-display settings, personalization persistence, compact device flyouts,
+**Still open:** full NetworkManager and BlueZ write backends, device and
+display settings, personalization persistence, richer notification/media flyouts,
 RiceExplorer Aqua renderer, icon family, screenshots and the 35 end-to-end
 acceptance scenarios.
 

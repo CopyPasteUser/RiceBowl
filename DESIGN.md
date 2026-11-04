@@ -168,6 +168,12 @@ secondary pages; prototypes and the release roadmap do not crowd the selector.
   installed allowlisted Linux utilities are available from their detail pages
   with explicit feedback when missing. `Your World` Places uses Gio's real
   mount monitor for hotplugged storage and network locations, plus XDG Trash.
+  `macrice/frutiger_device_details.py` provides bounded asynchronous read-only
+  probes (NetworkManager Wi-Fi names/strengths, BlueZ adapter, audio sinks,
+  XRandR displays, actual kernel/disk details). Stale views cannot overwrite
+  a newer settings page. `macrice/frutiger_flyouts.py` owns small anchored
+  network, sound and power bubbles with actual sound volume/mute controls and
+  deep links into the native Aqua pages, reusing the shared status poller.
   The installed third-party app's windows are *not* misleadingly represented
   as Aqua-native settings; advanced networking still uses real Linux tools.
   `_create_frutiger_menu()` renders a rounded `Your World` head with **real**
