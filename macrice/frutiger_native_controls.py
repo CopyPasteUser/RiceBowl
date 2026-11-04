@@ -27,10 +27,14 @@ NATIVE_TASKS = frozenset({
 
 
 class NativeAquaControls:
-    def __init__(self, shell, Gtk, GLib, parent, *, is_current, style_prefix="aqua"):
+    def __init__(self, shell, Gtk, GLib, parent, *, is_current, style_prefix="aqua",
+                 backend=None, runner=None):
         self.shell, self.Gtk, self.GLib = shell, Gtk, GLib
         self.parent, self.is_current = parent, is_current
         self.style_prefix = style_prefix
+        self.backend = backend if backend is not None else hw
+        self.runner = runner
+        self._disposed = False
         self._generation = 0
         self._syncing = False
         self._busy = False
@@ -146,7 +150,7 @@ class NativeAquaControls:
 
     def _submit(self, writer=None, *, completion=None):
         """Serialize GTK actions and discard results from a left-behind page."""
-        if self._busy or not self.is_current() or self._reader is None:
+        if getattr(self, "_disposed", False) or self._busy or not self.is_current() or self._reader is None:
             return
         self._generation += 1
         generation = self._generation
@@ -154,7 +158,7 @@ class NativeAquaControls:
         self._set_sensitive(False)
         self._status("Applying and verifying…" if writer else "Reading device state…")
 
-        def worker():
+        def probe():
             failure = None
             try:
                 if writer:
@@ -170,39 +174,63 @@ class NativeAquaControls:
                 read_ok = False
                 failure = failure or str(exc)[:220]
                 logging.getLogger(__name__).warning("Aqua device read-back: %s", type(exc).__name__)
+            return snapshot, read_ok, failure
 
-            def apply():
-                if generation != self._generation or not self.is_current():
-                    self._busy = False
-                    return False
+        def apply(response):
+            if generation != self._generation:
+                return False  # A newer request owns the busy state.
+            if getattr(self, "_disposed", False) or not self.is_current():
                 self._busy = False
-                self._set_sensitive(read_ok)
-                summary = [None]
-                if read_ok:
-                    try:
-                        self._set_values(lambda: summary.__setitem__(0, self._renderer(snapshot)))
-                    except (AttributeError, TypeError, ValueError) as exc:
-                        logging.getLogger(__name__).warning("Aqua device render: %s", type(exc).__name__)
-                        failure_message = "Unable to display the device state"
-                        self._status(failure_message, error=True)
-                        self._set_sensitive(False)
-                        self.refresh_button.set_sensitive(True)
-                        return False
-                if failure:
-                    self._status(failure, error=True)
-                    # The last confirmed state is restored from the read-back;
-                    # leave Refresh enabled even when that read also failed.
-                    if not read_ok:
-                        self._set_sensitive(False)
-                        self.refresh_button.set_sensitive(True)
-                else:
-                    self._status(completion or ("Applied and verified" if writer else
-                                    summary[0] or "Live device state"))
                 return False
+            self._busy = False
+            snapshot, read_ok, failure = response
+            self._set_sensitive(read_ok)
+            summary = [None]
+            if read_ok:
+                try:
+                    self._set_values(lambda: summary.__setitem__(0, self._renderer(snapshot)))
+                except (AttributeError, TypeError, ValueError) as exc:
+                    logging.getLogger(__name__).warning("Aqua device render: %s", type(exc).__name__)
+                    self._status("Unable to display the device state", error=True)
+                    self._set_sensitive(False)
+                    self.refresh_button.set_sensitive(True)
+                    return False
+            if failure:
+                self._status(failure, error=True)
+                if not read_ok:
+                    self._set_sensitive(False)
+                    self.refresh_button.set_sensitive(True)
+            else:
+                self._status(completion or ("Applied and verified" if writer else
+                                summary[0] or "Live device state"))
+            return False
 
-            self.GLib.idle_add(apply)
+        if getattr(self, "runner", None) is not None:
+            def completed(response):
+                if response.error:
+                    apply((None, False, response.error))
+                else:
+                    apply(response.value)
 
-        threading.Thread(target=worker, daemon=True, name="ricebowl-aqua-control").start()
+            self.runner.submit(f"native-{id(self)}", probe, completed)
+        else:
+            def worker():
+                result = probe()
+                self.GLib.idle_add(lambda: apply(result))
+
+            threading.Thread(target=worker, daemon=True, name="ricebowl-aqua-control").start()
+
+    def suspend(self):
+        """Invalidate hidden-page responses and pending debounced writes."""
+        self._generation += 1
+        self._busy = False
+        if self._debounce:
+            self.GLib.source_remove(self._debounce)
+            self._debounce = 0
+
+    def dispose(self):
+        self._disposed = True
+        self.suspend()
 
     def bind(self, reader, renderer):
         self._reader, self._renderer = reader, renderer
@@ -226,7 +254,7 @@ class NativeAquaControls:
                 confirmation.set_visible(True)
                 return
             confirmation.set_visible(False)
-            self.change(lambda: hw.set_wifi_radio(enabled))
+            self.change(lambda: self.backend.set_wifi_radio(enabled))
 
         toggle = self._switch("Wi-Fi radio", wifi_radio_change)
         confirmation = self.shell._class(
@@ -243,7 +271,7 @@ class NativeAquaControls:
 
         def confirm_off(_button):
             confirmation.set_visible(False)
-            self.change(lambda: hw.set_wifi_radio(False))
+            self.change(lambda: self.backend.set_wifi_radio(False))
 
         confirm.connect("clicked", confirm_off)
         buttons.pack_start(cancel, True, True, 0)
@@ -260,7 +288,7 @@ class NativeAquaControls:
         self._add(networks_box)
 
         def read():
-            return hw.read_wifi_radio(), hw.read_wifi_networks()
+            return self.backend.read_wifi_radio(), self.backend.read_wifi_networks()
 
         def render(snapshot):
             enabled, networks = snapshot
@@ -278,10 +306,10 @@ class NativeAquaControls:
                     self._style("mini"))
                 if network.connected:
                     action.connect("clicked", lambda _button:
-                                   self.change(hw.disconnect_wifi))
+                                   self.change(self.backend.disconnect_wifi))
                 else:
                     action.connect("clicked", lambda _button, ssid=network.ssid:
-                                   self.change(lambda: hw.connect_wifi(ssid)))
+                                   self.change(lambda: self.backend.connect_wifi(ssid)))
                 action.set_sensitive(enabled is True)
                 line.pack_end(action, False, False, 0)
                 networks_box.pack_start(line, False, False, 0)
@@ -298,25 +326,51 @@ class NativeAquaControls:
 
     def bluetooth(self):
         toggle = self._switch("Bluetooth adapter", lambda state:
-                              self.change(lambda: hw.set_bluetooth_power(state)))
+                              self.change(lambda: self.backend.set_bluetooth_power(state)))
         devices = self._label("Connected devices: checking…", self._style("hint"))
+        device_rows = self.Gtk.Box(orientation=self.Gtk.Orientation.VERTICAL, spacing=5)
+        if self.runner is not None:
+            self._add(device_rows)
 
         def render(state):
             toggle.set_active(bool(state.powered))
             toggle.set_sensitive(state.powered is not None)
             devices.set_text("Connected devices: " +
-                             (", ".join(state.devices) if state.devices else "none reported"))
+                             (", ".join(state.connected) if state.connected else "none reported"))
+            for child in tuple(device_rows.get_children()):
+                child.destroy()
+            if self.runner is not None:
+                for device in state.devices[:8]:
+                    row = self.Gtk.Box(orientation=self.Gtk.Orientation.HORIZONTAL, spacing=6)
+                    row.pack_start(self.Gtk.Label(label=device.name[:45], xalign=0),
+                                   True, True, 0)
+                    button = self.shell._class(
+                        self.Gtk.Button(label="Disconnect" if device.connected else "Connect"),
+                        self._style("mini"))
+                    button.set_sensitive(state.powered is True and
+                                         (device.paired or device.connected) and not self._busy)
+                    button.get_accessible().set_name(
+                        ("Disconnect " if device.connected else "Connect ") + device.name)
+                    button.connect("clicked", lambda _button, item=device:
+                                   self.change(lambda: self.backend.set_bluetooth_connection(
+                                       item.address, not item.connected)))
+                    row.pack_end(button, False, False, 0)
+                    device_rows.pack_start(row, False, False, 0)
+                if not state.devices:
+                    device_rows.pack_start(self.Gtk.Label(label="No paired devices reported", xalign=0),
+                                           False, False, 0)
+                device_rows.show_all()
             if state.powered is None:
                 return "BlueZ controller unavailable; adapter control disabled"
             return "Bluetooth on" if state.powered else "Bluetooth off"
 
-        self.bind(hw.read_bluetooth, render)
+        self.bind(self.backend.read_bluetooth, render)
 
     def output_sound(self):
         slider = self._scale("Output volume", lambda value:
-                              self.change(lambda: hw.set_sound_volume(value)))
+                              self.change(lambda: self.backend.set_sound_volume(value)))
         mute = self._switch("Mute output", lambda state:
-                             self.change(lambda: hw.set_sound_mute(state)))
+                             self.change(lambda: self.backend.set_sound_mute(state)))
 
         def render(state):
             slider.set_value(min(100, state.percent or 0))
@@ -327,18 +381,18 @@ class NativeAquaControls:
                 return "Audio backend unavailable; install WirePlumber or PulseAudio tools"
             return f"Output {state.percent}%" + (" · Muted" if state.muted else "")
 
-        self.bind(hw.read_sound, render)
+        self.bind(self.backend.read_sound, render)
 
     def audio_devices(self):
         combo = self._combo("Default output device", lambda name:
-                            self.change(lambda: hw.set_sound_output(name)))
+                            self.change(lambda: self.backend.set_sound_output(name)))
         microphone = self._scale("Microphone input volume", lambda value:
-                                 self.change(lambda: hw.set_microphone_volume(value)))
+                                 self.change(lambda: self.backend.set_microphone_volume(value)))
         mute = self._switch("Mute microphone", lambda state:
-                             self.change(lambda: hw.set_microphone_mute(state)))
+                             self.change(lambda: self.backend.set_microphone_mute(state)))
 
         def read():
-            return hw.read_sound_outputs(), hw.read_microphone()
+            return self.backend.read_sound_outputs(), self.backend.read_microphone()
 
         def render(snapshot):
             outputs, state = snapshot
@@ -360,7 +414,7 @@ class NativeAquaControls:
 
     def display(self):
         slider = self._scale("Laptop screen brightness", lambda value:
-                              self.change(lambda: hw.set_brightness(value)), minimum=1)
+                              self.change(lambda: self.backend.set_brightness(value)), minimum=1)
         self._label("Backlight access requires a supported device and permission to use brightnessctl.",
                     self._style("hint"))
 
@@ -373,7 +427,7 @@ class NativeAquaControls:
                 return f"Brightness {value}% · install brightnessctl to change it"
             return f"Brightness {value}%"
 
-        self.bind(hw.read_brightness, render)
+        self.bind(self.backend.read_brightness, render)
 
     def battery(self):
         summary = self._label("Battery: checking…", self._style("section"))
@@ -387,11 +441,11 @@ class NativeAquaControls:
             bar.set_visible(state is not None)
             return f"Battery {state.percent}%" if state else "No laptop battery detected"
 
-        self.bind(hw.read_battery, render)
+        self.bind(self.backend.read_battery, render)
 
     def power(self):
         combo = self._combo("Performance / power profile", lambda name:
-                            self.change(lambda: hw.set_power_profile(name)))
+                            self.change(lambda: self.backend.set_power_profile(name)))
         self._label("Profiles are offered only when power-profiles-daemon supports them.",
                     self._style("hint"))
 
@@ -406,7 +460,7 @@ class NativeAquaControls:
             return ("Power profile: " + current.replace("-", " ") if current else
                     "No supported power-profiles-daemon profile available")
 
-        self.bind(hw.read_power_profiles, render)
+        self.bind(self.backend.read_power_profiles, render)
 
 
 def build_native_controls(shell, Gtk, GLib, parent, category, title, *, is_current):

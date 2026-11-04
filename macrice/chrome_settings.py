@@ -9,6 +9,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 import shutil
 
+from .frutiger_native_controls import NativeAquaControls
+
 
 @dataclass(frozen=True)
 class SettingAction:
@@ -67,6 +69,16 @@ ACTIONS = (
                   ("xfce4-taskmanager", "gnome-system-monitor"), "utilities-system-monitor"),
 )
 
+# Distinct ChromeOS Settings screens reuse the same live device contracts as
+# Quick Settings. Other rows still lead to their genuine XFCE utilities.
+NATIVE_DETAILS = {
+    "Connections": ("wifi",),
+    "Bluetooth devices": ("bluetooth",),
+    "Sound": ("output_sound", "audio_devices"),
+    "Displays": ("display",),
+    "Power": ("battery", "power"),
+}
+
 
 def available_tool(action: SettingAction, which=shutil.which) -> str | None:
     """Return an allowlisted, installed command, never a shell fragment."""
@@ -99,8 +111,8 @@ def status_text(action: SettingAction, state) -> str:
 class ChromeSettings:
     """A reusable Material You settings navigator; never fakes backend state."""
 
-    def __init__(self, shell, Gtk, Gdk):
-        self.shell, self.Gtk, self.Gdk = shell, Gtk, Gdk
+    def __init__(self, shell, Gtk, Gdk, GLib):
+        self.shell, self.Gtk, self.Gdk, self.GLib = shell, Gtk, Gdk, GLib
         self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
         self.window.set_title("Settings — RiceBowl ChromeOS")
         self.window.set_default_size(860, 570)
@@ -113,6 +125,7 @@ class ChromeSettings:
         self.active_action = None
         self.status_labels = []
         self._built = False
+        self._native_panels = []
 
         root = shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL), "chrome-settings-root")
         header = shell._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10),
@@ -164,8 +177,16 @@ class ChromeSettings:
         self.window.hide()
 
     def _hide(self, *_args):
+        for panel in self._native_panels:
+            panel.suspend()
         self.window.hide()
         return True
+
+    def close(self):
+        for panel in self._native_panels:
+            panel.dispose()
+        self._native_panels.clear()
+        self.window.destroy()
 
     def _key(self, _widget, event):
         if event.keyval == self.Gdk.KEY_Escape:
@@ -179,6 +200,9 @@ class ChromeSettings:
         return False
 
     def _clear(self):
+        for panel in self._native_panels:
+            panel.dispose()
+        self._native_panels.clear()
         for child in self.content.get_children():
             self.content.remove(child)
         self.status_labels.clear()
@@ -266,6 +290,15 @@ class ChromeSettings:
                                 "chrome-settings-state")
             self.status_labels.append((action, label))
             self.content.pack_start(label, False, False, 0)
+        for kind in NATIVE_DETAILS.get(action.name, ()):
+            panel = NativeAquaControls(
+                self.shell, self.Gtk, self.GLib, self.content,
+                is_current=lambda selected=action: self.window.get_visible() and
+                    self.active_action == selected,
+                style_prefix="chrome", backend=self.shell.chrome_controller.hardware,
+                runner=self.shell.chrome_controller.runner)
+            getattr(panel, kind)()
+            self._native_panels.append(panel)
         tool = available_tool(action)
         button = self.shell._class(self.Gtk.Button(label="Open installed Linux utility"),
                                    "chrome-settings-primary")
@@ -277,6 +310,8 @@ class ChromeSettings:
             button.connect("clicked", lambda _button, command=tool: self.shell._open_tool(command))
         self.content.pack_start(button, False, False, 0)
         self._show()
+        for panel in self._native_panels:
+            panel.refresh()
 
     def back(self):
         if not self.history:

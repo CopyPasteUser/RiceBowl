@@ -833,6 +833,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 if profile == "chromeos":
                     from .chrome_settings import ACTIONS
                     from .chrome_quick_settings import calendar_today
+                    assert self.chrome_controller is not None
                     self._toggle_chrome_calendar()
                     assert self.chrome_quick_stack.get_visible_child_name() == "Calendar"
                     assert self.chrome_quick_calendar.get_date() == calendar_today()
@@ -846,6 +847,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     assert self.chrome_quick_stack.get_visible_child_name() == "overview"
                     self.chrome_quick_show_page("Network")
                     assert self.chrome_quick_stack.get_visible_child_name() == "Network"
+                    self.chrome_quick_show_page("Bluetooth")
+                    assert self.chrome_quick_stack.get_visible_child_name() == "Bluetooth"
                     self._action_key(type("Event", (), {"keyval": Gdk.KEY_Escape})())
                     assert self.chrome_quick_stack.get_visible_child_name() == "overview"
                     self._open_chrome_settings(section="Device")
@@ -853,8 +856,14 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     sound = next(action for action in ACTIONS if action.name == "Sound")
                     self._chrome_settings.show_detail(sound)
                     assert self._chrome_settings.active_action == sound
+                    assert len(self._chrome_settings._native_panels) == 2
                     self._chrome_settings.back()
                     assert self._chrome_settings.active_section == "Device"
+                    assert not self._chrome_settings._native_panels
+                    wifi = next(action for action in ACTIONS if action.name == "Connections")
+                    self._chrome_settings.show_detail(wifi)
+                    assert len(self._chrome_settings._native_panels) == 1
+                    self._chrome_settings.back()
                     self._chrome_settings.search.set_text("unlikely-ricebowl-setting")
                     assert self._chrome_settings.content.get_children()
                     self._chrome_settings.window.hide()
@@ -1629,6 +1638,12 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self.luna_tray.close()
             if profile == "windows10" and hasattr(self, "ten_controller"):
                 self.ten_controller.close()
+            if profile == "chromeos" and hasattr(self, "chrome_controller"):
+                self.chrome_controller.close()
+                if hasattr(self, "chrome_notifications"):
+                    self.chrome_notifications.close()
+                if self._chrome_settings is not None:
+                    self._chrome_settings.close()
             if profile == "winclassic" and hasattr(self, "classic98_controller"):
                 self.classic98_controller.close()
             for component in ("ten_network", "ten_settings", "ten_task_view"):
@@ -2101,6 +2116,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 from .classic98_riceware import Classic98Controller
 
                 self.classic98_controller = Classic98Controller(GLib)
+            elif profile == "chromeos":
+                from .chrome_riceware import ChromeController
+
+                self.chrome_controller = ChromeController(GLib)
             for name in ("battery", "network", "audio"):
                 button = self._class(Gtk.Button(), "rice-status")
                 button.get_style_context().add_class("rice-status-" + name)
@@ -2159,6 +2178,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             if profile == "winclassic":
                 self.classic98_controller.refresh_status(self._apply_status)
                 return True
+            if profile == "chromeos":
+                self.chrome_controller.refresh_status(self._apply_status)
+                return True
             def worker():
                 try:
                     from .hardware_status import read_status
@@ -2180,7 +2202,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     self.luna_tray.on_status(None)
                 if hasattr(self, "frutiger_status_label"):
                     self.frutiger_status_label.set_text(frutiger_status_summary(None))
-                if profile in ("windows10", "winclassic") and hasattr(self, "volume_status_label"):
+                if profile in ("windows10", "winclassic", "chromeos") and hasattr(self, "volume_status_label"):
                     self.control_network_label.set_text("Network: unavailable — retrying")
                     self.control_battery_label.set_text("Battery: unavailable — retrying")
                     self.volume_status_label.set_text("Audio backend unavailable — retrying")
@@ -2201,7 +2223,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     # Luna's tray popovers are also the recovery path when a
                     # transient probe fails; keep them openable for details.
                     button.set_sensitive(self.luna_tray is not None or
-                                         profile in ("windows10", "winclassic"))
+                                         profile in ("windows10", "winclassic", "chromeos"))
                     button.set_tooltip_text("Hardware status temporarily unavailable")
                 return False
             previous_status = self._last_status
@@ -2351,6 +2373,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             elif profile == "winclassic":
                 self.classic98_controller.change_audio("audio_volume", value,
                                                         self._volume_change_complete)
+            elif profile == "chromeos":
+                self.chrome_controller.change_audio("audio_volume", value,
+                                                    self._volume_change_complete)
             else:
                 def worker():
                     from .hardware_status import set_sound_volume
@@ -2404,6 +2429,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             elif profile == "winclassic":
                 self.classic98_controller.change_audio("audio_mute", requested,
                                                         self._mute_change_complete)
+            elif profile == "chromeos":
+                self.chrome_controller.change_audio("audio_mute", requested,
+                                                    self._mute_change_complete)
             else:
                 def worker():
                     from .hardware_status import set_sound_mute
@@ -4537,7 +4565,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 return
             if self._chrome_settings is None:
                 from .chrome_settings import ChromeSettings
-                self._chrome_settings = ChromeSettings(self, Gtk, Gdk)
+                self._chrome_settings = ChromeSettings(self, Gtk, Gdk, GLib)
             self._hide_menu()
             self._hide_actions()
             self._chrome_settings.present(section or (action.section if action else None))
@@ -5031,6 +5059,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._cancel_popup_hide("control")
             if profile == "chromeos" and hasattr(self, "chrome_notifications"):
                 self.chrome_notifications.discard()
+                if hasattr(self, "chrome_quick_suspend_all"):
+                    self.chrome_quick_suspend_all()
             if profile == "windows10" and hasattr(self, "ten_controller"):
                 self.ten_controller.discard()
             self.actions.hide()

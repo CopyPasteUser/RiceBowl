@@ -5,6 +5,24 @@ Linux application, not ChromeOS or a Chromium fork. All controls launch real
 Linux applications or act on verified device state; no Google binaries or
 pretend connectivity toggles are included.
 
+### Shared Riceware checkpoint — 4 November 2026
+
+- [x] Route Shelf hardware status, Quick Settings output volume/mute and
+  hierarchical device pages through a per-shell bounded `riceSpice` worker.
+  Only read-back-verified mutations are reported as successful.
+- [x] Reuse the native Wi-Fi, Bluetooth, audio, display brightness and power
+  controls inside the standalone ChromeOS Settings navigator, retaining
+  Material You styles and optional advanced XFCE configuration links.
+- [x] Reuse `ricePop` for XFCE-owned notification history, unread status,
+  Do Not Disturb and deletion/read actions; keep one notification owner,
+  discard private content on close and disconnect the observer at shutdown.
+- [x] Preserve earlier Aqua World controls without forcing their renderer to
+  migrate in the same change; add hermetic adapter and regression tests.
+- [ ] Complete physical XFCE hardware/keyboard/HiDPI/suspend acceptance and
+  long-history, no-network, missing-BlueZ and multi-monitor checks.
+- [ ] Finish remaining full ChromeOS fidelity gates below, including Shelf
+  positioning, Overview/Desks, Tote, Files/RiceExplorer theme and tablet mode.
+
 ## Seven acceptance gates
 
 - [x] 1. **Baseline and references:** audit the native ChromeOS shell and

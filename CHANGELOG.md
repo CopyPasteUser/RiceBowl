@@ -1,5 +1,21 @@
 # RiceBowl changelog
 
+## Unreleased — ChromeOS shared Riceware integration (4 November 2026)
+
+- Migrated Material You shelf device status, Quick Settings volume/mute and
+  native Wi-Fi/Bluetooth/audio/brightness/battery/power controls to a single
+  bounded, closeable riceSpice worker with verified write-readback.
+- Reused those native device pages inside the separate searchable ChromeOS
+  Settings window. Advanced Linux utility links remain optional; unsupported
+  devices are disabled honestly and changes never imply success prematurely.
+- Reused ricePop for XFCE's existing notification history, unread badge,
+  DND, mark-read and dismiss actions with one shared worker and an event
+  observer that closes on shutdown; no second notification daemon or log.
+- Added stale-page invalidation, hardware detail navigation and adapter
+  tests. Original Shelf, Launcher and ChromeOS artwork remain unchanged.
+- Physical Mint hardware, suspend/reconnect, multi-monitor geometry, full
+  ChromeOS fidelity and riceExplorer theme acceptance remain open.
+
 ## Unreleased — Windows 98 SE Riceware device and desktop integration (4 November 2026)
 
 - Migrated Classic taskbar status, volume and mute writes onto the same bounded,
