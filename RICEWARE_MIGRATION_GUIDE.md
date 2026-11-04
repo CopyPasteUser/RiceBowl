@@ -150,6 +150,20 @@ An installed RiceExplorer binary is offered as an opt-in `win10` launcher only;
 Thunar and default MIME handlers are left untouched. Advanced Settings and
 physical-hardware acceptance are still open gates.
 
+**ChromeOS checkpoint (4 November 2026):** The Material You Shelf now polls
+hardware status through one per-shell bounded riceSpice runner; Quick Settings
+volume/mute and device subpages share verified reads and mutations with the
+separately navigable ChromeOS Settings app. Those pages cover real Wi-Fi
+radio/SSID connections, Bluetooth adapter and paired-device links, sound
+output/microphone, brightness, battery and supported power profiles. The
+existing Chrome-only visual styles and Linux utility deep links remain.
+XFCE notification history, unread badge, individual dismissal, marking read
+and Do Not Disturb reuse ricePop over the existing notifyd service, without
+starting a second daemon or saving private notification content. Hidden
+device pages discard late callbacks; the shared runner and D-Bus observer
+close on session shutdown. Hardware/suspend acceptance and the broader
+Material You fidelity checklist remain open.
+
 The family mapping changes **selection only**; per-rice windows, menu flows,
 icons, keyboard shortcuts, layouts and styling must remain independent.
 Do not substitute a generic themed Settings page for any of the seven.

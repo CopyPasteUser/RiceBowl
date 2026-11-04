@@ -9,9 +9,8 @@ from __future__ import annotations
 from collections import OrderedDict
 import logging
 import shutil
-import threading
 
-from . import chrome_notification_backend as backend
+from .riceware import pop
 
 
 class ChromeNotifications:
@@ -27,8 +26,9 @@ class ChromeNotifications:
         self._refreshing = False
         self._refresh_queued = False
         self._pending_feedback = None
-        self._dbus = None
-        self._subscription = 0
+        self._watch = None
+        self._poll_source = 0
+        self._closed = False
 
         self.surface = shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=9),
                                     "chrome-notifications")
@@ -52,7 +52,7 @@ class ChromeNotifications:
         self.mark_all = shell._class(Gtk.Button(label="Mark all read"),
                                       "chrome-notifications-action")
         self.mark_all.set_sensitive(False)
-        self.mark_all.connect("clicked", lambda _button: self._write(backend.mark_read))
+        self.mark_all.connect("clicked", lambda _button: self._write(pop.mark_read))
         toolbar.pack_start(self.mark_all, True, True, 0)
         self.clear = shell._class(Gtk.Button(label="Clear all"),
                                    "chrome-notifications-action")
@@ -72,7 +72,7 @@ class ChromeNotifications:
         cancel.connect("clicked", lambda _button: self.confirm.hide())
         proceed = shell._class(Gtk.Button(label="Delete history"),
                                 "chrome-notifications-danger")
-        proceed.connect("clicked", lambda _button: self._write(backend.clear_notifications))
+        proceed.connect("clicked", lambda _button: self._write(pop.clear_history))
         buttons.pack_start(cancel, True, True, 0)
         buttons.pack_start(proceed, True, True, 0)
         self.confirm.pack_start(buttons, False, False, 0)
@@ -94,23 +94,20 @@ class ChromeNotifications:
         self.GLib.idle_add(self._connect_signals)
 
     def _connect_signals(self):
-        def ready(_source, result):
-            try:
-                self._dbus = self.Gio.bus_get_finish(result)
-                self._subscription = self._dbus.signal_subscribe(
-                    backend.BUS_NAME, backend.LOG_INTERFACE, None,
-                    backend.OBJECT_PATH, None, self.Gio.DBusSignalFlags.NONE,
-                    self._log_changed)
-            except (self.GLib.Error, OSError) as exc:
-                logging.getLogger(__name__).debug("XFCE notification signals unavailable: %s",
-                                                  type(exc).__name__)
-            self.refresh_badge()
-
-        self.Gio.bus_get(self.Gio.BusType.SESSION, None, ready)
-        self.GLib.timeout_add_seconds(45, self._poll_badge)
+        if self._closed:
+            return False
+        try:
+            self._watch = pop.watch(self._log_changed, Gio=self.Gio)
+        except (pop.NotificationUnavailable, OSError, RuntimeError) as exc:
+            logging.getLogger(__name__).debug("XFCE notification signals unavailable: %s",
+                                              type(exc).__name__)
+        self.refresh_badge()
+        self._poll_source = self.GLib.timeout_add_seconds(45, self._poll_badge)
         return False
 
     def _poll_badge(self):
+        if self._closed:
+            return False
         self.refresh_badge()
         return True
 
@@ -120,31 +117,22 @@ class ChromeNotifications:
             self.refresh()
 
     def refresh_badge(self):
-        if self._badge_busy:
+        if self._badge_busy or self._closed:
             return
         self._badge_busy = True
 
-        def worker():
-            try:
-                unread = backend.has_unread()
-            except backend.NotificationUnavailable:
-                unread = None
+        def apply(response):
+            self._badge_busy = False
+            unread = response.value if response.error is None else None
+            badge = getattr(self.shell, "chrome_notifications_badge", None)
+            if badge is not None:
+                badge.set_text("●" if unread else "")
+            button = getattr(self.shell, "chrome_notifications_button", None)
+            if button is not None:
+                button.get_accessible().set_name(
+                    "Open unread notifications" if unread else "Open notifications")
 
-            def apply():
-                self._badge_busy = False
-                badge = getattr(self.shell, "chrome_notifications_badge", None)
-                if badge is not None:
-                    badge.set_text("●" if unread else "")
-                button = getattr(self.shell, "chrome_notifications_button", None)
-                if button is not None:
-                    button.get_accessible().set_name(
-                        "Open unread notifications" if unread else "Open notifications")
-                return False
-
-            self.GLib.idle_add(apply)
-
-        threading.Thread(target=worker, daemon=True,
-                         name="ricebowl-chrome-notification-count").start()
+        self.shell.chrome_controller.submit("notify-badge", pop.unread, apply)
 
     def _add_text(self, message):
         label = self.shell._class(self.Gtk.Label(label=message, xalign=0),
@@ -165,12 +153,22 @@ class ChromeNotifications:
         self._add_text("Open notifications to read Xfce history.")
         self.confirm.hide()
 
+    def close(self):
+        self._closed = True
+        self.discard()
+        if self._watch is not None:
+            self._watch.close()
+            self._watch = None
+        if self._poll_source:
+            self.GLib.source_remove(self._poll_source)
+            self._poll_source = 0
+
     def on_open(self):
         self.confirm.hide()
         self.refresh()
 
     def refresh(self):
-        if not self.is_current() or self._busy:
+        if self._closed or not self.is_current() or self._busy:
             return
         if self._refreshing:
             self._refresh_queued = True
@@ -183,37 +181,35 @@ class ChromeNotifications:
         self.clear.set_sensitive(False)
         self.dnd.set_sensitive(False)
 
-        def worker():
+        def probe():
             try:
-                entries = backend.list_notifications()
+                entries = pop.history()
                 error = None
-            except backend.NotificationUnavailable:
+            except pop.NotificationUnavailable:
                 entries, error = (), "Xfce notification history is not available."
-            dnd = backend.read_dnd()
+            return entries, error, pop.quiet_mode()
 
-            def apply():
-                self._refreshing = False
-                if generation != self._generation or not self.is_current():
-                    if self._refresh_queued and self.is_current() and not self._busy:
-                        self._refresh_queued = False
-                        self.refresh()
-                    return False
-                self._syncing = True
-                try:
-                    self.dnd.set_active(bool(dnd))
-                finally:
-                    self._syncing = False
-                self.dnd.set_sensitive(dnd is not None and not self._busy)
-                self._render(entries, error)
-                if self._refresh_queued:
+        def apply(response):
+            self._refreshing = False
+            if generation != self._generation or not self.is_current():
+                if self._refresh_queued and self.is_current() and not self._busy:
                     self._refresh_queued = False
                     self.refresh()
-                return False
+                return
+            entries, error, dnd = (response.value if response.error is None else
+                                   ((), "Unable to read notifications: " + response.error[:160], None))
+            self._syncing = True
+            try:
+                self.dnd.set_active(bool(dnd))
+            finally:
+                self._syncing = False
+            self.dnd.set_sensitive(dnd is not None and not self._busy)
+            self._render(entries, error)
+            if self._refresh_queued:
+                self._refresh_queued = False
+                self.refresh()
 
-            self.GLib.idle_add(apply)
-
-        threading.Thread(target=worker, daemon=True,
-                         name="ricebowl-chrome-notification-read").start()
+        self.shell.chrome_controller.submit("notify-history", probe, apply)
 
     def _render(self, entries, error):
         self._clear_cards()
@@ -265,13 +261,13 @@ class ChromeNotifications:
             read = self.shell._class(self.Gtk.Button(label="Mark read"),
                                      "chrome-notifications-action")
             read.connect("clicked", lambda _button, entry_id=item.identifier:
-                         self._write(lambda: backend.mark_read((entry_id,))))
+                         self._write(lambda: pop.mark_read((entry_id,))))
             actions.pack_start(read, False, False, 0)
         dismiss = self.shell._class(self.Gtk.Button(label="Dismiss"),
                                     "chrome-notifications-action")
         dismiss.get_accessible().set_name("Dismiss notification: " + item.summary)
         dismiss.connect("clicked", lambda _button, entry_id=item.identifier:
-                        self._write(lambda: backend.delete_notification(entry_id)))
+                        self._write(lambda: pop.dismiss(entry_id)))
         actions.pack_end(dismiss, False, False, 0)
         card.pack_start(actions, False, False, 0)
         self.list_box.pack_start(card, False, False, 0)
@@ -282,10 +278,10 @@ class ChromeNotifications:
     def _dnd_changed(self, switch, _property):
         if not self._syncing:
             enabled = switch.get_active()
-            self._write(lambda: backend.set_dnd(enabled))
+            self._write(lambda: pop.set_quiet_mode(enabled))
 
     def _write(self, writer):
-        if self._busy or not self.is_current():
+        if self._closed or self._busy or not self.is_current():
             return
         self._busy = True
         self._generation += 1
@@ -296,24 +292,13 @@ class ChromeNotifications:
         self.confirm.hide()
         self.status.set_text("Applying and verifying Xfce notification state…")
 
-        def worker():
-            error = None
-            try:
-                writer()
-            except (backend.NotificationUnavailable, ValueError) as exc:
-                error = str(exc)
+        def apply(response):
+            if generation != self._generation or self._closed:
+                return
+            self._busy = False
+            if response.error:
+                self._pending_feedback = response.error[:160]
+            self.refresh()
+            self.refresh_badge()
 
-            def apply():
-                if generation != self._generation:
-                    return False
-                self._busy = False
-                if error:
-                    self._pending_feedback = error
-                self.refresh()
-                self.refresh_badge()
-                return False
-
-            self.GLib.idle_add(apply)
-
-        threading.Thread(target=worker, daemon=True,
-                         name="ricebowl-chrome-notification-write").start()
+        self.shell.chrome_controller.submit("notify-write", writer, apply)

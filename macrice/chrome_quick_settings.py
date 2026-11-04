@@ -1,8 +1,7 @@
 """ChromeOS-inspired Quick Settings with genuine Linux navigation and status.
 
-The XFCE notification daemon continues to own external notifications. Network,
-Bluetooth, brightness and other privileged controls are *not* represented by
-fake on/off buttons. Every tile navigates to an actual settings detail page.
+XFCE remains the notification owner. Device detail pages use the bounded
+riceSpice adapter, not independent unverified backend writes.
 """
 
 from __future__ import annotations
@@ -195,7 +194,8 @@ def build(shell, Gtk, Gdk, GLib):
                 shell, Gtk, GLib, page,
                 is_current=lambda page_name=name:
                     actions.get_visible() and stack.get_visible_child_name() == page_name,
-                style_prefix="chrome")
+                style_prefix="chrome", backend=shell.chrome_controller.hardware,
+                runner=shell.chrome_controller.runner)
             getattr(panel, kind)()
             native_panels[name].append(panel)
         open_settings = shell._class(Gtk.Button(label="View in Settings  ›"),
@@ -248,6 +248,8 @@ def build(shell, Gtk, Gdk, GLib):
     def show_home():
         if stack.get_visible_child_name() == "Notifications":
             notifications.discard()
+        for panel in native_panels.get(stack.get_visible_child_name(), ()):
+            panel.suspend()
         heading.set_text("Quick Settings")
         stack.set_visible_child_name("overview")
         back.hide()
@@ -255,6 +257,9 @@ def build(shell, Gtk, Gdk, GLib):
     def show_page(name):
         if stack.get_visible_child_name() == "Notifications" and name != "Notifications":
             notifications.discard()
+        if stack.get_visible_child_name() != name:
+            for panel in native_panels.get(stack.get_visible_child_name(), ()):
+                panel.suspend()
         heading.set_text(name)
         stack.set_visible_child_name(name)
         back.show()
@@ -269,6 +274,8 @@ def build(shell, Gtk, Gdk, GLib):
     shell.chrome_quick_show_home = show_home
     shell.chrome_quick_show_page = show_page
     shell.chrome_quick_stack = stack
+    shell.chrome_quick_suspend_all = lambda: [
+        panel.suspend() for panels in native_panels.values() for panel in panels]
     root.pack_start(stack, True, True, 0)
     # The real network/battery/sound states already appear directly above;
     # avoid a duplicated footer that gets clipped on 1024x768 laptops.

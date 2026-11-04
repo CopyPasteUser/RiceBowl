@@ -205,28 +205,31 @@ CSS = b"""
 .chrome-quick-page-action:hover, .chrome-quick-page-action:focus {
   background: #d5dfff; border-color: #a7b8f1; }
 .chrome-quick-page-action:disabled { color: #838ba0; background: #f0f1f6; }
-.chrome-quick-root .chrome-native-panel { background: #eef0fb;
+.chrome-quick-root .chrome-native-panel, .chrome-settings-root .chrome-native-panel { background: #eef0fb;
   border: 1px solid #e0e6f6; border-radius: 18px; padding: 12px; }
-.chrome-quick-root .chrome-native-title { color: #41588f; font-size: 11px;
+.chrome-quick-root .chrome-native-title, .chrome-settings-root .chrome-native-title { color: #41588f; font-size: 11px;
   font-weight: 700; }
-.chrome-quick-root .chrome-native-status { color: #445577; font-size: 11px; }
-.chrome-quick-root .chrome-native-error { color: #a32e4f; }
-.chrome-quick-root .chrome-native-label, .chrome-quick-root .chrome-native-section {
+.chrome-quick-root .chrome-native-status, .chrome-settings-root .chrome-native-status { color: #445577; font-size: 11px; }
+.chrome-quick-root .chrome-native-error, .chrome-settings-root .chrome-native-error { color: #a32e4f; }
+.chrome-quick-root .chrome-native-label, .chrome-quick-root .chrome-native-section,
+.chrome-settings-root .chrome-native-label, .chrome-settings-root .chrome-native-section {
   color: @chrome-ink; font-size: 12px; font-weight: 600; }
-.chrome-quick-root .chrome-native-hint { color: @chrome-muted; font-size: 11px; }
-.chrome-quick-root .chrome-native-confirm { background: #fff1e7; color: #754328;
+.chrome-quick-root .chrome-native-hint, .chrome-settings-root .chrome-native-hint { color: @chrome-muted; font-size: 11px; }
+.chrome-quick-root .chrome-native-confirm, .chrome-settings-root .chrome-native-confirm { background: #fff1e7; color: #754328;
   border-radius: 12px; padding: 8px; }
-.chrome-quick-root .chrome-native-action, .chrome-quick-root .chrome-native-mini {
+.chrome-quick-root .chrome-native-action, .chrome-quick-root .chrome-native-mini,
+.chrome-settings-root .chrome-native-action, .chrome-settings-root .chrome-native-mini {
   background: #e0e7fd; border: 1px solid #cbd7f2; border-radius: 15px;
   color: #293d79; padding: 7px 9px; box-shadow: none; }
-.chrome-quick-root .chrome-native-action:hover, .chrome-quick-root .chrome-native-mini:hover {
+.chrome-quick-root .chrome-native-action:hover, .chrome-quick-root .chrome-native-mini:hover,
+.chrome-settings-root .chrome-native-action:hover, .chrome-settings-root .chrome-native-mini:hover {
   background: #cfdbfe; }
-.chrome-quick-root .chrome-native-panel switch { background: #cbd4e8;
+.chrome-quick-root .chrome-native-panel switch, .chrome-settings-root .chrome-native-panel switch { background: #cbd4e8;
   border-radius: 20px; min-height: 20px; }
-.chrome-quick-root .chrome-native-panel switch:checked { background: @chrome-iris; }
-.chrome-quick-root .chrome-native-panel switch slider { background: #fff;
+.chrome-quick-root .chrome-native-panel switch:checked, .chrome-settings-root .chrome-native-panel switch:checked { background: @chrome-iris; }
+.chrome-quick-root .chrome-native-panel switch slider, .chrome-settings-root .chrome-native-panel switch slider { background: #fff;
   min-width: 16px; min-height: 16px; border-radius: 20px; }
-.chrome-quick-root .chrome-native-panel combobox button { background: #e0e7fd;
+.chrome-quick-root .chrome-native-panel combobox button, .chrome-settings-root .chrome-native-panel combobox button { background: #e0e7fd;
   color: @chrome-ink; border-radius: 12px; }
 .chrome-notifications { padding: 2px 0 10px; }
 .chrome-notifications-label { color: @chrome-ink; font-size: 13px;
