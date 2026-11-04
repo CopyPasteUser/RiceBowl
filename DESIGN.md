@@ -192,7 +192,14 @@ secondary pages; prototypes and the release roadmap do not crowd the selector.
   `macrice/chrome_quick_settings.py` renders a 396px bottom-right settings
   popup with date, verified Linux volume/mute, real network and battery status
   and installed XFCE/NetworkManager utility navigation. All switches reflect
-  read-back-verified Linux state; XFCE still owns notifications. Settings
+  read-back-verified Linux state; XFCE still owns notification delivery. A
+  separate Shelf bell reveals a log-backed notifications detail panel using
+  `org.xfce.Notifyd.Log`: live unread badge, application groups, bounded
+  history, read/dismiss controls, confirmation before Clear all and verified
+  XFConf Do Not Disturb. Asynchronous D-Bus reads leave GTK responsive and
+  the UI forgets notification content after closing. Missing providers show
+  explicit empty/unavailable states; no second daemon or expired app actions.
+  Settings
   links use navigation chevrons rather than fake connection switches.
   The latest milestone replaces direct utility launches with six navigable
   Quick Settings detail pages and a separate `chrome_settings.py` Settings

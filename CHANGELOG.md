@@ -1,5 +1,20 @@
 # RiceBowl changelog
 
+## Unreleased — ChromeOS genuine XFCE notification center (4 November 2026)
+
+- Added a dedicated Shelf notification bell with a real unread marker backed
+  by XFCE's `org.xfce.Notifyd.Log` D-Bus interface and change signals.
+- ChromeOS Quick Settings now displays bounded, application-grouped notification
+  history with real titles, timestamps and descriptions, individual Mark read /
+  Dismiss actions, Mark all read and confirmation before deleting all history.
+- Do Not Disturb uses XFCE's persisted `xfconf-query` setting with read-back
+  verification. The control is disabled when the native provider is missing.
+- D-Bus, XFConf and notification updates run off the GTK main thread. Private
+  history entries are discarded from the view when Quick Settings closes.
+- Added backend schema/sanitization/error tests and a real GTK smoke path for
+  opening/closing the notification panel. No replacement notification daemon,
+  synthetic app notifications or replayed expired actions.
+
 ## Unreleased — ChromeOS local Shelf calendar (4 November 2026)
 
 - The ChromeOS Shelf clock now opens a genuine local monthly calendar rather
