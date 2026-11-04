@@ -50,6 +50,56 @@ class AeroTrayTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 select_tray_icons(registered, invalid)
 
+    def test_stale_statusnotifier_reply_cannot_overwrite_newer_status(self):
+        class Button:
+            def __init__(self):
+                self.tooltip = None
+
+            def set_tooltip_text(self, title):
+                self.tooltip = title
+
+            def get_accessible(self):
+                return self
+
+            def set_name(self, _name):
+                pass
+
+            def set_no_show_all(self, _state):
+                pass
+
+            def show(self):
+                pass
+
+        class Image:
+            def set_from_icon_name(self, *_args):
+                pass
+
+        class Reply:
+            def __init__(self, title):
+                self.title = title
+
+            def unpack(self):
+                return ({"Status": "Active", "Title": self.title,
+                         "IconName": "application-x-executable", "Id": "example"},)
+
+        tray = StatusNotifierTray.__new__(StatusNotifierTray)
+        tray.items = {"org.example.Tray": (Button(), Image())}
+        tray.item_state = {}
+        tray.item_stable_ids = {}
+        tray._refresh_serial = 0
+        tray._refresh_versions = {}
+        tray.visible_limit = None
+        tray.Gtk = type("Gtk", (), {"IconSize": type("Size", (), {"MENU": 1})})()
+        replies = []
+        tray._call = lambda _name, _path, _interface, _method, _params, _signature, finished: replies.append(finished)
+        tray.GLib = type("GLib", (), {"Variant": lambda _self, _type, _data: None})()
+        tray._refresh("org.example.Tray")
+        tray._refresh("org.example.Tray")
+        replies[1](Reply("New title"))
+        replies[0](Reply("Stale title"))
+        self.assertEqual(tray.item_state["org.example.Tray"], ("Active", "New title"))
+        self.assertEqual(tray.items["org.example.Tray"][0].tooltip, "New title")
+
     def test_win7_overflow_reflow_hides_passive_and_excess_icons(self):
         class Button:
             def __init__(self):
@@ -85,6 +135,15 @@ class AeroTrayTests(unittest.TestCase):
         tray._reflow()
         self.assertEqual(tray.overflow_ids, ())
         self.assertFalse(tray.overflow_button.visible)
+        from macrice.win7_tray_prefs import TrayPreferences
+
+        tray.item_state["app"] = ("Active", "App")
+        tray.preferences = TrayPreferences(1, {"app": "show", "warning": "hide"})
+        tray.item_stable_ids = {"app": "app", "warning": "warning"}
+        tray._reflow()
+        self.assertTrue(tray.items["app"][0].visible)
+        self.assertFalse(tray.items["warning"][0].visible)
+        self.assertEqual(tray.overflow_ids, ("warning",))
 
     def test_watcher_callbacks_accept_six_arg_pygobject_dispatch(self):
         class FakeVariant:
