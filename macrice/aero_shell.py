@@ -100,6 +100,24 @@ def frutiger_apps(apps, pins: tuple[str, ...], query: str):
     return tuple(sorted(matches, key=rank))
 
 
+def frutiger_select_page(stack, buttons, section, search, page: str):
+    """Keep Aqua launcher pages and tab states synchronized in both directions.
+
+    Used for clicks, searching, reopening the launcher and the explicit Back
+    button. A deliberately small GTK-independent contract is regression-tested.
+    """
+    if page not in buttons:
+        raise ValueError("Unknown Aqua launcher page: " + page)
+    stack.set_visible_child_name(page)
+    for name, button in buttons.items():
+        active = name == page
+        if button.get_active() != active:
+            button.set_active(active)
+    section.set_visible(page == "Apps")
+    if page == "Apps":
+        search.grab_focus()
+
+
 def luna_programs(apps, pins: tuple[str, ...], query: str, limit: int = 8,
                   *, start_favorites=None, history=None):
     """Pick real installed apps for the XP pin band and the recent-program area."""
@@ -2916,6 +2934,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.aqua_stack = Gtk.Stack()
             self.aqua_stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
             self.aqua_stack.set_transition_duration(140)
+            # Nine settings rows have a greater natural height than the app
+            # grid. GTK's homogeneous default otherwise expands the fixed
+            # 600px launcher and can make navigation effectively inaccessible.
+            self.aqua_stack.set_vhomogeneous(False)
             buttons = {}
             for name in ("Apps", "Places", "Settings"):
                 button = self._class(Gtk.ToggleButton(label=name), "aqua-tab")
@@ -2932,14 +2954,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                                        "aqua-section-hint")
             section.pack_start(section_title, True, True, 0)
             section.pack_end(section_hint, False, False, 0)
+            section.set_no_show_all(True)
             root.pack_start(section, False, False, 0)
             def switch_to(name):
-                self.aqua_stack.set_visible_child_name(name)
-                for key, button in buttons.items():
-                    button.set_active(key == name)
-                section.set_visible(name == "Apps")
-                if name == "Apps":
-                    search.grab_focus()
+                frutiger_select_page(self.aqua_stack, buttons, section, search, name)
             self._frutiger_switch_to = switch_to
             for name, button in buttons.items():
                 button.connect("clicked", lambda _button, chosen=name: switch_to(chosen))
@@ -3033,7 +3051,13 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
             settings_page = Gtk.ScrolledWindow()
             settings_page.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+            settings_page.set_min_content_height(135)
             settings_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=7)
+            return_to_apps = self._class(Gtk.Button(label="‹ All apps"), "aqua-settings-back")
+            return_to_apps.set_tooltip_text("Return to applications and places")
+            return_to_apps.get_accessible().set_name("Back to all applications")
+            return_to_apps.connect("clicked", lambda _button: switch_to("Apps"))
+            settings_box.pack_start(return_to_apps, False, False, 0)
             for title, icon_name, category in (
                 ("Connections", "network-wireless", "connections"),
                 ("Sound & media", "audio-volume-high", "sound"),
@@ -3076,8 +3100,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     btn.connect("clicked", lambda _button, app=command: self._open_tool(app))
                 footer.pack_start(btn, False, False, 0)
             root.pack_start(footer, False, False, 0)
-            buttons["Apps"].set_active(True)
-            self.aqua_stack.set_visible_child_name("Apps")
+            switch_to("Apps")
             menu.add(root)
             menu.connect("focus-in-event", self._menu_focus_in)
             menu.connect("focus-out-event", self._menu_focus_out)

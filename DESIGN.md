@@ -179,7 +179,14 @@ secondary pages; prototypes and the release roadmap do not crowd the selector.
   with a nine-category overview, task pages, detail leaves, search and Back
   navigation. `heritage_shell.DETAIL_CSS["frutiger"]` extends the Pearl/Lagoon/
   Lime grammar to its nested surfaces. The original verified sound volume/mute
-  backend and live network/battery readings remain intact. Launcher Settings,
+  backend and live network/battery readings remain intact. The launcher uses
+  synchronized Apps/Places/Settings tabs, a visible Settings-to-Apps escape and
+  a non-homogeneous scrollable settings page. The Aqua Control Center now embeds
+  `frutiger_native_controls.py`: GTK switches for Wi-Fi and Bluetooth, sliders
+  for real output/microphone volume and backlight, a true default-sink selector,
+  Wi-Fi network actions, a battery meter and supported power-profile choices.
+  Device writes run off the UI thread with backend read-back, explicit errors
+  and a refresh action; Wi-Fi disable asks for confirmation. Launcher Settings,
   its gear and the network/audio/power tray controls open relevant Aqua views;
   installed allowlisted Linux utilities are available from their detail pages
   with explicit feedback when missing. `Your World` Places uses Gio's real

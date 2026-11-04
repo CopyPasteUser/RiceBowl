@@ -144,14 +144,31 @@ the full P0 requirements below**:
   Control Center settings, opening matching settings detail pages directly.
   This is metadata-only local filtering; no recursive filesystem scan runs
   on keypress. Full document search and recent-file indexing remain open.
+- The Settings tab can always return to **Apps** using its own visible Back
+  button; the Apps/Places/Settings tab selection is synchronized and regression
+  tested. The stack no longer sizes every page to the nine-row Settings view,
+  avoiding launcher height overflow when switching tabs.
+- `macrice/frutiger_native_controls.py` now builds independent Aqua-styled,
+  interactive detail panels with real GTK sliders, switches, device dropdowns,
+  network choices, manual refresh, loading/error states and asynchronous writes:
+  NetworkManager Wi-Fi radio/list/connect/disconnect (with confirmation before
+  disabling the radio), BlueZ adapter power, output volume/mute, default sound
+  output selection, microphone volume/mute, backlight brightness where writable,
+  battery status and supported power profile selection. Real state is re-read
+  after writes; unexpected results are errors and do not masquerade as applied.
+  Native controls come before installed XFCE utility fallbacks in detail pages.
+- `hardware_status.py` now also supports verified PipeWire/PulseAudio microphone
+  input level and mute operations. The already-existing device backends are
+  reused; no new daemon, permission elevation or monitoring loop is introduced.
 - CSS scope: only the Frutiger rice receives the deeper Aqua material system.
   Session ownership, apply/restore logic and all other rice profiles are intact.
 - Verification: the Python suite, new targeted contracts and native headless
   GTK3 CSS parser. **Native X11 screenshot and actual Mint/XFCE acceptance
   remain unverified in this runtime**.
 
-**Still open:** full NetworkManager and BlueZ write backends, device and
-display settings, personalization persistence, richer notification/media flyouts,
+**Still open:** Wi-Fi password entry and advanced connection editing, Bluetooth
+pairing/device management, complete monitor layout/scaling, persistence for
+visual personalization, richer notification/media flyouts,
 RiceExplorer Aqua renderer, icon family, screenshots and the 35 end-to-end
 acceptance scenarios.
 

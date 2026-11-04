@@ -433,6 +433,81 @@ def set_bluetooth_power(enabled: bool) -> BluetoothState:
     return state
 
 
+def read_microphone() -> SoundState:
+    """Read default microphone level and mute via PipeWire or PulseAudio."""
+    if shutil.which("wpctl"):
+        raw = _run(["wpctl", "get-volume", "@DEFAULT_AUDIO_SOURCE@"])
+        if raw is not None:
+            match = re.search(r"Volume:\s*([0-9.]+)", raw)
+            if match:
+                try:
+                    percent = max(0, min(150, round(float(match.group(1)) * 100)))
+                    return SoundState(percent, "[MUTED]" in raw)
+                except ValueError:
+                    pass
+    if shutil.which("pactl"):
+        volume = _run(["pactl", "get-source-volume", "@DEFAULT_SOURCE@"])
+        mute = _run(["pactl", "get-source-mute", "@DEFAULT_SOURCE@"])
+        if volume is not None and mute is not None:
+            match = re.search(r"(\d+)%", volume)
+            if match:
+                return SoundState(int(match.group(1)), "yes" in mute.casefold())
+    return SoundState(None, None)
+
+
+def set_microphone_volume(percent: int) -> SoundState:
+    """Set microphone volume and verify the actual input level."""
+    if isinstance(percent, bool) or not isinstance(percent, int) or not 0 <= percent <= 100:
+        raise ValueError("Microphone volume must be between 0 and 100")
+    errors = []
+    for args in (["wpctl", "set-volume", "@DEFAULT_AUDIO_SOURCE@", f"{percent / 100:.2f}"],
+                 ["pactl", "set-source-volume", "@DEFAULT_SOURCE@", f"{percent}%"]):
+        if not shutil.which(args[0]):
+            continue
+        try:
+            result = subprocess.run(args, capture_output=True, text=True,
+                                    timeout=2.0, check=False)
+        except (OSError, subprocess.TimeoutExpired):
+            errors.append(args[0] + ": unavailable")
+            continue
+        if result.returncode:
+            errors.append(args[0] + ": rejected")
+            continue
+        state = read_microphone()
+        if state.percent is not None and abs(state.percent - percent) <= 2:
+            return state
+        errors.append(args[0] + ": read-back mismatch")
+    raise RuntimeError("Microphone level could not be verified" +
+                       (": " + "; ".join(errors) if errors else " (no backend installed)"))
+
+
+def set_microphone_mute(muted: bool) -> SoundState:
+    """Set the microphone mute state; never use an optimistic UI update."""
+    if not isinstance(muted, bool):
+        raise ValueError("Microphone mute must be boolean")
+    value = "1" if muted else "0"
+    errors = []
+    for args in (["wpctl", "set-mute", "@DEFAULT_AUDIO_SOURCE@", value],
+                 ["pactl", "set-source-mute", "@DEFAULT_SOURCE@", value]):
+        if not shutil.which(args[0]):
+            continue
+        try:
+            result = subprocess.run(args, capture_output=True, text=True,
+                                    timeout=2.0, check=False)
+        except (OSError, subprocess.TimeoutExpired):
+            errors.append(args[0] + ": unavailable")
+            continue
+        if result.returncode:
+            errors.append(args[0] + ": rejected")
+            continue
+        state = read_microphone()
+        if state.muted is muted:
+            return state
+        errors.append(args[0] + ": read-back mismatch")
+    raise RuntimeError("Microphone mute could not be verified" +
+                       (": " + "; ".join(errors) if errors else " (no backend installed)"))
+
+
 def set_sound_volume(percent: int) -> SoundState:
     """Set the default sink to a bounded value and verify the actual backend.
 

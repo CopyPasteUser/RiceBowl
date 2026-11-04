@@ -578,6 +578,12 @@ menu menuitem:hover { background: #000080; color: #fff; }
   min-height: 39px; padding: 9px; box-shadow: inset 0 1px #fff; }
 .aqua-place:hover, .aqua-place:focus { background-image: linear-gradient(#fff,
   #d0ffdc 45%, #92e9bf); border-color: #32abc5; color: #075479; }
+.aqua-settings-back { color: #075a7b; font-weight: bold;
+  background-image: linear-gradient(#fff, #ddfff5 55%, #b4eae5);
+  border: 1px solid #82cfd5; border-radius: 11px; padding: 7px 12px; }
+.aqua-settings-back:hover, .aqua-settings-back:focus {
+  background-image: linear-gradient(#fff, #e9ffcc 53%, #b2e98e);
+  border-color: #2aa2b7; }
 .aqua-footer { background-image: linear-gradient(rgba(255,255,255,.81),
   rgba(167,240,224,.74)); border: 1px solid #8bd9d8;
   border-radius: 17px; padding: 5px 9px; box-shadow: inset 0 1px #fff; }
@@ -685,6 +691,42 @@ menu menuitem:hover { background: #000080; color: #fff; }
 .aqua-control-root .aqua-control-probe-error {
   color: #8b492e; background: #fff6e9; border-color: #eac7ad;
 }
+.aqua-control-root .aqua-native-panel { background-image: linear-gradient(#ffffff, #ebfff5 38%, #c9f0e7);
+  border: 1px solid #91ced2; border-radius: 15px; padding: 12px 13px;
+  box-shadow: inset 0 1px #fff, 0 2px 6px rgba(8,96,115,.11); }
+.aqua-control-root .aqua-native-title { color: #13798d; font-size: 11px;
+  font-weight: bold; }
+.aqua-control-root .aqua-native-section { color: #07566f; font-size: 13px;
+  font-weight: bold; margin-top: 4px; }
+.aqua-control-root .aqua-native-label { color: #135d75; font-size: 12px;
+  font-weight: bold; }
+.aqua-control-root .aqua-native-hint { color: #426e73; font-size: 11px; }
+.aqua-control-root .aqua-native-status { color: #187263; font-size: 11px;
+  border: 1px solid #b3e4c6; border-radius: 9px; padding: 7px 9px;
+  background: rgba(246,255,242,.83); }
+.aqua-control-root .aqua-native-error { color: #9b4b36;
+  border-color: #e6baa1; background: #fff4ed; }
+.aqua-control-root .aqua-native-confirm { color: #7b5a20;
+  background: #fff9e5; border: 1px solid #edcf91;
+  border-radius: 10px; padding: 9px 10px; }
+.aqua-control-root .aqua-native-panel scale trough {
+  background: #c6efeb; border: 1px solid #82cbd1;
+  border-radius: 8px; min-height: 8px; }
+.aqua-control-root .aqua-native-panel scale highlight {
+  background-image: linear-gradient(to right, #d4ff88, #62c8a3);
+  border-radius: 7px; }
+.aqua-control-root .aqua-native-panel switch slider {
+  background-image: linear-gradient(#fff, #c5f7e8); border: 1px solid #90c9ca; }
+.aqua-control-root .aqua-native-panel switch:checked {
+  background-image: linear-gradient(#e3ff9c, #74d77d);
+  border-color: #5bc585; }
+.aqua-control-root .aqua-native-action, .aqua-control-root .aqua-native-mini,
+.aqua-control-root .aqua-native-panel combobox button {
+  color: #075b72; background-image: linear-gradient(#ffffff, #d8fff4 56%, #a6e5df);
+  border: 1px solid #83c7d3; border-radius: 10px; padding: 6px 9px;
+  box-shadow: inset 0 1px #fff; }
+.aqua-control-root .aqua-native-action:hover, .aqua-control-root .aqua-native-mini:hover {
+  background-image: linear-gradient(#fff, #dcffdb 52%, #a3e2aa); border-color: #39aab4; }
 popover.aqua-flyout > contents {
   background-image: linear-gradient(to bottom, #faffff, #e8fff6 44%, #ace6e6);
   color: #07536e; border: 2px solid #94d4df; border-radius: 20px;

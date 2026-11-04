@@ -1,9 +1,4 @@
-"""Aqua World's native three-level settings browser.
-
-All leaves are honest Linux integrations. A leaf without a supported installed
-utility remains readable but cannot pretend to apply a setting. Sound volume
-and mute are handled by RiceBowl's existing verified hardware backend.
-"""
+"""Aqua World's settings hierarchy, native Linux controls and external tools."""
 
 from __future__ import annotations
 
@@ -12,6 +7,7 @@ import threading
 import logging
 
 from .frutiger_device_details import ProbeResult, probe
+from .frutiger_native_controls import NATIVE_TASKS, build_native_controls
 
 
 # id, label, icon, short explanation, (label, icon, utility candidates, purpose)
@@ -26,7 +22,7 @@ AQUA_CATEGORIES = (
         ("Output volume & mute", "audio-volume-high", (),
          "Change the default sound output with verified Linux read-back"),
         ("Input & output devices", "audio-card", ("pavucontrol", "xfce4-mixer"),
-         "Choose output, input and microphone levels"),
+         "Select an audio output and adjust microphone input with native controls"),
         ("Notification sounds", "preferences-desktop-notification", ("xfce4-notifyd-config",),
          "Configure the installed desktop notification service"),
     )),
@@ -86,8 +82,7 @@ AQUA_CATEGORIES = (
     )),
 )
 
-# Device detail views are intentionally read-only; writes remain with the
-# verified audio backend and installed Linux configuration utilities.
+# These live read-only summaries supplement native verified controls.
 DETAIL_PROBES = {
     ("connections", "Network connections"): "wifi",
     ("connections", "Bluetooth devices"): "bluetooth",
@@ -228,8 +223,11 @@ def build(shell, Gtk, Gdk):
         button.add(line)
         button.get_accessible().set_name("Show " + task[0] + " details")
         button.connect("clicked", lambda _button: show_detail(category, task))
-        button.set_tooltip_text("Review options" if tool or not task[2]
-                                else "Read more; this Linux utility is unavailable")
+        if (category[0], task[0]) in NATIVE_TASKS:
+            button.set_tooltip_text("Open interactive Aqua controls for this device")
+        else:
+            button.set_tooltip_text("Review options" if tool or not task[2]
+                                    else "Read more; this Linux utility is unavailable")
         return button
 
     for index, category in enumerate(AQUA_CATEGORIES):
@@ -277,10 +275,6 @@ def build(shell, Gtk, Gdk):
             shell.aqua_control_detail_status = clone
             shell.aqua_control_detail_kind = category[0]
             details.pack_start(clone, False, False, 3)
-        if category[0] == "sound" and task[0] == "Output volume & mute":
-            info = shell._class(Gtk.Label(label="Live volume controls are below", xalign=0),
-                                "aqua-control-live-label")
-            details.pack_start(info, False, False, 5)
         if tool:
             launch = shell._class(Gtk.Button(label="Open " + task[0] + " settings"),
                                   "aqua-control-launch")
@@ -308,11 +302,17 @@ def build(shell, Gtk, Gdk):
             result_body.set_line_wrap(True)
             result_body.set_selectable(True)
             details.pack_start(result_body, False, False, 0)
-        details.show_all()
         navigate("detail", category, task)
+        serial = request_serial[0]
+        native = build_native_controls(shell, Gtk, GLib, details, category[0], task[0],
+                                       is_current=lambda: serial == request_serial[0]
+                                       and current[0] == "detail" and current[2] == task)
+        if native is not None:
+            # The functional controls are the primary action; installed XFCE
+            # utilities and device-probe explanations remain below as fallbacks.
+            details.reorder_child(native.surface, 2)
+        details.show_all()
         if kind:
-            serial = request_serial[0]
-
             def worker():
                 try:
                     result = probe(kind)
