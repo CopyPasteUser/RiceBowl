@@ -76,6 +76,8 @@ def matching_categories(query: str) -> tuple[Category, ...]:
 
 def build(shell, Gtk, Gdk):
     """Build an actual navigable category window, not a quick-toggle popup."""
+    from gi.repository import GdkPixbuf
+
     window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
     window.set_title("Control Panel — RiceBowl Linux")
     window.set_icon_name("preferences-system")
@@ -97,9 +99,14 @@ def build(shell, Gtk, Gdk):
                            "win7-cp-toolbar")
     back = shell._class(Gtk.Button(), "win7-cp-back")
     back.add(shell._icon("go-previous", Gtk.IconSize.BUTTON))
-    back.get_accessible().set_name("Back to Control Panel home")
+    back.get_accessible().set_name("Back to previous Control Panel page")
     back.set_sensitive(False)
     toolbar.pack_start(back, False, False, 0)
+    forward = shell._class(Gtk.Button(), "win7-cp-back")
+    forward.add(shell._icon("go-next", Gtk.IconSize.BUTTON))
+    forward.get_accessible().set_name("Forward to next Control Panel page")
+    forward.set_sensitive(False)
+    toolbar.pack_start(forward, False, False, 0)
     breadcrumb = shell._class(Gtk.Button(label="Control Panel"), "win7-cp-breadcrumb")
     breadcrumb.get_accessible().set_name("Return to Control Panel home")
     toolbar.pack_start(breadcrumb, True, True, 0)
@@ -118,11 +125,28 @@ def build(shell, Gtk, Gdk):
     heading = shell._class(Gtk.Label(label="Adjust your computer's settings", xalign=0),
                            "win7-cp-heading")
     content.pack_start(heading, False, False, 0)
-    view_by = shell._class(Gtk.Label(label="View by: Category", xalign=1), "win7-cp-viewby")
-    content.pack_start(view_by, False, False, 0)
+    view_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+    view_row.set_halign(Gtk.Align.END)
+    view_row.pack_start(shell._class(Gtk.Label(label="View by:"), "win7-cp-viewby"),
+                        False, False, 0)
+    view_by = shell._class(Gtk.ComboBoxText(), "win7-cp-view-select")
+    for option in ("Category", "Large icons", "Small icons"):
+        view_by.append_text(option)
+    view_by.set_active(0)
+    view_by.get_accessible().set_name("Control Panel view")
+    view_row.pack_start(view_by, False, False, 0)
+    content.pack_start(view_row, False, False, 0)
     categories_grid = Gtk.Grid(column_spacing=22, row_spacing=18)
     categories_grid.set_column_homogeneous(True)
     content.pack_start(categories_grid, False, False, 2)
+    icons_grid = Gtk.FlowBox()
+    icons_grid.set_selection_mode(Gtk.SelectionMode.NONE)
+    icons_grid.set_row_spacing(10)
+    icons_grid.set_column_spacing(10)
+    icons_grid.set_min_children_per_line(1)
+    icons_grid.set_max_children_per_line(4)
+    icons_grid.set_no_show_all(True)
+    content.pack_start(icons_grid, False, False, 2)
     empty = shell._class(Gtk.Label(label="No matching settings", xalign=0),
                          "win7-cp-empty")
     empty.set_no_show_all(True)
@@ -134,45 +158,128 @@ def build(shell, Gtk, Gdk):
     scroll.add(content)
     root.pack_start(scroll, True, True, 0)
 
-    def task_link(task):
+    def task_link(category, task):
         command = installed_command(task)
         button = shell._class(Gtk.Button(label=task.name), "win7-cp-link")
         button.set_halign(Gtk.Align.START)
-        button.set_sensitive(command is not None)
-        button.get_accessible().set_name("Open " + task.name)
-        button.set_tooltip_text("Open " + task.name if command else
-                                "Not installed: " + " / ".join(task.commands))
-        if command:
-            button.connect("clicked", lambda _button, selected=command: shell._open_tool(selected))
+        button.get_accessible().set_name("View " + task.name + " settings")
+        button.set_tooltip_text("View details and open settings" if command else
+                                "Settings tool not installed; view availability details")
+        button.connect("clicked", lambda _button: show_task(category, task))
         return button
 
     category_rows = []
+    history = [("home", None, None)]
+    position = 0
 
-    def show_home(*_args):
+    def render_home():
         for widget in details.get_children():
             details.remove(widget)
         details.hide()
         empty.hide()
-        categories_grid.show()
-        view_by.show()
-        back.set_sensitive(False)
+        if view_by.get_active() == 0:
+            icons_grid.hide()
+            categories_grid.show()
+        else:
+            categories_grid.hide()
+            icons_grid.show_all()
+        view_row.show_all()
         breadcrumb.set_label("Control Panel")
         heading.set_text("Adjust your computer's settings")
+        needle = search.get_text()
+        matching = matching_categories(needle)
+        for category, row in category_rows:
+            row.set_visible(category in matching)
+        for category, row, _image, _tile, _source in icon_rows:
+            row.set_visible(category in matching)
+        empty.set_visible(not matching)
         scroll.get_vadjustment().set_value(0)
 
-    def show_category(category):
+    def render_category(category):
         categories_grid.hide()
-        view_by.hide()
+        icons_grid.hide()
+        view_row.hide()
         empty.hide()
         for widget in details.get_children():
             details.remove(widget)
-        back.set_sensitive(True)
         breadcrumb.set_label("Control Panel  ›  " + category.name)
         heading.set_text(category.name)
         for task in category.tasks:
-            details.pack_start(task_link(task), False, False, 0)
+            details.pack_start(task_link(category, task), False, False, 0)
         details.show_all()
         scroll.get_vadjustment().set_value(0)
+
+    def render_task(category, task):
+        categories_grid.hide()
+        icons_grid.hide()
+        view_row.hide()
+        empty.hide()
+        for widget in details.get_children():
+            details.remove(widget)
+        breadcrumb.set_label("Control Panel  ›  " + category.name + "  ›  " + task.name)
+        heading.set_text(task.name)
+        command = installed_command(task)
+        details.pack_start(shell._class(Gtk.Label(
+            label=("Configure this Linux feature using its installed settings utility."
+                   if command else "This Linux settings utility is not installed."),
+            xalign=0), "win7-cp-task-info"), False, False, 0)
+        action = shell._class(Gtk.Button(label="Open " + task.name + " settings"),
+                              "win7-cp-task-open")
+        action.set_halign(Gtk.Align.START)
+        action.set_sensitive(command is not None)
+        action.get_accessible().set_name("Open " + task.name + " settings")
+        action.set_tooltip_text("Launch " + command if command else
+                                "Install " + " or ".join(task.commands) + " to enable")
+        if command:
+            action.connect("clicked", lambda _button: shell._open_tool(command))
+        details.pack_start(action, False, False, 4)
+        details.show_all()
+        scroll.get_vadjustment().set_value(0)
+
+    def render():
+        view, category, task = history[position]
+        back.set_sensitive(position > 0)
+        forward.set_sensitive(position < len(history) - 1)
+        if view == "home":
+            render_home()
+        elif view == "category":
+            render_category(category)
+        else:
+            render_task(category, task)
+
+    def navigate(view, category=None, task=None):
+        nonlocal history, position
+        target = (view, category, task)
+        if history[position] != target:
+            history = history[:position + 1] + [target]
+            position += 1
+        render()
+
+    def show_home(*_args):
+        navigate("home")
+
+    def reset():
+        nonlocal history, position
+        history, position = [("home", None, None)], 0
+        render()
+
+    def show_category(category):
+        navigate("category", category)
+
+    def show_task(category, task):
+        navigate("task", category, task)
+
+    def go_back(*_args):
+        nonlocal position
+        if position:
+            position -= 1
+            render()
+
+    def go_forward(*_args):
+        nonlocal position
+        if position < len(history) - 1:
+            position += 1
+            render()
 
     for index, category in enumerate(CATEGORIES):
         row = shell._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=11),
@@ -187,21 +294,53 @@ def build(shell, Gtk, Gdk):
         title.connect("clicked", lambda _button, chosen=category: show_category(chosen))
         links.pack_start(title, False, False, 0)
         for task in category.tasks[:2]:
-            links.pack_start(task_link(task), False, False, 0)
+            links.pack_start(task_link(category, task), False, False, 0)
         row.pack_start(links, True, True, 0)
         categories_grid.attach(row, index % 2, index // 2, 1, 1)
         category_rows.append((category, row))
 
+    icon_rows = []
+    for category in CATEGORIES:
+        tile = shell._class(Gtk.Button(), "win7-cp-icon-tile")
+        tile.get_accessible().set_name("Open " + category.name)
+        icon_content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+        img = shell._icon(category.icon, Gtk.IconSize.DIALOG)
+        img.set_pixel_size(47)
+        icon_content.pack_start(img, False, False, 0)
+        caption = Gtk.Label(label=category.name)
+        caption.set_line_wrap(True)
+        caption.set_justify(Gtk.Justification.CENTER)
+        icon_content.pack_start(caption, False, False, 0)
+        tile.add(icon_content)
+        tile.connect("clicked", lambda _button, chosen=category: show_category(chosen))
+        icons_grid.add(tile)
+        icon_rows.append((category, tile.get_parent(), img, tile, img.get_pixbuf()))
+
+    def change_view(*_args):
+        small = view_by.get_active() == 2
+        icons_grid.set_max_children_per_line(6 if small else 4)
+        for _category, _row, image, tile, source in icon_rows:
+            pixel_size = 20 if small else 47
+            if source is not None:
+                image.set_from_pixbuf(source.scale_simple(
+                    pixel_size, pixel_size, GdkPixbuf.InterpType.BILINEAR))
+            else:
+                image.set_pixel_size(pixel_size)
+            tile.set_size_request(88 if small else 132, -1)
+        if history[position][0] == "home":
+            render_home()
+
     def on_search(entry):
-        show_home()
-        matching = matching_categories(entry.get_text())
-        for category, row in category_rows:
-            row.set_visible(category in matching)
-        empty.set_visible(not matching)
+        if history[position][0] != "home":
+            show_home()
+        else:
+            render_home()
 
     search.connect("search-changed", on_search)
-    back.connect("clicked", show_home)
+    back.connect("clicked", go_back)
+    forward.connect("clicked", go_forward)
     breadcrumb.connect("clicked", show_home)
+    view_by.connect("changed", change_view)
 
     # Native status controls stay available but live in a clearly identified
     # Linux hardware drawer; they are not fabricated Windows control items.
@@ -242,15 +381,22 @@ def build(shell, Gtk, Gdk):
     window.add(root)
     def on_key_press(_widget, event):
         if event.keyval == Gdk.KEY_Left and event.state & Gdk.ModifierType.MOD1_MASK:
-            show_home()  # Explorer-style Alt+Left navigation
+            go_back()  # Explorer-style Alt+Left navigation
+            return True
+        if event.keyval == Gdk.KEY_Right and event.state & Gdk.ModifierType.MOD1_MASK:
+            go_forward()
             return True
         return shell._action_key(event)
 
     window.connect("key-press-event", on_key_press)
     shell.win7_panel_search = search
     shell.win7_panel_back = back
+    shell.win7_panel_forward = forward
     shell.win7_panel_rows = category_rows
     shell.win7_panel_show_category = show_category
+    shell.win7_panel_show_task = show_task
     shell.win7_panel_show_home = show_home
-    show_home()
+    shell.win7_panel_reset = reset
+    shell.win7_panel_view_by = view_by
+    render()
     return window

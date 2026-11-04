@@ -26,11 +26,19 @@ focused; `Escape` dismisses it.
 
 The Control Panel is now a genuine decorated, resizable Windows 7-style window,
 opened from Start or `Control_R` rather than an Android-style tile popup. Its
-eight historical categories have browseable task pages, a working category/task
-search and a Back button. The links launch **installed Linux applications**;
-missing utilities are disabled with a tooltip. Hardware/network/volume status
-remains in an explicitly labeled expandable Linux section. It is not a Windows
-settings backend or a simulated connectivity toggle.
+eight historical categories have browseable task and applet pages, working
+category/task search, **Back/Forward** history and Category/Large icons/Small
+icons views. Only installed Linux utilities can launch; missing utilities
+have explicit disabled actions and installation guidance. Hardware/network/
+volume status remains in an expandable Linux section.
+
+Five separate **Aero notification flyouts** open above their Superbar icons:
+upright volume/mute and output devices, NetworkManager Wi-Fi discovery and
+connections, battery/backlight/power profiles, BlueZ Bluetooth status, and a
+real calendar. These use the existing bounded Linux backends and verify state
+changes; they are independently styled for Windows 7, not XP repaints.
+The screenshot below predates these flyouts and deeper navigation; new X11
+captures and physical Mint verification remain open.
 
 ![Latest Aero Control Panel](screenshots/current/aero-controls.webp)
 
@@ -58,16 +66,16 @@ owner's Linux Mint XFCE acceptance; CI captures are not a physical desktop photo
 | **Start orb** | [Aero Penguin](assets/aero-penguin.svg) | Original branded Linux Start button; toggles a real GTK window |
 | **Start menu** | [aero_shell.py](macrice/aero_shell.py) | Installed desktop programs, search, Enter/Escape/Down keyboard operation, paging, Home/Computer/Documents, Control Panel, safe XFCE session dialog |
 | **Taskbar** | [aero_shell.py](macrice/aero_shell.py) / [aero_superbar.py](macrice/aero_superbar.py) | 48px glass Superbar, larger real app icons, WM_CLASS grouping, window previews, Jump Lists, minimize/restore, active group, overflow |
-| **Control Panel** | [win7_control_panel.py](macrice/win7_control_panel.py) | Native framed category window, eight period-accurate sections, real XFCE task links, search and back navigation; Linux status disclosure |
+| **Control Panel** | [win7_control_panel.py](macrice/win7_control_panel.py) | Eight categories, three views, Back/Forward, applet details, installed Linux actions and unavailable states |
 | **Pinned applications** | [aero_pins.py](macrice/aero_pins.py) | Right-click a Start result to pin, right-click taskbar icon to unpin; 6 persistent launchers maximum |
 | **Show Desktop** | [aero_windows.py](macrice/aero_windows.py) | Wnck Show Desktop with safe reversible hover Peek and click action |
-| **Notification area** | [aero_tray.py](macrice/aero_tray.py) | Experimental D-Bus StatusNotifier icons, click and context menu, coexists with an existing watcher |
-| **Clock / quick links** | [aero_shell.py](macrice/aero_shell.py) | Date and time, optional direct native network and sound settings (launchers, not simulated connection state) |
+| **Notification area** | [win7_tray.py](macrice/win7_tray.py) / [aero_tray.py](macrice/aero_tray.py) | Five Aero native-device flyouts, optional D-Bus StatusNotifier icons and context menu |
+| **Clock / quick links** | [aero_shell.py](macrice/aero_shell.py) | Clickable date/calendar and live volume, Wi-Fi, Bluetooth and battery buttons |
 | **Glass** | [Aero shell CSS](macrice/aero_shell.py) | Glass-inspired gradient, optional translucent variant; no compositor blur guarantee |
 | **Window decoration** | [XFWM4 theme](assets/themes/RiceHub-Aero/xfwm4/) | Real minimize, maximize, close, shading, sticky, border and title button artwork |
 | **GTK widgets** | [GTK3 theme](assets/themes/RiceHub-Aero/gtk-3.0/gtk.css) | Unified buttons, menus, controls and palettes |
 | **Application / places icons** | [RiceHub-Aero icon theme](assets/icons/RiceHub-Aero/) | Original golden folders (desktop, videos, templates, sharing), drive/network icons and eight distinct SVG MIME-type icons |
-| **File manager** | [Thunar integration](macrice/thunar.py) | Seven-only native GTK toolbar, unified breadcrumb, unboxed navigation, white file view, subdued statusbar and reversible hidden menu bar |
+| **File manager** | [Thunar integration](macrice/thunar.py) / [RiceExplorer](https://github.com/CopyPasteUser/riceExplorer) | Safe default Thunar; optional Rust `--theme win7` preview from Start without association changes |
 | **Dock** | [Aero glass Plank theme](assets/plank-themes/RiceHub-Aero-Glass/dock.theme) | Existing Plank configuration shifted away from the bottom taskbar during Aero apply |
 | **Wallpapers** | [Seven Blue](assets/wallpapers/aero-seven-blue.jpg) / [Seven Night](assets/wallpapers/aero-seven-night.jpg) | Two original cobalt-blue 2009 Aero Linux-penguin desktops, distinct from Frutiger Aero |
 | **Session startup** | [aero.py](macrice/aero.py) | RiceBowl-managed, user-local XFCE autostart; no global systemd service |
@@ -112,7 +120,10 @@ thunar -q
 GTK CSS does not expose Windows 7's Libraries namespace, metadata preview
 pane or contextual `Organize / New folder` command strip. Those would need a
 separate file-manager frontend or a substantial Thunar extension; RiceBowl
-does not add fake, nonfunctional buttons.
+does not add fake, nonfunctional buttons. With RiceExplorer installed, the
+Start menu additionally shows **RiceExplorer (preview)**, opening the real
+Rust Windows 7 renderer at the home directory. It does not replace Thunar or
+promise currently unsupported remote mounts and complete transfer recovery.
 
 ### Customization and compatibility
 

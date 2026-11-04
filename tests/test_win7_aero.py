@@ -8,12 +8,14 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 from macrice.aero_layout import actual_popup_y, bottom_strut, menu_geometry, task_capacity
-from macrice.aero_shell import CSS, win7_programs
+from macrice.aero_shell import CSS, win7_explorer_command, win7_programs
 from macrice.asset_upgrade import (AssetConflict, git_blob_sha, inspect_bundle,
                                    install_bundle, trusted_assets)
 from macrice.installer import project_root
 from macrice.rice import STYLES
+from macrice.luna_tray import LunaTray
 from macrice.win7_control_panel import CATEGORIES, Task, installed_command, matching_categories
+from macrice.win7_tray import Win7Tray
 
 
 class App:
@@ -67,6 +69,21 @@ class Win7MenuTests(unittest.TestCase):
         panel = (project_root() / "macrice/win7_control_panel.py").read_text()
         self.assertIn('search.set_placeholder_text("Search Control Panel")', panel)
         self.assertIn('window.set_skip_taskbar_hint(False)', panel)
+
+    def test_win7_device_flyouts_have_distinct_gtk_skin_and_shared_safe_backends(self):
+        for name in (b"win7-tray-popup", b"win7-tray-heading",
+                     b"win7-tray-volume-row", b"win7-clock-button"):
+            self.assertIn(name, CSS)
+        self.assertIsNot(Win7Tray._audio, LunaTray._audio)
+        for action in ("refresh_network", "_join_wifi", "_switch_output",
+                       "_toggle_bluetooth", "_commit_brightness", "_switch_profile"):
+            self.assertIs(getattr(Win7Tray, action), getattr(LunaTray, action))
+        self.assertTrue(issubclass(Win7Tray, LunaTray))
+
+    def test_optional_explorer_uses_its_structural_win7_skin_without_mime_changes(self):
+        self.assertEqual(
+            win7_explorer_command("/usr/bin/rice-explorer", Path("/tmp/folder with spaces")),
+            ("/usr/bin/rice-explorer", "--theme", "win7", "/tmp/folder with spaces"))
 
 
 class Win7ControlPanelTests(unittest.TestCase):
