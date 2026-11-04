@@ -124,6 +124,15 @@ class LunaGeometryTests(unittest.TestCase):
 
 
 class LunaArtworkTests(unittest.TestCase):
+    def test_nested_program_group_icons_are_original_luna_assets(self):
+        icons = project_root() / "assets/icons/RiceHub-Luna-Icons/scalable"
+        for name, directory in (("accessories-text-editor", "apps"),
+                                ("web-browser", "apps"),
+                                ("preferences-system", "apps"),
+                                ("folder-documents", "places"),
+                                ("applications-other", "apps")):
+            self.assertTrue((icons / directory / (name + ".svg")).is_file())
+
     def test_bespoke_user_avatar_and_xp_system_glyphs_are_valid_svg(self):
         root = project_root()
         icons = root / "assets/icons/RiceHub-Luna-Icons/scalable/apps"

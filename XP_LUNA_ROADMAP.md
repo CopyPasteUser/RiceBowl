@@ -62,7 +62,7 @@ folders produced unexpectedly inert Start links. These improvements are scoped
 to `winxp` only:
 
 - [x] Build a centered XP-like category Control Panel window with an actual
-  category / classic switch and eight real settings launch targets. The blue
+  category / classic switch and real Linux settings tasks. The blue
   sidebar retains accurate network/battery information and verifiable output
   volume/mute controls, even when an external sound backend is unavailable.
 - [x] Make Start > Control Panel open that same native panel, eliminating two

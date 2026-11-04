@@ -126,13 +126,13 @@ def luna_programs(apps, pins: tuple[str, ...], query: str, limit: int = 8):
 def luna_program_groups(apps):
     """Every installed app appears exactly once in the XP All Programs flyout."""
     categories = (
-        ("Accessories", "applications-utilities", ("Utility", "Accessories", "TextEditor")),
+        ("Accessories", "accessories-text-editor", ("Utility", "Accessories", "TextEditor")),
         ("Games", "applications-games", ("Game",)),
         ("Graphics", "applications-graphics", ("Graphics", "Photography")),
-        ("Internet", "applications-internet", ("Network", "WebBrowser", "Email")),
+        ("Internet", "web-browser", ("Network", "WebBrowser", "Email")),
         ("Multimedia", "applications-multimedia", ("Audio", "Video", "Player")),
-        ("Office", "applications-office", ("Office", "Spreadsheet", "WordProcessor")),
-        ("System Tools", "applications-system", ("System", "Settings", "FileManager", "TerminalEmulator")),
+        ("Office", "folder-documents", ("Office", "Spreadsheet", "WordProcessor")),
+        ("System Tools", "preferences-system", ("System", "Settings", "FileManager", "TerminalEmulator")),
     )
     remaining = list(apps)
     grouped = []
@@ -702,8 +702,17 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 category = next((item for item in self.luna_programs_popup.get_children()
                                  if isinstance(item, Gtk.MenuItem) and item.get_submenu()), None)
                 if category:
-                    category.select()
-                GLib.timeout_add(450, self._capture_luna_nested)
+                    # A real pointer hover also validates the submenu placement;
+                    # programmatic select() lacks an X11 trigger event.
+                    import subprocess
+
+                    x, y = category.get_window().get_root_origin()
+                    allocation = category.get_allocation()
+                    subprocess.run(["xdotool", "mousemove", str(x + allocation.x +
+                                    allocation.width // 2), str(y + allocation.y +
+                                    allocation.height // 2)], check=True, timeout=3)
+                self._luna_capture_submenu = category.get_submenu() if category else None
+                GLib.timeout_add(600, self._capture_luna_nested)
             except Exception:
                 import traceback
                 traceback.print_exc()
@@ -713,6 +722,14 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _capture_luna_nested(self):
             try:
+                submenu = self._luna_capture_submenu
+                if submenu is not None:
+                    assert submenu.get_mapped(), "XP category submenu did not open on hover"
+                    self._assert_luna_popup_above_taskbar(submenu)
+                    parent_x, _y = self.luna_programs_popup.get_window().get_root_origin()
+                    child_x, _y = submenu.get_window().get_root_origin()
+                    assert (child_x >= parent_x + self.luna_programs_popup.get_allocated_width() - 4), (
+                        "XP submenu must cascade beside its parent, not cover categories")
                 self._capture_screen(f"ricebowl-winxp-programs-0.9.1{self._capture_variant}.png")
                 self._hide_menu()
                 self._toggle_actions()
@@ -1186,8 +1203,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             return screen.get_monitor_geometry(monitor if monitor >= 0 else 0)
 
         def _icon(self, name, size=Gtk.IconSize.LARGE_TOOLBAR):
-            if profile in ("aero", "winclassic"):
-                theme_dir = "RiceHub-Aero" if profile == "aero" else "RiceHub-Classic-Icons"
+            if profile in ("aero", "winclassic", "winxp"):
+                theme_dir = {"aero": "RiceHub-Aero", "winclassic": "RiceHub-Classic-Icons",
+                             "winxp": "RiceHub-Luna-Icons"}[profile]
                 for category in ("places", "apps", "devices"):
                     candidate = (project_root() / ("assets/icons/" + theme_dir + "/scalable") /
                                  category / (name + ".svg"))
@@ -1198,6 +1216,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                                 str(candidate), pixels, pixels, True))
                         except (GLib.Error, OSError):
                             pass
+                if profile == "winxp" and name != "applications-other":
+                    theme = Gtk.IconTheme.get_default()
+                    if theme is not None and not theme.has_icon(name):
+                        return self._icon("applications-other", size)
             return Gtk.Image.new_from_icon_name(name, size)
 
         def _set_status_icon(self, image, kind):
@@ -2399,6 +2421,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             apps.pack_start(scroll, True, True, 0)
             browse = self._class(Gtk.Button(label="All Programs  ▸"), "luna-all-programs")
             self.luna_programs_popup = self._programs_cascade(self._reveal_luna_search)
+            self.luna_programs_popup.attach_to_widget(browse, None)
             browse.connect("clicked", lambda widget: self.luna_programs_popup.popup_at_widget(
                 widget, Gdk.Gravity.SOUTH_EAST, Gdk.Gravity.SOUTH_WEST, None))
             self.luna_browse = browse
