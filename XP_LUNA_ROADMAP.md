@@ -241,6 +241,10 @@ acceptance checklist above is not yet fully satisfied.
   program search with the initial character preserved. Search Down/Up focuses
   the first/last result, while Tab keeps native access to right-side links.
   Further nested-menu and screen-reader acceptance is still open.
+- [x] Start > Run opens a real Luna-themed native dialog with file browsing,
+  inline launch errors and temporary in-session history, reusing the verified
+  safe Win98 Run target parser and URI/command launcher. No shell expansion,
+  no command-history file, no external AppFinder required.
 - [x] Focused unit coverage and XP-native smoke assertions for the new taskbar
   dialog, crowded-window grouping, Help and System Properties. Gallery CI now
   saves actual 1600×900 and 1024×768 Taskbar Properties screenshots alongside

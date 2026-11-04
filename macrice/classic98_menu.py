@@ -160,11 +160,19 @@ def remember_run(history: tuple[str, ...], value: str, maximum: int = 12) -> tup
     return (text, *(entry for entry in history if entry != text))[:maximum]
 
 
-def show_run(shell, Gtk, Gio):
-    """Win98 Run with browse, inline errors and a volatile recent-command list."""
+def show_run(shell, Gtk, Gio, *, theme="winclassic"):
+    """Shared safe Run backend with Win98 or XP-native UI and isolated history."""
+    if theme not in ("winclassic", "winxp"):
+        raise ValueError("Unsupported Run dialog theme")
     shell._hide_menu()
-    history = tuple(getattr(shell, "_classic98_run_history", ()))
-    dialog = Gtk.Dialog(title="Run", transient_for=shell.bar, flags=Gtk.DialogFlags.MODAL)
+    history_name = "_luna_run_history" if theme == "winxp" else "_classic98_run_history"
+    history = tuple(getattr(shell, history_name, ()))
+    dialog = Gtk.Dialog(title="Run", transient_for=shell.bar,
+                        flags=(Gtk.DialogFlags.MODAL | Gtk.DialogFlags.DESTROY_WITH_PARENT
+                               if theme == "winxp" else Gtk.DialogFlags.MODAL))
+    if theme == "winxp":
+        dialog.get_style_context().add_class("luna-run-dialog")
+        shell._luna_run_dialog = dialog
     dialog.add_button("Cancel", Gtk.ResponseType.CANCEL)
     dialog.add_button("OK", Gtk.ResponseType.OK)
     dialog.set_default_response(Gtk.ResponseType.OK)
@@ -175,10 +183,20 @@ def show_run(shell, Gtk, Gio):
     body.set_margin_end(14)
     body.set_margin_top(12)
     body.set_margin_bottom(12)
-    prompt = Gtk.Label(label="Type the name of a program, folder, document, or Internet resource:",
+    prompt = Gtk.Label(label=("Type the name of a program, folder, document or Internet\n"
+                              "resource, and RiceBowl will open it for you."
+                              if theme == "winxp" else
+                              "Type the name of a program, folder, document, or Internet resource:"),
                        xalign=0)
     prompt.set_line_wrap(True)
-    body.pack_start(prompt, False, False, 0)
+    if theme == "winxp":
+        intro = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=13)
+        intro.pack_start(Gtk.Image.new_from_icon_name(
+            "system-run", Gtk.IconSize.DIALOG), False, False, 0)
+        intro.pack_start(prompt, True, True, 0)
+        body.pack_start(intro, False, False, 2)
+    else:
+        body.pack_start(prompt, False, False, 0)
     row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
     row.pack_start(Gtk.Label(label="Open:"), False, False, 0)
     combo = Gtk.ComboBoxText.new_with_entry()
@@ -215,13 +233,17 @@ def show_run(shell, Gtk, Gio):
     clear = Gtk.Button(label="Clear history")
     clear.set_sensitive(bool(history))
     def clear_history(_button):
-        shell._classic98_run_history = ()
+        setattr(shell, history_name, ())
         combo.remove_all()
         clear.set_sensitive(False)
     clear.connect("clicked", clear_history)
     tools.pack_start(clear, False, False, 0)
     body.pack_start(tools, False, False, 0)
     dialog.show_all()
+    if theme == "winxp":
+        from .luna_taskbar_settings import center_on_workarea
+
+        dialog.move(*center_on_workarea(shell._desktop_rect(), *dialog.get_size()))
     feedback.hide()
     entry.grab_focus()
     try:
@@ -236,12 +258,14 @@ def show_run(shell, Gtk, Gio):
                 feedback.show()
                 entry.grab_focus()
                 continue
-            shell._classic98_run_history = remember_run(
-                tuple(getattr(shell, "_classic98_run_history", ())), typed)
+            setattr(shell, history_name, remember_run(
+                tuple(getattr(shell, history_name, ())), typed))
             shell._hide_menu()
             break
     finally:
         dialog.destroy()
+        if theme == "winxp":
+            shell._luna_run_dialog = None
 
 
 def show_favorite_manager(shell, Gtk):
