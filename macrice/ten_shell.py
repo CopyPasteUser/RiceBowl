@@ -130,7 +130,20 @@ CSS = b"""
 .ten-action-notifications { background: #242424; padding: 13px 17px; }
 .ten-action-title { color: #f8f8f8; font-size: 16px; font-weight: 600; }
 .ten-notification-empty { color: #d8d8d8; font-size: 12px; }
+.ten-notification-card { background: #303030; border: 1px solid #444444;
+                         border-left: 3px solid #666666; padding: 9px 11px; }
+.ten-notification-unread { border-left-color: @ten-blue; }
+.ten-notification-title { color: white; font-size: 12px; font-weight: 600; }
+.ten-notification-dismiss { background: transparent; color: #bce4ff;
+                            border: 1px solid #595959; padding: 3px 7px; font-size: 10px; }
+.ten-notification-dismiss:hover { background: #484848; }
 .ten-action-bottom { background: #1c1c1c; padding: 12px 12px 16px; border-top: 1px solid #474747; }
+.ten-live-switch { background: #363636; color: white; border: 1px solid #666666;
+                   padding: 9px 5px; font-size: 11px; }
+.ten-live-switch:checked { background: @ten-blue; border-color: #68beff; }
+.ten-live-switch:disabled { background: #282828; color: #909090; }
+.ten-live-switch:focus { border-color: #a1dfff; }
+.ten-action-feedback { color: #cbddec; font-size: 10px; }
 .ten-quick { background: #444444; color: white; border: 1px solid #565656;
   border-radius: 0; box-shadow: none; padding: 7px 5px; min-height: 61px; }
 .ten-quick:hover, .ten-quick:focus { background: #535353; border-color: #8ed1ff; }

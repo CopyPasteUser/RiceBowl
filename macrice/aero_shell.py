@@ -1597,6 +1597,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self.luna_balloon.close()
             if profile in ("winxp", "aero") and self.luna_tray is not None:
                 self.luna_tray.close()
+            if profile == "windows10" and hasattr(self, "ten_controller"):
+                self.ten_controller.close()
             if self._volume_write_source:
                 GLib.source_remove(self._volume_write_source)
                 self._volume_write_source = 0
@@ -2047,6 +2049,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
                 self.luna_tray = Win7Tray(self, Gtk, GLib)
                 self.luna_balloon = Win7Balloon(self, Gtk, Gdk, GLib)
+            elif profile == "windows10":
+                from .ten_riceware import TenController
+
+                self.ten_controller = TenController(self, Gtk, GLib)
             for name in ("battery", "network", "audio"):
                 button = self._class(Gtk.Button(), "rice-status")
                 button.get_style_context().add_class("rice-status-" + name)
@@ -2088,6 +2094,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             if profile in ("winxp", "aero") and self.luna_tray is not None:
                 self.luna_tray.refresh_status(self._apply_status)
                 return True
+            if profile == "windows10":
+                self.ten_controller.refresh_status(self._apply_status)
+                return True
             def worker():
                 try:
                     from .hardware_status import read_status
@@ -2109,6 +2118,12 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     self.luna_tray.on_status(None)
                 if hasattr(self, "frutiger_status_label"):
                     self.frutiger_status_label.set_text(frutiger_status_summary(None))
+                if profile == "windows10" and hasattr(self, "volume_status_label"):
+                    self.control_network_label.set_text("Network: unavailable — retrying")
+                    self.control_battery_label.set_text("Battery: unavailable — retrying")
+                    self.volume_status_label.set_text("Audio backend unavailable — retrying")
+                    self.volume_scale.set_sensitive(False)
+                    self.mute_button.set_sensitive(False)
                 if profile == "frutiger" and hasattr(self, "control_network_label"):
                     self.control_network_label.set_text("Network: unavailable — retrying")
                     self.control_battery_label.set_text("Battery: unavailable — retrying")
@@ -2123,7 +2138,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 for button, _image, _label in self._status_widgets.values():
                     # Luna's tray popovers are also the recovery path when a
                     # transient probe fails; keep them openable for details.
-                    button.set_sensitive(self.luna_tray is not None)
+                    button.set_sensitive(self.luna_tray is not None or
+                                         profile == "windows10")
                     button.set_tooltip_text("Hardware status temporarily unavailable")
                 return False
             previous_status = self._last_status
@@ -2267,6 +2283,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self.luna_tray.volume_pending(value)
             if profile in ("winxp", "aero") and self.luna_tray is not None:
                 self.luna_tray.change_audio("audio_volume", value, self._volume_change_complete)
+            elif profile == "windows10":
+                self.ten_controller.change_audio("audio_volume", value,
+                                                 self._volume_change_complete)
             else:
                 def worker():
                     from .hardware_status import set_sound_volume
@@ -2314,6 +2333,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
             if profile in ("winxp", "aero") and self.luna_tray is not None:
                 self.luna_tray.change_audio("audio_mute", requested, self._mute_change_complete)
+            elif profile == "windows10":
+                self.ten_controller.change_audio("audio_mute", requested,
+                                                 self._mute_change_complete)
             else:
                 def worker():
                     from .hardware_status import set_sound_mute
@@ -4857,6 +4879,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._cancel_popup_hide("control")
             if profile == "chromeos" and hasattr(self, "chrome_notifications"):
                 self.chrome_notifications.discard()
+            if profile == "windows10" and hasattr(self, "ten_controller"):
+                self.ten_controller.discard()
             self.actions.hide()
 
         def _show_aqua_control(self, category=None, task=None):
@@ -5000,6 +5024,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.actions.move(rect.x + rect.width - width - margin,
                               rect.y + rect.height - panel_height - height - margin)
             self.actions.present()
+            if profile == "windows10":
+                self.ten_controller.on_open()
             if profile == "chromeos":
                 # Utility popups don't reliably emit a second configure event
                 # after present() under Xvfb. Apply the X11 mask once mapped.
