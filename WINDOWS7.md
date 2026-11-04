@@ -50,6 +50,15 @@ captures and physical Mint verification remain open.
   Windows hidden behind others may not yield a usable thumbnail.
 - Click a grouped app to select its window; right-click to switch/close a
   specific window or pin a recognized installed application.
+- Inactive windows requesting attention through X11/Wnck mark their Superbar
+  group amber; focus removes the mark when the native request clears.
+- Right-click a running window to **Snap to left half**, **Snap to right half**,
+  **Maximize** or **Restore previous size**. A grouped app exposes the same
+  actions under **Arrange windows** for each actual member. The workarea is
+  selected from that window's monitor and excludes XFCE panel/taskbar struts.
+  Original window dimensions and maximization state are retained for restore,
+  then discarded when the window closes. No system-wide keyboard shortcut or
+  window manager configuration is overridden.
 - Right-click pinned programs to open real MIME-compatible local recent files
   through that program. Empty Jump Lists never invent entries.
 - Hover **Show Desktop** to temporarily reveal the desktop; moving away restores
@@ -58,6 +67,8 @@ captures and physical Mint verification remain open.
 The CI suite also verifies both 1600×900 and 1024×768. Native window tracking,
 real notifications, multiple monitors, and power/network hardware need the
 owner's Linux Mint XFCE acceptance; CI captures are not a physical desktop photo.
+Edge-drag Snap, Windows+Arrow bindings and Shake are separate open roadmap
+items; the context menu is the available native arrangement entry point.
 
 ## What is included
 
@@ -65,7 +76,7 @@ owner's Linux Mint XFCE acceptance; CI captures are not a physical desktop photo
 | --- | --- | --- |
 | **Start orb** | [Aero Penguin](assets/aero-penguin.svg) | Original branded Linux Start button; toggles a real GTK window |
 | **Start menu** | [aero_shell.py](macrice/aero_shell.py) | Installed desktop programs, search, Enter/Escape/Down keyboard operation, paging, Home/Computer/Documents, Control Panel, safe XFCE session dialog |
-| **Taskbar** | [aero_shell.py](macrice/aero_shell.py) / [aero_superbar.py](macrice/aero_superbar.py) | 48px glass Superbar, larger real app icons, WM_CLASS grouping, window previews, Jump Lists, minimize/restore, active group, overflow |
+| **Taskbar** | [aero_shell.py](macrice/aero_shell.py) / [aero_superbar.py](macrice/aero_superbar.py) | 48px glass Superbar, real app icons and attention states, WM_CLASS grouping, previews, Jump Lists, native context-menu Snap/maximize/restore, overflow |
 | **Control Panel** | [win7_control_panel.py](macrice/win7_control_panel.py) | Eight categories, three views, Back/Forward, applet details, installed Linux actions and unavailable states |
 | **Pinned applications** | [aero_pins.py](macrice/aero_pins.py) | Right-click a Start result to pin, right-click taskbar icon to unpin; 6 persistent launchers maximum |
 | **Show Desktop** | [aero_windows.py](macrice/aero_windows.py) | Wnck Show Desktop with safe reversible hover Peek and click action |

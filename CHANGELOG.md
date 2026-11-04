@@ -1,5 +1,22 @@
 # RiceBowl changelog
 
+## Unreleased — Windows 7 native window arrangement and attention (4 November 2026)
+
+- Show a distinct amber Aero Superbar state for real X11 window-attention
+  requests, including inactive members of grouped applications. Native
+  Wnck state-change signals clear the warning when the request is dismissed.
+- Add per-window **Snap left/right**, **Maximize** and **Restore previous size**
+  to the running-app Jump List (under **Arrange windows** for app groups).
+  Actions target existing XFWM4 windows without changing global keybindings;
+  tile bounds respect each window's monitor workarea, including negative
+  coordinates and taskbar/panel reservations. Closed windows discard cached
+  geometry. Fullscreen and non-task windows are not rearranged.
+- Add dedicated unit tests for odd-width split, multi-monitor choice, state
+  restoration, closed windows and real attention snapshot propagation; extend
+  the native GTK smoke test for grouped menus and attention styling.
+- Edge-drag, global Win+Arrow keybindings, Shake, preview compositor parity
+  and physical Mint acceptance remain open.
+
 ## Unreleased — Windows 7 personalized notification icons (4 November 2026)
 
 - Added an Aero-themed **Customize Notification Area Icons** dialog reachable

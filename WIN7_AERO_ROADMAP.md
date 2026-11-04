@@ -178,6 +178,29 @@ P0/P1/Sollkatalog checkboxes below stay open until fully accepted.
 **Still open:** native Win7 balloon notifications, Snap/Shake fidelity,
 deep applets and physical hardware acceptance.
 
+### P1 progress — native window attention and reversible context-menu Snap
+
+- [x] Read real X11 `needs_attention()` from Wnck state notifications and render
+  an amber Aero Superbar state for inactive groups, including hidden members.
+  The highlight is cleared when the native attention request clears or the
+  requesting window gains foreground focus.
+- [x] Add live per-window context-menu left/right half-tiling, maximize and
+  restore (including previously maximized state). Group menus expose actions
+  for each actual member without storing native Wnck window objects.
+- [x] Choose the correct monitor's *available workarea* for half-tiling,
+  excluding taskbar/dock struts; preserve odd widths and negative monitor
+  coordinates; discard saved geometry when the window is closed.
+- [x] Add pure geometry, maximization, missing/fullscreen-window and attention
+  state tests, plus native GTK smoke assertions for attention and arrange menus.
+- [ ] Validate actual XFWM4 geometry requests, focus/restore, cross-monitor
+  behavior, minimize/maximize races and high-DPI rendering on Mint hardware.
+- [ ] Implement and accept edge-drag Snap, reversible system keyboard shortcuts,
+  Shake and optional visual tile preview without hijacking existing XFWM4
+  window-management bindings.
+
+The complete Superbar/Snap umbrella tasks below remain open. The available
+right-click arrangement is **not** a substitute for edge-drag/keyboard Snap.
+
 ### P0 — Close the biggest depth and functionality gaps
 
 - [ ] **Authentic notification area and native-feeling flyouts:** small Aero-style controls anchored to the corresponding Superbar icon. Audio: real volume/mute and output switching; network: actual wired/Wi-Fi status, discovery, connect/disconnect through NetworkManager; power: battery/charge, supported brightness and power profile; clock: date/calendar; Bluetooth: adapter/device view when installed. Display success only after verifying the backend state. Handle absent hardware, offline mode, permission errors, timeouts and unsupported actions honestly. This is Windows 7's notification area, **not Windows 10's Action Center**.
