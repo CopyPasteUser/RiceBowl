@@ -841,6 +841,16 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     assert self._luna_system_dialog is None
                     self._luna_help_dialog.response(Gtk.ResponseType.CLOSE)
                     assert self._luna_help_dialog is None
+                    original_dialog_run = Gtk.Dialog.run
+                    def cancel_luna_run(dialog):
+                        assert dialog.get_title() == "Run"
+                        assert dialog.get_style_context().has_class("luna-run-dialog")
+                        return Gtk.ResponseType.CANCEL
+                    try:
+                        Gtk.Dialog.run = cancel_luna_run
+                        self._luna_open_run()
+                    finally:
+                        Gtk.Dialog.run = original_dialog_run
                     assert self.luna_control_stack.get_visible_child_name() == "categories"
                     assert set(self.luna_tray.popovers) == {
                         "audio", "network", "battery", "clock", "bluetooth"}
@@ -1259,7 +1269,42 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 import traceback
                 traceback.print_exc()
                 self._smoke_failed = True
+                self.quit()
+                return False
+            GLib.timeout_add(280, self._capture_luna_run_start)
+            return False
+
+        def _capture_luna_run_start(self):
+            try:
+                GLib.timeout_add(400, self._capture_luna_run_snapshot)
+                self._luna_open_run()
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._smoke_failed = True
             self.quit()
+            return False
+
+        def _capture_luna_run_snapshot(self):
+            try:
+                dialog = self._luna_run_dialog
+                assert dialog is not None and dialog.get_mapped()
+                assert dialog.get_style_context().has_class("luna-run-dialog")
+                rect = self._desktop_rect()
+                x, y = dialog.get_window().get_root_origin()
+                width, height = dialog.get_size()
+                assert (rect.x <= x and rect.y <= y and
+                        x + width <= rect.x + rect.width and
+                        y + height <= rect.y + rect.height - panel_height), (
+                    f"XP Run dialog offscreen: {x},{y} {width}x{height}")
+                self._capture_screen(f"ricebowl-winxp-run-0.9.1{self._capture_variant}-extra.png")
+                dialog.response(Gtk.ResponseType.CANCEL)
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._smoke_failed = True
+                if getattr(self, "_luna_run_dialog", None) is not None:
+                    self._luna_run_dialog.response(Gtk.ResponseType.CANCEL)
             return False
 
         def _capture_luna_tray_preferences(self):
@@ -2434,6 +2479,12 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 return
             from .luna_help import show_help
             show_help(self, Gtk)
+
+        def _luna_open_run(self):
+            if profile != "winxp":
+                return
+            from .classic98_menu import show_run
+            show_run(self, Gtk, Gio, theme="winxp")
 
         def _luna_start_context(self, _widget, event):
             if profile != "winxp" or event.button != 3:
@@ -3697,7 +3748,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                                                      command="catfish" if shutil.which("catfish") else None,
                                                      callback=self._reveal_luna_search), False, False, 0)
             self.luna_run_link = self._luna_navigation(
-                "Run…", "system-run", command="xfce4-appfinder")
+                "Run…", "system-run", callback=self._luna_open_run)
             places.pack_start(self.luna_run_link, False, False, 0)
             place_scroll = Gtk.ScrolledWindow()
             place_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
