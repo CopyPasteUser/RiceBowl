@@ -86,8 +86,12 @@ def select_tray_icons(items, visible_limit, overrides=None):
 class StatusNotifierTray:
     """Register as host; own a watcher only if no existing one owns its bus name."""
 
-    def __init__(self, box, Gtk, Gio, GLib, GdkPixbuf, *, visible_limit=None):
+    def __init__(self, box, Gtk, Gio, GLib, GdkPixbuf, *, visible_limit=None,
+                 theme="win7"):
+        if theme not in ("win7", "luna"):
+            raise ValueError("Unsupported StatusNotifier tray theme")
         self.box, self.Gtk, self.Gio, self.GLib, self.GdkPixbuf = box, Gtk, Gio, GLib, GdkPixbuf
+        self.theme = theme
         self.items = {}
         self.item_signals = {}
         self.item_state = {}
@@ -98,18 +102,24 @@ class StatusNotifierTray:
         self.preferences = None
         self.overflow_ids = ()
         self._overflow_menu = None
+        self._preferences_dialog = None
         self.overflow_button = None
         if visible_limit is not None:
             from .win7_tray_prefs import TrayPreferences, load
 
+            self.preferences_path = None
+            if theme == "luna":
+                from .luna_tray_preferences import preferences_path
+                self.preferences_path = preferences_path()
+
             try:
-                self.preferences = load()
+                self.preferences = load(self.preferences_path)
             except (OSError, ValueError) as exc:
-                logging.getLogger(__name__).warning("Invalid Windows 7 SNI preferences: %s", exc)
-                self.preferences = TrayPreferences()
+                logging.getLogger(__name__).warning("Invalid %s SNI preferences: %s", theme, exc)
+                self.preferences = TrayPreferences(visible_limit)
             self.visible_limit = self.preferences.visible_limit
             self.overflow_button = Gtk.Button(label="▴")
-            self.overflow_button.get_style_context().add_class("win7-tray-chevron")
+            self.overflow_button.get_style_context().add_class(f"{theme}-tray-chevron")
             self.overflow_button.set_relief(Gtk.ReliefStyle.NONE)
             self.overflow_button.get_accessible().set_name("Show hidden notification icons")
             self.overflow_button.set_tooltip_text("Show hidden notification icons")
@@ -356,7 +366,7 @@ class StatusNotifierTray:
             self._overflow_menu.popdown()
         menu = self.Gtk.Menu()
         self._overflow_menu = menu
-        menu.get_style_context().add_class("win7-tray-overflow-menu")
+        menu.get_style_context().add_class(f"{getattr(self, 'theme', 'win7')}-tray-overflow-menu")
         for identifier in self.overflow_ids:
             if identifier not in self.items:
                 continue
@@ -395,7 +405,7 @@ class StatusNotifierTray:
         menu.destroy()
 
     def open_preferences(self):
-        """Open a native, explicit Win7 dialog; never modify XFCE tray settings."""
+        """Open rice-specific preferences; never modify XFCE tray settings."""
         if self.preferences is None:
             return
         self.GLib.idle_add(self._open_preferences)
@@ -403,12 +413,17 @@ class StatusNotifierTray:
     def _open_preferences(self):
         from .win7_tray_prefs import TrayPreferences, save
 
+        if self._preferences_dialog is not None:
+            self._preferences_dialog.present()
+            return False
         Gtk = self.Gtk
         parent = self.box.get_toplevel()
+        theme = getattr(self, "theme", "win7")
         dialog = Gtk.Dialog(title="Customize Notification Area Icons",
                             transient_for=parent if isinstance(parent, Gtk.Window) else None,
                             flags=Gtk.DialogFlags.MODAL)
-        dialog.get_style_context().add_class("win7-tray-customize")
+        dialog.get_style_context().add_class(f"{theme}-tray-customize")
+        self._preferences_dialog = dialog
         dialog.set_default_size(500, 350)
         dialog.add_button("Cancel", Gtk.ResponseType.CANCEL)
         dialog.add_button("Restore defaults", Gtk.ResponseType.APPLY)
@@ -420,7 +435,7 @@ class StatusNotifierTray:
         content.set_margin_top(12)
         content.set_margin_bottom(12)
         heading = Gtk.Label(label="Choose which icons appear on the taskbar", xalign=0)
-        heading.get_style_context().add_class("win7-tray-customize-heading")
+        heading.get_style_context().add_class(f"{theme}-tray-customize-heading")
         content.pack_start(heading, False, False, 0)
         settings_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
         settings_row.pack_start(Gtk.Label(label="Visible icons", xalign=0), True, True, 0)
@@ -470,11 +485,18 @@ class StatusNotifierTray:
                         0, 0, 2, 1)
         scroll.add(grid)
         content.pack_start(scroll, True, True, 0)
-        info = Gtk.Label(label="Preferences only affect RiceBowl Windows 7.\n"
+        info = Gtk.Label(label=f"Preferences only affect RiceBowl {'Windows XP Luna' if theme == 'luna' else 'Windows 7'}.\n"
                                "Applications without a stable ID use automatic placement.", xalign=0)
         info.set_line_wrap(True)
         content.pack_start(info, False, False, 0)
         dialog.show_all()
+        if theme == "luna":
+            from .luna_taskbar_settings import center_on_workarea
+
+            screen = dialog.get_screen()
+            monitor = screen.get_monitor_at_window(parent.get_window())
+            dialog.move(*center_on_workarea(screen.get_monitor_geometry(monitor),
+                                            *dialog.get_size()))
         response = dialog.run()
         if response in (Gtk.ResponseType.OK, Gtk.ResponseType.APPLY):
             icons = dict(self.preferences.icons)
@@ -489,7 +511,7 @@ class StatusNotifierTray:
                         icons[stable_id] = mode
                 candidate = TrayPreferences(int(count.get_active_id()), icons)
             try:
-                save(candidate)
+                save(candidate, getattr(self, "preferences_path", None))
             except (OSError, ValueError) as exc:
                 problem = Gtk.MessageDialog(transient_for=dialog, flags=Gtk.DialogFlags.MODAL,
                                             message_type=Gtk.MessageType.ERROR,
@@ -503,6 +525,7 @@ class StatusNotifierTray:
                 self.visible_limit = candidate.visible_limit
                 self._reflow()
         dialog.destroy()
+        self._preferences_dialog = None
         return False
 
     def _pixmap(self, image, pixmaps):

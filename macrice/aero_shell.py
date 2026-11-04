@@ -772,6 +772,21 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self._toggle_actions()
                 assert not self.actions.get_visible()
                 if profile == "winxp":
+                    if self._tray is not None:
+                        assert self._tray.theme == "luna"
+                        assert self._tray.preferences is not None
+                        assert self._tray.overflow_button.get_style_context().has_class(
+                            "luna-tray-chevron")
+                        saved_dialog_run = Gtk.Dialog.run
+                        def cancel_luna_tray_preferences(dialog):
+                            assert dialog.get_style_context().has_class(
+                                "luna-tray-customize")
+                            return Gtk.ResponseType.CANCEL
+                        try:
+                            Gtk.Dialog.run = cancel_luna_tray_preferences
+                            self._tray._open_preferences()
+                        finally:
+                            Gtk.Dialog.run = saved_dialog_run
                     self.luna_open_taskbar_properties()
                     assert self._luna_taskbar_dialog is not None
                     assert self._luna_taskbar_dialog.get_style_context().has_class(
@@ -1186,11 +1201,36 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self._capture_screen(
                     f"ricebowl-winxp-properties-0.9.1{self._capture_variant}-extra.png")
                 dialog.response(Gtk.ResponseType.CANCEL)
+                if self._tray is not None:
+                    GLib.timeout_add(440, self._capture_luna_tray_preferences)
+                    self._tray._open_preferences()
             except Exception:
                 import traceback
                 traceback.print_exc()
                 self._smoke_failed = True
             self.quit()
+            return False
+
+        def _capture_luna_tray_preferences(self):
+            try:
+                dialog = self._tray._preferences_dialog
+                assert dialog is not None and dialog.get_mapped()
+                rect = self._desktop_rect()
+                x, y = dialog.get_window().get_root_origin()
+                width, height = dialog.get_size()
+                assert (rect.x <= x and rect.y <= y and
+                        x + width <= rect.x + rect.width and
+                        y + height <= rect.y + rect.height - panel_height), (
+                    f"XP notification preferences offscreen: {x},{y} {width}x{height}")
+                self._capture_screen(
+                    f"ricebowl-winxp-notification-icons-0.9.1{self._capture_variant}-extra.png")
+                dialog.response(Gtk.ResponseType.CANCEL)
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._smoke_failed = True
+                if self._tray is not None and self._tray._preferences_dialog is not None:
+                    self._tray._preferences_dialog.response(Gtk.ResponseType.CANCEL)
             return False
 
         def _capture_workspace_start(self):
@@ -2203,7 +2243,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     from .aero_tray import StatusNotifierTray
                     self._tray = StatusNotifierTray(
                         tray_box, Gtk, Gio, GLib, GdkPixbuf,
-                        visible_limit=3 if profile == "aero" else None)
+                        visible_limit=3 if profile in ("aero", "winxp") else None,
+                        theme="luna" if profile == "winxp" else "win7")
                 except (GLib.Error, RuntimeError, OSError) as exc:
                     logging.getLogger(__name__).warning("Optional Aero tray unavailable: %s", exc)
             def update_clock():
@@ -2328,6 +2369,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._track_luna_popup(menu)
             for title, action in (
                 ("Taskbar and Start Menu Properties…", self.luna_open_taskbar_properties),
+                ("Customize notification icons…", lambda: self._tray.open_preferences()
+                 if self._tray is not None else None),
                 ("Show Desktop", self._show_desktop),
                 ("Add XP desktop icons…", lambda: self._luna_manage_desktop("install")),
                 ("Remove XP desktop icons…", lambda: self._luna_manage_desktop("remove")),
@@ -2338,6 +2381,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 item = Gtk.MenuItem(label=title)
                 if title == "Desktop Properties…":
                     item.set_sensitive(shutil.which("xfdesktop-settings") is not None)
+                elif title == "Customize notification icons…":
+                    item.set_sensitive(self._tray is not None)
                 item.connect("activate", lambda _item, callback=action: callback())
                 menu.append(item)
             menu.show_all()
