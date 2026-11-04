@@ -115,6 +115,8 @@ Current evidence: source files, existing roadmap, current repository screenshot 
 - [x] Connect **Start → Settings → Taskbar & Start Menu** to the new dialog rather than the generic XFCE settings manager; add taskbar blank-area context menu → Properties.
 - [x] Atomic, owner-readable-only configuration writes, strict booleans, corrupt/oversized input fallback and symlink overwrite refusal.
 - [x] Add seven headless regression test cases for persistence and widget application; CI and hardware execution remain to be verified.
+- [x] Upgrade Win98 Run dialog: bounded 12-entry recent-command list kept **in memory only**, clear-history control, Browse, and inline error messages. No shell execution or persistent secrets.
+- [x] Add four Run history ordering/bounds regression tests; real GTK UI remains subject to CI and hardware acceptance.
 - [ ] Add Auto Hide, Lock Taskbar, toolbars configuration, screen-edge position, small icons, and WM capability-aware Always On Top with reversible session ownership.
 - [ ] Verify context menu placement, Apply/Cancel semantics and clock/Quick Launch visibility across login and rice switching on physical Mint/XFCE.
 
