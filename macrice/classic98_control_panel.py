@@ -25,6 +25,8 @@ APPLETS: tuple[Applet, ...] = (
            "Open your installed software manager. Package removal is handled by Linux."),
     Applet("Date/Time", "preferences-system-time", ("time-admin", "gnome-control-center"),
            "Open your system's date and time settings."),
+    Applet("Desktop Icons", "user-desktop", (),
+           "Inspect real XFDesktop files and open the desktop folder without changing ownership."),
     Applet("Display", "video-display", ("xfdesktop-settings", "xfce4-display-settings"),
            "Background, appearance and display options."),
     Applet("Fonts", "preferences-desktop-font", ("xfce4-appearance-settings",),
@@ -39,6 +41,8 @@ APPLETS: tuple[Applet, ...] = (
            "Manage the real audio devices and their output levels."),
     Applet("Network", "network-workgroup", ("nm-connection-editor",),
            "Manage actual NetworkManager connections."),
+    Applet("Bluetooth", "bluetooth-active", ("blueman-manager",),
+           "View paired devices and control a supported Bluetooth adapter."),
     Applet("Power Management", "battery", ("xfce4-power-manager-settings",),
            "Configure suspend, battery and display power behavior."),
     Applet("Printers", "printer", ("system-config-printer",),
@@ -125,7 +129,9 @@ def build(shell, Gtk, Gdk):
     available = 0
     for applet in APPLETS:
         command = executable(applet)
-        native = applet.name in ("Taskbar & Start Menu", "System")
+        native = applet.name in ("Taskbar & Start Menu", "System", "Desktop Icons",
+                                 "Network", "Bluetooth", "Multimedia", "Sounds",
+                                 "Power Management")
         if command or native:
             available += 1
         content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
@@ -153,6 +159,17 @@ def build(shell, Gtk, Gdk):
         elif child._rice_applet == "System":
             from .classic98_system import show_system
             show_system(shell, Gtk)
+        elif child._rice_applet == "Desktop Icons":
+            if not hasattr(shell, "classic98_desktop"):
+                from .classic98_desktop import Classic98Desktop
+                shell.classic98_desktop = Classic98Desktop(shell, Gtk)
+            shell.classic98_desktop.show()
+        elif child._rice_applet in ("Multimedia", "Sounds", "Network", "Bluetooth",
+                                    "Power Management"):
+            popup = {"Multimedia": "audio", "Sounds": "audio", "Network": "network",
+                     "Bluetooth": "bluetooth", "Power Management": "battery"}[
+                         child._rice_applet]
+            shell.classic98_tray_show(popup, centered=True)
         elif child._rice_command:
             shell._open_tool(child._rice_command)
 

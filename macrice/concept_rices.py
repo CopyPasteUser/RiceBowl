@@ -34,7 +34,7 @@ CONCEPTS = {
          ("Internet", "web-browser-symbolic"), *COMMON),
     ),
     "winclassic": Concept(
-        "winclassic", "Windows 98 / 2000", "Teal desktop, compact windows and classic Start",
+        "winclassic", "Windows 98 SE", "Teal desktop, compact windows and classic Start",
         "Programs", "Start", None,
         (("My Computer", "computer-symbolic"), ("Network", "network-workgroup-symbolic"),
          ("Files", "system-file-manager-symbolic"), *COMMON),

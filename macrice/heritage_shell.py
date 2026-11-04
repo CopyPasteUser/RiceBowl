@@ -1001,6 +1001,20 @@ CONTROL_DETAIL_CSS = {
 .classic98-tray-title button { color: #111; background: #c0c0c0;
   border: 2px outset #fff; border-radius: 0; padding: 0 5px; }
 .classic98-tray-popup button { border-radius: 0; }
+.classic98-tray-action { background: #c0c0c0; color: #111;
+  border: 2px outset #fff; border-radius: 0; padding: 3px 6px;
+  box-shadow: none; min-height: 24px; }
+.classic98-tray-action:hover, .classic98-tray-action:focus {
+  background: #d0d0d0; outline: 1px dotted #000080; }
+.classic98-tray-action:active { border: 2px inset #fff; background: #aaa; }
+.classic98-tray-action:disabled { color: #777; }
+.classic98-desktop-window { background: #c0c0c0; color: #111;
+  padding: 9px; border-radius: 0; }
+.classic98-desktop-window treeview { background: #fff; color: #111; }
+.classic98-desktop-window treeview:selected { background: #000080; color: #fff; }
+.classic98-desktop-window button { background: #c0c0c0; color: #111;
+  border: 2px outset #fff; border-radius: 0; min-height: 24px; padding: 2px 7px; }
+.classic98-desktop-window button:active { border: 2px inset #fff; }
 .classic98-tray-popup scale trough { background: #fff; border: 2px inset #fff;
   border-radius: 0; min-height: 8px; }
 .classic98-tray-popup scale slider { background: #c0c0c0; border: 2px outset #fff;

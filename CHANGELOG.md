@@ -1,5 +1,23 @@
 # RiceBowl changelog
 
+## Unreleased — Windows 98 SE Riceware device and desktop integration (4 November 2026)
+
+- Migrated Classic taskbar status, volume and mute writes onto the same bounded,
+  verified riceSpice worker as the newer rices, removing independent Classic
+  hardware threads and retaining XFCE ownership.
+- Added original square/beveled Windows 98 network, Bluetooth, output-device,
+  brightness and power-scheme controls with live data, explicit writes, bounded
+  discovery lists, stale-callback suppression and recoverable backend errors.
+- Opened those Classic dialogs from corresponding native Control Panel applets,
+  including on installations without third-party settings launchers; kept
+  advanced Linux tools accessible where available.
+- Added a read-only ricePlate/XFDesktop desktop icon inspector with actual file
+  metadata, folder navigation and no competing desktop or shortcut service.
+- Narrowed the `winclassic` identity to **Windows 98 SE**, leaving a potential
+  distinct Windows 2000 rice for later. Preserved original Linux artwork.
+- Added regression tests and actual GTK/X11 smoke for new popups; real Mint
+  hardware, suspend/reconnect and advanced full-fidelity applets remain open.
+
 ## Unreleased — Windows 10 native Settings, Network and Task View (4 November 2026)
 
 - Added independently rendered Windows 10 Settings with nine discoverable
