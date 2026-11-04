@@ -631,6 +631,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._smoke_failed = False
             self._capture_gallery = False
             self._capture_variant = ""
+            self._chrome_settings = None
             self._popup_hide_sources = {"menu": 0, "control": 0}
 
         def do_startup(self):
@@ -797,6 +798,23 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 assert not self.menu.get_visible()
                 self._toggle_actions()
                 assert self.actions.get_visible()
+                if profile == "chromeos":
+                    from .chrome_settings import ACTIONS
+                    self.chrome_quick_show_page("Network")
+                    assert self.chrome_quick_stack.get_visible_child_name() == "Network"
+                    self._action_key(type("Event", (), {"keyval": Gdk.KEY_Escape})())
+                    assert self.chrome_quick_stack.get_visible_child_name() == "overview"
+                    self._open_chrome_settings(section="Device")
+                    assert self._chrome_settings.active_section == "Device"
+                    sound = next(action for action in ACTIONS if action.name == "Sound")
+                    self._chrome_settings.show_detail(sound)
+                    assert self._chrome_settings.active_action == sound
+                    self._chrome_settings.back()
+                    assert self._chrome_settings.active_section == "Device"
+                    self._chrome_settings.search.set_text("unlikely-ricebowl-setting")
+                    assert self._chrome_settings.content.get_children()
+                    self._chrome_settings.window.hide()
+                    self._toggle_actions()
                 self._toggle_actions()
                 assert not self.actions.get_visible()
                 if profile == "winxp":
@@ -1978,6 +1996,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
         def _apply_status(self, status):
             self._status_pending = False
             if status is None:
+                if profile == "chromeos":
+                    for action, label in getattr(self, "chrome_quick_status_labels", ()):
+                        label.set_text("Status temporarily unavailable")
                 if self.luna_tray is not None:
                     self.luna_tray.on_status(None)
                 if hasattr(self, "frutiger_status_label"):
@@ -2001,6 +2022,12 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 return False
             previous_status = self._last_status
             self._last_status = status
+            if profile == "chromeos":
+                from .chrome_settings import status_text
+                for action, label in getattr(self, "chrome_quick_status_labels", ()):
+                    label.set_text(status_text(action, status))
+                if self._chrome_settings is not None:
+                    self._chrome_settings.refresh()
             if self.luna_balloon is not None:
                 from .luna_notifications import event_messages
 
@@ -4201,6 +4228,19 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._render_ten_tiles()
             self._populate("")
 
+        def _open_chrome_settings(self, section=None, action=None):
+            """Reuse one settings window, scoped exclusively to ChromeOS."""
+            if profile != "chromeos":
+                return
+            if self._chrome_settings is None:
+                from .chrome_settings import ChromeSettings
+                self._chrome_settings = ChromeSettings(self, Gtk, Gdk)
+            self._hide_menu()
+            self._hide_actions()
+            self._chrome_settings.present(section or (action.section if action else None))
+            if action is not None:
+                self._chrome_settings.show_detail(action)
+
         def _create_chrome_launcher(self):
             """Material You launcher with genuine Gio applications and real shelf pins."""
             from .chrome_shell import apply_rounded_window_shape
@@ -4233,11 +4273,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 "chrome-launcher-title"), True, True, 0)
             settings = self._class(Gtk.Button(), "chrome-launcher-settings")
             settings.set_image(self._icon("preferences-system", Gtk.IconSize.MENU))
-            settings.set_tooltip_text("Open Linux desktop settings")
-            settings.get_accessible().set_name("Open Linux desktop settings")
-            settings.set_sensitive(shutil.which("xfce4-settings-manager") is not None)
-            settings.connect("clicked", lambda _button:
-                             self._open_tool("xfce4-settings-manager"))
+            settings.set_tooltip_text("Open ChromeOS-inspired Settings")
+            settings.get_accessible().set_name("Open ChromeOS-inspired Settings")
+            settings.connect("clicked", lambda _button: self._open_chrome_settings())
             header.pack_end(settings, False, False, 0)
             root.pack_start(header, False, False, 0)
 
@@ -4653,6 +4691,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _action_key(self, event):
             if event.keyval == Gdk.KEY_Escape:
+                if (profile == "chromeos" and hasattr(self, "chrome_quick_stack")
+                        and self.chrome_quick_stack.get_visible_child_name() != "overview"):
+                    self.chrome_quick_show_home()
+                    return True
                 self._hide_actions()
                 return True
             return False
@@ -4787,6 +4829,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self._error("The display is too small for " + ("Action Center." if ten else "Control Panel."))
                 return
             if profile == "chromeos":
+                self.chrome_quick_show_home()
                 self.chrome_quick_clock.set_text(
                     GLib.DateTime.new_now_local().format("%a, %d %b · %H:%M"))
             self.actions.resize(width, height)

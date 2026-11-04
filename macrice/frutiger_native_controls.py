@@ -27,9 +27,10 @@ NATIVE_TASKS = frozenset({
 
 
 class NativeAquaControls:
-    def __init__(self, shell, Gtk, GLib, parent, *, is_current):
+    def __init__(self, shell, Gtk, GLib, parent, *, is_current, style_prefix="aqua"):
         self.shell, self.Gtk, self.GLib = shell, Gtk, GLib
         self.parent, self.is_current = parent, is_current
+        self.style_prefix = style_prefix
         self._generation = 0
         self._syncing = False
         self._busy = False
@@ -39,15 +40,18 @@ class NativeAquaControls:
         self._debounce = 0
 
         self.surface = shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=9),
-                                    "aqua-native-panel")
+                                    self._style("panel"))
         self.title = shell._class(Gtk.Label(label="LIVE CONTROLS", xalign=0),
-                                  "aqua-native-title")
+                                  self._style("title"))
         self.surface.pack_start(self.title, False, False, 0)
         self.status = shell._class(Gtk.Label(label="Reading your Linux devices…", xalign=0),
-                                   "aqua-native-status")
+                                   self._style("status"))
         self.status.set_line_wrap(True)
         self.surface.pack_start(self.status, False, False, 0)
         parent.pack_start(self.surface, False, False, 6)
+
+    def _style(self, name):
+        return f"{self.style_prefix}-native-{name}"
 
     def _add(self, widget, *, interactive=False):
         self.surface.pack_start(widget, False, False, 0)
@@ -56,15 +60,16 @@ class NativeAquaControls:
             self._interactive.append(widget)
         return widget
 
-    def _label(self, text, style="aqua-native-label"):
-        label = self.shell._class(self.Gtk.Label(label=text, xalign=0), style)
+    def _label(self, text, style=None):
+        label = self.shell._class(self.Gtk.Label(label=text, xalign=0),
+                                  style or self._style("label"))
         label.set_line_wrap(True)
         return self._add(label)
 
     def _switch(self, caption, callback):
         row = self.Gtk.Box(orientation=self.Gtk.Orientation.HORIZONTAL, spacing=12)
         title = self.shell._class(self.Gtk.Label(label=caption, xalign=0),
-                                  "aqua-native-label")
+                                  self._style("label"))
         row.pack_start(title, True, True, 0)
         toggle = self.Gtk.Switch()
         toggle.set_valign(self.Gtk.Align.CENTER)
@@ -106,7 +111,7 @@ class NativeAquaControls:
         return scale
 
     def _button(self, caption, callback):
-        button = self.shell._class(self.Gtk.Button(label=caption), "aqua-native-action")
+        button = self.shell._class(self.Gtk.Button(label=caption), self._style("action"))
         button.connect("clicked", lambda _button: callback())
         self._add(button, interactive=True)
         return button
@@ -131,9 +136,9 @@ class NativeAquaControls:
         self.status.set_text(message)
         css = self.status.get_style_context()
         if error:
-            css.add_class("aqua-native-error")
+            css.add_class(self._style("error"))
         else:
-            css.remove_class("aqua-native-error")
+            css.remove_class(self._style("error"))
 
     def _set_sensitive(self, available):
         for widget in self._interactive:
@@ -226,14 +231,14 @@ class NativeAquaControls:
         toggle = self._switch("Wi-Fi radio", wifi_radio_change)
         confirmation = self.shell._class(
             self.Gtk.Box(orientation=self.Gtk.Orientation.VERTICAL, spacing=5),
-            "aqua-native-confirm")
+            self._style("confirm"))
         caution = self.Gtk.Label(
             label="Turning Wi-Fi off may interrupt remote connections. Continue?", xalign=0)
         caution.set_line_wrap(True)
         confirmation.pack_start(caution, False, False, 0)
         buttons = self.Gtk.Box(orientation=self.Gtk.Orientation.HORIZONTAL, spacing=7)
-        cancel = self.shell._class(self.Gtk.Button(label="Keep Wi-Fi on"), "aqua-native-mini")
-        confirm = self.shell._class(self.Gtk.Button(label="Turn Wi-Fi off"), "aqua-native-mini")
+        cancel = self.shell._class(self.Gtk.Button(label="Keep Wi-Fi on"), self._style("mini"))
+        confirm = self.shell._class(self.Gtk.Button(label="Turn Wi-Fi off"), self._style("mini"))
         cancel.connect("clicked", lambda _button: confirmation.set_visible(False))
 
         def confirm_off(_button):
@@ -249,8 +254,8 @@ class NativeAquaControls:
         confirmation.hide()
         self._add(confirmation)
         self._label("The radio switch changes real NetworkManager state. Turning it off can disconnect this computer.",
-                    "aqua-native-hint")
-        self._label("Nearby networks", "aqua-native-section")
+                    self._style("hint"))
+        self._label("Nearby networks", self._style("section"))
         networks_box = self.Gtk.Box(orientation=self.Gtk.Orientation.VERTICAL, spacing=5)
         self._add(networks_box)
 
@@ -270,7 +275,7 @@ class NativeAquaControls:
                                 True, True, 0)
                 action = self.shell._class(self.Gtk.Button(
                     label="Disconnect" if network.connected else "Connect"),
-                    "aqua-native-mini")
+                    self._style("mini"))
                 if network.connected:
                     action.connect("clicked", lambda _button:
                                    self.change(hw.disconnect_wifi))
@@ -294,7 +299,7 @@ class NativeAquaControls:
     def bluetooth(self):
         toggle = self._switch("Bluetooth adapter", lambda state:
                               self.change(lambda: hw.set_bluetooth_power(state)))
-        devices = self._label("Connected devices: checking…", "aqua-native-hint")
+        devices = self._label("Connected devices: checking…", self._style("hint"))
 
         def render(state):
             toggle.set_active(bool(state.powered))
@@ -357,7 +362,7 @@ class NativeAquaControls:
         slider = self._scale("Laptop screen brightness", lambda value:
                               self.change(lambda: hw.set_brightness(value)), minimum=1)
         self._label("Backlight access requires a supported device and permission to use brightnessctl.",
-                    "aqua-native-hint")
+                    self._style("hint"))
 
         def render(value):
             slider.set_value(value or 1)
@@ -371,7 +376,7 @@ class NativeAquaControls:
         self.bind(hw.read_brightness, render)
 
     def battery(self):
-        summary = self._label("Battery: checking…", "aqua-native-section")
+        summary = self._label("Battery: checking…", self._style("section"))
         bar = self.Gtk.LevelBar.new_for_interval(0, 100)
         self._add(bar)
 
@@ -388,7 +393,7 @@ class NativeAquaControls:
         combo = self._combo("Performance / power profile", lambda name:
                             self.change(lambda: hw.set_power_profile(name)))
         self._label("Profiles are offered only when power-profiles-daemon supports them.",
-                    "aqua-native-hint")
+                    self._style("hint"))
 
         def render(snapshot):
             current, supported = snapshot
