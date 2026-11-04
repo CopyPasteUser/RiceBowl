@@ -694,6 +694,29 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     assert self._win7_preview is not None
                     self._win7_stop_preview()
                     self._win7_windows_changed((), None)
+                if profile == "frutiger":
+                    # Reproduce the Settings dead-end under an actual GTK/Xvfb
+                    # event environment, not only through mocked tab objects.
+                    self._toggle_menu()
+                    assert self.menu.get_visible()
+                    for name in ("Settings", "Places", "Settings", "Apps"):
+                        self._frutiger_tab_buttons[name].clicked()
+                        assert self.aqua_stack.get_visible_child_name() == name
+                    self._frutiger_tab_buttons["Settings"].clicked()
+                    self._frutiger_back_to_apps.clicked()
+                    assert self.aqua_stack.get_visible_child_name() == "Apps"
+                    self._show_aqua_control("sound", "Input & output devices")
+                    assert self.actions.get_visible()
+
+                    def walk(widget):
+                        yield widget
+                        if isinstance(widget, Gtk.Container):
+                            for child in widget.get_children():
+                                yield from walk(child)
+
+                    assert any(widget.get_style_context().has_class("aqua-native-panel")
+                               for widget in walk(self.actions))
+                    self._hide_actions()
             except Exception:
                 import traceback
                 traceback.print_exc()
@@ -2959,6 +2982,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             def switch_to(name):
                 frutiger_select_page(self.aqua_stack, buttons, section, search, name)
             self._frutiger_switch_to = switch_to
+            self._frutiger_tab_buttons = buttons
             for name, button in buttons.items():
                 button.connect("clicked", lambda _button, chosen=name: switch_to(chosen))
 
@@ -3054,6 +3078,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             settings_page.set_min_content_height(135)
             settings_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=7)
             return_to_apps = self._class(Gtk.Button(label="‹ All apps"), "aqua-settings-back")
+            self._frutiger_back_to_apps = return_to_apps
             return_to_apps.set_tooltip_text("Return to applications and places")
             return_to_apps.get_accessible().set_name("Back to all applications")
             return_to_apps.connect("clicked", lambda _button: switch_to("Apps"))

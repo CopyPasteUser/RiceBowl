@@ -69,6 +69,7 @@ class LauncherRegressionTests(unittest.TestCase):
         self.assertIn("self.aqua_stack.set_vhomogeneous(False)", launcher)
         self.assertIn('label="‹ All apps"', launcher)
         self.assertIn('switch_to("Apps")', launcher)
+        self.assertIn('self._frutiger_tab_buttons = buttons', launcher)
 
 
 class NativeDeviceTests(unittest.TestCase):
