@@ -47,8 +47,8 @@ APPLETS: tuple[Applet, ...] = (
            "Open Linux desktop preferences; regional support depends on your distribution."),
     Applet("Sounds", "audio-volume-high", ("pavucontrol", "xfce4-mixer"),
            "Adjust system output, input devices and volume."),
-    Applet("System", "computer", ("xfce4-about", "gnome-system-monitor", "xfce4-taskmanager"),
-           "View real Linux hardware and system information."),
+    Applet("System", "computer", (),
+           "Read-only real Linux system, devices and performance information."),
     Applet("Taskbar & Start Menu", "preferences-desktop", (),
            "Configure RiceBowl Windows 98 Quick Launch and taskbar clock."),
 )
@@ -125,7 +125,7 @@ def build(shell, Gtk, Gdk):
     available = 0
     for applet in APPLETS:
         command = executable(applet)
-        native = applet.name == "Taskbar & Start Menu"
+        native = applet.name in ("Taskbar & Start Menu", "System")
         if command or native:
             available += 1
         content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
@@ -150,6 +150,9 @@ def build(shell, Gtk, Gdk):
     def launch(_flow, child):
         if child._rice_applet == "Taskbar & Start Menu":
             shell.classic98_open_taskbar_properties()
+        elif child._rice_applet == "System":
+            from .classic98_system import show_system
+            show_system(shell, Gtk)
         elif child._rice_command:
             shell._open_tool(child._rice_command)
 
