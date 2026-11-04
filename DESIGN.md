@@ -55,7 +55,12 @@ secondary pages; prototypes and the release roadmap do not crowd the selector.
   shell owns `win7-*` CSS classes and `_create_win7_menu()` in `aero_shell.py`;
   `macrice/aero_superbar.py` groups immutable Wnck snapshots by WM_CLASS,
   supplies active-aware group overflow, and feeds GTK window previews and Jump
-  Lists. A 450ms Show Desktop hover provides reversible Peek; it is not full
+  Lists. Inactive groups with a genuine Wnck `needs_attention()` signal receive
+  an amber Aero highlight, not an artificial timer. Running-window context
+  menus offer left/right half-tiling, maximize and restore of the previous
+  window geometry; the native Wnck actions use the actual display workarea and
+  leave XFWM4 shortcuts untouched. Edge-drag, global Win+Arrow and Shake remain
+  open. A 450ms Show Desktop hover provides reversible Peek; it is not full
   compositor transparency. `scripts/build_aero_assets.py` owns generated art;
   curated generic-folder SVG is maintained directly in `assets/icons/RiceHub-Aero/`.
   Both wallpapers now use a **2009 Aero cobalt/navy glow** with an original glass

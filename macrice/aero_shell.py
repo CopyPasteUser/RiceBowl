@@ -362,6 +362,12 @@ window.win7-tray-customize button:hover, window.win7-tray-customize button:focus
   border-bottom: 2px solid #d0f5ff;
   box-shadow: inset 0 1px rgba(255,255,255,.63), 0 0 4px rgba(145,227,255,.37);
 }
+.win7-task-attention.win7-task {
+  background-image: linear-gradient(to bottom, rgba(255,232,158,.76), rgba(236,151,39,.5) 54%, rgba(155,87,27,.7));
+  border: 1px solid rgba(255,236,181,.91);
+  border-bottom: 2px solid #ffd16a;
+  box-shadow: inset 0 1px rgba(255,255,255,.65), 0 0 5px rgba(255,179,52,.56);
+}
 .aero-desktop.win7-desktop {
   background-image: linear-gradient(to right, rgba(255,255,255,.1), rgba(207,247,255,.34));
   border: 1px solid rgba(220,245,255,.55);
@@ -559,7 +565,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
     from gi.repository import Gdk, GdkPixbuf, Gio, GLib, Gtk, Pango
 
     from .aero_layout import actual_popup_y
-    from .aero_windows import WindowSnapshot, create_window_tracker, toggle_window_id
+    from .aero_windows import (WindowSnapshot, WindowSnapController, closest_workarea,
+                               create_window_tracker, toggle_window_id)
     from .installer import project_root
 
     class AeroShell(Gtk.Application):
@@ -578,6 +585,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._win7_group_members = {}
             self._win7_group_signature = {}
             self._win7_group_buttons = {}
+            self._win7_snap = None
             self._win7_preview = None
             self._win7_preview_group = None
             self._win7_preview_timer = 0
@@ -736,6 +744,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             if profile == "winxp":
                 self._luna_install_volume_notifications()
             self._window_tracker = create_window_tracker(GLib.idle_add, self._windows_changed)
+            if profile == "aero" and self._window_tracker is not None:
+                self._win7_snap = WindowSnapController(self._window_tracker.wnck)
             if self.show_desktop_button is not None:
                 self.show_desktop_button.set_sensitive(self._window_tracker is not None)
             screen = Gdk.Screen.get_default()
@@ -891,12 +901,24 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     assert self.win7_panel_back.get_sensitive()
                     # Run the native group button / preview construction path
                     # even if the CI virtual desktop has no ordinary app windows.
-                    first = WindowSnapshot(987654, "First window", False, None, "ricebowl-ci")
+                    first = WindowSnapshot(987654, "First window", False, None, "ricebowl-ci",
+                                           needs_attention=True)
                     second = WindowSnapshot(987655, "Second window", False, None, "ricebowl-ci")
-                    self._win7_windows_changed((first, second), second)
+                    self._win7_windows_changed((first, second), None)
                     assert self._win7_visible_groups == ("app:ricebowl-ci",)
                     button = self._win7_group_buttons["app:ricebowl-ci"][0]
                     assert button.get_visible()
+                    assert button.get_style_context().has_class("win7-task-attention")
+                    self._win7_windows_changed((first, second), second)
+                    assert button.get_style_context().has_class("win7-task-attention")
+                    self._win7_windows_changed((first, second), first)
+                    assert not button.get_style_context().has_class("win7-task-attention")
+                    menu = self._win7_group_menu("app:ricebowl-ci")
+                    assert menu is not None
+                    assert any(item.get_label() == "Arrange windows"
+                               and item.get_submenu() is not None
+                               for item in menu.get_children() if isinstance(item, Gtk.MenuItem))
+                    menu.destroy()
                     self._win7_show_preview("app:ricebowl-ci", button)
                     assert self._win7_preview is not None
                     self._win7_stop_preview()
@@ -2596,6 +2618,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             """Show one task button per WM_CLASS, never discard member windows."""
             groups = group_windows(tuple(windows))
             active_xid = active.xid if active is not None else None
+            if self._win7_snap is not None:
+                self._win7_snap.forget_closed(window.xid for window in windows)
             visible, hidden = select_groups(groups, active_xid, self._task_capacity)
             self._overflow_windows = tuple(member for group in hidden for member in group.windows)
             identifiers = tuple(group.key for group in visible)
@@ -2650,9 +2674,16 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 else:
                     badge.hide()
                 title = (group.title if count == 1 else f"{group.title} ({count} windows)")
+                attention = any(w.needs_attention and w.xid != active_xid for w in group.windows)
+                if attention:
+                    title += " — Needs attention"
                 button.set_tooltip_text(title)
                 button.get_accessible().set_name("Open window previews for " + title)
                 style = button.get_style_context()
+                if attention:
+                    style.add_class("win7-task-attention")
+                else:
+                    style.remove_class("win7-task-attention")
                 if active_xid in group.xids and not foreground.minimized:
                     style.add_class("aero-task-active")
                 else:
@@ -2688,13 +2719,65 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 window.close(Gtk.get_current_event_time())
             self._win7_stop_preview()
 
+        def _win7_window_workarea(self, xid):
+            """Use the selected window's monitor including its X11 panel struts."""
+            if self._window_tracker is None:
+                return None
+            window = self._window_tracker.wnck.Window.get(xid)
+            if window is None:
+                return None
+            display = Gdk.Display.get_default()
+            if display is None:
+                return None
+            regions = []
+            for index in range(display.get_n_monitors()):
+                monitor = display.get_monitor(index)
+                if monitor is not None:
+                    region = monitor.get_workarea()
+                    if region.width > 0 and region.height > 0:
+                        regions.append((region.x, region.y, region.width, region.height))
+            if not regions:
+                return None
+            return closest_workarea(tuple(window.get_geometry()), tuple(regions))
+
+        def _win7_arrange_window(self, xid, action):
+            """Arrange with Wnck/XFWM; do not intercept system-wide keybindings."""
+            if self._win7_snap is None:
+                return
+            area = self._win7_window_workarea(xid)
+            if area is None:
+                return
+            if not self._win7_snap.arrange(xid, action, area, Gtk.get_current_event_time()):
+                logging.getLogger(__name__).info("Cannot %s window %s", action, xid)
+
+        def _win7_append_arrange_items(self, menu, xid):
+            for title, action in (("Snap to left half", "left"),
+                                  ("Snap to right half", "right"),
+                                  ("Maximize", "maximize"),
+                                  ("Restore previous size", "restore")):
+                item = Gtk.MenuItem(label=title)
+                item.set_sensitive(self._win7_snap is not None and
+                                   (action != "restore" or xid in self._win7_snap.original))
+                item.connect("activate", lambda _item, target=xid, mode=action:
+                             self._win7_arrange_window(target, mode))
+                menu.append(item)
+
         def _win7_group_context(self, button, event, key):
             if event.button != 3:
                 return False
-            group = self._win7_group_members.get(key)
-            if group is None:
+            menu = self._win7_group_menu(key)
+            if menu is None:
                 return False
             self._win7_stop_preview()
+            menu.show_all()
+            menu.popup_at_pointer(event)
+            return True
+
+        def _win7_group_menu(self, key):
+            """Build a fully native Jump List; the caller owns its GTK lifetime."""
+            group = self._win7_group_members.get(key)
+            if group is None:
+                return None
             menu = Gtk.Menu()
             menu.get_style_context().add_class("win7-jumplist")
             app = self._win7_group_app(key)
@@ -2715,14 +2798,27 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 item = Gtk.MenuItem(label="Switch to " + window.title)
                 item.connect("activate", lambda _item, xid=window.xid: self._activate_task(xid))
                 menu.append(item)
+            if self._win7_snap is not None:
+                menu.append(Gtk.SeparatorMenuItem())
+                if len(group.windows) == 1:
+                    self._win7_append_arrange_items(menu, group.windows[0].xid)
+                else:
+                    arrange = Gtk.MenuItem(label="Arrange windows")
+                    submenu = Gtk.Menu()
+                    for window in group.windows[:16]:
+                        window_item = Gtk.MenuItem(label=window.title)
+                        window_menu = Gtk.Menu()
+                        self._win7_append_arrange_items(window_menu, window.xid)
+                        window_item.set_submenu(window_menu)
+                        submenu.append(window_item)
+                    arrange.set_submenu(submenu)
+                    menu.append(arrange)
             menu.append(Gtk.SeparatorMenuItem())
             for window in group.windows[:16]:
                 item = Gtk.MenuItem(label="Close " + window.title)
                 item.connect("activate", lambda _item, xid=window.xid: self._win7_close_window(xid))
                 menu.append(item)
-            menu.show_all()
-            menu.popup_at_pointer(event)
-            return True
+            return menu
 
         def _win7_group_app(self, key):
             """Match WM_CLASS to installed .desktop metadata only when unambiguous."""

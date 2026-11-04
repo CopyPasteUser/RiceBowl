@@ -21,7 +21,7 @@ RiceBowl changes the actual Linux desktop: GTK and XFWM4 themes, icons, wallpape
 | Style | Preset(s) | What changes |
 | --- | --- | --- |
 | **macOS · Aurora** | `night`, `day`, `aqua` | MacBar, MacMenu, Control Center; optional Plank dock |
-| **[Windows 7 · Aero](WIN7_AERO_ROADMAP.md)** | `aero-meadow`, `aero-cascade` | Glass Superbar, grouped previews, hidden-tray chevron, Aero flyouts, desktop shortcuts and Control Panel |
+| **[Windows 7 · Aero](WIN7_AERO_ROADMAP.md)** | `aero-meadow`, `aero-cascade` | Glass Superbar with attention states and window tiling, previews, Aero flyouts, desktop shortcuts and Control Panel |
 | **[Windows 10](WINDOWS10_ROADMAP.md)** | `ten-light`, `ten-dark` | Flat taskbar, pinned Start tiles and Action Center |
 | **[Windows XP · Luna](XP_LUNA_ROADMAP.md)** | `winxp` | XP Control Panel, configurable taskbar and Start, native Help and Support, device flyouts and optional desktop icons |
 | **[Windows 98 SE (classic)](CLASSIC_98_ROADMAP.md)** | `winclassic` | Teal desktop, real Start descendants, Win98 Control Panel, Quick Launch/taskbar preferences and live tray menus |
@@ -42,11 +42,15 @@ Windows 7 now has dedicated audio, Wi-Fi, power, Bluetooth and calendar
 flyouts, a genuine hidden-application-icon chevron, opt-in desktop shortcuts
 (Computer/Documents/Network/Recycle Bin, via blank-Superbar right-click),
 per-app notification-icon preferences and multi-view Control Panel navigation.
+Running apps now indicate real X11 requests for attention; their right-click
+menus can tile individual windows left/right, maximize and restore their
+original position using the monitor's available workarea.
 Configure visible icons from the chevron or blank-Superbar context menu. Installed
 [RiceExplorer](https://github.com/CopyPasteUser/riceExplorer) appears as an
 optional Windows 7 preview in Start; Thunar remains the default while file
 operation and mount recovery are validated. Screenshots below show the previous
 verified shell; updated deep-surface captures are pending native X11 CI.
+Edge-drag Snap, global shortcuts, Shake and real compositor blur are still open.
 
 ### Current screenshots
 
