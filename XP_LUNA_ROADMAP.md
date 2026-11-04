@@ -114,3 +114,39 @@ adds fake filesystem operations or replaces its file-management engine.
 - **Normal RiceBowl work, no side project needed**: usage-based recently launched
   programs, better pinned Start favorites and context actions, fuller keyboard
   traversal, date/time settings discovery and user-configurable Start menu layout.
+
+## Completion backlog — convincing everyday XP Luna (4 November 2026)
+
+**Goal:** The desktop should still feel like Windows XP after the *second and third click*, while every visible operation remains a genuine, reversible Linux action. This is the **open acceptance backlog**, not a list of shipped features. It complements the completed stages above.
+
+### P0 — Close the most visible interaction gaps
+
+- [ ] **Control Panel icon fidelity:** replace washed-out/generic or missing category and applet glyphs with one original, coherent, vivid XP-style set. Validate each category, task page and Classic View at actual 16/24/32/48 px sizes; preserve readable focus, disabled, hover and high-contrast states. Keep the existing working category → task → Linux utility navigation and search.
+- [ ] **Native-feeling notification-area flyouts:** provide small Luna-styled, focus-safe popups anchored to the clicked tray icon — not a modern combined Control Center. Audio needs a verified volume slider, mute and output selection; network needs real connection information and Wi-Fi discovery/connect/disconnect through NetworkManager; power needs battery/charge information, supported brightness and power-profile controls; clock needs date/calendar; Bluetooth needs an actual adapter/device view when available. Missing hardware or permissions must produce honest disabled/error states. Never optimistically claim a system change succeeded.
+- [ ] **RiceExplorer handoff and integration:** adopt riceExplorer for `winxp` only once its real file operations, trash, removable media, SMB/SFTP/network locations, mounts, errors and recovery are accepted. Its XP skin must change **structure**, not only colors: My Computer device/volume view, Explorer command/address/navigation bars, context-sensitive File and Folder Tasks sidebar, details, icons, property sheets, copy/move/progress dialogs, views/groups/thumbnails/filmstrip and actual context menus. Keep a functioning Thunar fallback, with no silent changes to file associations.
+- [ ] **ThinkPad hardware validation:** verify all P0 popups with real Wi-Fi, audio, battery/charging and brightness; also test external HDMI, wake from suspend, login/relogin, Plank autostart and repeated switching/restoring across all seven rices.
+
+### P1 — Make every interaction consistently XP
+
+- [ ] **Desktop surface:** authentic My Computer, My Documents, My Network Places and Recycle Bin launchers with correct destinations; independently configurable grid, icon size, label shadow, selection/drag behavior, context menu (Arrange Icons, Refresh, New, Properties) and a real trash backend. Reuse XFDesktop where sufficient; isolate additional desktop-shell behavior if it cannot represent the layout.
+- [ ] **Taskbar completeness:** Quick Launch behavior, pinned/running distinction, grouping and overflow, XP-like active/inactive/window-button states, notification-area overflow/chevron, taskbar and Start properties, right-click menus, optional auto-hide/lock, clock tooltip/calendar and predictable show-desktop handling. Preserve keyboard navigation and real window activation.
+- [ ] **Dialogs and menus:** apply consistent Luna styling to RiceBowl-owned confirmations, context menus, progress/errors, tooltips, search, property views, nested flyouts, tabs, scrollbars, checkboxes and focus rings. Keep sensible geometry at 800×600, 1024×768, 1600×900 and with external-monitor placement. Clearly document any limitation in third-party GTK4/Qt/Electron apps.
+- [ ] **Notification balloons:** classic taskbar-anchored, dismissible informational balloons for real events (network, removable devices, low battery, transfer completion) with timeouts, nonintrusive behavior and no invented status.
+- [ ] **Start-menu details:** usage-based recent programs, user-editable favorites and pin ordering, context actions, complete keyboard traversal, correct submenu ownership on focus shifts, real search/run targets, and a configurable layout that retains XP's two-column structure.
+- [ ] **Icon and typography consistency:** consistent icon families across taskbar, app menu, Control Panel, Explorer, file types and dialogs; suitable original XP-inspired cursor/typographic treatment and restrained era-appropriate hover/pressed/disabled styling rather than modern generic stock widgets.
+
+### P2 — Optional finishing touches without compromising XFCE
+
+- [ ] **Session visuals:** optional Luna-inspired lock/login/logout/shutdown dialogs and user switching only through supported LightDM/XFCE integration with backup, opt-in enablement and rollback. Never replace the login manager unprompted.
+- [ ] **Soundscape and motion:** optional original or appropriately licensed login/logout, notification and error sounds; short animations with reduced-motion support and minimal CPU overhead.
+- [ ] **Expanded XP-era utilities:** coherent Help and Support, system information, display/network properties and accessibility entry points, each backed by a real Linux utility or marked unavailable; XP SP2-style Security Center is optional.
+
+### Shared architecture and acceptance contract
+
+- **RiceBowl owns** the launcher, taskbar, tray flyouts, session integration, system dialogs, desktop integration and reversible theme/preset configuration. **riceExplorer owns** filesystem operations and the structurally distinct XP Explorer presentation. Avoid duplicating its file-operation code in RiceBowl.
+- Every rice may supply its own **layout, toolbar hierarchy, navigation, sidebar, context menus, controls, icon mappings, spacing and interaction rules** over a shared functional backend. XP must not accidentally inherit Windows 7/10/macOS components or CSS.
+- Every visible action is **functional, explicitly unavailable with a useful explanation, or absent**. Test success, loading, empty, disconnected, permission-denied and backend-failure paths; never render decorative toggles as if they worked.
+- Automated acceptance: native XFWM4/X11 screenshots of Start, nested All Programs, Control Panel category/detail/Classic/search, system-tray flyouts, actual Explorer and desktop; keyboard/focus and popup-bounds tests at multiple resolutions. Update the committed screenshot gallery from the same passing revision; do not reuse obsolete mockups.
+- Final owner acceptance: install/update on Linux Mint XFCE, seven-rice switch/restore, rollback after failure, suspend/resume, dual monitors, real network/mount/file operations and idle CPU/PSS/startup measurements on the ThinkPad. No claim of XP Luna 1.0 completeness before these pass.
+
+**Scope:** these are XP-specific product goals. Do not redesign the other rice identities or replace working XFCE services as a side effect.
