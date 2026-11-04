@@ -87,6 +87,18 @@ class Win7MenuTests(unittest.TestCase):
 
 
 class Win7ControlPanelTests(unittest.TestCase):
+    def test_deep_device_applets_reuse_real_aero_controls(self):
+        mapped = {task.name: task.device for category in CATEGORIES
+                  for task in category.tasks if task.device}
+        self.assertEqual(mapped, {
+            "Power options": "battery",
+            "View network connections": "network",
+            "Sound": "audio",
+            "Bluetooth devices": "bluetooth",
+        })
+        self.assertTrue(set(mapped.values()).issubset({
+            "audio", "network", "battery", "bluetooth", "clock"}))
+
     def test_eight_historical_categories_have_only_real_linux_tasks(self):
         self.assertEqual(tuple(category.name for category in CATEGORIES), (
             "System and Security", "Network and Internet", "Hardware and Sound",

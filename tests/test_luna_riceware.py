@@ -74,6 +74,9 @@ def tray(tray_type=LunaTray):
     instance._brightness_writing = False
     instance._brightness_queued = None
     instance._brightness_source = 0
+    # The Win7 subclass owns an additional observer, but hermetic adapters
+    # deliberately bypass GTK constructors and must model its idle state.
+    instance._alerts_watch = None
     instance.network_label = FakeLabel()
     instance.wifi_toggle = FakeButton()
     instance.wifi_disconnect = FakeButton()

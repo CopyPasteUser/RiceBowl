@@ -90,7 +90,12 @@ See [Riceware foundation API and manual checks](RICEWARE_FOUNDATIONS.md).
   same opt-in and user-modification protections.
 - [x] Add isolated Win7 adapter tests; preserve the existing Win7 X11 GUI and
   1024/1600 screenshot checks.
-- [ ] Complete real Mint, notifications, deep applet and full session-switch
+- [x] Show the real XFCE notification log in a native Win7 Action Center flyout
+  through ricePop; honor native quiet mode for observed hardware balloons.
+  No new global notification host or copied third-party action history.
+- [x] Add direct Windows 7 Control Panel deep links for live Riceware hardware
+  flyouts; retain real advanced XFCE utilities and bounded GTK requests.
+- [ ] Complete real Mint, remaining applets and full session-switch
   acceptance before describing the entire Windows 7 rice as fully migrated.
 
 ### Reliability checkpoint — 4 November 2026

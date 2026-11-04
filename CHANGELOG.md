@@ -1,5 +1,20 @@
 # RiceBowl changelog
 
+## Unreleased — Windows 7 Action Center and native Control Panel devices (4 November 2026)
+
+- Added the independent Windows 7 white-flag Action Center flyout that reads
+  the actual XFCE notification log via ricePop; unread/quiet/unavailable status
+  is truthful and marking read is explicitly user-triggered. Stored third-party
+  actions are never replayed, and XFCE remains the only notification host.
+- Added original Aero-style, dismissible hardware transition balloons for
+  network/battery/removable drives; suppress them when native DND is enabled or
+  cannot be established. No duplicate third-party toast delivery.
+- Linked Power, Network, Sound and Bluetooth Control Panel detail pages to
+  the same live Win7 Riceware device flyouts, retaining advanced Linux tools.
+- Added hermetic checks and native GTK/X11 small-screen Action Center capture.
+- Physical Mint acceptance, full native Win7 file manager, edge-drag Snap and
+  compositor-level DWM fidelity remain separate unfinished release gates.
+
 ## Unreleased — Windows 7 Aero Riceware integration (4 November 2026)
 
 - Reused the verified LunaTray riceSpice device API and bounded GTK worker

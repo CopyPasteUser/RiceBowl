@@ -1,5 +1,26 @@
 # Windows 7 Aero fidelity — implementation and acceptance
 
+## Windows 7 Action Center and deeper devices — 4 November 2026
+
+- [x] Add a unique white-flag Action Center button in the Win7 Superbar; its
+  small Aero flyout reads genuine XFCE notification history through ricePop,
+  including unread indicators and an explicit Mark all as read action.
+- [x] Keep XFCE Notifyd as the only third-party delivery/history owner. Do not
+  copy its log, replay stale action buttons or pretend the shell owns all
+  notifications; unavailable logging is visibly reported.
+- [x] Add separate Win7-styled system-device balloons for observed network,
+  low-battery and removable mount changes; native Do Not Disturb must be
+  verified off the GTK thread before displaying them.
+- [x] Add native Power/Network/Sound/Bluetooth flyout launch actions inside
+  their deep Control Panel task pages, with advanced installed tools retained.
+- [x] Add hermetic notification/adapter regressions and native 1600×900 and
+  1024×768 X11 Action Center capture/fit gates in CI.
+- [ ] Review generated X11 alert captures and test real XFCE history events,
+  keyboard/focus, notification privacy and DND on the owner's Mint session.
+- [ ] Complete the independent RiceExplorer Win7 renderer, full edge Snap/Shake,
+  richer native CP applets, all physical acceptance and session recovery tests
+  before calling the Windows 7 rice fully finished.
+
 ## Riceware backend migration — 4 November 2026
 
 - [x] Keep the distinct Windows 7 Aero glass taskbar, vertical volume flyout,

@@ -539,6 +539,22 @@ window.win7-tray-popup {
   background: rgba(239,250,255,.32); border-color: rgba(255,255,255,.65);
 }
 .win7-clock-button label { color: white; }
+.win7-alert-button { color: #f2f8fd; background: transparent;
+  border: 1px solid transparent; border-radius: 3px; padding: 3px 5px;
+  font-size: 19px; }
+.win7-alert-button:hover, .win7-alert-button:focus {
+  background: rgba(220,240,255,.25); border-color: #b2daf5; }
+.win7-alert-unread { color: #fff4a5; text-shadow: 0 0 3px #e3a84b; }
+.win7-alert-item { background: #fff; color: #214966; border: 1px solid #dae4ed;
+  border-radius: 2px; padding: 6px; }
+.win7-alert-item-unread { border-left: 3px solid #e3a342; }
+.win7-alert-summary { font-weight: bold; color: #1b4969; }
+window.win7-balloon { background: #f3f9ff; color: #183955;
+  border: 1px solid #6296c2; box-shadow: 0 3px 12px rgba(15,39,68,.45); }
+.win7-balloon-body { background: #f5f9fd; color: #213e54; padding: 10px 13px; }
+.win7-balloon-title { color: #153e65; font-weight: bold; font-size: 12px; }
+.win7-balloon-dismiss { background: #e2eef9; color: #1a4767;
+  border: 1px solid #93b2d0; border-radius: 3px; padding: 3px 9px; }
 """
 
 
@@ -743,7 +759,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._create_menu()
             self._create_actions()
             self.connect("shutdown", self._shutdown)
-            if profile == "winxp":
+            if profile in ("winxp", "aero"):
                 self._luna_install_volume_notifications()
             self._window_tracker = create_window_tracker(GLib.idle_add, self._windows_changed)
             if profile == "aero" and self._window_tracker is not None:
@@ -936,11 +952,15 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                         finally:
                             Gtk.Dialog.run = saved_dialog_run
                     assert set(self.luna_tray.popovers) == {
-                        "audio", "network", "battery", "clock", "bluetooth"}
+                        "audio", "network", "battery", "clock", "bluetooth", "alerts"}
                     for popup in self.luna_tray.popovers.values():
                         assert popup.get_style_context().has_class("win7-tray-popup")
                         assert isinstance(popup, Gtk.Window)
-                    for name in ("audio", "network", "battery", "clock", "bluetooth"):
+                    assert self.luna_tray._alerts_button is not None
+                    assert self.luna_tray._alerts_button.get_style_context().has_class(
+                        "win7-alert-button")
+                    assert self.luna_balloon.css_prefix == "win7-balloon"
+                    for name in ("audio", "network", "battery", "clock", "bluetooth", "alerts"):
                         self.luna_tray.toggle(name)
                         assert self.luna_tray.popovers[name].get_visible()
                         self.luna_tray.toggle(name)
@@ -1173,6 +1193,31 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     self.chrome_quick_show_page("Notifications")
                     GLib.timeout_add(1100, self._capture_chrome_notifications)
                     return False
+                if profile == "aero":
+                    self._hide_actions()
+                    self.luna_tray.toggle("alerts")
+                    GLib.timeout_add(780, self._capture_aero_alerts)
+                    return False
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._smoke_failed = True
+            self.quit()
+            return False
+
+        def _capture_aero_alerts(self):
+            try:
+                popup = self.luna_tray.popovers["alerts"]
+                assert popup.get_mapped(), "Windows 7 Action Center did not map"
+                rect = self._desktop_rect()
+                x, y = popup.get_window().get_root_origin()
+                width, height = popup.get_size()
+                assert (rect.x <= x and rect.y <= y and
+                        x + width <= rect.x + rect.width and
+                        y + height <= rect.y + rect.height - panel_height), (
+                        f"Windows 7 Action Center offscreen: {x},{y} {width}x{height}")
+                self._capture_screen(
+                    f"ricebowl-aero-action-center-0.9.1{self._capture_variant}-extra.png")
             except Exception:
                 import traceback
                 traceback.print_exc()
@@ -1998,8 +2043,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self.luna_balloon = LunaBalloon(self, Gtk, Gdk, GLib)
             elif profile == "aero":
                 from .win7_tray import Win7Tray
+                from .win7_notifications import Win7Balloon
 
                 self.luna_tray = Win7Tray(self, Gtk, GLib)
+                self.luna_balloon = Win7Balloon(self, Gtk, Gdk, GLib)
             for name in ("battery", "network", "audio"):
                 button = self._class(Gtk.Button(), "rice-status")
                 button.get_style_context().add_class("rice-status-" + name)
@@ -2026,6 +2073,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 row.pack_end(bluetooth, False, False, 0)
                 self.luna_tray.install("bluetooth", bluetooth)
                 self.luna_tray.install("clock", self._luna_clock_button)
+                if profile == "aero":
+                    alert = self._class(Gtk.Button(label="⚑"), "win7-alert-button")
+                    alert.get_accessible().set_name("Windows 7 Action Center notifications")
+                    row.pack_end(alert, False, False, 0)
+                    self.luna_tray.install("alerts", alert)
             self._refresh_status_async()
             GLib.timeout_add_seconds(20, self._refresh_status_async)
 
@@ -2086,7 +2138,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 from .luna_notifications import event_messages
 
                 for message in event_messages(previous_status, status):
-                    self.luna_balloon.show(message)
+                    if profile == "aero" and self.luna_tray is not None:
+                        self.luna_tray.announce(message)
+                    else:
+                        self.luna_balloon.show(message)
             if self.luna_tray is not None:
                 self.luna_tray.on_status(status)
             if hasattr(self, "_aqua_flyouts"):
@@ -2566,7 +2621,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             from .luna_notifications import removable_mount_message
             message = removable_mount_message(mount, added=added)
             if message:
-                self.luna_balloon.show(message)
+                if profile == "aero" and self.luna_tray is not None:
+                    self.luna_tray.announce(message)
+                else:
+                    self.luna_balloon.show(message)
 
         def luna_open_taskbar_properties(self):
             if profile != "winxp":
