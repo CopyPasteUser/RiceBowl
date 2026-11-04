@@ -28,6 +28,8 @@ RiceBowl changes the actual Linux desktop: GTK and XFWM4 themes, icons, wallpape
 | **[ChromeOS](CHROMEOS_ROADMAP.md)** | `chromeos` | Material You shelf, searchable app launcher and Quick Settings |
 | **[Frutiger Aero](FRUTIGER_AERO_ROADMAP.md)** | `frutiger` | Aqua World launcher with working Back navigation, native Wi-Fi/audio/Bluetooth/brightness/power controls, live Places and device flyouts |
 
+Windows 98 **Control Panel → System** now opens a native, read-only **System Properties** viewer with General, Device Manager and Performance tabs showing actual Linux CPU, memory, network, disks and uptime. Refresh is manual, and nothing is installed or reconfigured.
+
 Windows 98 **Help** now opens an offline Contents/Index/Search viewer with functional Back/Forward/Home navigation instead of a static topic list. Its pages explain the actual Linux controls and feature limitations.
 
 Windows 98 **Find → Files or Folders** now supports file/folder type, extension, modification-date, size and hidden-file filters, plus bounded UTF-8 content search. Search runs in a cancellable worker with hard scan/result budgets; it never modifies files.

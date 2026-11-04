@@ -1,5 +1,12 @@
 # RiceBowl changelog
 
+## Unreleased — Windows 98 classic functionality (4 November 2026)
+
+- Enhanced Find with real type, extension, date, size and hidden-file filters, plus bounded text-content search (1 MiB/file, 32 MiB total). The search remains cancellable, read-only and capped at 50,000 entries / 500 results.
+- Replaced the static Help dialog with a local Contents/Index/Search viewer and Back/Forward/Home navigation.
+- Added a native read-only System Properties applet with real Linux kernel, CPU, RAM, network, disk and uptime data, plus manual Refresh.
+- Added disposable-file-system and native GTK/Xvfb regression coverage. Physical Mint acceptance and the remaining Classic roadmap remain outstanding.
+
 ## Unreleased — Windows 7 Aero deep controls (4 November 2026)
 
 - Added distinctly Windows 7-style native tray windows for volume/output

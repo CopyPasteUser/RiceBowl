@@ -123,7 +123,7 @@ Current evidence: source files, existing roadmap, current repository screenshot 
 
 ### Implementation checkpoint — navigable Classic Help (4 November 2026)
 
-**Implementation on feature branch; awaiting CI and physical Mint validation.**
+**CI passed via PR #38; physical Mint validation still outstanding.**
 
 - [x] Replace the original six-topic static Help dialog with a dedicated local Windows 98-style viewer offering Contents, alphabetical Index and on-device Search.
 - [x] Add functional Back, Forward and Home navigation with real topic history and clearly labeled UI controls; topic pages document actual Linux behaviors, supported options and feature limitations.
@@ -131,6 +131,18 @@ Current evidence: source files, existing roadmap, current repository screenshot 
 - [ ] Complete contextual Help links from every Control Panel applet, localized documentation and advanced keyboard/screen-reader acceptance on physical Mint.
 
 **Gate:** Help search and navigation must work after multiple clicks without opening a generic browser, losing focus or making unsupported Windows functionality claims.
+
+### Implementation checkpoint — native System Properties (4 November 2026)
+
+**Implemented on branch, pending full CI and physical Mint acceptance.**
+
+- [x] Replace the external `xfce4-about` shortcut behind the Win98 Control Panel's **System** icon with a real tabbed **System Properties** dialog.
+- [x] General reports the actual Linux distribution, kernel, architecture, CPU model and RAM; Device Manager lists actual network interfaces and block devices without pretending they are Windows drivers; Performance reports current available memory and uptime.
+- [x] Provide a manual Refresh button instead of a permanent polling daemon. The applet reads only bounded `/etc/os-release`, `/proc` and `/sys` properties and cannot modify settings or devices.
+- [x] Add five disposable-fixture regression tests and one native GTK/Xvfb System Properties construction test.
+- [ ] Polish classic property tabs/icons and test localization, real laptop devices, unplug events, missing sysfs data and low-resolution sizing on Linux Mint.
+
+**Gate:** the System applet must report correct real Linux facts and remain usable without privileged access or a process-monitoring daemon.
 
 ### Milestone 0 — Freeze references, safe state and test harness (P0)
 
