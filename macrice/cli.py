@@ -65,6 +65,8 @@ def parser() -> argparse.ArgumentParser:
     commands.add_parser("session-menu", help="Toggle the active rice's application menu")
     commands.add_parser("session-control", help="Toggle the active rice's control panel")
     commands.add_parser("session-keys-restore", help="Restore the previous Super/Right Control shortcuts")
+    xp_desktop = commands.add_parser("winxp-desktop", help="Manage optional XP XFDesktop shortcuts safely")
+    xp_desktop.add_argument("action", choices=("status", "install", "remove"))
     commands.add_parser("status", help="Show installed components and the detected appearance")
     commands.add_parser("inspect", help="Print a safe, read-only JSON appearance report")
     installer = commands.add_parser("install", help="Install or repair the three bundled apps; preserve Plank")
@@ -119,6 +121,18 @@ def main(argv: list[str] | None = None) -> int:
             from .session_shortcuts import restore_bindings
             for warning in restore_bindings():
                 print("Shortcut warning:", warning, file=sys.stderr)
+            return 0
+        if args.command == "winxp-desktop":
+            from .luna_desktop import desktop_path, manage
+
+            changed, preserved = manage(args.action)
+            print("XP desktop:", desktop_path())
+            for name in changed:
+                print(" ", "Installed" if args.action == "install" else "Removed", name)
+            for name in preserved:
+                print("  Preserved", name)
+            if args.action == "status" and not preserved:
+                print("  No XP shortcuts currently installed")
             return 0
         if args.command == "session-sync":
             from .shell_session import login_reconcile

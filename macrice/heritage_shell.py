@@ -303,6 +303,22 @@ window.luna-tray-popup {
 .luna-logoff:hover { background: #e8aa38; }
 .luna-shutdown:hover { background: #ed5944; }
 .luna-power:disabled { opacity: .5; }
+/* Quick Launch is distinct from the wide task buttons, like the real XP bar. */
+.luna-quicklaunch { background-image: linear-gradient(#428bf0, #255dc2);
+  border: 1px inset #4b83d9; border-radius: 2px; padding: 1px 4px; }
+.luna-quicklaunch .aero-pin, .luna-desktop-quick {
+  background: transparent; border: 1px solid transparent; border-radius: 2px;
+  padding: 2px 4px; min-width: 24px; min-height: 27px; }
+.luna-quicklaunch .aero-pin:hover, .luna-quicklaunch .aero-pin:focus,
+.luna-desktop-quick:hover, .luna-desktop-quick:focus {
+  background: #4b95ef; border: 1px solid #a9d0ff; }
+.luna-balloon { background: #ffffdd; border: 1px solid #b48b19;
+  border-radius: 5px; box-shadow: 2px 3px 6px rgba(14,41,87,.32); }
+.luna-balloon-body { background: #ffffdd; color: #2e3441;
+  padding: 11px 14px; border-radius: 4px; }
+.luna-balloon-title { color: #174286; font-size: 12px; font-weight: bold; }
+.luna-balloon-dismiss { background: #fff2b5; color: #25415d; border: 1px solid #bfa76d;
+  border-radius: 3px; font-size: 10px; padding: 2px 6px; }
 /* Gtk.Menu is a separate popup window, not a descendant of .luna-menu. */
 menu.luna-popup { background: #f9fbff; color: #1a345b; border: 1px solid #2e65b0;
   border-radius: 0; padding: 3px; box-shadow: 2px 3px 7px rgba(9,38,91,.3); }

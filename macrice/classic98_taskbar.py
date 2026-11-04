@@ -47,7 +47,7 @@ def perform(window, name: str, timestamp: int) -> None:
         raise ValueError("Unsupported taskbar action")
 
 
-def show(shell, widget, event, xid: int, Gtk, Gdk):
+def show(shell, widget, event, xid: int, Gtk, Gdk, *, style_class="classic98-window-menu"):
     """Re-resolve the Wnck window both when opening and activating a menu item."""
     if event.button != 3 or shell._window_tracker is None:
         return False
@@ -56,7 +56,7 @@ def show(shell, widget, event, xid: int, Gtk, Gdk):
     if window is None:
         return False
     menu = Gtk.Menu()
-    menu.get_style_context().add_class("classic98-window-menu")
+    menu.get_style_context().add_class(style_class)
     timestamp = int(event.time)
     for label, enabled in available_actions(window, wnck):
         if label == "Close":

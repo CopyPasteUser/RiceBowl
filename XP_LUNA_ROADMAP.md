@@ -122,7 +122,7 @@ adds fake filesystem operations or replaces its file-management engine.
 ### P0 — Close the most visible interaction gaps
 
 - [x] **Control Panel icon fidelity:** replace washed-out/generic or missing category and applet glyphs with one original, coherent, vivid XP-style set. Validate each category, task page and Classic View at actual 16/24/32/48 px sizes; preserve readable focus, disabled, hover and high-contrast states. Keep the existing working category → task → Linux utility navigation and search. (Automated SVG/GTK sizing covered; owner visual signoff remains.)
-- [ ] **Native-feeling notification-area flyouts:** provide small Luna-styled, focus-safe popups anchored to the clicked tray icon — not a modern combined Control Center. Audio needs a verified volume slider, mute and output selection; network needs real connection information and Wi-Fi discovery/connect/disconnect through NetworkManager; power needs battery/charge information, supported brightness and power-profile controls; clock needs date/calendar; Bluetooth needs an actual adapter/device view when available. Missing hardware or permissions must produce honest disabled/error states. Never optimistically claim a system change succeeded.
+- [x] **Native-feeling notification-area flyouts:** provide small Luna-styled, focus-safe popups anchored to the clicked tray icon — not a modern combined Control Center. Audio needs a verified volume slider, mute and output selection; network needs real connection information and Wi-Fi discovery/connect/disconnect through NetworkManager; power needs battery/charge information, supported brightness and power-profile controls; clock needs date/calendar; Bluetooth needs an actual adapter/device view when available. Missing hardware or permissions must produce honest disabled/error states. Never optimistically claim a system change succeeded. (Native GTK captures and focused backend tests; physical owner acceptance still open.)
 - [ ] **RiceExplorer handoff and integration:** adopt riceExplorer for `winxp` only once its real file operations, trash, removable media, SMB/SFTP/network locations, mounts, errors and recovery are accepted. Its XP skin must change **structure**, not only colors: My Computer device/volume view, Explorer command/address/navigation bars, context-sensitive File and Folder Tasks sidebar, details, icons, property sheets, copy/move/progress dialogs, views/groups/thumbnails/filmstrip and actual context menus. Keep a functioning Thunar fallback, with no silent changes to file associations.
 - [ ] **ThinkPad hardware validation:** verify all P0 popups with real Wi-Fi, audio, battery/charging and brightness; also test external HDMI, wake from suspend, login/relogin, Plank autostart and repeated switching/restoring across all seven rices.
 
@@ -168,8 +168,44 @@ adds fake filesystem operations or replaces its file-management engine.
 - [x] Clock: clickable calendar popup with date/time settings.
 - [x] Start favorites/context actions are independent of taskbar pins, have
   reversible ordering, and successful launches populate a bounded recent list.
-- [ ] Validate screenshot regression captures for five popovers and original
-  icons at 1600×900 and 1024×768 in native GTK CI (coverage implemented).
+- [x] Validate screenshot regression captures for five popovers and original
+  icons at 1600×900 and 1024×768 in native GTK CI (prior passing PR #30).
 - [x] Add focused backend and SVG contract tests for the tray and Control Panel.
 - [ ] Hardware acceptance on the owner's physical Mint XFCE laptop: real audio,
   NetworkManager connection changes, backlight permissions, focus, external monitor.
+
+## Second completion pass — multi-path Bluetooth, XP taskbar and desktop
+
+The November 4 follow-up implements concrete portions of P1 without promising
+unavailable Linux backends or replacing core XFCE applications:
+
+- [x] Bluetooth now reads **BlueZ through two independent interfaces**:
+  `bluetoothctl` and direct `org.bluez` system D-Bus via existing PyGObject.
+  Known paired devices expose actual connect/disconnect actions; both adapter
+  power and device actions require a successful readback. Kernel rfkill shows
+  software/hardware blocks; it is **not** falsely advertised as an independent
+  pairing/connection backend. A genuine non-BlueZ Bluetooth management daemon
+  is not a normal drop-in Linux option and would need separate discovery/QA.
+- [x] XP task buttons now open right-click Restore/Move/Size/Minimize/Maximize/
+  Close menus backed by live Wnck capabilities, sharing the proven Win98 backend
+  but with a scoped Luna menu skin. Empty or closed window IDs are ignored.
+- [x] XP has a distinct beveled Quick Launch area for user-managed application
+  pins and a working Show Desktop control, retaining task overflow/readback.
+- [x] `macrice winxp-desktop install|status|remove` opts into authentic-looking
+  My Computer, My Documents, My Network Places and Recycle Bin XFDesktop icons.
+  The launchers open real GVfs locations and use native XFDesktop selection,
+  arrange/drag, refresh, file menu and trash behavior. Existing/edited user
+  desktop files and symlinks are preserved. Installation is never implicit.
+- [x] Small dismissible XP balloons announce *observed* network connect/loss
+  and low-battery threshold crossings only; no startup notifications or fake
+  device events. No separate long-running status daemon or interval is added.
+- [x] Added pure tests for BlueZ D-Bus fallback, paired-device guards, verified
+  actions, Desktop entry lifecycle, task actions and network/battery events.
+- [ ] Run the revised native-X11 gallery in GitHub CI, inspect XP tray and
+  workspace screenshots at 1024×768/1600×900, then verify the actual ThinkPad.
+
+Still open from P1/P2: custom desktop grid preferences beyond native XFDesktop,
+taskbar grouping/autohide/lock and properties, broader event integration,
+complete accessible keyboard navigation, optional session/logon visuals and
+original soundscape. Actual Explorer tasks/drive navigation remain blocked on
+riceExplorer feature acceptance and must not be simulated with Thunar CSS.

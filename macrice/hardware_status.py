@@ -51,6 +51,18 @@ class SoundOutput:
 class BluetoothState:
     powered: bool | None
     connected: tuple[str, ...]
+    devices: tuple[BluetoothDevice, ...] = ()
+    backend: str | None = None
+    soft_blocked: bool | None = None
+    hard_blocked: bool | None = None
+
+
+@dataclass(frozen=True)
+class BluetoothDevice:
+    address: str
+    name: str
+    paired: bool
+    connected: bool
 
 
 def _read(path: Path) -> str | None:
@@ -402,35 +414,152 @@ def set_power_profile(name: str) -> str:
     return name
 
 
-def read_bluetooth() -> BluetoothState:
+def _rfkill_bluetooth(root: Path = Path("/sys/class/rfkill")) -> tuple[bool | None, bool | None]:
+    """Kernel soft/hard radio blocks; this is status, not a device manager."""
+    soft, hard = [], []
+    try:
+        entries = list(root.iterdir())
+    except OSError:
+        return None, None
+    for entry in entries:
+        if _read(entry / "type") != "bluetooth":
+            continue
+        soft.append(_read(entry / "soft") == "1")
+        hard.append(_read(entry / "hard") == "1")
+    return (any(soft), any(hard)) if soft else (None, None)
+
+
+def _bluetooth_device_lines(raw: str | None) -> dict[str, str]:
+    devices = {}
+    for line in (raw or "").splitlines():
+        match = re.match(r"^Device\s+([0-9a-fA-F:]{17})\s+(.+)$", line.strip())
+        if match:
+            devices[match.group(1).upper()] = match.group(2).strip()
+    return devices
+
+
+def _bluetooth_via_cli() -> BluetoothState | None:
     if not shutil.which("bluetoothctl"):
-        return BluetoothState(None, ())
+        return None
     info = _run(["bluetoothctl", "show"], timeout=2.5)
-    if not info:
-        return BluetoothState(None, ())
-    status = re.search(r"(?m)^\s*Powered:\s*(yes|no)\b", info)
-    if not status:
-        return BluetoothState(None, ())
-    raw = _run(["bluetoothctl", "devices", "Connected"], timeout=2.5)
-    devices = tuple(match.group(1).strip() for line in (raw or "").splitlines()
-                    if (match := re.match(r"Device\s+[0-9a-fA-F:]{17}\s+(.+)", line)))[:10]
-    return BluetoothState(status.group(1) == "yes", devices)
+    match = re.search(r"(?m)^\s*Powered:\s*(yes|no)\b", info or "")
+    if not match:
+        return None
+    connected = _bluetooth_device_lines(
+        _run(["bluetoothctl", "devices", "Connected"], timeout=2.5))
+    paired = _bluetooth_device_lines(
+        _run(["bluetoothctl", "devices", "Paired"], timeout=2.5))
+    all_devices = {**paired, **connected}
+    devices = tuple(BluetoothDevice(address, name, address in paired,
+                                    address in connected)
+                    for address, name in sorted(all_devices.items(),
+                                                key=lambda item: item[1].casefold()))[:32]
+    soft, hard = _rfkill_bluetooth()
+    return BluetoothState(match.group(1) == "yes", tuple(connected.values())[:10],
+                          devices, "bluetoothctl", soft, hard)
+
+
+def _bluetooth_via_dbus() -> BluetoothState | None:
+    try:
+        from . import bluetooth_dbus
+
+        powered, _path, records = bluetooth_dbus.snapshot()
+    except Exception:
+        # Optional PyGObject or system-bus availability must never crash the tray.
+        return None
+    devices = tuple(BluetoothDevice(*record) for record in records)
+    soft, hard = _rfkill_bluetooth()
+    return BluetoothState(powered, tuple(entry.name for entry in devices if entry.connected)[:10],
+                          devices, "D-Bus", soft, hard)
+
+
+def read_bluetooth() -> BluetoothState:
+    """Probe BlueZ via CLI or direct system D-Bus, then kernel radio status."""
+    state = _bluetooth_via_cli() or _bluetooth_via_dbus()
+    if state is not None:
+        return state
+    soft, hard = _rfkill_bluetooth()
+    return BluetoothState(None, (), (), "rfkill" if soft is not None else None,
+                          soft, hard)
 
 
 def set_bluetooth_power(enabled: bool) -> BluetoothState:
     if not isinstance(enabled, bool):
         raise ValueError("Bluetooth power must be boolean")
-    if not shutil.which("bluetoothctl"):
-        raise RuntimeError("BlueZ bluetoothctl is not installed")
+    initial = read_bluetooth()
+    if initial.hard_blocked and enabled:
+        raise RuntimeError("Bluetooth radio is hardware-blocked (check the laptop switch)")
+    if initial.soft_blocked and enabled:
+        raise RuntimeError("Bluetooth radio is blocked by rfkill; unblock it in system settings")
+    if initial.powered is None:
+        raise RuntimeError("No Bluetooth adapter accessible through bluetoothctl or system D-Bus")
+    errors = []
+    if shutil.which("bluetoothctl"):
+        try:
+            result = subprocess.run(
+                ["bluetoothctl", "power", "on" if enabled else "off"],
+                capture_output=True, text=True, timeout=5, check=False)
+            if result.returncode == 0:
+                state = read_bluetooth()
+                if state.powered is enabled:
+                    return state
+            errors.append("bluetoothctl command/readback failed")
+        except (OSError, subprocess.TimeoutExpired):
+            errors.append("bluetoothctl timed out or is inaccessible")
     try:
-        result = subprocess.run(["bluetoothctl", "power", "on" if enabled else "off"],
-                                capture_output=True, text=True, timeout=5, check=False)
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        raise RuntimeError("Bluetooth adapter action failed") from exc
+        from . import bluetooth_dbus
+
+        _powered, path, _devices = bluetooth_dbus.snapshot()
+        bluetooth_dbus.set_power(path, enabled)
+        state = read_bluetooth()
+        if state.powered is enabled:
+            return state
+        errors.append("system D-Bus readback mismatch")
+    except Exception as exc:
+        errors.append("system D-Bus: " + str(exc)[:120])
+    raise RuntimeError("Bluetooth power change could not be verified: " + "; ".join(errors))
+
+
+def set_bluetooth_connection(address: str, connected: bool) -> BluetoothState:
+    """Connect/disconnect a discovered paired device and verify readback."""
+    if not isinstance(connected, bool):
+        raise ValueError("Connection target must be boolean")
     state = read_bluetooth()
-    if result.returncode or state.powered is not enabled:
-        raise RuntimeError("Bluetooth power change could not be verified")
-    return state
+    device = next((item for item in state.devices if item.address == address), None)
+    if device is None:
+        raise ValueError("Bluetooth device is not currently known")
+    if connected and not device.paired:
+        raise ValueError("Pair the device in Bluetooth settings first")
+    if state.powered is not True:
+        raise RuntimeError("Switch Bluetooth on before connecting devices")
+    if device.connected == connected:
+        return state
+    failures = []
+    if shutil.which("bluetoothctl"):
+        try:
+            result = subprocess.run(
+                ["bluetoothctl", "connect" if connected else "disconnect", address],
+                capture_output=True, text=True, timeout=10, check=False)
+            if result.returncode == 0:
+                actual = read_bluetooth()
+                if any(item.address == address and item.connected == connected
+                       for item in actual.devices):
+                    return actual
+            failures.append("bluetoothctl failed or did not confirm the new state")
+        except (OSError, subprocess.TimeoutExpired):
+            failures.append("bluetoothctl timed out")
+    try:
+        from . import bluetooth_dbus
+
+        bluetooth_dbus.set_connection(address, connected)
+        actual = read_bluetooth()
+        if any(item.address == address and item.connected == connected
+               for item in actual.devices):
+            return actual
+        failures.append("system D-Bus readback mismatch")
+    except Exception as exc:
+        failures.append("system D-Bus: " + str(exc)[:120])
+    raise RuntimeError("Bluetooth device action could not be verified: " + "; ".join(failures))
 
 
 def read_microphone() -> SoundState:
