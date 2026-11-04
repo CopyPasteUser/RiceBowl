@@ -122,7 +122,7 @@ def collect_system(root: Path = Path("/")) -> SystemSnapshot:
     )
 
 
-def report_sections(snapshot: SystemSnapshot) -> dict[str, str]:
+def report_sections(snapshot: SystemSnapshot, *, rice_name="Windows 98") -> dict[str, str]:
     """User-visible factual tab content for the classic System applet."""
     days, remainder = divmod(snapshot.uptime_seconds or 0, 86400)
     hours, minutes = divmod(remainder // 60, 60)
@@ -135,7 +135,7 @@ def report_sections(snapshot: SystemSnapshot) -> dict[str, str]:
         f"Processor: {snapshot.cpu_model}\n"
         f"Logical processors: {snapshot.cpu_threads or 'Unavailable'}\n"
         f"Installed memory: {size_label(snapshot.memory_total)}\n\n"
-        "This is a Linux desktop with a Windows 98-inspired interface."
+        f"This is a Linux desktop with a {rice_name}-inspired interface."
     )
     interfaces = "\n".join(f"  {name} — {state}" for name, state in snapshot.interfaces)
     disks = "\n".join(

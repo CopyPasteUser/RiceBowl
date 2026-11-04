@@ -319,6 +319,53 @@ window.luna-tray-popup {
 .luna-balloon-title { color: #174286; font-size: 12px; font-weight: bold; }
 .luna-balloon-dismiss { background: #fff2b5; color: #25415d; border: 1px solid #bfa76d;
   border-radius: 3px; font-size: 10px; padding: 2px 6px; }
+.luna-taskbar-properties { background: #ece9d8; color: #172b4b;
+  font-family: "Tahoma", "DejaVu Sans", sans-serif; font-size: 11px; }
+.luna-taskbar-properties notebook { background: #ece9d8; }
+.luna-taskbar-properties notebook > header { background: #d7e4f4;
+  border-bottom: 1px solid #6b8fc2; }
+.luna-taskbar-properties notebook > header tab { background: #d9e4f6;
+  border: 1px solid #8ea9cb; border-bottom: none; padding: 5px 13px;
+  border-radius: 3px 3px 0 0; }
+.luna-taskbar-properties notebook > header tab:checked { background: #fffdf5;
+  border-color: #316ac5; }
+.luna-taskbar-properties notebook > stack { background: #fffdf5;
+  border: 1px solid #9eb7d5; border-top: none; }
+.luna-taskbar-properties button { background-image: linear-gradient(#fff, #e2eaf8);
+  border: 1px solid #7c9bc3; color: #143c79; border-radius: 3px;
+  min-height: 23px; padding: 3px 11px; }
+.luna-taskbar-properties button:hover, .luna-taskbar-properties button:focus {
+  border-color: #316ac5; background: #d4e6ff; }
+.luna-taskbar-properties button:active { background: #abcdf6; }
+.luna-taskbar-properties checkbutton:focus, .luna-taskbar-properties spinbutton:focus {
+  outline: 1px solid #316ac5; outline-offset: 2px; }
+.luna-taskbar-properties spinbutton { background: #fff; border: 1px solid #849bc0;
+  border-radius: 2px; color: #183d75; }
+.luna-properties-heading { color: #164997; font-weight: bold; font-size: 12px; }
+.luna-properties-note { color: #596d85; font-size: 10px; }
+.luna-properties-error { color: #a11e1e; font-weight: bold; }
+.luna-group-task { padding-right: 5px; }
+.luna-help-window { background: #ece9d8; color: #172d4e;
+  font-family: "Tahoma", "DejaVu Sans", sans-serif; font-size: 11px; }
+.luna-help-window button { background-image: linear-gradient(#fff, #e2eaf8);
+  border: 1px solid #7c9bc3; color: #143c79; border-radius: 3px;
+  min-height: 23px; padding: 3px 10px; }
+.luna-help-window button:hover, .luna-help-window button:focus {
+  border-color: #316ac5; background: #d4e6ff; }
+.luna-help-window .luna-help-banner { background-image: linear-gradient(#2569ca, #104494);
+  border: 1px solid #16427f; color: #fff; padding: 13px 17px; }
+.luna-help-window .luna-help-banner label { color: #fff; }
+.luna-help-title { font-size: 17px; font-weight: bold; }
+.luna-help-navigation { background: #d7e6f8; border: 1px solid #9fbee0;
+  padding: 9px; }
+.luna-help-navigation list { background: #f4f9ff; }
+.luna-help-navigation row { border-bottom: 1px solid #d1e1f3; }
+.luna-help-navigation row:hover, .luna-help-navigation row:selected {
+  background: #316ac5; color: white; }
+.luna-help-navigation row:hover label, .luna-help-navigation row:selected label {
+  color: white; }
+.luna-help-article { background: #fffdf5; border: 1px solid #9fbee0; }
+.luna-help-article textview, .luna-help-article text { background: #fffdf5; color: #1b344f; }
 /* Gtk.Menu is a separate popup window, not a descendant of .luna-menu. */
 menu.luna-popup { background: #f9fbff; color: #1a345b; border: 1px solid #2e65b0;
   border-radius: 0; padding: 3px; box-shadow: 2px 3px 7px rgba(9,38,91,.3); }
