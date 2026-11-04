@@ -25,7 +25,7 @@ RiceBowl changes the actual Linux desktop: GTK and XFWM4 themes, icons, wallpape
 | **[Windows 10](WINDOWS10_ROADMAP.md)** | `ten-light`, `ten-dark` | Flat taskbar, pinned Start tiles and Action Center |
 | **[Windows XP · Luna](XP_LUNA_ROADMAP.md)** | `winxp` | XP Control Panel, configurable taskbar and Start, native Help and Support, device flyouts and optional desktop icons |
 | **[Windows 98 SE (classic)](CLASSIC_98_ROADMAP.md)** | `winclassic` | Teal desktop, real Start descendants, Win98 Control Panel, Quick Launch/taskbar preferences and live tray menus |
-| **[ChromeOS](CHROMEOS_ROADMAP.md)** | `chromeos` | Material You shelf, app launcher, hierarchical Quick Settings and searchable Settings window |
+| **[ChromeOS](CHROMEOS_ROADMAP.md)** | `chromeos` | Material You shelf, app launcher, Quick Settings, XFCE notification history, local calendar and searchable Settings |
 | **[Frutiger Aero](FRUTIGER_AERO_ROADMAP.md)** | `frutiger` | Aqua World launcher with working Back navigation, native Wi-Fi/audio/Bluetooth/brightness/power controls, live Places and device flyouts |
 
 Windows 98 **Control Panel → System** now opens a native, read-only **System Properties** viewer with General, Device Manager and Performance tabs showing actual Linux CPU, memory, network, disks and uptime. Refresh is manual, and nothing is installed or reconfigured.
@@ -66,8 +66,12 @@ networks, adapter power, screen brightness, battery and supported performance
 profiles; unsupported hardware remains clearly unavailable. The Linux service
 adapters run off the UI thread. Clicking the ChromeOS **Shelf clock** opens a
 native local monthly calendar with month navigation and a Today action; the
-date in Quick Settings opens the same view. Google-only services, native
-notifications and
+date in Quick Settings opens the same view. A separate Shelf bell opens the
+**actual XFCE notification log**, grouped by application with real unread
+state, dismissal, verified Do Not Disturb and a confirm-before-clear action.
+It uses XFCE's installed daemon and does not intercept notifications;
+unavailable or disabled history is explained rather than invented. Live
+ChromeOS-style toast notifications, Google-only services and
 [RiceExplorer](https://github.com/CopyPasteUser/riceExplorer) integration are
 still separate roadmap work. Updated deep-page screenshots and physical Mint
 XFCE acceptance are pending. [ChromeOS roadmap](CHROMEOS_ROADMAP.md).

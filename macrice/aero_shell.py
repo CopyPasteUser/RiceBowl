@@ -806,6 +806,12 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     assert self.chrome_quick_calendar.get_date() == calendar_today()
                     self._action_key(type("Event", (), {"keyval": Gdk.KEY_Escape})())
                     assert self.chrome_quick_stack.get_visible_child_name() == "overview"
+                    self._toggle_chrome_notifications()
+                    assert self.chrome_quick_stack.get_visible_child_name() == "Notifications"
+                    assert self.chrome_notifications is not None
+                    assert self.chrome_notifications_badge is not None
+                    self._action_key(type("Event", (), {"keyval": Gdk.KEY_Escape})())
+                    assert self.chrome_quick_stack.get_visible_child_name() == "overview"
                     self.chrome_quick_show_page("Network")
                     assert self.chrome_quick_stack.get_visible_child_name() == "Network"
                     self._action_key(type("Event", (), {"keyval": Gdk.KEY_Escape})())
@@ -2389,6 +2395,19 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 clock_button.get_accessible().set_name("Open local calendar")
                 clock_button.connect("clicked", lambda _button: self._toggle_chrome_calendar())
                 right_area.pack_end(clock_button, False, False, 4)
+                bell = self._class(Gtk.Button(), "chrome-clock-button")
+                self.chrome_notifications_button = bell
+                bell_content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
+                bell_content.pack_start(self._icon("preferences-system-notifications",
+                                                   Gtk.IconSize.MENU), False, False, 0)
+                self.chrome_notifications_badge = self._class(
+                    Gtk.Label(label=""), "chrome-notifications-badge")
+                bell_content.pack_start(self.chrome_notifications_badge, False, False, 0)
+                bell.add(bell_content)
+                bell.set_tooltip_text("Open notification history")
+                bell.get_accessible().set_name("Open notifications")
+                bell.connect("clicked", lambda _button: self._toggle_chrome_notifications())
+                right_area.pack_end(bell, False, False, 0)
             elif profile in ("winxp", "aero"):
                 clock_button = self._class(Gtk.Button(), "luna-clock-button" if profile == "winxp"
                                            else "win7-clock-button")
@@ -4732,6 +4751,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _hide_actions(self):
             self._cancel_popup_hide("control")
+            if profile == "chromeos" and hasattr(self, "chrome_notifications"):
+                self.chrome_notifications.discard()
             self.actions.hide()
 
         def _show_aqua_control(self, category=None, task=None):
@@ -4767,6 +4788,22 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._toggle_actions()
             if self.actions.get_visible():
                 self.chrome_quick_show_page("Calendar")
+
+        def _toggle_chrome_notifications(self):
+            """Open Xfce's real notification log without replacing its daemon."""
+            if profile != "chromeos":
+                return
+            self._cancel_popup_hide("control")
+            if self.actions.get_visible():
+                if self.chrome_quick_stack.get_visible_child_name() == "Notifications":
+                    self._hide_actions()
+                else:
+                    self.chrome_quick_show_page("Notifications")
+                    self.actions.present()
+                return
+            self._toggle_actions()
+            if self.actions.get_visible():
+                self.chrome_quick_show_page("Notifications")
 
         def _toggle_actions(self):
             self._cancel_popup_hide("control")

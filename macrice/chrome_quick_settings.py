@@ -12,6 +12,7 @@ import shutil
 
 from .chrome_shell import apply_rounded_window_shape
 from .chrome_settings import ACTIONS, available_tool, status_text
+from .chrome_notifications import ChromeNotifications
 from .frutiger_native_controls import NativeAquaControls
 
 
@@ -19,7 +20,7 @@ QUICK_ACTIONS = (
     ("Network", "network-wireless", "Connections", "Connections & VPN"),
     ("Bluetooth", "bluetooth", "Bluetooth devices", "Nearby devices"),
     ("Display", "video-display", "Displays", "Displays & scaling"),
-    ("Notifications", "preferences-system-notifications", "Notifications", "Notification preferences"),
+    ("Notifications", "preferences-system-notifications", "Notifications", "Notification history"),
     ("Power", "battery", "Power", "Battery & sleep"),
     ("Keyboard", "input-keyboard", "Keyboard", "Keyboard & shortcuts"),
 )
@@ -32,7 +33,7 @@ def calendar_today(today: date | None = None) -> tuple[int, int, int]:
 
 
 def build(shell, Gtk, Gdk, GLib):
-    from gi.repository import Pango
+    from gi.repository import Gio, Pango
     actions = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
     actions.set_title("RiceBowl ChromeOS Quick Settings")
     actions.set_decorated(False)
@@ -163,6 +164,7 @@ def build(shell, Gtk, Gdk, GLib):
 
     shell.chrome_quick_status_labels = []
     native_panels = {}
+    notifications = None
     for name, _icon_name, action_name, explanation in QUICK_ACTIONS:
         action = next(item for item in ACTIONS if item.name == action_name)
         page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
@@ -180,6 +182,12 @@ def build(shell, Gtk, Gdk, GLib):
         description.set_line_wrap(True)
         page.pack_start(description, False, False, 0)
         native_panels[name] = []
+        if name == "Notifications":
+            notifications = ChromeNotifications(
+                shell, Gtk, GLib, Gio, page,
+                is_current=lambda: actions.get_visible() and
+                    stack.get_visible_child_name() == "Notifications")
+            shell.chrome_notifications = notifications
         controls = {"Network": ("wifi",), "Bluetooth": ("bluetooth",),
                     "Display": ("display",), "Power": ("battery", "power")}
         for kind in controls.get(name, ()):
@@ -238,16 +246,22 @@ def build(shell, Gtk, Gdk, GLib):
     shell.chrome_quick_calendar = calendar
 
     def show_home():
+        if stack.get_visible_child_name() == "Notifications":
+            notifications.discard()
         heading.set_text("Quick Settings")
         stack.set_visible_child_name("overview")
         back.hide()
 
     def show_page(name):
+        if stack.get_visible_child_name() == "Notifications" and name != "Notifications":
+            notifications.discard()
         heading.set_text(name)
         stack.set_visible_child_name(name)
         back.show()
         if name == "Calendar":
             reset_calendar()
+        if name == "Notifications":
+            notifications.on_open()
         for panel in native_panels[name]:
             panel.refresh()
 

@@ -117,6 +117,8 @@ CSS = b"""
 .chrome-clock-button { background: transparent; border: 0; border-radius: 16px;
   box-shadow: none; padding: 2px 4px; }
 .chrome-clock-button:hover, .chrome-clock-button:focus { background: #dce6ff; }
+.chrome-notifications-badge { color: #bd416b; font-size: 13px;
+  font-weight: 800; }
 
 .chrome-launcher, .chrome-quick-root {
   background: @chrome-surface; color: @chrome-ink;
@@ -226,6 +228,41 @@ CSS = b"""
   min-width: 16px; min-height: 16px; border-radius: 20px; }
 .chrome-quick-root .chrome-native-panel combobox button { background: #e0e7fd;
   color: @chrome-ink; border-radius: 12px; }
+.chrome-notifications { padding: 2px 0 10px; }
+.chrome-notifications-label { color: @chrome-ink; font-size: 13px;
+  font-weight: 700; }
+.chrome-notifications-status { color: @chrome-muted; font-size: 11px;
+  padding: 3px 2px 7px; }
+.chrome-notifications-group { color: #495b81; font-size: 11px;
+  font-weight: 700; padding: 7px 5px 0; }
+.chrome-notifications-card { background: #eff2fc; color: @chrome-ink;
+  border: 1px solid #e0e5f4; border-radius: 17px;
+  padding: 12px 13px; }
+.chrome-notifications-card.chrome-notifications-unread {
+  background: #e0e9ff; border-color: #b8c7ee; }
+.chrome-notifications-summary { color: @chrome-ink; font-size: 12px;
+  font-weight: 700; }
+.chrome-notifications-time { color: #67738f; font-size: 10px; }
+.chrome-notifications-body { color: #3c4862; font-size: 11px; }
+.chrome-notifications-empty { color: @chrome-muted; font-size: 11px;
+  padding: 14px 12px; }
+.chrome-notifications-action { background: #e4eafd; color: #31477e;
+  border: 1px solid #cbd7f2; border-radius: 14px; box-shadow: none;
+  padding: 7px 10px; font-size: 11px; }
+.chrome-notifications-action:hover, .chrome-notifications-action:focus {
+  background: #ccd9fe; }
+.chrome-notifications-action:disabled { color: #8993a9;
+  background: #edeff5; }
+.chrome-notifications-confirm { background: #fff1e8; color: #653b31;
+  border-radius: 14px; padding: 12px; }
+.chrome-notifications-danger { background: #a73a58; color: #fff;
+  border: 1px solid #953249; border-radius: 14px;
+  padding: 7px 10px; box-shadow: none; }
+.chrome-notifications switch { background: #d0d8eb;
+  min-height: 22px; border-radius: 16px; }
+.chrome-notifications switch:checked { background: #4b66d7; }
+.chrome-notifications switch slider { background: #fff; border-radius: 16px;
+  min-height: 17px; min-width: 17px; }
 
 /* ChromeOS Settings is a separate, persistent app window, not an XFCE
    Control Panel reskin. All selectors stay in the ChromeOS namespace. */

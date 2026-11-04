@@ -68,8 +68,29 @@ hardware and compositor behavior still require on-device acceptance.
 - [x] Preserve the existing Quick Settings back/Escape behavior and provide
   accessible names; do not synthesize Google Calendar events or account data.
 - [ ] Validate clock/date click geometry and keyboard navigation on the
-  physical Mint XFCE desktop. Freedesktop notifications and any authenticated
-  events provider remain separate open work.
+  physical Mint XFCE desktop. At the time of this calendar milestone, native
+  notification history and any authenticated events provider remained open;
+  the notification-history milestone follows below.
+
+### Progress update — 4 November 2026: XFCE notification history
+
+- [x] Connect the Shelf bell and Quick Settings Notifications page to the real
+  `org.xfce.Notifyd.Log` DBus interface (XFCE 4.18 / notifyd 0.9.x API).
+  Display at most 40 real historical entries, grouped by source application,
+  with their actual timestamps, read status and safe plain-text bodies.
+- [x] Include a real unread-status badge via `HasUnread` and log signals,
+  individual Mark read and Dismiss, Mark all read and a confirmation before
+  destructive Clear all. No second freedesktop notification daemon, no
+  local persistent private-history copy and no expired action replay.
+- [x] Integrate XFConf Do Not Disturb with a read-back-verified switch;
+  unavailable daemon/settings gracefully disable the relevant controls.
+  Fetches and mutations are asynchronous to GTK; closing the view discards
+  cached notification content. Add pure backend contract tests and a GTK
+  navigation smoke test.
+- [ ] Validate genuine populated log, DND, large histories, 1024×768 placement
+  and focus behavior on the physical Mint XFCE machine. A full desktop-toast
+  rendering pipeline, per-app policy, quiet hours and grouped-card expansion
+  remain distinct tasks. This does **not** complete section 4 below.
 
 ## Reference principles
 
