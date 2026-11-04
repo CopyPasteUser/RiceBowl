@@ -713,6 +713,11 @@ CONTROL_DETAIL_CSS = {
 .classic98-tray-popup scale highlight, .classic98-tray-popup levelbar block.filled {
   background: #000080; border-radius: 0; }
 .classic98-flyout menuitem:hover { background: #000080; color: white; }
+.classic98-window-menu { background: #c0c0c0; border: 2px outset #fff;
+  border-radius: 0; padding: 2px; }
+.classic98-window-menu menuitem { border-radius: 0; padding: 3px 15px; color: #111; }
+.classic98-window-menu menuitem:hover { background: #000080; color: white; }
+.classic98-window-menu menuitem:disabled { color: #888; }
 """,
     "chromeos": b"""
 .rice-hardware-panel { background: #edf2ff; border: 1px solid #d4ddf1;

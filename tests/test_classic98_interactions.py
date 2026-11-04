@@ -6,12 +6,49 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
+from enum import IntFlag
 
 from macrice.classic98_control_panel import APPLETS, executable, visible_applets
 from macrice.classic98_menu import (
     Favorite, all_favorites, gtk_bookmarks, parse_run_target, save_favorites,
     user_favorites, valid_favorite,
 )
+from macrice.classic98_taskbar import available_actions, perform
+
+
+class FakeActions(IntFlag):
+    MOVE = 1
+    RESIZE = 2
+    MINIMIZE = 4
+    UNMINIMIZE = 8
+    MAXIMIZE = 16
+    UNMAXIMIZE = 32
+    CLOSE = 64
+
+
+class FakeWnck:
+    WindowActions = FakeActions
+
+
+class FakeWindow:
+    def __init__(self, minimized=False, maximized=False):
+        self.minimized = minimized
+        self.maximized = maximized
+        self.calls = []
+
+    def get_actions(self):
+        return FakeActions(127)
+
+    def is_minimized(self):
+        return self.minimized
+
+    def is_maximized(self):
+        return self.maximized
+
+    def __getattr__(self, name):
+        def method(*args):
+            self.calls.append((name, args))
+        return method
 
 
 class Classic98BackendTests(unittest.TestCase):
@@ -70,6 +107,27 @@ class Classic98BackendTests(unittest.TestCase):
         self.assertEqual(executable(APPLETS[0], which=lambda name: None), None)
         self.assertEqual(executable(APPLETS[0], which=lambda name: "/usr/bin/" + name),
                          APPLETS[0].commands[0])
+
+    def test_classic_taskbar_menu_matches_window_manager_state(self):
+        normal = dict(available_actions(FakeWindow(), FakeWnck))
+        self.assertEqual(normal, {"Restore": False, "Move": True, "Size": True,
+                                  "Minimize": True, "Maximize": True, "Close": True})
+        maximized = dict(available_actions(FakeWindow(maximized=True), FakeWnck))
+        self.assertTrue(maximized["Restore"])
+        self.assertFalse(maximized["Move"])
+        self.assertFalse(maximized["Size"])
+        minimized = dict(available_actions(FakeWindow(minimized=True), FakeWnck))
+        self.assertTrue(minimized["Restore"])
+        self.assertFalse(minimized["Minimize"])
+
+    def test_window_actions_call_the_real_wm_interface(self):
+        win = FakeWindow()
+        perform(win, "Close", 1234)
+        perform(win, "Move", 1234)
+        self.assertEqual(win.calls, [("close", (1234,)), ("activate", (1234,)),
+                                     ("keyboard_move", ())])
+        with self.assertRaises(ValueError):
+            perform(win, "Delete all files", 1)
 
 
 if __name__ == "__main__":

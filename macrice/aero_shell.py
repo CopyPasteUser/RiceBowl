@@ -1684,6 +1684,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                         content.pack_start(label, True, True, 0)
                         button.add(content)
                         button.connect("clicked", lambda _btn, target=xid: self._activate_task(target))
+                        if profile == "winclassic":
+                            button.connect("button-press-event", lambda widget, event, target=xid:
+                                           self._classic_task_context(widget, event, target))
                     self.window_buttons[xid] = (button, icon, label)
                     self.tasks.pack_start(button, False, False, 0)
                 self._visible_window_ids = visible_ids
@@ -1959,6 +1962,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
         def _activate_preview(self, xid):
             self._win7_stop_preview()
             self._activate_task(xid)
+
+        def _classic_task_context(self, widget, event, xid):
+            from .classic98_taskbar import show
+
+            return show(self, widget, event, xid, Gtk, Gdk)
 
         def _activate_task(self, xid):
             if self._window_tracker:
