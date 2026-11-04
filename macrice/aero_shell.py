@@ -779,7 +779,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
         def _capture_actions(self):
             try:
                 self._assert_popup_on_monitor(self.actions)
-                if profile in ("winxp", "winclassic"):
+                if profile == "winxp":
                     self._assert_control_footer_visible()
                 self._capture_screen(f"ricebowl-{profile}-controls-0.9.1{self._capture_variant}.png")
                 if profile == "winxp":
@@ -1049,6 +1049,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             if self._tray is not None:
                 self._tray.close()
                 self._tray = None
+            if profile == "winclassic" and hasattr(self, "classic98_tray_close"):
+                self.classic98_tray_close()
             if hasattr(self, "actions"):
                 self.actions.destroy()
 
@@ -1089,6 +1091,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     image.set_pixel_size(29)
                 if profile == "chromeos":
                     image.set_pixel_size(32)
+                if profile == "winclassic":
+                    image.set_pixel_size(16)
                 btn.set_image(image)
                 name = app.get_display_name() or app.get_name() or identifier
                 btn.set_tooltip_text(name)
@@ -1293,7 +1297,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 subprocess.Popen([executable], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                                  stderr=subprocess.DEVNULL, close_fds=True, start_new_session=True)
                 self._hide_menu()
-                if ten or profile == "chromeos":
+                if ten or profile in ("chromeos", "frutiger"):
                     self._hide_actions()
             except OSError as exc:
                 self._error(str(exc))
@@ -1394,6 +1398,16 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _status_action(self, name):
             """Open usable controls for audio/power; network settings for Wi-Fi."""
+            if profile == "winclassic":
+                self.classic98_tray_show(name)
+                return
+            if profile == "frutiger":
+                if not hasattr(self, "_aqua_flyouts"):
+                    from .frutiger_flyouts import AquaFlyouts
+
+                    self._aqua_flyouts = AquaFlyouts(self, Gtk)
+                self._aqua_flyouts.show(name)
+                return
             if name in ("audio", "battery"):
                 self._toggle_actions()
                 return
@@ -1463,6 +1477,17 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     self.luna_tray.on_status(None)
                 if hasattr(self, "frutiger_status_label"):
                     self.frutiger_status_label.set_text(frutiger_status_summary(None))
+                if profile == "frutiger" and hasattr(self, "control_network_label"):
+                    self.control_network_label.set_text("Network: unavailable — retrying")
+                    self.control_battery_label.set_text("Battery: unavailable — retrying")
+                    self.volume_status_label.set_text("Volume: unavailable — retrying")
+                    self.volume_scale.set_sensitive(False)
+                    self.mute_button.set_sensitive(False)
+                    detail = getattr(self, "aqua_control_detail_status", None)
+                    if detail is not None:
+                        detail.set_text("Device status temporarily unavailable")
+                if hasattr(self, "_aqua_flyouts"):
+                    self._aqua_flyouts.sync(None)
                 for button, _image, _label in self._status_widgets.values():
                     # Luna's tray popovers are also the recovery path when a
                     # transient probe fails; keep them openable for details.
@@ -1472,12 +1497,21 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._last_status = status
             if self.luna_tray is not None:
                 self.luna_tray.on_status(status)
+            if hasattr(self, "_aqua_flyouts"):
+                self._aqua_flyouts.sync(status)
             if hasattr(self, "frutiger_status_label"):
                 self.frutiger_status_label.set_text(frutiger_status_summary(status))
             if hasattr(self, "control_network_label"):
                 self.control_network_label.set_text(
                     "Network: " + {"wifi": "Wi-Fi", "ethernet": "Ethernet",
                                    "offline": "No active route"}[status.network])
+                detail = getattr(self, "aqua_control_detail_status", None)
+                if detail is not None:
+                    detail.set_text(
+                        self.control_network_label.get_text() if
+                        getattr(self, "aqua_control_detail_kind", None) == "connections" else
+                        (f"Battery: {status.battery.percent}% — {status.battery.label}"
+                         if status.battery else "Battery: not detected"))
                 if hasattr(self, "chrome_network_detail"):
                     self.chrome_network_detail.set_text({
                         "wifi": "Wi-Fi · connected", "ethernet": "Ethernet · connected",
@@ -1723,7 +1757,22 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.pinned_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
             if profile == "frutiger":
                 self.pinned_box.get_style_context().add_class("frutiger-pins")
-            shelf_box.pack_start(self.pinned_box, False, False, 0)
+            if profile == "winclassic":
+                quick_launch = self._class(
+                    Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2),
+                    "classic98-quicklaunch")
+                quick_launch.pack_start(self.pinned_box, False, False, 0)
+                desktop_quick = self._class(Gtk.Button(), "classic98-desktop-quick")
+                desktop_quick.set_image(self._icon("user-desktop", Gtk.IconSize.MENU))
+                desktop_quick.set_tooltip_text("Show Desktop")
+                desktop_quick.get_accessible().set_name("Show Desktop")
+                desktop_quick.connect("clicked", self._show_desktop)
+                quick_launch.pack_start(desktop_quick, False, False, 0)
+                shelf_box.pack_start(quick_launch, False, False, 2)
+                shelf_box.pack_start(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL),
+                                     False, False, 2)
+            else:
+                shelf_box.pack_start(self.pinned_box, False, False, 0)
             self._render_pins()
             self._pin_count = len(self._pinned_ids)
             self.tasks = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
@@ -1753,11 +1802,20 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 desktop.set_tooltip_text("Show desktop / restore windows")
             desktop.get_accessible().set_name("Show desktop or restore windows")
             desktop.connect("clicked", self._show_desktop)
-            right_area.pack_end(desktop, False, False, 0)
-            self.show_desktop_button = desktop
+            if profile != "winclassic":
+                right_area.pack_end(desktop, False, False, 0)
+            self.show_desktop_button = desktop_quick if profile == "winclassic" else desktop
             clock = self._class(Gtk.Label(), "aero-time")
             clock.set_justify(Gtk.Justification.CENTER)
-            if profile == "chromeos":
+            if profile == "winclassic":
+                clock_button = self._class(Gtk.Button(), "classic98-clock-button")
+                clock_button.add(clock)
+                clock_button.set_tooltip_text("Open date and time")
+                clock_button.get_accessible().set_name("Open date and time")
+                clock_button.connect("clicked", lambda _button:
+                                     self.classic98_tray_show("clock"))
+                right_area.pack_end(clock_button, False, False, 4)
+            elif profile == "chromeos":
                 clock_button = self._class(Gtk.Button(), "chrome-clock-button")
                 clock_button.add(clock)
                 clock_button.set_tooltip_text("Open Quick Settings")
@@ -1850,6 +1908,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                         content.pack_start(label, True, True, 0)
                         button.add(content)
                         button.connect("clicked", lambda _btn, target=xid: self._activate_task(target))
+                        if profile == "winclassic":
+                            button.connect("button-press-event", lambda widget, event, target=xid:
+                                           self._classic_task_context(widget, event, target))
                     self.window_buttons[xid] = (button, icon, label)
                     self.tasks.pack_start(button, False, False, 0)
                 self._visible_window_ids = visible_ids
@@ -2125,6 +2186,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
         def _activate_preview(self, xid):
             self._win7_stop_preview()
             self._activate_task(xid)
+
+        def _classic_task_context(self, widget, event, xid):
+            from .classic98_taskbar import show
+
+            return show(self, widget, event, xid, Gtk, Gdk)
 
         def _activate_task(self, xid):
             if self._window_tracker:
@@ -2690,124 +2756,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._finish_heritage_menu(menu, search)
 
         def _create_classic_menu(self):
-            """Win98: dense native cascading Start menu, not an XP-style launcher."""
-            menu = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
-            menu.set_title("RiceBowl Windows 98 Start")
-            menu.set_decorated(False)
-            menu.set_resizable(True)
-            menu.set_skip_taskbar_hint(True)
-            menu.set_skip_pager_hint(True)
-            menu.set_type_hint(Gdk.WindowTypeHint.UTILITY)
-            menu.set_transient_for(self.bar)
-            menu.set_keep_above(True)
-            menu.set_default_size(262, 332)
-            root = self._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL),
-                               "classic-menu")
-            rail = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL), "classic-brand")
-            rail.set_size_request(27, -1)
-            word = self._class(Gtk.Label(label="RiceBowl 98"), "classic-brand-label")
-            word.set_angle(90)
-            rail.pack_end(word, False, False, 9)
-            root.pack_start(rail, False, False, 0)
-            main = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0),
-                               "classic-menu-list")
+            """Native Windows 98 Start with dynamic Gio/XDG descendants."""
+            from .classic98_menu import build
 
-            def menu_item(title, icon, *, cascade=None, action=None, enabled=True):
-                button = self._class(Gtk.MenuButton() if cascade else Gtk.Button(),
-                                     "classic-menu-item")
-                content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-                content.pack_start(self._icon(icon, Gtk.IconSize.MENU), False, False, 0)
-                label = Gtk.Label(label=title, xalign=0)
-                content.pack_start(label, True, True, 0)
-                if cascade is not None:
-                    content.pack_end(self._class(Gtk.Label(label="\u25b6"),
-                                                 "classic-chevron"), False, False, 0)
-                    button.set_direction(Gtk.ArrowType.RIGHT)
-                    button.set_popup(cascade)
-                    button.connect("enter-notify-event", lambda widget, _event:
-                                   widget.set_active(True) if widget.get_sensitive() else None)
-                elif action is not None:
-                    button.connect("clicked", lambda _widget: action())
-                button.add(content)
-                button.get_accessible().set_name(title)
-                button.set_sensitive(enabled)
-                main.pack_start(button, False, False, 0)
-                return button
-
-            def folder_menu(entries):
-                submenu = Gtk.Menu()
-                for title, icon, target in entries:
-                    item = Gtk.ImageMenuItem.new_with_label(title)
-                    item.set_image(self._icon(icon, Gtk.IconSize.MENU))
-                    item.set_always_show_image(True)
-                    item.set_sensitive(target.is_dir())
-                    item.connect("activate", lambda _item, folder=target:
-                                 self._open_uri(folder.as_uri()))
-                    submenu.append(item)
-                submenu.show_all()
-                return submenu
-
-            home = Path.home()
-            menu_item("Programs", "applications-other",
-                      cascade=self._programs_cascade(self._reveal_classic_search))
-            menu_item("Favorites", "user-home", cascade=folder_menu((
-                ("Home", "user-home", home),
-                ("Desktop", "user-desktop", home / "Desktop"),
-                ("Downloads", "folder-download", home / "Downloads"),
-            )))
-            menu_item("Documents", "folder-documents", cascade=folder_menu((
-                ("Documents", "folder-documents", home / "Documents"),
-                ("Pictures", "folder-pictures", home / "Pictures"),
-                ("Music", "folder-music", home / "Music"),
-            )))
-            main.pack_start(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL),
-                            False, False, 2)
-            settings_menu = Gtk.Menu()
-            for title, icon, command in (
-                ("Control Panel", "classic-control-panel", None),
-                ("Display", "video-display", "xfce4-display-settings"),
-                ("Network", "network-workgroup", "nm-connection-editor"),
-                ("Sound", "audio-card", "pavucontrol"),
-            ):
-                item = Gtk.ImageMenuItem.new_with_label(title)
-                item.set_image(self._icon(icon, Gtk.IconSize.MENU))
-                item.set_always_show_image(True)
-                item.set_sensitive(command is None or shutil.which(command) is not None)
-                item.connect("activate", lambda _item, program=command:
-                             self._toggle_actions() if program is None else self._open_tool(program))
-                settings_menu.append(item)
-            settings_menu.show_all()
-            menu_item("Settings", "classic-control-panel", cascade=settings_menu)
-            menu_item("Find", "edit-find", action=self._reveal_classic_search)
-            help_tool = next((cmd for cmd in ("xfce4-about", "yelp") if shutil.which(cmd)), None)
-            menu_item("Help", "help-browser", action=lambda: self._open_tool(help_tool),
-                      enabled=help_tool is not None)
-            menu_item("Run…", "system-run", action=lambda:
-                      self._open_tool("xfce4-appfinder"),
-                      enabled=shutil.which("xfce4-appfinder") is not None)
-            main.pack_start(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL),
-                            False, False, 2)
-            self.classic_search = self._class(Gtk.SearchEntry(), "aero-menu-search")
-            self.classic_search.set_placeholder_text("Find programs")
-            self.classic_search.get_accessible().set_name("Find installed programs")
-            self.classic_search.set_no_show_all(True)
-            main.pack_start(self.classic_search, False, False, 3)
-            self.classic_results_scroll = Gtk.ScrolledWindow()
-            self.classic_results_scroll.set_policy(Gtk.PolicyType.NEVER,
-                                                    Gtk.PolicyType.AUTOMATIC)
-            self.classic_results_scroll.set_min_content_height(112)
-            self.classic_results_scroll.set_no_show_all(True)
-            self.results = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
-            self.classic_results_scroll.add(self.results)
-            main.pack_start(self.classic_results_scroll, True, True, 0)
-
-            footer = menu_item("Shut Down…", "system-shutdown",
-                               action=lambda: self._open_tool("xfce4-session-logout"),
-                               enabled=shutil.which("xfce4-session-logout") is not None)
-            footer.set_tooltip_text("Open XFCE session options; no immediate shutdown")
-            root.pack_start(main, True, True, 0)
-            menu.add(root)
-            self._finish_heritage_menu(menu, self.classic_search)
+            build(self, Gtk, Gdk, Gio, GLib, Pango)
 
         def _reveal_classic_search(self):
             self.classic_search.set_no_show_all(False)
@@ -2866,9 +2818,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             gear = self._class(Gtk.Button(), "aqua-gear")
             gear.set_image(self._icon("preferences-system", Gtk.IconSize.MENU))
             gear.get_accessible().set_name("Open desktop settings")
-            gear.set_tooltip_text("Desktop settings")
+            gear.set_tooltip_text("Open Aqua Control Center")
             gear.connect("clicked", lambda _button:
-                         self._open_tool("xfce4-settings-manager"))
+                         self._show_aqua_control())
             heading.pack_end(gear, False, False, 0)
             root.pack_start(heading, False, False, 0)
             search = self._class(Gtk.SearchEntry(), "aero-menu-search")
@@ -2919,10 +2871,12 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             root.pack_start(tabs, False, False, 0)
             section = self._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8),
                                   "aqua-section")
-            section.pack_start(self._class(Gtk.Label(label="DISCOVER YOUR APPS", xalign=0),
-                                           "aqua-section-title"), True, True, 0)
-            section.pack_end(self._class(Gtk.Label(label="Right-click to pin", xalign=1),
-                                         "aqua-section-hint"), False, False, 0)
+            section_title = self._class(Gtk.Label(label="DISCOVER YOUR APPS", xalign=0),
+                                        "aqua-section-title")
+            section_hint = self._class(Gtk.Label(label="Right-click to pin", xalign=1),
+                                       "aqua-section-hint")
+            section.pack_start(section_title, True, True, 0)
+            section.pack_end(section_hint, False, False, 0)
             root.pack_start(section, False, False, 0)
             def switch_to(name):
                 self.aqua_stack.set_visible_child_name(name)
@@ -2950,6 +2904,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
             places_page = Gtk.ScrolledWindow()
             places_page.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+            places_content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
             places_grid = Gtk.Grid(column_spacing=9, row_spacing=8)
             places_grid.set_margin_top(7)
             places_grid.set_margin_bottom(7)
@@ -2961,32 +2916,88 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 ("Music", "folder-music", music),
                 ("Pictures", "folder-pictures", xdg_path(GLib.UserDirectory.DIRECTORY_PICTURES, "Pictures")),
                 ("Videos", "folder-videos", xdg_path(GLib.UserDirectory.DIRECTORY_VIDEOS, "Videos")),
+                ("Desktop", "user-desktop", xdg_path(GLib.UserDirectory.DIRECTORY_DESKTOP, "Desktop")),
+                ("File system", "drive-harddisk", Path("/")),
             )
             for index, (title, icon_name, path) in enumerate(entries):
                 button = self._place_button(title, icon_name, path, "aqua-place", offer_create=True)
                 places_grid.attach(button, index % 2, index // 2, 1, 1)
-            places_page.add(places_grid)
+            places_content.pack_start(places_grid, False, False, 0)
+            trash = self._class(Gtk.Button(), "aqua-place")
+            trash_line = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=9)
+            trash_line.pack_start(self._icon("user-trash", Gtk.IconSize.MENU), False, False, 0)
+            trash_line.pack_start(Gtk.Label(label="Trash", xalign=0), True, True, 0)
+            trash.add(trash_line)
+            trash.get_accessible().set_name("Open Trash")
+            trash.set_tooltip_text("Open the real desktop Trash folder")
+            trash.connect("clicked", lambda _button: self._open_uri("trash:///"))
+            places_content.pack_start(trash, False, False, 0)
+            places_content.pack_start(self._class(Gtk.Label(label="CONNECTED LOCATIONS", xalign=0),
+                                                  "aqua-section-title"), False, False, 3)
+            mounts_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+            places_content.pack_start(mounts_box, False, False, 0)
+            monitor = Gio.VolumeMonitor.get()
+
+            def refresh_mounts(*_args):
+                for old in tuple(mounts_box.get_children()):
+                    mounts_box.remove(old)
+                visible = []
+                for mount in monitor.get_mounts():
+                    try:
+                        if mount.is_shadowed():
+                            continue
+                        uri = mount.get_default_location().get_uri()
+                        if uri in ("file:///", "file:///boot"):
+                            continue
+                        visible.append((mount.get_name(), uri))
+                    except (AttributeError, GLib.Error):
+                        continue
+                for title, uri in sorted(visible, key=lambda row: row[0].casefold()):
+                    button = self._class(Gtk.Button(), "aqua-place")
+                    line = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=9)
+                    line.pack_start(self._icon("drive-removable-media", Gtk.IconSize.MENU),
+                                    False, False, 0)
+                    line.pack_start(Gtk.Label(label=title, xalign=0), True, True, 0)
+                    button.add(line)
+                    button.get_accessible().set_name("Open mounted location " + title)
+                    button.set_tooltip_text(uri)
+                    button.connect("clicked", lambda _button, destination=uri:
+                                   self._open_uri(destination))
+                    mounts_box.pack_start(button, False, False, 0)
+                if not visible:
+                    mounts_box.pack_start(self._class(Gtk.Label(
+                        label="No mounted removable or network locations", xalign=0),
+                        "aqua-section-hint"), False, False, 0)
+                mounts_box.show_all()
+
+            refresh_mounts()
+            for signal in ("mount-added", "mount-removed", "mount-changed"):
+                monitor.connect(signal, refresh_mounts)
+            places_page.add(places_content)
             self.aqua_stack.add_named(places_page, "Places")
 
             settings_page = Gtk.ScrolledWindow()
             settings_page.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
             settings_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=7)
-            for title, icon_name, command in (
-                ("Network connections", "network-wireless", "nm-connection-editor"),
-                ("Sound & media", "audio-volume-high", "pavucontrol"),
-                ("Appearance & themes", "preferences-desktop-theme", "xfce4-appearance-settings"),
-                ("Display", "video-display", "xfce4-display-settings"),
-                ("System settings", "preferences-system", "xfce4-settings-manager"),
+            for title, icon_name, category in (
+                ("Connections", "network-wireless", "connections"),
+                ("Sound & media", "audio-volume-high", "sound"),
+                ("Personalize", "preferences-desktop-theme", "personalize"),
+                ("Display & windows", "video-display", "display"),
+                ("Power & battery", "battery", "power"),
+                ("Devices & input", "input-keyboard", "devices"),
+                ("Applications", "system-software-install", "applications"),
+                ("System & recovery", "computer", "system"),
+                ("Accessibility", "preferences-desktop-accessibility", "accessibility"),
             ):
                 btn = self._class(Gtk.Button(), "aqua-place")
                 content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=11)
                 content.pack_start(self._icon(icon_name, Gtk.IconSize.MENU), False, False, 0)
                 content.pack_start(Gtk.Label(label=title, xalign=0), True, True, 0)
                 btn.add(content)
-                btn.set_sensitive(shutil.which(command) is not None)
-                btn.set_tooltip_text("Open " + title if shutil.which(command) else
-                                    command + " is not installed")
-                btn.connect("clicked", lambda _button, app=command: self._open_tool(app))
+                btn.set_tooltip_text("Open Aqua Control Center · " + title)
+                btn.connect("clicked", lambda _button, page=category:
+                            self._show_aqua_control(page))
                 settings_box.pack_start(btn, False, False, 0)
             settings_page.add(settings_box)
             self.aqua_stack.add_named(settings_page, "Settings")
@@ -3002,9 +3013,12 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 btn.set_image(self._icon(icon_name, Gtk.IconSize.MENU))
                 btn.set_tooltip_text("Open " + name)
                 btn.get_accessible().set_name("Open " + name)
-                command = "xfce4-settings-manager" if name == "Settings" else "xfce4-session-logout"
-                btn.set_sensitive(shutil.which(command) is not None)
-                btn.connect("clicked", lambda _button, app=command: self._open_tool(app))
+                if name == "Settings":
+                    btn.connect("clicked", lambda _button: self._show_aqua_control())
+                else:
+                    command = "xfce4-session-logout"
+                    btn.set_sensitive(shutil.which(command) is not None)
+                    btn.connect("clicked", lambda _button, app=command: self._open_tool(app))
                 footer.pack_start(btn, False, False, 0)
             root.pack_start(footer, False, False, 0)
             buttons["Apps"].set_active(True)
@@ -3014,6 +3028,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             menu.connect("focus-out-event", self._menu_focus_out)
             def search_changed(*_args):
                 self._app_page_size = 24
+                searching = bool(search.get_text().strip())
+                section_title.set_text("SEARCH YOUR WORLD" if searching else "DISCOVER YOUR APPS")
+                section_hint.set_text("Apps · Places · Settings" if searching else
+                                      "Right-click to pin")
                 if search.get_text().strip():
                     switch_to("Apps")
                 self._populate(search.get_text())
@@ -3346,6 +3364,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _create_actions(self):
             """Profile-aware controls; never simulate state-changing toggles."""
+            if profile == "frutiger":
+                from .frutiger_control_center import build
+
+                self.actions = build(self, Gtk, Gdk)
+                return
             if profile == "aero":
                 from .win7_control_panel import build
 
@@ -3365,6 +3388,13 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 from .chrome_quick_settings import build
 
                 self.actions = build(self, Gtk, Gdk, GLib)
+                return
+            if profile == "winclassic":
+                from .classic98_control_panel import build as build_control_panel
+                from .classic98_tray import build as build_tray
+
+                self.actions = build_control_panel(self, Gtk, Gdk)
+                build_tray(self, Gtk, Gdk)
                 return
             actions = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
             heading = heritage.control_heading if heritage else ("Action Center" if ten else "Control Panel")
@@ -3626,6 +3656,24 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._cancel_popup_hide("control")
             self.actions.hide()
 
+        def _show_aqua_control(self, category=None, task=None):
+            """Open a real Aqua detail page without toggling an open panel shut."""
+            if profile != "frutiger":
+                return
+            if hasattr(self, "_aqua_flyouts"):
+                for popover in self._aqua_flyouts.popovers.values():
+                    popover.popdown()
+            if not self.actions.get_visible():
+                self._toggle_actions()
+            if self.actions.get_visible():
+                if category and task:
+                    self.aqua_control_show_task(category, task)
+                elif category:
+                    self.aqua_control_show_category(category)
+                else:
+                    self.aqua_control_show_home()
+                self.actions.present()
+
         def _toggle_actions(self):
             self._cancel_popup_hide("control")
             if self.luna_tray is not None:
@@ -3636,6 +3684,18 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 return
             self._hide_menu()
             rect = self._desktop_rect()
+            if profile == "winclassic":
+                width = min(690, max(0, rect.width - 20))
+                height = min(475, max(0, rect.height - panel_height - 20))
+                if width < 300 or height < 235:
+                    self._error("The display is too small for Control Panel.")
+                    return
+                self.actions.show_all()
+                self.actions.resize(width, height)
+                self.actions.move(rect.x + (rect.width - width) // 2,
+                                  rect.y + (rect.height - panel_height - height) // 2)
+                self.actions.present()
+                return
             if profile == "winxp":
                 width = min(746, max(0, rect.width - 24))
                 height = min(536, max(0, rect.height - panel_height - 24))
@@ -3664,6 +3724,24 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self.actions.move(rect.x + (rect.width - width) // 2,
                                   rect.y + (rect.height - panel_height - height) // 2)
                 self.actions.present()
+                return
+            if profile == "frutiger":
+                width = min(492, max(0, rect.width - 24))
+                height = min(620, max(0, rect.height - panel_height - 24))
+                if width < 290 or height < 275:
+                    self._error("The display is too small for Aqua Control Center.")
+                    return
+                self.aqua_control_show_home()
+                self.actions.show_all()
+                self.actions.resize(width, height)
+                self.actions.move(rect.x + rect.width - width - 10,
+                                  rect.y + rect.height - panel_height - height - 8)
+                self.actions.present()
+                self._refresh_status_async()
+                from .chrome_shell import apply_rounded_window_shape
+
+                GLib.idle_add(apply_rounded_window_shape, self.actions, 22)
+                GLib.timeout_add(150, apply_rounded_window_shape, self.actions, 22)
                 return
             width = min(396 if profile == "chromeos" else 362 if ten else 382 if profile == "winclassic" else 388 if profile == "frutiger" else 412 if profile == "aero" else 330,
                         max(0, rect.width - 16))
@@ -3806,7 +3884,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.results.show_all()
 
         def _populate_frutiger(self, query):
-            """Icon-first, fully functional Aqua grid of installed Gio apps."""
+            """Icon-first Gio apps plus bounded real places/settings search."""
             matches = frutiger_apps(self.apps, self._pinned_ids, query)
             for app in matches[:self._app_page_size]:
                 title = app.get_display_name() or app.get_name() or "Application"
@@ -3832,8 +3910,70 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 button.connect("popup-menu", lambda widget, selected=app:
                                self._pin_context(widget, selected))
                 self.results.add(button)
-            if not matches:
-                empty = self._class(Gtk.Label(label="No matching applications"),
+            extra_results = 0
+            if query.strip():
+                from .frutiger_control_center import search_aqua
+
+                needle = query.casefold().strip()
+                special_dirs = (
+                    ("Home", "user-home", Path.home()),
+                    ("Desktop", "user-desktop", Path(
+                        GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP)
+                        or Path.home() / "Desktop")),
+                    ("Documents", "folder-documents", Path(
+                        GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DOCUMENTS)
+                        or Path.home() / "Documents")),
+                    ("Downloads", "folder-download", Path(
+                        GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DOWNLOAD)
+                        or Path.home() / "Downloads")),
+                    ("Music", "folder-music", Path(
+                        GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_MUSIC)
+                        or Path.home() / "Music")),
+                    ("Pictures", "folder-pictures", Path(
+                        GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_PICTURES)
+                        or Path.home() / "Pictures")),
+                    ("Videos", "folder-videos", Path(
+                        GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_VIDEOS)
+                        or Path.home() / "Videos")),
+                )
+                for title, icon_name, path in special_dirs:
+                    if needle not in title.casefold():
+                        continue
+                    button = self._class(Gtk.Button(), "aqua-app-tile")
+                    inside = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+                    inside.pack_start(self._icon(icon_name, Gtk.IconSize.DIALOG),
+                                      False, False, 0)
+                    inside.pack_start(Gtk.Label(label=title), False, False, 0)
+                    button.add(inside)
+                    button.get_accessible().set_name("Open location " + title)
+                    button.connect("clicked", lambda _button, folder=path:
+                                   self._open_luna_user_folder(folder))
+                    self.results.add(button)
+                    extra_results += 1
+                if "trash" in needle or needle in "trash":
+                    button = self._class(Gtk.Button(label="Trash"), "aqua-app-tile")
+                    button.get_accessible().set_name("Open Trash")
+                    button.connect("clicked", lambda _button: self._open_uri("trash:///"))
+                    self.results.add(button)
+                    extra_results += 1
+                for category, task in search_aqua(query):
+                    button = self._class(Gtk.Button(), "aqua-app-tile")
+                    inside = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+                    inside.pack_start(self._icon(task[1], Gtk.IconSize.DIALOG),
+                                      False, False, 0)
+                    title = Gtk.Label(label=task[0])
+                    title.set_line_wrap(True)
+                    title.set_max_width_chars(20)
+                    inside.pack_start(title, False, False, 0)
+                    button.add(inside)
+                    button.get_accessible().set_name("Open setting " + task[0])
+                    button.set_tooltip_text(category[1] + " · " + task[3])
+                    button.connect("clicked", lambda _button, page=category[0], item=task[0]:
+                                   self._show_aqua_control(page, item))
+                    self.results.add(button)
+                    extra_results += 1
+            if not matches and not extra_results:
+                empty = self._class(Gtk.Label(label="No matching apps, places or settings"),
                                     "aqua-empty")
                 self.results.add(empty)
             if len(matches) > self._app_page_size:
@@ -3967,6 +4107,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             return False
 
         def _hide_menu(self):
+            if profile == "winclassic":
+                for popup in getattr(self, "classic_menus", ()):
+                    popup.popdown()
             if profile == "winxp":
                 # Native Gtk.Menu flyouts are separate X11 popup surfaces: hiding
                 # the Start Gtk.Window alone does not release their pointer grab.
@@ -4031,6 +4174,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self.search.set_no_show_all(True)
                 self.search.hide()
             elif profile == "winclassic":
+                self.classic_refresh_submenus()
                 self.classic_search.set_no_show_all(True)
                 self.classic_search.hide()
                 self.classic_results_scroll.set_no_show_all(True)

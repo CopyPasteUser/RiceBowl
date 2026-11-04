@@ -22,10 +22,10 @@ def changed_area(menu: Path, controls: Path, profile: str = "") -> tuple[int, in
         if a.size != b.size or a.size != (1600, 900):
             raise ValueError("Screenshot size mismatch; expected 1600x900")
         width, height = a.size
-        # Windows 7 and XP both use a genuine centered Control Panel window;
+        # Windows 7, XP and now Windows 98 use real centered Control Panel windows;
         # the other profiles keep their right-anchored status popups.
         box = ((width // 2 - 340, 170, width // 2 + 340, 750)
-               if profile in ("aero", "winxp") else
+               if profile in ("aero", "winxp", "winclassic") else
                (width - 385, height - 515, width - 6, height - 60))
         diff = ImageChops.difference(a.crop(box), b.crop(box))
         changed = sum(1 for pixel in diff.getdata() if max(pixel) > 18)
