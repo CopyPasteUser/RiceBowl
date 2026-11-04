@@ -217,8 +217,7 @@ window.luna-tray-customize {
   background: #ece9d8; color: #152d55; border: 2px solid #2559b3;
   border-radius: 5px; }
 .luna-tray-customize-heading { color: #1b4c98; font-size: 14px; font-weight: bold; }
-.luna-tray-icon-list { background: #fff; border: 1px solid #aeb4b9;
-  border-radius: 1px; box-shadow: inset 1px 1px #d8d8d8; }
+.luna-tray-icon-list { background: #fff; border: 0; box-shadow: none; }
 .luna-tray-icon-list viewport, .luna-tray-icon-list grid { background: #fff; }
 .luna-tray-icon-empty { color: #59677c; }
 .luna-tray-icon-empty-heading { color: #214a83; font-size: 12px; font-weight: bold; }
