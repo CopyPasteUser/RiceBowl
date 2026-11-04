@@ -79,6 +79,7 @@ class Win98FidelityTests(unittest.TestCase):
         self.assertIn("classic98_tray_show", shell)
         self.assertIn("classic98-quicklaunch", shell)
         self.assertIn("classic98_open_taskbar_properties", shell)
+        self.assertIn("taskbar_spacer = Gtk.EventBox()", shell)
         self.assertIn("classic98_open_taskbar_properties", classic)
         self.assertIn("classic98_open_taskbar_properties", control)
         self.assertIn("Gtk.ResponseType.APPLY", taskbar_options)

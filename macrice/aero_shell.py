@@ -1798,7 +1798,15 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.overflow_button.get_accessible().set_name("Show other running windows")
             self.overflow_button.connect("clicked", self._show_overflow)
             shelf_box.pack_start(self.tasks, False, False, 4)
-            row.pack_start(Gtk.Box(), True, True, 0)
+            if profile == "winclassic":
+                # Only blank taskbar space owns this menu; right-clicks on
+                # tray controls and task buttons retain their own semantics.
+                taskbar_spacer = Gtk.EventBox()
+                taskbar_spacer.set_visible_window(False)
+                taskbar_spacer.connect("button-press-event", self._classic98_taskbar_context)
+            else:
+                taskbar_spacer = Gtk.Box()
+            row.pack_start(taskbar_spacer, True, True, 0)
             right_area = row
             if profile in ("chromeos", "winxp", "frutiger"):
                 right_area = self._class(
@@ -1888,8 +1896,6 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             win.show_all()
             if profile == "winclassic":
                 self._classic98_apply_taskbar_options()
-                win.add_events(Gdk.EventMask.BUTTON_PRESS_MASK)
-                win.connect("button-press-event", self._classic98_taskbar_context)
             win.move(rect.x, rect.y + rect.height - panel_height)
             self.bar = win
 
