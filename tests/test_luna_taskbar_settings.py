@@ -8,12 +8,23 @@ import tempfile
 import unittest
 
 from macrice.luna_taskbar_settings import (
-    DEFAULT_OPTIONS, LunaSettingsError, load_options, save_options,
+    DEFAULT_OPTIONS, LunaSettingsError, center_on_workarea, load_options, save_options,
     validate_options,
 )
 
 
 class LunaTaskbarSettingsTests(unittest.TestCase):
+    def test_dialog_centers_above_taskbar_on_any_monitor(self):
+        from types import SimpleNamespace
+
+        for width, height in ((800, 600), (1024, 768), (1600, 900)):
+            rect = SimpleNamespace(x=300, y=150, width=width, height=height)
+            x, y = center_on_workarea(rect, 408, 366)
+            self.assertGreaterEqual(x, rect.x)
+            self.assertGreaterEqual(y, rect.y)
+            self.assertLessEqual(x + 408, rect.x + width)
+            self.assertLessEqual(y + 366, rect.y + height - 40)
+
     def test_missing_preferences_use_separate_defaults(self):
         with tempfile.TemporaryDirectory() as directory:
             default = load_options(Path(directory) / "missing.json")

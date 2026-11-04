@@ -90,6 +90,12 @@ def save_options(options: dict, path: Path | None = None) -> dict:
     return valid
 
 
+def center_on_workarea(rect, width: int, height: int, panel_height: int = 40):
+    """Center an XP-owned dialog above its DOCK on the current monitor."""
+    return (rect.x + max(0, (rect.width - width) // 2),
+            rect.y + max(0, (rect.height - panel_height - height) // 2))
+
+
 def show(shell, Gtk):
     """Single-instance, real Luna-styled properties window with Apply/Cancel."""
     existing = getattr(shell, "_luna_taskbar_dialog", None)
@@ -135,6 +141,7 @@ def show(shell, Gtk):
         label="Auto-hide and locking require monitor-safe X11 edge handling; "
               "they are not enabled in this release.", xalign=0)
     unavailable.set_line_wrap(True)
+    unavailable.set_max_width_chars(38)
     unavailable.get_style_context().add_class("luna-properties-note")
     task.pack_end(unavailable, False, False, 0)
 
@@ -157,6 +164,7 @@ def show(shell, Gtk):
               "Right-click a program in Start to manage favorites and their order.",
         xalign=0)
     explanation.set_line_wrap(True)
+    explanation.set_max_width_chars(38)
     start.pack_start(explanation, False, False, 0)
 
     error = Gtk.Label(xalign=0)
@@ -184,6 +192,13 @@ def show(shell, Gtk):
 
     dialog.connect("response", respond)
     dialog.connect("destroy", lambda _dialog: setattr(shell, "_luna_taskbar_dialog", None))
+    from gi.repository import GLib
+
+    def center_dialog():
+        dialog.move(*center_on_workarea(shell._desktop_rect(), *dialog.get_size()))
+        return False
+
+    dialog.connect("map-event", lambda *_args: GLib.idle_add(center_dialog))
     shell._luna_taskbar_dialog = dialog
     dialog.show_all()
     error.hide()
