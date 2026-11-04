@@ -28,6 +28,8 @@ RiceBowl changes the actual Linux desktop: GTK and XFWM4 themes, icons, wallpape
 | **[ChromeOS](CHROMEOS_ROADMAP.md)** | `chromeos` | Material You shelf, searchable app launcher and Quick Settings |
 | **[Frutiger Aero](FRUTIGER_AERO_ROADMAP.md)** | `frutiger` | Aqua World, live Places, three-level Control Center and device flyouts |
 
+The latest Classic Run dialog supports a private session-only recent-command list, Clear history and inline error feedback. No shell commands are interpreted implicitly.
+
 The Windows 98 rice is still a work in progress: classic Taskbar Properties now saves real clock/Quick Launch options; auto-hide, taskbar relocation and Explorer internals remain open. GTK/X11 CI is in place, and physical Mint acceptance is still required. A separate historically authentic Windows 2000 preset is planned. [Detailed checklist](CLASSIC_98_ROADMAP.md).
 
 ### Current screenshots
