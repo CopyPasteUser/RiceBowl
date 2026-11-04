@@ -45,13 +45,17 @@ def release_name(text: str) -> str:
 
 
 def cpu_name(text: str) -> str:
+    matches = {}
     for line in text.splitlines():
         key, separator, value = line.partition(":")
-        if separator and key.strip().casefold() in (
-                "model name", "hardware", "processor", "model"):
-            candidate = value.strip()
-            if candidate:
-                return candidate[:180]
+        label = key.strip().casefold()
+        if separator and label in ("model name", "hardware", "model", "processor"):
+            matches.setdefault(label, value.strip())
+    for label in ("model name", "hardware", "model", "processor"):
+        candidate = matches.get(label, "")
+        # The Linux "processor: 0" field is a CPU index, not a model name.
+        if candidate and not (label == "processor" and candidate.isdecimal()):
+            return candidate[:180]
     return "Processor model unavailable"
 
 
