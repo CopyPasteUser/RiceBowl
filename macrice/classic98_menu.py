@@ -16,6 +16,8 @@ import subprocess
 import threading
 from urllib.parse import unquote, urlsplit
 
+from .classic98_properties import show_properties
+
 
 @dataclass(frozen=True)
 class Favorite:
@@ -623,8 +625,7 @@ def build(shell, Gtk, Gdk, Gio, GLib, Pango):
     replace_children(settings, (
         item("Control Panel", "classic-control-panel", shell._toggle_actions),
         available_tool("Printers", ("system-config-printer",)),
-        item("Taskbar & Start Menu", "preferences-system", lambda:
-             __import__("macrice.classic98_properties", fromlist=["show_properties"]).show_properties(shell, Gtk)),
+        item("Taskbar & Start Menu", "preferences-system", lambda: show_properties(shell, Gtk)),
         available_tool("Folder Options", ("xfce4-settings-manager",)),
     ))
     replace_children(finder, (
