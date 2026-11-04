@@ -579,7 +579,17 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._last_status = None
             self.luna_tray = None
             self.luna_balloon = None
+            self._luna_volume_monitor = None
+            self._luna_volume_signals = ()
             self._luna_start_state = None
+            self._luna_taskbar_options = None
+            self._luna_taskbar_dialog = None
+            self._luna_quick_launch = None
+            self._luna_quick_separator = None
+            self._luna_clock_button = None
+            self._luna_grouped_mode = False
+            self._luna_group_buttons = {}
+            self._luna_group_members = {}
             self._volume_programmatic = False
             self._volume_write_source = 0
             self._volume_writing = False
@@ -690,18 +700,28 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     self._classic98_taskbar_options = dict(DEFAULT_OPTIONS)
             if profile == "winxp":
                 from .luna_start_state import StartState, load_start_state
+                from .luna_taskbar_settings import (
+                    DEFAULT_OPTIONS as LUNA_OPTIONS, LunaSettingsError, load_options as load_luna_options,
+                )
 
                 try:
                     self._luna_start_state = load_start_state()
                 except (OSError, ValueError) as exc:
                     logging.getLogger(__name__).warning("XP Start preferences unavailable: %s", exc)
                     self._luna_start_state = StartState()
+                try:
+                    self._luna_taskbar_options = load_luna_options()
+                except (OSError, LunaSettingsError) as exc:
+                    logging.getLogger(__name__).warning("XP taskbar preferences unavailable: %s", exc)
+                    self._luna_taskbar_options = dict(LUNA_OPTIONS)
             if self._capture_gallery or self._capture_workspace:
                 self._capture_background()
             self._create_taskbar()
             self._create_menu()
             self._create_actions()
             self.connect("shutdown", self._shutdown)
+            if profile == "winxp":
+                self._luna_install_volume_notifications()
             self._window_tracker = create_window_tracker(GLib.idle_add, self._windows_changed)
             if self.show_desktop_button is not None:
                 self.show_desktop_button.set_sensitive(self._window_tracker is not None)
@@ -739,6 +759,32 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self._toggle_actions()
                 assert not self.actions.get_visible()
                 if profile == "winxp":
+                    self.luna_open_taskbar_properties()
+                    assert self._luna_taskbar_dialog is not None
+                    assert self._luna_taskbar_dialog.get_style_context().has_class(
+                        "luna-taskbar-properties")
+                    self._luna_taskbar_dialog.response(Gtk.ResponseType.CANCEL)
+                    assert self._luna_taskbar_dialog is None
+                    sample_windows = tuple(WindowSnapshot(
+                        xid=10000 + index, title="Browser " + str(index),
+                        minimized=False, mini_icon=None, group_id="xp-smoke-browser")
+                        for index in range(self._task_capacity + 2))
+                    self._luna_windows_grouped(sample_windows, sample_windows[-1])
+                    assert len(self._luna_group_buttons) == 1
+                    assert tuple(self._luna_group_members.values())[0].xids == tuple(
+                        item.xid for item in sample_windows)
+                    self._windows_changed((), None)
+                    self._luna_open_help()
+                    assert self._luna_help_dialog is not None
+                    assert self._luna_help_dialog.get_style_context().has_class(
+                        "luna-help-window")
+                    from .luna_help import show_system
+                    show_system(self, Gtk)
+                    assert self._luna_system_dialog is not None
+                    self._luna_system_dialog.response(Gtk.ResponseType.CLOSE)
+                    assert self._luna_system_dialog is None
+                    self._luna_help_dialog.response(Gtk.ResponseType.CLOSE)
+                    assert self._luna_help_dialog is None
                     assert self.luna_control_stack.get_visible_child_name() == "categories"
                     assert set(self.luna_tray.popovers) == {
                         "audio", "network", "battery", "clock", "bluetooth"}
@@ -1087,6 +1133,31 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
         def _capture_luna_clock(self):
             try:
                 self._capture_luna_tray("clock")
+                self.luna_tray.toggle("clock")
+                self.luna_open_taskbar_properties()
+                GLib.timeout_add(420, self._capture_luna_properties)
+                return False
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._smoke_failed = True
+            self.quit()
+            return False
+
+        def _capture_luna_properties(self):
+            try:
+                dialog = self._luna_taskbar_dialog
+                assert dialog is not None and dialog.get_mapped()
+                rect = self._desktop_rect()
+                x, y = dialog.get_window().get_root_origin()
+                width, height = dialog.get_size()
+                assert (rect.x <= x and rect.y <= y and
+                        x + width <= rect.x + rect.width and
+                        y + height <= rect.y + rect.height - panel_height), (
+                    f"XP properties outside usable monitor: {x},{y} {width}x{height}")
+                self._capture_screen(
+                    f"ricebowl-winxp-properties-0.9.1{self._capture_variant}-extra.png")
+                dialog.response(Gtk.ResponseType.CANCEL)
             except Exception:
                 import traceback
                 traceback.print_exc()
@@ -1251,6 +1322,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self._tray = None
             if self.luna_balloon is not None:
                 self.luna_balloon.close()
+            if self._luna_volume_monitor is not None:
+                for handler in self._luna_volume_signals:
+                    self._luna_volume_monitor.disconnect(handler)
+                self._luna_volume_signals = ()
+                self._luna_volume_monitor = None
             if profile == "winclassic" and hasattr(self, "classic98_tray_close"):
                 self.classic98_tray_close()
             if hasattr(self, "actions"):
@@ -1265,11 +1341,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.bar.move(rect.x, rect.y + rect.height - panel_height)
             if self.bar.get_realized():
                 self._reserve_workarea(self.bar)
-            self._task_capacity = task_capacity(rect.width, self._pin_count,
+            self._task_capacity = task_capacity(rect.width, self._effective_task_pin_count(),
                                                 340 if tiles else 345 if profile == "aero" else
                                                 230 if profile == "winxp" else 185,
                                                 compact=profile == "aero")
-            if self._window_tracker is not None:
+            if getattr(self, "_window_tracker", None) is not None:
                 self._window_tracker.refresh()
             if self.menu.get_visible():
                 self._hide_menu()
@@ -1441,7 +1517,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             if tiles:
                 self._render_ten_tiles()
             self._pin_count = len(candidate)
-            self._task_capacity = task_capacity(self._desktop_rect().width, self._pin_count,
+            self._task_capacity = task_capacity(self._desktop_rect().width, self._effective_task_pin_count(),
                                                 340 if tiles else 345 if profile == "aero" else
                                                 230 if profile == "winxp" else 185,
                                                 compact=profile == "aero")
@@ -1949,6 +2025,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             start.get_accessible().set_name("Toggle " + (heritage.name if heritage else
                 "Windows 10" if ten else "Aero") + " application menu")
             start.connect("clicked", lambda _button: self._toggle_menu())
+            if profile == "winxp":
+                start.connect("button-press-event", self._luna_start_context)
             start.set_tooltip_text("Start")
             row.pack_start(start, False, False, 0 if profile in ("winxp", "aero", "winclassic", "windows10") else 4)
             if profile == "chromeos":
@@ -1980,6 +2058,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     "classic98-quicklaunch" if profile == "winclassic" else "luna-quicklaunch")
                 if profile == "winclassic":
                     self.classic98_quick_launch = quick_launch
+                elif profile == "winxp":
+                    self._luna_quick_launch = quick_launch
                 quick_launch.pack_start(self.pinned_box, False, False, 0)
                 desktop_quick = self._class(Gtk.Button(),
                                             "classic98-desktop-quick" if profile == "winclassic"
@@ -1990,14 +2070,16 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 desktop_quick.connect("clicked", self._show_desktop)
                 quick_launch.pack_start(desktop_quick, False, False, 0)
                 shelf_box.pack_start(quick_launch, False, False, 2)
-                shelf_box.pack_start(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL),
-                                     False, False, 2)
+                separator = Gtk.Separator(orientation=Gtk.Orientation.VERTICAL)
+                if profile == "winxp":
+                    self._luna_quick_separator = separator
+                shelf_box.pack_start(separator, False, False, 2)
             else:
                 shelf_box.pack_start(self.pinned_box, False, False, 0)
             self._render_pins()
             self._pin_count = len(self._pinned_ids)
             self.tasks = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
-            self._task_capacity = task_capacity(rect.width, self._pin_count,
+            self._task_capacity = task_capacity(rect.width, self._effective_task_pin_count(),
                                                 340 if tiles else 345 if profile == "aero" else
                                                 230 if profile == "winxp" else 185,
                                                 compact=profile == "aero")
@@ -2062,6 +2144,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 clock_button.add(clock)
                 clock_button.get_accessible().set_name("Show date and calendar")
                 self._luna_clock_button = clock_button
+                if profile == "winxp":
+                    clock_button.set_tooltip_text("Show the current date and calendar")
                 right_area.pack_end(clock_button, False, False, 6)
             else:
                 right_area.pack_end(clock, False, False, 6)
@@ -2109,6 +2193,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             win.show_all()
             if profile == "winclassic":
                 self._classic98_apply_taskbar_options()
+            elif profile == "winxp":
+                self._luna_apply_taskbar_options()
             win.move(rect.x, rect.y + rect.height - panel_height)
             self.bar = win
 
@@ -2121,6 +2207,71 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             ):
                 if widget is not None:
                     widget.set_visible(self._classic98_taskbar_options[key])
+
+        def _effective_task_pin_count(self):
+            if (profile == "winxp" and self._luna_taskbar_options is not None and
+                    not self._luna_taskbar_options["show_quick_launch"]):
+                return 0
+            return self._pin_count
+
+        def _luna_apply_taskbar_options(self):
+            if profile != "winxp" or self._luna_taskbar_options is None:
+                return
+            self._luna_quick_launch.set_visible(self._luna_taskbar_options["show_quick_launch"])
+            self._luna_quick_separator.set_visible(self._luna_taskbar_options["show_quick_launch"])
+            self._luna_clock_button.set_visible(self._luna_taskbar_options["show_clock"])
+            self._task_capacity = task_capacity(self._desktop_rect().width,
+                                                self._effective_task_pin_count(), 230)
+            if getattr(self, "_window_tracker", None) is not None:
+                self._window_tracker.refresh()
+            if hasattr(self, "menu") and self.menu.get_visible():
+                self._populate(self.search.get_text())
+
+        def _luna_install_volume_notifications(self):
+            """Use Gio's actual mount signals; avoid polling or fabricated ejects."""
+            try:
+                monitor = Gio.VolumeMonitor.get()
+                connected = (
+                    monitor.connect("mount-added", self._luna_mount_event, True),
+                    monitor.connect("mount-removed", self._luna_mount_event, False),
+                )
+            except (GLib.Error, RuntimeError, OSError) as exc:
+                logging.getLogger(__name__).debug("XP removable-mount notifications unavailable: %s", exc)
+                return
+            self._luna_volume_monitor = monitor
+            self._luna_volume_signals = connected
+
+        def _luna_mount_event(self, _monitor, mount, added):
+            if self.luna_balloon is None:
+                return
+            from .luna_notifications import removable_mount_message
+            message = removable_mount_message(mount, added=added)
+            if message:
+                self.luna_balloon.show(message)
+
+        def luna_open_taskbar_properties(self):
+            if profile != "winxp":
+                return
+            from .luna_taskbar_settings import show
+            show(self, Gtk)
+
+        def _luna_open_help(self):
+            if profile != "winxp":
+                return
+            from .luna_help import show_help
+            show_help(self, Gtk)
+
+        def _luna_start_context(self, _widget, event):
+            if profile != "winxp" or event.button != 3:
+                return False
+            menu = Gtk.Menu()
+            self._track_luna_popup(menu)
+            item = Gtk.MenuItem(label="Properties")
+            item.connect("activate", lambda *_args: self.luna_open_taskbar_properties())
+            menu.append(item)
+            menu.show_all()
+            menu.popup_at_pointer(event)
+            return True
 
         def classic98_open_taskbar_properties(self):
             if profile != "winclassic":
@@ -2148,12 +2299,13 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             menu = Gtk.Menu()
             self._track_luna_popup(menu)
             for title, action in (
+                ("Taskbar and Start Menu Properties…", self.luna_open_taskbar_properties),
                 ("Show Desktop", self._show_desktop),
                 ("Add XP desktop icons…", lambda: self._luna_manage_desktop("install")),
                 ("Remove XP desktop icons…", lambda: self._luna_manage_desktop("remove")),
                 ("Desktop Properties…", lambda: self._open_tool("xfdesktop-settings")),
             ):
-                if title == "Desktop Properties…":
+                if title in ("Show Desktop", "Desktop Properties…"):
                     menu.append(Gtk.SeparatorMenuItem())
                 item = Gtk.MenuItem(label=title)
                 if title == "Desktop Properties…":
@@ -2240,6 +2392,19 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             if profile == "aero":
                 self._win7_windows_changed(windows, active)
                 return
+            if profile == "winxp":
+                should_group = (self._luna_taskbar_options["group_similar_windows"] and
+                                len(windows) > self._task_capacity)
+                if should_group:
+                    self._luna_windows_grouped(windows, active)
+                    return
+                if self._luna_grouped_mode:
+                    self._luna_grouped_mode = False
+                    self._visible_window_ids = ()
+                    self._luna_group_buttons.clear()
+                    self._luna_group_members.clear()
+                    for child in self.tasks.get_children():
+                        self.tasks.remove(child)
             visible, self._overflow_windows = select_windows(tuple(windows), active, self._task_capacity)
             visible_ids = tuple(window.xid for window in visible)
             if visible_ids != self._visible_window_ids:
@@ -2301,6 +2466,99 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             elif self.overflow_button.get_parent() is self.tasks:
                 self.tasks.remove(self.overflow_button)
             self.tasks.show_all()
+
+        def _luna_windows_grouped(self, windows, active):
+            """XP combines siblings only when needed, never by title alone."""
+            grouped = group_windows(tuple(windows))
+            active_xid = active.xid if active is not None else None
+            visible, hidden = select_groups(grouped, active_xid, self._task_capacity)
+            self._overflow_windows = tuple(win for group in hidden for win in group.windows)
+            self._luna_group_members = {group.key: group for group in grouped}
+            identifiers = tuple(group.key for group in visible)
+            if (not self._luna_grouped_mode or
+                    identifiers != tuple(self._luna_group_buttons)):
+                self._luna_grouped_mode = True
+                for child in self.tasks.get_children():
+                    self.tasks.remove(child)
+                self._luna_group_buttons.clear()
+                for group in visible:
+                    button = self._class(Gtk.Button(), "aero-task")
+                    button.get_style_context().add_class("luna-group-task")
+                    button.set_size_request(135, 35)
+                    line = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
+                    icon = Gtk.Image.new_from_icon_name("application-x-executable", Gtk.IconSize.MENU)
+                    caption = Gtk.Label(xalign=0)
+                    caption.set_ellipsize(Pango.EllipsizeMode.END)
+                    caption.set_max_width_chars(15)
+                    line.pack_start(icon, False, False, 0)
+                    line.pack_start(caption, True, True, 0)
+                    button.add(line)
+                    button.connect("clicked", lambda widget, key=group.key:
+                                   self._luna_group_click(widget, key))
+                    button.connect("button-press-event", lambda widget, event, key=group.key:
+                                   self._luna_group_context(widget, event, key))
+                    self.tasks.pack_start(button, False, False, 0)
+                    self._luna_group_buttons[group.key] = (button, icon, caption)
+            for group in visible:
+                button, icon, caption = self._luna_group_buttons[group.key]
+                current = next((win for win in group.windows if win.xid == active_xid),
+                               group.windows[0])
+                if current.mini_icon is not None:
+                    icon.set_from_pixbuf(current.mini_icon)
+                name = current.title if len(group.windows) == 1 else (
+                    f"{group.windows[0].title} ({len(group.windows)})")
+                caption.set_text(name)
+                button.set_tooltip_text("\n".join(win.title for win in group.windows))
+                button.get_accessible().set_name("Choose window: " + name)
+                state = button.get_style_context()
+                if active_xid in group.xids and not current.minimized:
+                    state.add_class("aero-task-active")
+                else:
+                    state.remove_class("aero-task-active")
+            if self._overflow_windows:
+                self.overflow_button.set_label(f"+{len(self._overflow_windows)}")
+                if self.overflow_button.get_parent() is None:
+                    self.tasks.pack_start(self.overflow_button, False, False, 0)
+            elif self.overflow_button.get_parent() is self.tasks:
+                self.tasks.remove(self.overflow_button)
+            self.tasks.show_all()
+
+        def _luna_group_click(self, button, key):
+            group = self._luna_group_members.get(key)
+            if group is None:
+                return
+            if len(group.windows) == 1:
+                self._activate_task(group.windows[0].xid)
+            else:
+                self._luna_group_popup(button, group)
+
+        def _luna_group_context(self, button, event, key):
+            if event.button != 3:
+                return False
+            group = self._luna_group_members.get(key)
+            if group is None:
+                return False
+            self._luna_group_popup(button, group, show_close=True)
+            return True
+
+        def _luna_group_popup(self, button, group, *, show_close=False):
+            menu = Gtk.Menu()
+            self._track_luna_popup(menu)
+            for window in group.windows:
+                item = Gtk.MenuItem(label=window.title)
+                item.connect("activate", lambda _item, xid=window.xid:
+                             self._activate_task(xid))
+                menu.append(item)
+            if show_close:
+                menu.append(Gtk.SeparatorMenuItem())
+                for window in group.windows:
+                    item = Gtk.MenuItem(label="Close " + window.title)
+                    item.connect("activate", lambda _item, xid=window.xid:
+                                 self._win7_close_window(xid))
+                    menu.append(item)
+            menu.show_all()
+            menu.popup_at_widget(button, Gdk.Gravity.NORTH_WEST,
+                                 Gdk.Gravity.SOUTH_WEST, None)
 
         def _win7_windows_changed(self, windows, active):
             """Show one task button per WM_CLASS, never discard member windows."""
@@ -3112,7 +3370,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 places.pack_start(self._luna_navigation(name, icon, command=cmd), False, False, 0)
             places.pack_start(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL), False, False, 5)
             places.pack_start(self._luna_navigation("Help and Support", "help-browser",
-                                                     command=("xfhelp4", "yelp")), False, False, 0)
+                                                     callback=self._luna_open_help), False, False, 0)
             places.pack_start(self._luna_navigation("Search", "system-search",
                                                      command="catfish" if shutil.which("catfish") else None,
                                                      callback=self._reveal_luna_search), False, False, 0)
@@ -4433,7 +4691,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             """XP: 2 prominent favorites, a separator and actual installed apps."""
             featured, regular = luna_programs(
                 self.apps, self._pinned_ids, query,
-                self._app_page_size if query.strip() else 6,
+                self._app_page_size if query.strip() else
+                self._luna_taskbar_options["recent_program_count"],
                 start_favorites=self._luna_start_state.favorites,
                 history=self._luna_start_state.launches)
 

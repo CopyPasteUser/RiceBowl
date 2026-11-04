@@ -26,6 +26,23 @@ def event_messages(previous: DesktopStatus | None,
     return tuple(events)
 
 
+def removable_mount_message(mount, *, added: bool) -> str | None:
+    """Notify only verified removable-volume mounts, never arbitrary GVfs shares.
+
+    A mount signal means mounted/unmounted, *not* that a device was safely
+    ejected or a file transfer completed. Both claims would be misleading.
+    """
+    try:
+        volume = mount.get_volume()
+        drive = volume.get_drive() if volume is not None else None
+        if drive is None or not (drive.is_removable() or drive.is_media_removable()):
+            return None
+        name = " ".join((mount.get_name() or "Removable device").split())[:72]
+    except (AttributeError, RuntimeError, ValueError):
+        return None
+    return (name + " is ready to use" if added else name + " was unmounted")
+
+
 class LunaBalloon:
     """Dismissible, auto-expiring lightweight notification above the taskbar."""
 

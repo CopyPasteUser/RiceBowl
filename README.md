@@ -23,7 +23,7 @@ RiceBowl changes the actual Linux desktop: GTK and XFWM4 themes, icons, wallpape
 | **macOS · Aurora** | `night`, `day`, `aqua` | MacBar, MacMenu, Control Center; optional Plank dock |
 | **[Windows 7 · Aero](WIN7_AERO_ROADMAP.md)** | `aero-meadow`, `aero-cascade` | Glass Superbar, grouped previews, hidden-tray chevron, Aero flyouts, desktop shortcuts and Control Panel |
 | **[Windows 10](WINDOWS10_ROADMAP.md)** | `ten-light`, `ten-dark` | Flat taskbar, pinned Start tiles and Action Center |
-| **[Windows XP · Luna](XP_LUNA_ROADMAP.md)** | `winxp` | XP Control Panel, Quick Launch, interactive device flyouts, safe optional desktop icons and live notifications |
+| **[Windows XP · Luna](XP_LUNA_ROADMAP.md)** | `winxp` | XP Control Panel, configurable taskbar and Start, native Help and Support, device flyouts and optional desktop icons |
 | **[Windows 98 SE (classic)](CLASSIC_98_ROADMAP.md)** | `winclassic` | Teal desktop, real Start descendants, Win98 Control Panel, Quick Launch/taskbar preferences and live tray menus |
 | **[ChromeOS](CHROMEOS_ROADMAP.md)** | `chromeos` | Material You shelf, searchable app launcher and Quick Settings |
 | **[Frutiger Aero](FRUTIGER_AERO_ROADMAP.md)** | `frutiger` | Aqua World launcher with working Back navigation, native Wi-Fi/audio/Bluetooth/brightness/power controls, live Places and device flyouts |
@@ -113,6 +113,17 @@ so their drag-and-drop, icon arrangement and context menu remain native XFCE.
 No existing desktop icon, login manager or file association is overwritten.
 For a graphical confirmation, right-click an empty area of the XP taskbar and
 choose **Add XP desktop icons…** or **Remove XP desktop icons…**.
+
+XP's Start button and empty taskbar area also offer **Taskbar and Start Menu
+Properties**. The native Luna dialog persistently controls Quick Launch, the
+clock, crowded-window grouping and the number of recent applications in Start;
+Apply updates the running shell without changing XFCE Panel or another rice.
+Grouped task buttons retain individual window switching and close actions.
+**Help and Support** now opens RiceBowl's searchable XP help window with a
+read-only, refreshable Linux **System Properties** view instead of depending on
+external documentation software. Notification balloons additionally report
+real removable-drive mount/unmount events through Gio. Auto-hide and taskbar
+locking remain disabled until monitor-safe handling is verified.
 
 The active rice uses **Super** for its app menu and **Right Ctrl** for Control Panel/Quick Settings. RiceBowl backs up previous shortcut bindings and coordinates its taskbar with XFCE Panel and Plank.
 

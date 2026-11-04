@@ -212,3 +212,41 @@ taskbar grouping/autohide/lock and properties, broader event integration,
 complete accessible keyboard navigation, optional session/logon visuals and
 original soundscape. Actual Explorer tasks/drive navigation remain blocked on
 riceExplorer feature acceptance and must not be simulated with Thunar CSS.
+
+## Third completion pass — taskbar, Start, mount events, Help and System
+
+This pass implements **additional portions** of the P1/P2 goals; the open
+acceptance checklist above is not yet fully satisfied.
+
+- [x] New XP-only, private and atomic `winxp-taskbar.json` preferences with
+  symlink, type, range and oversized-input guards. Taskbar and Start Menu
+  Properties is available from empty taskbar space and Start-button right click.
+  It supports Apply/OK/Cancel and live toggles for Quick Launch, clock,
+  grouped task buttons and 3–12 recent programs. No XFCE panel settings are
+  written, and old rice profiles remain unchanged.
+- [x] Group task buttons by verified X11 WM_CLASS **only when crowded**;
+  unknown app classes remain separate. Actual member windows stay accessible
+  through native Luna menus, including individual switch/close actions and
+  overflow. Windows are resolved live when activated, not retained as Wnck
+  GObjects after closing.
+- [x] Removable-device XP balloons listen for genuine Gio VolumeMonitor
+  mount-added/removed signals. Ignore fixed disks and network mounts, and say
+  “unmounted” rather than claiming an unverified safe ejection. No polling.
+- [x] Start > Help and Support now opens a native, searchable Help window with
+  real XP/RiceBowl feature guidance, Back/Home and a separate refreshable,
+  read-only Linux System Properties dialog. The Win98 System Properties
+  data collector is reused without changing Win98 text or UI.
+- [x] Focused unit coverage and XP-native smoke assertions for the new taskbar
+  dialog, crowded-window grouping, Help and System Properties. Gallery CI now
+  saves actual 1600×900 and 1024×768 Taskbar Properties screenshots alongside
+  the existing XP interaction gallery.
+- [ ] Owner acceptance: real X1 Yoga with battery/Wi-Fi/Bluetooth/backlight,
+  suspend/resume, multimonitor, Gtk keyboard traversal, auto-hide edge UX.
+
+**Still open and intentionally not misrepresented as finished:** independent
+desktop icon grid/label styles and contextual New/Arrange menus beyond
+XFDesktop, full taskbar auto-hide and lock, tray-overflow personalization,
+complete third-party dialog fidelity, comprehensive keyboard/accessibility
+validation, optional login/logout/session effects, original soundscape and
+hardware measurements. riceExplorer remains a separate, unaccepted dependency
+and is neither installed nor integrated by this pass.
