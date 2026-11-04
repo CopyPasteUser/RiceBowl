@@ -136,10 +136,32 @@ Keep the prior release/tag intact. Switch back via RiceBowl's backed-up rice res
 - [ ] Verify sound, device switching, network, brightness, Bluetooth, DPI and
   popup placement on the owner's physical Mint XFCE ThinkPad.
 
-**Still open:** SNI icon overflow/personalization, genuine Windows 7 balloon
+**Still open:** SNI personalization, genuine Windows 7 balloon
 events, deeper native applets, all physical acceptance, compositor limits and
 the independent RiceExplorer file-job/network-mount roadmap. The umbrella
 P0/P1/Sollkatalog checkboxes below stay open until fully accepted.
+
+### P1 progress — authentic tray overflow and real desktop links
+
+- [x] Hide application SNI icons after the first three inside a Windows 7
+  Superbar chevron; prioritize `NeedsAttention` while keeping `Passive` hidden.
+  A real GTK menu provides icon, title and actual application activation.
+- [x] Preserve optional SNI behavior and unlimited layout in the other rice
+  profiles; no new watcher, daemon, or global XFCE configuration.
+- [x] Add opt-in Computer, Documents, Network and Recycle Bin desktop entries
+  with genuine GIO locations and original active-theme icons. Only exact,
+  unmodified RiceBowl Windows 7 entries can be removed. Existing user files,
+  XP shortcuts and symlinks are preserved.
+- [x] Wire the blank Superbar context menu to Show Desktop, reversible
+  install/remove prompts and the actual XFDesktop personalization tool.
+- [x] Add pure SNI ordering/overflow tests and filesystem rollback tests.
+- [ ] Capture the opened chevron with populated test icons under X11; test real
+  SNI activation/context and recovery when a process disappears.
+- [ ] Physically validate XFDesktop launcher placement, permissions, GIO
+  `computer:///`, `network:///`, `trash:///`, theme icons and multi-monitor.
+
+**Still open:** per-icon user customization of visible/hidden positions, native
+Win7 balloon notifications, Snap/Shake fidelity and additional deep applets.
 
 ### P0 — Close the biggest depth and functionality gaps
 

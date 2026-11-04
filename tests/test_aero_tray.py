@@ -2,7 +2,8 @@
 import unittest
 
 from macrice.aero_tray import (StatusNotifierTray, parse_item_id, registration_id,
-                              pixel_rgba, MAX_ITEMS, WATCHER_XML, unpack_variant)
+                              pixel_rgba, select_tray_icons, MAX_ITEMS, WATCHER_XML,
+                              unpack_variant)
 
 
 class AeroTrayTests(unittest.TestCase):
@@ -32,6 +33,58 @@ class AeroTrayTests(unittest.TestCase):
         self.assertIsNone(pixel_rgba(0, 0, b""))
         self.assertLessEqual(MAX_ITEMS, 64)
         self.assertIn("RegisteredStatusNotifierItems", WATCHER_XML)
+
+    def test_win7_notification_overflow_prioritizes_attention(self):
+        registered = [
+            ("chat", "Active"), ("sync", "Active"), ("updates", "NeedsAttention"),
+            ("sleep", "Passive"), ("music", "Active"),
+        ]
+        self.assertEqual(select_tray_icons(registered, 2),
+                         (("updates", "chat"), ("sync", "music")))
+        self.assertEqual(select_tray_icons(registered, None),
+                         (("chat", "sync", "updates", "music"), ()))
+        self.assertEqual(select_tray_icons(registered, 0),
+                         ((), ("chat", "sync", "updates", "music")))
+        self.assertEqual(select_tray_icons([("passive", "Passive")], 3), ((), ()))
+        for invalid in (-1, True, "3"):
+            with self.assertRaises(ValueError):
+                select_tray_icons(registered, invalid)
+
+    def test_win7_overflow_reflow_hides_passive_and_excess_icons(self):
+        class Button:
+            def __init__(self):
+                self.visible = self.no_show_all = None
+                self.tooltip = ""
+
+            def set_visible(self, value):
+                self.visible = value
+
+            def set_no_show_all(self, value):
+                self.no_show_all = value
+
+            def set_tooltip_text(self, value):
+                self.tooltip = value
+
+        tray = StatusNotifierTray.__new__(StatusNotifierTray)
+        tray.visible_limit = 1
+        tray.overflow_button = Button()
+        tray.items = {name: (Button(), None) for name in ("app", "warning", "sleep")}
+        tray.item_state = {
+            "app": ("Active", "App"),
+            "warning": ("NeedsAttention", "Warning"),
+            "sleep": ("Passive", "Sleeping app"),
+        }
+        tray._reflow()
+        self.assertEqual(tray.overflow_ids, ("app",))
+        self.assertFalse(tray.items["app"][0].visible)
+        self.assertTrue(tray.items["warning"][0].visible)
+        self.assertFalse(tray.items["sleep"][0].visible)
+        self.assertTrue(tray.overflow_button.visible)
+        self.assertIn("1 hidden", tray.overflow_button.tooltip)
+        tray.item_state["app"] = ("Passive", "App")
+        tray._reflow()
+        self.assertEqual(tray.overflow_ids, ())
+        self.assertFalse(tray.overflow_button.visible)
 
     def test_watcher_callbacks_accept_six_arg_pygobject_dispatch(self):
         class FakeVariant:

@@ -81,6 +81,13 @@ secondary pages; prototypes and the release roadmap do not crowd the selector.
   code does not mean reusing XP's flyout skin. The Win7-specific CSS in
   `aero_shell.py` is canonical for these visual states; this DESIGN entry
   mirrors their purpose rather than introducing duplicate runtime tokens.
+  The optional SNI application icons use a small Aero chevron for overflow:
+  three directly visible active icons, `NeedsAttention` prioritized, `Passive`
+  hidden, and an accessible native menu for actual activation. This is not a
+  Windows 10 Action Center or synthetic status feed. XFDesktop owns the
+  desktop icons; Windows 7's original Computer/Documents/Network/Recycle Bin
+  links are opt-in and removable only when unmodified. The shell must not take
+  over the desktop, overwrite personal launchers or silently replace Thunar.
   An installed Rust RiceExplorer can be launched from Start in explicit
   `--theme win7` preview mode, leaving Thunar and system MIME defaults alone
   until file recovery and mount support pass acceptance. The 48px bar carries

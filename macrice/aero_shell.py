@@ -253,6 +253,25 @@ CSS = b"""
   border-radius: 4px; padding: 4px 8px; }
 .aero-tray-icon { background: transparent; border: 0; padding: 3px; }
 .aero-tray-icon:hover { background: rgba(255,255,255,.22); border-radius: 4px; }
+.win7-taskbar .win7-tray-chevron {
+  border: 1px solid transparent; background: transparent; padding: 2px 4px;
+  color: #e4f5ff; font-size: 13px; border-radius: 3px; min-width: 21px;
+}
+.win7-taskbar .win7-tray-chevron:hover,
+.win7-taskbar .win7-tray-chevron:focus {
+  border-color: #9ad4f7; background: rgba(208,234,252,.26);
+}
+menu.win7-tray-overflow-menu {
+  background: #eff6fb; border: 1px solid #6d92b5; color: #173c5a;
+  padding: 4px; box-shadow: 0 3px 9px rgba(12,37,61,.3);
+}
+menu.win7-tray-overflow-menu menuitem {
+  min-height: 28px; color: #173c5a; padding: 3px 8px;
+}
+menu.win7-tray-overflow-menu menuitem:hover,
+menu.win7-tray-overflow-menu menuitem:focus {
+  background: #c9e7fc; color: #0a3558;
+}
 .aero-glass { background-image: linear-gradient(to bottom, rgba(205,242,255,.79), rgba(94,172,221,.83) 48%, rgba(26,81,139,.90)); }
 .aero-time { color: #fff; font-size: 11px; font-weight: bold; }
 .aero-quick { background: transparent; border: 1px solid transparent; color: white; border-radius: 4px; padding: 4px; }
@@ -754,6 +773,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                         self.luna_tray.toggle(name)
                         assert not self.luna_tray.popovers[name].get_visible()
                 if profile == "aero":
+                    if self._tray is not None:
+                        assert self._tray.visible_limit == 3
+                        assert self._tray.overflow_button is not None
+                        assert self._tray.overflow_button.get_style_context().has_class(
+                            "win7-tray-chevron")
                     assert set(self.luna_tray.popovers) == {
                         "audio", "network", "battery", "clock", "bluetooth"}
                     for popup in self.luna_tray.popovers.values():
@@ -1981,14 +2005,15 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.overflow_button.get_accessible().set_name("Show other running windows")
             self.overflow_button.connect("clicked", self._show_overflow)
             shelf_box.pack_start(self.tasks, False, False, 4)
-            if profile in ("winclassic", "winxp"):
+            if profile in ("winclassic", "winxp", "aero"):
                 # Only blank taskbar space owns this menu; right-clicks on
                 # tray controls and task buttons retain their own semantics.
                 taskbar_spacer = Gtk.EventBox()
                 taskbar_spacer.set_visible_window(False)
                 taskbar_spacer.connect("button-press-event",
                                         self._classic98_taskbar_context if profile == "winclassic"
-                                        else self._luna_taskbar_context)
+                                        else self._luna_taskbar_context if profile == "winxp"
+                                        else self._win7_taskbar_context)
             else:
                 taskbar_spacer = Gtk.Box()
             row.pack_start(taskbar_spacer, True, True, 0)
@@ -2064,7 +2089,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 right_area.pack_end(tray_box, False, False, 4)
                 try:
                     from .aero_tray import StatusNotifierTray
-                    self._tray = StatusNotifierTray(tray_box, Gtk, Gio, GLib, GdkPixbuf)
+                    self._tray = StatusNotifierTray(
+                        tray_box, Gtk, Gio, GLib, GdkPixbuf,
+                        visible_limit=3 if profile == "aero" else None)
                 except (GLib.Error, RuntimeError, OSError) as exc:
                     logging.getLogger(__name__).warning("Optional Aero tray unavailable: %s", exc)
             def update_clock():
@@ -2139,18 +2166,53 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _luna_manage_desktop(self, action):
             """Explicit opt-in with confirmation; untouched user icons remain safe."""
-            if profile != "winxp":
-                return
-            from .luna_desktop import manage
+            self._manage_desktop_shortcuts(action, "winxp")
 
-            title = ("Add XP desktop icons?" if action == "install" else
-                     "Remove RiceBowl XP desktop icons?")
+        def _win7_taskbar_context(self, _widget, event):
+            """Windows 7 blank Superbar area, without stealing app/SNI clicks."""
+            if profile != "aero" or event.button != 3:
+                return False
+            menu = Gtk.Menu()
+            menu.get_style_context().add_class("win7-jumplist")
+            for title, action in (
+                ("Show the desktop", self._show_desktop),
+                ("Add Windows 7 desktop icons…", lambda: self._win7_manage_desktop("install")),
+                ("Remove RiceBowl desktop icons…", lambda: self._win7_manage_desktop("remove")),
+                ("Personalize…", lambda: self._open_tool("xfdesktop-settings")),
+            ):
+                if title == "Personalize…":
+                    menu.append(Gtk.SeparatorMenuItem())
+                item = Gtk.MenuItem(label=title)
+                if title == "Personalize…":
+                    item.set_sensitive(shutil.which("xfdesktop-settings") is not None)
+                item.connect("activate", lambda _item, callback=action: callback())
+                menu.append(item)
+            menu.show_all()
+            menu.popup_at_pointer(event)
+            return True
+
+        def _win7_manage_desktop(self, action):
+            self._manage_desktop_shortcuts(action, "aero")
+
+        def _manage_desktop_shortcuts(self, action, style):
+            """Install/remove only our unedited links after explicit confirmation."""
+            if profile != style:
+                return
+            if style == "aero":
+                from .win7_desktop import manage
+                era = "Windows 7"
+            else:
+                from .luna_desktop import manage
+                era = "XP"
+
+            title = ("Add " + era + " desktop icons?" if action == "install" else
+                     "Remove RiceBowl " + era + " desktop icons?")
             dialog = Gtk.MessageDialog(
                 transient_for=self.bar, flags=Gtk.DialogFlags.MODAL,
                 message_type=Gtk.MessageType.QUESTION,
                 buttons=Gtk.ButtonsType.YES_NO, text=title)
             dialog.format_secondary_text(
-                "Only RiceBowl-owned shortcuts are changed. Existing files and edited shortcuts "
+                "Only unmodified RiceBowl " + era + " shortcuts are changed. Existing files and edited shortcuts "
                 "are always preserved. XFDesktop manages icons and trash using real Linux backends.")
             answer = dialog.run()
             dialog.destroy()
@@ -2159,7 +2221,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             try:
                 changed, kept = manage(action)
             except (OSError, RuntimeError, ValueError) as exc:
-                self._error(str(exc), title="XP desktop icons")
+                self._error(str(exc), title=era + " desktop icons")
                 return
             info = (str(len(changed)) + " shortcuts " +
                     ("installed" if action == "install" else "removed") + ".")
@@ -2168,7 +2230,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             result = Gtk.MessageDialog(
                 transient_for=self.bar, flags=Gtk.DialogFlags.MODAL,
                 message_type=Gtk.MessageType.INFO,
-                buttons=Gtk.ButtonsType.CLOSE, text="XP desktop icons")
+                buttons=Gtk.ButtonsType.CLOSE, text=era + " desktop icons")
             result.format_secondary_text(info)
             result.run()
             result.destroy()

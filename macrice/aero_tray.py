@@ -64,13 +64,41 @@ def pixel_rgba(width: int, height: int, pixels: bytes) -> bytes | None:
     return bytes(result)
 
 
+def select_tray_icons(items, visible_limit):
+    """Select live SNI icons; prioritize attention without exposing Passive items."""
+    active = [(identifier, status) for identifier, status in items
+              if status in ("Active", "NeedsAttention")]
+    if visible_limit is None:
+        return tuple(identifier for identifier, _ in active), ()
+    if not isinstance(visible_limit, int) or isinstance(visible_limit, bool) or visible_limit < 0:
+        raise ValueError("visible_limit must be a non-negative integer or None")
+    attention = [identifier for identifier, status in active if status == "NeedsAttention"]
+    normal = [identifier for identifier, status in active if status == "Active"]
+    visible = tuple((attention + normal)[:visible_limit])
+    return visible, tuple(identifier for identifier, _ in active if identifier not in visible)
+
+
 class StatusNotifierTray:
     """Register as host; own a watcher only if no existing one owns its bus name."""
 
-    def __init__(self, box, Gtk, Gio, GLib, GdkPixbuf):
+    def __init__(self, box, Gtk, Gio, GLib, GdkPixbuf, *, visible_limit=None):
         self.box, self.Gtk, self.Gio, self.GLib, self.GdkPixbuf = box, Gtk, Gio, GLib, GdkPixbuf
         self.items = {}
         self.item_signals = {}
+        self.item_state = {}
+        self.visible_limit = visible_limit
+        self.overflow_ids = ()
+        self.overflow_button = None
+        if visible_limit is not None:
+            self.overflow_button = Gtk.Button(label="▴")
+            self.overflow_button.get_style_context().add_class("win7-tray-chevron")
+            self.overflow_button.set_relief(Gtk.ReliefStyle.NONE)
+            self.overflow_button.get_accessible().set_name("Show hidden notification icons")
+            self.overflow_button.set_tooltip_text("Show hidden notification icons")
+            self.overflow_button.set_no_show_all(True)
+            self.overflow_button.hide()
+            self.overflow_button.connect("clicked", self._show_overflow)
+            self.box.pack_start(self.overflow_button, False, False, 0)
         self.hosts = set()
         self.own_watcher = False
         self.registration = None
@@ -192,6 +220,9 @@ class StatusNotifierTray:
         button = self.Gtk.Button()
         button.get_style_context().add_class("aero-tray-icon")
         button.set_relief(self.Gtk.ReliefStyle.NONE)
+        if self.visible_limit is not None:
+            button.set_no_show_all(True)
+            button.hide()
         img = self.Gtk.Image.new_from_icon_name("application-x-executable", self.Gtk.IconSize.MENU)
         button.add(img)
         button.connect("clicked", lambda _button: self._activate(service, path, "Activate",
@@ -200,6 +231,7 @@ class StatusNotifierTray:
                        lambda _button, event: self._context(service, path, event) if event.button == 3 else False)
         self.box.pack_start(button, False, False, 0)
         self.items[identifier] = (button, img)
+        self.item_state[identifier] = ("Passive", service)
         self.item_signals[identifier] = self.bus.signal_subscribe(
             service, ITEM_IFACE, None, path, None, self.Gio.DBusSignalFlags.NONE,
             self._item_signal, identifier)
@@ -211,8 +243,10 @@ class StatusNotifierTray:
         if subscription is not None:
             self.bus.signal_unsubscribe(subscription)
         item = self.items.pop(identifier, None)
+        self.item_state.pop(identifier, None)
         if item:
             self.box.remove(item[0])
+        self._reflow()
 
     def _reset_items(self):
         for identifier in tuple(self.items):
@@ -234,9 +268,13 @@ class StatusNotifierTray:
             except (IndexError, TypeError, ValueError, AttributeError):
                 return
             button, img = self.items[identifier]
-            if props.get("Status") == "Passive":
+            status = props.get("Status")
+            title = str(props.get("Title") or service)[:128]
+            self.item_state[identifier] = (status, title)
+            if status == "Passive":
                 button.set_no_show_all(True)
                 button.hide()
+                self._reflow()
                 return
             name = props.get("AttentionIconName") if props.get("Status") == "NeedsAttention" else None
             name = name or props.get("IconName")
@@ -244,13 +282,69 @@ class StatusNotifierTray:
                 img.set_from_icon_name(name, self.Gtk.IconSize.MENU)
             else:
                 self._pixmap(img, props.get("IconPixmap") or ())
-            button.set_no_show_all(False)
-            title = str(props.get("Title") or service)[:128]
             button.set_tooltip_text(title)
             button.get_accessible().set_name(title)
-            button.show()
+            if self.visible_limit is None:
+                button.set_no_show_all(False)
+                button.show()
+            else:
+                self._reflow()
         self._call(service, path, "org.freedesktop.DBus.Properties", "GetAll",
                    self.GLib.Variant("(s)", (ITEM_IFACE,)), "(a{sv})", received)
+
+    def _reflow(self):
+        if self.visible_limit is None:
+            return
+        visible, self.overflow_ids = select_tray_icons(
+            ((identifier, self.item_state.get(identifier, ("Passive", ""))[0])
+             for identifier in self.items), self.visible_limit)
+        visible_set = set(visible)
+        for identifier, (button, _image) in self.items.items():
+            should_show = identifier in visible_set
+            button.set_no_show_all(not should_show)
+            button.set_visible(should_show)
+        has_overflow = bool(self.overflow_ids)
+        self.overflow_button.set_no_show_all(not has_overflow)
+        self.overflow_button.set_visible(has_overflow)
+        self.overflow_button.set_tooltip_text(
+            f"Show {len(self.overflow_ids)} hidden notification icons" if has_overflow
+            else "Show hidden notification icons")
+
+    def _show_overflow(self, button):
+        """A bounded GTK menu escapes the narrow dock and stays keyboard-operable."""
+        from gi.repository import Gdk, Pango
+
+        if not self.overflow_ids:
+            return
+        menu = self.Gtk.Menu()
+        menu.get_style_context().add_class("win7-tray-overflow-menu")
+        for identifier in self.overflow_ids:
+            if identifier not in self.items:
+                continue
+            service, path = parse_item_id(identifier)
+            _button, icon = self.items[identifier]
+            title = self.item_state.get(identifier, ("", service))[1]
+            item = self.Gtk.MenuItem()
+            content = self.Gtk.Box(orientation=self.Gtk.Orientation.HORIZONTAL, spacing=9)
+            image = self.Gtk.Image()
+            if icon.get_storage_type() == self.Gtk.ImageType.PIXBUF:
+                image.set_from_pixbuf(icon.get_pixbuf())
+            elif icon.get_storage_type() == self.Gtk.ImageType.ICON_NAME:
+                image.set_from_icon_name(icon.get_icon_name()[0], self.Gtk.IconSize.MENU)
+            content.pack_start(image, False, False, 0)
+            label = self.Gtk.Label(label=title, xalign=0)
+            label.set_max_width_chars(30)
+            label.set_ellipsize(Pango.EllipsizeMode.END)
+            content.pack_start(label, True, True, 0)
+            item.add(content)
+            item.connect("activate", lambda _item, s=service, p=path:
+                         self._activate(s, p, "Activate", self._button_position(button)))
+            item.connect("button-press-event", lambda _item, event, s=service, p=path:
+                         self._context(s, p, event))
+            menu.append(item)
+        menu.connect("deactivate", lambda widget: widget.destroy())
+        menu.show_all()
+        menu.popup_at_widget(button, Gdk.Gravity.NORTH_WEST, Gdk.Gravity.SOUTH_WEST, None)
 
     def _pixmap(self, image, pixmaps):
         for width, height, raw in sorted(pixmaps, key=lambda p: p[0] * p[1]):
