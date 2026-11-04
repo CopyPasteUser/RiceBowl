@@ -39,7 +39,7 @@ jobs:
           # Flat Windows 98 teal compresses to ~28 KiB as a valid 1600x900 PNG;
           # size alone must not reject a real capture. The area-diff validation below
           # independently proves that the functional control panel rendered.
-          /usr/bin/python3 -c 'from pathlib import Path; import hashlib, struct; fs=sorted(Path("screenshots").glob("ricebowl-*-0.9.1.png")); assert len(fs)==12, f"Expected 12 GTK captures, found {len(fs)}"; data=[p.read_bytes() for p in fs]; assert all(len(b)>15000 and b[:8]==bytes.fromhex("89504e470d0a1a0a") and struct.unpack(">II", b[16:24])==(1600,900) for b in data), "Invalid or incomplete screenshot"; assert len({hashlib.sha256(b).digest() for b in data})==12, "Duplicate screenshot detected"'
+          /usr/bin/python3 -c 'from pathlib import Path; import hashlib, struct; fs=sorted(Path("screenshots").glob("ricebowl-*-0.9.1.png")); assert len(fs)==15, f"Expected 15 GTK captures, found {len(fs)}"; data=[p.read_bytes() for p in fs]; assert all(len(b)>15000 and b[:8]==bytes.fromhex("89504e470d0a1a0a") and struct.unpack(">II", b[16:24])==(1600,900) for b in data), "Invalid or incomplete screenshot"; assert len({hashlib.sha256(b).digest() for b in data})==15, "Duplicate screenshot detected"'
           /usr/bin/python3 screenshots/validate_gallery.py
           # Each desktop must also render a REAL application window, with its
           # own GTK theme, icons, Thunar controls and native XFWM4 titlebar.
@@ -50,7 +50,7 @@ jobs:
           /usr/bin/python3 -c 'from pathlib import Path; import struct; fs=sorted(Path("screenshots").glob("ricebowl-*-workspace-0.9.1.png")); assert len(fs)==6, f"Expected 6 genuine workspace captures, got {len(fs)}"; assert all(p.stat().st_size>30000 and struct.unpack(">II",p.read_bytes()[16:24])==(1600,900) for p in fs),"Invalid native XFWM4/Thunar screenshot"'
           # XP 2001 layout must fit a real 1024x768 GTK/XFWM workarea as well.
           RICEBOWL_CAPTURE_SIZE=1024 timeout 24s dbus-run-session -- xvfb-run -a -s '-screen 0 1024x768x24' /usr/bin/python3 -c 'from macrice.aero_shell import run; raise SystemExit(run(["ricebowl-winxp-shell", "--capture-gallery"], profile="winxp"))'
-          /usr/bin/python3 -c 'from pathlib import Path; import struct; fs=sorted(Path("screenshots").glob("ricebowl-winxp-*-0.9.1-1024.png")); assert len(fs)==2, "XP small-screen captures missing"; assert all(struct.unpack(">II", p.read_bytes()[16:24])==(1024,768) for p in fs), "XP 1024x768 capture invalid"'
+          /usr/bin/python3 -c 'from pathlib import Path; import struct; fs=sorted(Path("screenshots").glob("ricebowl-winxp-*-0.9.1-1024.png")); assert len(fs)==5, "XP deep-menu captures missing"; assert all(struct.unpack(">II", p.read_bytes()[16:24])==(1024,768) for p in fs), "XP 1024x768 capture invalid"'
           RICEBOWL_CAPTURE_SIZE=1024 timeout 35s dbus-run-session -- xvfb-run -a -s '-screen 0 1024x768x24' /usr/bin/python3 screenshots/capture_native_workspace.py winxp
           /usr/bin/python3 -c 'from pathlib import Path; import struct; p=Path("screenshots/ricebowl-winxp-workspace-0.9.1-1024.png"); b=p.read_bytes(); assert len(b)>30000 and struct.unpack(">II", b[16:24])==(1024,768), "XP compact Thunar window invalid"'
           # Windows 7 uses the historically sized 48px Superbar and a genuine
@@ -88,6 +88,9 @@ jobs:
             screenshots/ricebowl-hub-windows10-current.png
             screenshots/ricebowl-*-0.9.1.png
             screenshots/ricebowl-winxp-*-0.9.1-1024.png
+            screenshots/ricebowl-winxp-programs-0.9.1.png
+            screenshots/ricebowl-winxp-detail-0.9.1.png
+            screenshots/ricebowl-winxp-classic-0.9.1.png
             screenshots/ricebowl-winxp-workspace-0.9.1-1024.png
             screenshots/ricebowl-aero-*-0.9.1-1024.png
             screenshots/ricebowl-frutiger-*-0.9.1-1024.png

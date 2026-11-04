@@ -250,8 +250,20 @@ DETAIL_CSS = {
 .luna-logoff:hover { background: #e8aa38; }
 .luna-shutdown:hover { background: #ed5944; }
 .luna-power:disabled { opacity: .5; }
-.luna-menu menu { background: #fff; border: 1px solid #316ac5; }
-.luna-menu menuitem:hover { background: #316ac5; color: #fff; }
+/* Gtk.Menu is a separate popup window, not a descendant of .luna-menu. */
+menu.luna-popup { background: #f9fbff; color: #1a345b; border: 1px solid #2e65b0;
+  border-radius: 0; padding: 3px; box-shadow: 2px 3px 7px rgba(9,38,91,.3); }
+menu.luna-popup menuitem { background: transparent; border: 1px solid transparent;
+  border-radius: 0; min-height: 25px; padding: 3px 9px; color: #1a345b; }
+menu.luna-popup menuitem label { color: #1a345b; font-size: 12px; }
+menu.luna-popup menuitem:hover, menu.luna-popup menuitem:selected,
+menu.luna-popup menuitem:focus { background: #316ac5; border-color: #1a55a0; color: #fff; }
+menu.luna-popup menuitem:hover label, menu.luna-popup menuitem:selected label,
+menu.luna-popup menuitem:focus label { color: #fff; }
+menu.luna-popup menuitem:disabled label { color: #6c7e95; }
+menu.luna-popup separator { background: #b6c9df; min-height: 1px; margin: 3px 5px; }
+menu.luna-popup arrow { color: #315b94; }
+menu.luna-popup menuitem:hover arrow, menu.luna-popup menuitem:selected arrow { color: #fff; }
 """,
     "winclassic": b"""
 /* 98/2000: no gradients, no glass, squared pixel-like geometry. */
@@ -606,12 +618,34 @@ CONTROL_DETAIL_CSS = {
   color: #102f70; text-decoration: underline; }
 .luna-control-main { background: #ffffff; padding: 18px 20px; color: #333333; }
 .luna-control-heading { color: #164eae; font-size: 19px; font-weight: bold; }
-.luna-control-category, .luna-control-applet { background: transparent; border: 1px solid transparent;
-  border-radius: 2px; box-shadow: none; padding: 7px 5px; color: #1b3e75; }
-.luna-control-category:hover, .luna-control-applet:hover,
-.luna-control-category:focus, .luna-control-applet:focus { background: #edf5ff;
-  border-color: #a8c8ef; }
-.luna-control-category:disabled, .luna-control-applet:disabled { opacity: .53; }
+.luna-control-intro { color: #515151; font-size: 11px; }
+.luna-control-search { background: #fff; color: #203959; border: 1px solid #88a8ce;
+  border-radius: 2px; padding: 4px 7px; min-height: 28px; }
+.luna-control-search:focus { border-color: #316ac5; box-shadow: 0 0 0 1px #bad1f3; }
+.luna-control-category, .luna-control-applet, .luna-control-task {
+  background: transparent; border: 1px solid transparent; border-radius: 2px;
+  box-shadow: none; padding: 6px 5px; color: #1b3e75; }
+.luna-control-task { padding: 9px 8px; }
+.luna-control-category:hover, .luna-control-applet:hover, .luna-control-task:hover,
+.luna-control-category:focus, .luna-control-applet:focus, .luna-control-task:focus {
+  background: #edf5ff; border-color: #91b9ec; }
+.luna-control-category:active, .luna-control-applet:active, .luna-control-task:active {
+  background: #d2e5ff; border-color: #316ac5; }
+.luna-control-category:focus, .luna-control-applet:focus, .luna-control-task:focus {
+  box-shadow: inset 0 0 0 1px #d4e8ff; }
+.luna-control-category:hover .luna-control-link, .luna-control-category:focus .luna-control-link,
+.luna-control-task:hover .luna-control-link, .luna-control-task:focus .luna-control-link {
+  text-decoration: underline; }
+.luna-control-applet:disabled, .luna-control-task:disabled {
+  opacity: .82; background: #f7f8fa; border-color: #e9edf3; }
+.luna-control-applet:disabled label, .luna-control-task:disabled label { color: #586574; }
+.luna-control-detail-header { background: #e6f0fd; border: 1px solid #b2cbe9;
+  border-radius: 4px; padding: 9px; }
+.luna-control-details, .luna-control-results { padding: 3px 0 10px; }
+.luna-control-result-heading { background: #eaf2fd; color: #1b4e91;
+  font-weight: bold; font-size: 12px; padding: 5px 8px;
+  border-bottom: 1px solid #aac6e7; }
+.luna-control-empty { color: #536c8a; font-style: italic; font-size: 12px; }
 .luna-control-link { color: #164eae; font-size: 12px; font-weight: bold; }
 .luna-control-explanation { color: #4c4c4c; font-size: 10px; font-weight: normal; }
 .luna-control-summary { color: #325b91; font-size: 10px; }

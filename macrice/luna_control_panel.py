@@ -28,6 +28,77 @@ LUNA_CATEGORIES = (
      ("time-admin", "xfce4-settings-manager"), "Open regional and time settings"),
 )
 
+# Windows XP's categories lead to task pages; only leaf actions launch Linux
+# settings utilities. This is also the source for Classic View and search.
+LUNA_TASKS = {
+    "Appearance and Themes": (
+        ("Change the desktop theme", "preferences-desktop-theme", ("xfce4-appearance-settings",),
+         "Colors, fonts and widget styles"),
+        ("Change the desktop background", "preferences-desktop-wallpaper", ("xfdesktop-settings",),
+         "Wallpaper and desktop icons"),
+        ("Change window borders", "preferences-system-windows", ("xfwm4-settings",),
+         "Window frames and title bars"),
+    ),
+    "Network and Internet Connections": (
+        ("View network connections", "network-workgroup", ("nm-connection-editor",),
+         "Edit saved Wi-Fi and wired connections"),
+        ("Configure Bluetooth devices", "bluetooth", ("blueman-manager",),
+         "Pair and manage Bluetooth devices"),
+    ),
+    "Add or Remove Programs": (
+        ("Install or remove programs", "system-software-install",
+         ("mintinstall", "gnome-software", "synaptic"), "Open the installed software manager"),
+        ("Browse installed applications", "system-search", ("xfce4-appfinder",),
+         "Find and launch desktop programs"),
+        ("Set preferred applications", "preferences-desktop-default-applications",
+         ("exo-preferred-applications",), "Choose default browser and mail apps"),
+    ),
+    "Sounds, Speech, and Audio Devices": (
+        ("Adjust audio devices", "audio-card", ("pavucontrol", "xfce4-mixer"),
+         "Input, output and playback levels"),
+        ("Configure notification sounds", "preferences-desktop-notification",
+         ("xfce4-notifyd-config",), "Desktop notification preferences"),
+    ),
+    "Performance and Maintenance": (
+        ("View running processes", "utilities-system-monitor",
+         ("xfce4-taskmanager", "gnome-system-monitor"), "CPU, memory and applications"),
+        ("Adjust power options", "battery", ("xfce4-power-manager-settings",),
+         "Battery, brightness and sleep settings"),
+        ("Open system settings", "preferences-system", ("xfce4-settings-manager",),
+         "Other installed XFCE settings"),
+    ),
+    "Printers and Other Hardware": (
+        ("View printers", "printer", ("system-config-printer",),
+         "Printer queues and device setup"),
+        ("Change display settings", "video-display", ("xfce4-display-settings",),
+         "Monitor layout and resolution"),
+        ("Configure mouse and touchpad", "input-mouse", ("xfce4-mouse-settings",),
+         "Pointer and button settings"),
+    ),
+    "User Accounts": (
+        ("Manage user accounts", "system-users", ("users-admin", "mate-user-admin"),
+         "Available local account manager"),
+        ("Change session and startup", "system-log-out", ("xfce4-session-settings",),
+         "Autostart programs and saved sessions"),
+    ),
+    "Date, Time, Language, and Regional Options": (
+        ("Set date and time", "preferences-system-time", ("time-admin", "gnome-control-center"),
+         "Available date and time utility"),
+        ("Keyboard and language settings", "input-keyboard", ("xfce4-keyboard-settings",),
+         "Keyboard layouts and shortcuts"),
+        ("Accessibility options", "preferences-desktop-accessibility",
+         ("xfce4-accessibility-settings",), "Assistive input and display options"),
+    ),
+}
+
+
+def matching_tasks(query):
+    """Return category/task pairs matching the Control Panel's visible search."""
+    needle = query.casefold().strip()
+    return tuple((category, task) for category, tasks in LUNA_TASKS.items()
+                 for task in tasks if not needle or needle in category.casefold()
+                 or needle in task[0].casefold() or needle in task[3].casefold())
+
 
 def available_program(candidates, which=shutil.which):
     """Select the first *available* real tool; never fake a working applet."""
@@ -76,9 +147,10 @@ def build(shell, Gtk, Gdk):
 
     body = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
     frame.pack_start(body, True, True, 0)
+    compact_layout = shell._desktop_rect().width < 700
     sidebar = shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8),
                            "luna-control-sidebar")
-    sidebar.set_size_request(232, -1)
+    sidebar.set_size_request(165 if compact_layout else 232, -1)
     body.pack_start(sidebar, False, False, 0)
     main = shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10),
                         "luna-control-main")
@@ -87,71 +159,177 @@ def build(shell, Gtk, Gdk):
     heading = shell._class(Gtk.Label(label="Pick a category", xalign=0),
                            "luna-control-heading")
     main.pack_start(heading, False, False, 0)
-    main.pack_start(Gtk.Label(label="Choose a task to configure your computer", xalign=0),
-                    False, False, 0)
+    description = shell._class(Gtk.Label(
+        label="Choose a task to configure your computer", xalign=0),
+        "luna-control-intro")
+    description.set_line_wrap(True)
+    main.pack_start(description, False, False, 0)
+    search = shell._class(Gtk.SearchEntry(), "luna-control-search")
+    search.set_placeholder_text("Search Control Panel tasks")
+    search.get_accessible().set_name("Search Control Panel tasks")
+    main.pack_start(search, False, False, 2)
 
     stack = Gtk.Stack()
     stack.set_transition_type(Gtk.StackTransitionType.NONE)
-    category_grid = Gtk.Grid(row_spacing=10, column_spacing=10)
-    classic_grid = Gtk.Grid(row_spacing=8, column_spacing=8)
-    stack.add_named(category_grid, "categories")
-    stack.add_named(classic_grid, "classic")
+    stack.set_homogeneous(False)
+    category_grid = Gtk.Grid(row_spacing=7, column_spacing=9)
+    category_grid.set_column_homogeneous(True)
+    classic_grid = Gtk.Grid(row_spacing=3, column_spacing=6)
+    classic_grid.set_column_homogeneous(True)
+    details = shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5),
+                           "luna-control-details")
+    matches = shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4),
+                           "luna-control-results")
+    for name, child in (("categories", category_grid), ("classic", classic_grid),
+                        ("detail", details), ("search", matches)):
+        stack.add_named(child, name)
     main.pack_start(stack, True, True, 2)
+    home_view = ["categories"]
 
-    def category_button(name, icon, commands, explanation, *, compact=False):
+    def task_button(task, *, compact=False):
+        name, icon, commands, explanation = task
         program = available_program(commands)
         button = shell._class(Gtk.Button(),
-                              "luna-control-applet" if compact else "luna-control-category")
-        button.set_relief(Gtk.ReliefStyle.NONE)
-        line = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        line.pack_start(shell._icon(icon, Gtk.IconSize.LARGE_TOOLBAR if compact else
-                                    Gtk.IconSize.DIALOG), False, False, 0)
+                              "luna-control-applet" if compact else "luna-control-task")
+        line = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=9)
+        image = shell._icon(icon, Gtk.IconSize.MENU if compact else Gtk.IconSize.LARGE_TOOLBAR)
+        line.pack_start(image, False, False, 0)
         labels = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
         title = shell._class(Gtk.Label(label=name, xalign=0), "luna-control-link")
         title.set_line_wrap(True)
-        title.set_max_width_chars(23 if not compact else 19)
+        title.set_max_width_chars(23 if compact else 31)
         labels.pack_start(title, False, False, 0)
-        if not compact:
-            subtitle = shell._class(Gtk.Label(label=explanation, xalign=0),
-                                    "luna-control-explanation")
+        summary = explanation if program else "Unavailable — install " + " or ".join(commands)
+        if not compact or not program:
+            subtitle = shell._class(Gtk.Label(
+                label="Not installed" if compact else summary, xalign=0),
+                "luna-control-explanation")
             subtitle.set_line_wrap(True)
-            subtitle.set_max_width_chars(24)
+            subtitle.set_max_width_chars(24 if compact else 44)
             labels.pack_start(subtitle, False, False, 0)
         line.pack_start(labels, True, True, 0)
         button.add(line)
         button.set_sensitive(program is not None)
-        button.set_tooltip_text("Open " + name if program else
-                                "Not installed: " + " or ".join(commands))
-        button.get_accessible().set_name("Open " + name)
+        button.set_tooltip_text("Open " + name if program else summary)
+        button.get_accessible().set_name("Open " + name if program else name + " (not installed)")
         if program:
-            button.connect("clicked", lambda _button, executable=program:
-                           shell._open_tool(executable))
+            button.connect("clicked", lambda _button, cmd=program: shell._open_tool(cmd))
         return button
 
-    for index, (name, icon, commands, explanation) in enumerate(LUNA_CATEGORIES):
-        category_grid.attach(category_button(name, icon, commands, explanation),
-                             index % 2, index // 2, 1, 1)
-        classic_grid.attach(category_button(name, icon, commands, explanation, compact=True),
-                            index % 2, index // 2, 1, 1)
+    def show_home(view=None):
+        if view in ("categories", "classic"):
+            home_view[0] = view
+        if search.get_text():
+            search.set_text("")
+        stack.set_visible_child_name(home_view[0])
+        heading.set_text("Classic View" if home_view[0] == "classic" else "Pick a category")
+        description.set_text("Open an installed Control Panel tool" if home_view[0] == "classic"
+                             else "Choose a task to configure your computer")
+        toggle.set_label("Switch to Category View" if home_view[0] == "classic"
+                         else "Switch to Classic View")
+        back.hide()
+
+    def show_category(category):
+        if search.get_text():
+            search.set_text("")
+        for child in details.get_children():
+            details.remove(child)
+        title = next((row for row in LUNA_CATEGORIES if row[0] == category), None)
+        if title:
+            icon = shell._icon(title[1], Gtk.IconSize.DIALOG)
+            header = shell._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=11),
+                                  "luna-control-detail-header")
+            header.pack_start(icon, False, False, 0)
+            header.pack_start(shell._class(Gtk.Label(label=title[3], xalign=0),
+                                           "luna-control-intro"), True, True, 0)
+            details.pack_start(header, False, False, 6)
+        for task in LUNA_TASKS[category]:
+            details.pack_start(task_button(task), False, False, 0)
+        details.show_all()
+        stack.set_visible_child_name("detail")
+        heading.set_text(category)
+        description.set_text("Pick a task")
+        back.show()
+
+    for index, (name, icon, _commands, explanation) in enumerate(LUNA_CATEGORIES):
+        button = shell._class(Gtk.Button(), "luna-control-category")
+        line = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=9)
+        line.pack_start(shell._icon(icon, Gtk.IconSize.DIALOG), False, False, 0)
+        labels = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
+        category_label = shell._class(Gtk.Label(label=name, xalign=0), "luna-control-link")
+        category_label.set_line_wrap(True)
+        category_label.set_max_width_chars(23)
+        labels.pack_start(category_label, False, False, 0)
+        summary = shell._class(Gtk.Label(label=explanation, xalign=0),
+                               "luna-control-explanation")
+        summary.set_line_wrap(True)
+        summary.set_max_width_chars(24)
+        labels.pack_start(summary, False, False, 0)
+        line.pack_start(labels, True, True, 0)
+        button.add(line)
+        button.get_accessible().set_name("Show " + name + " tasks")
+        button.connect("clicked", lambda _button, chosen=name: show_category(chosen))
+        columns = 1 if compact_layout else 2
+        category_grid.attach(button, index % columns, index // columns, 1, 1)
+
+    # Classic View lists real individual applets, not duplicate category cards.
+    distinct = {task[0]: task for group in LUNA_TASKS.values() for task in group}
+    for index, task in enumerate(distinct.values()):
+        columns = 1 if compact_layout else 2
+        classic_grid.attach(task_button(task, compact=True), index % columns,
+                            index // columns, 1, 1)
+
+    def on_search(entry):
+        needle = entry.get_text().strip()
+        if not needle:
+            show_home()
+            return
+        for child in matches.get_children():
+            matches.remove(child)
+        found = matching_tasks(needle)
+        if not found:
+            matches.pack_start(shell._class(Gtk.Label(label="No matching settings", xalign=0),
+                                            "luna-control-empty"), False, False, 10)
+        else:
+            last_category = None
+            for category, task in found:
+                if category != last_category:
+                    matches.pack_start(shell._class(Gtk.Label(label=category, xalign=0),
+                                                    "luna-control-result-heading"), False, False, 4)
+                    last_category = category
+                matches.pack_start(task_button(task), False, False, 0)
+        matches.show_all()
+        stack.set_visible_child_name("search")
+        heading.set_text("Search results")
+        description.set_text(str(len(found)) + " matching task" + ("" if len(found) == 1 else "s"))
+        back.show()
+
+    search.connect("search-changed", on_search)
 
     nav_group = shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4),
                              "luna-control-side-group")
     sidebar.pack_start(nav_group, False, False, 0)
     nav_group.pack_start(shell._class(Gtk.Label(label="Control Panel", xalign=0),
                                        "luna-control-side-heading"), False, False, 0)
+    back = shell._class(Gtk.Button(label="‹  Back to Control Panel"), "luna-control-nav")
+    back.set_no_show_all(True)
+    back.get_accessible().set_name("Back to Control Panel home")
+    back.connect("clicked", lambda _button: show_home())
+    nav_group.pack_start(back, False, False, 0)
     toggle = shell._class(Gtk.Button(label="Switch to Classic View"), "luna-control-nav")
     toggle.get_accessible().set_name("Switch Control Panel view")
 
     def switch_view(_button):
-        classic = stack.get_visible_child_name() != "classic"
-        stack.set_visible_child_name("classic" if classic else "categories")
-        toggle.set_label("Switch to Category View" if classic else "Switch to Classic View")
-        heading.set_text("Classic View" if classic else "Pick a category")
+        show_home("classic" if home_view[0] == "categories" else "categories")
 
     toggle.connect("clicked", switch_view)
     nav_group.pack_start(toggle, False, False, 0)
     shell.luna_control_stack = stack
     shell.luna_control_switch = toggle
+    shell.luna_control_back = back
+    shell.luna_control_search = search
+    shell.luna_control_show_home = show_home
+    shell.luna_control_show_category = show_category
 
     hardware = shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5),
                             "luna-control-side-group")
@@ -190,5 +368,12 @@ def build(shell, Gtk, Gdk):
     sidebar.pack_end(shell.status_summary, False, False, 0)
 
     window.connect("focus-out-event", lambda *_args: shell._schedule_popup_hide("control"))
-    window.connect("key-press-event", lambda _widget, event: shell._action_key(event))
+    def on_key(_widget, event):
+        if event.keyval == Gdk.KEY_Left and event.state & Gdk.ModifierType.MOD1_MASK:
+            show_home()
+            return True
+        return shell._action_key(event)
+
+    window.connect("key-press-event", on_key)
+    show_home()
     return window

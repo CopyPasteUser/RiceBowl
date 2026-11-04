@@ -8,10 +8,10 @@ from pathlib import Path
 from xml.etree import ElementTree
 
 from macrice.aero_layout import actual_popup_y, bottom_strut, menu_geometry
-from macrice.aero_shell import luna_programs
+from macrice.aero_shell import LAUNCHABLE_TOOLS, luna_program_groups, luna_programs
 from macrice.asset_upgrade import AssetConflict, git_blob_sha, inspect_bundle, install_bundle, trusted_assets
 from macrice.installer import project_root
-from macrice.luna_control_panel import LUNA_CATEGORIES, available_program
+from macrice.luna_control_panel import LUNA_CATEGORIES, LUNA_TASKS, available_program, matching_tasks
 
 
 class App:
@@ -32,6 +32,17 @@ class App:
 
 
 class LunaProgramsTests(unittest.TestCase):
+    def test_all_programs_cascade_covers_every_app_once_including_uncategorized(self):
+        apps = (App("browser.desktop", "Browser", "Network;WebBrowser;"),
+                App("editor.desktop", "Editor", "Utility;Office;"),
+                App("mystery.desktop", "Mystery", "Unlisted;"),
+                App("other.desktop", "Other"))
+        groups = luna_program_groups(apps)
+        assigned = [app for _name, _icon, members in groups for app in members]
+        self.assertCountEqual(assigned, apps)
+        self.assertEqual(len(assigned), len(set(assigned)))
+        self.assertIn("Other Programs", [name for name, _, _ in groups])
+
     def test_featured_are_real_browser_and_mail_apps_with_no_duplicates(self):
         apps = (App("xfce4-terminal.desktop", "Terminal", "System;"),
                 App("icefox.desktop", "Icefox", "Network;WebBrowser;"),
@@ -77,6 +88,17 @@ class LunaGeometryTests(unittest.TestCase):
                                            if program == "installed" else None), "installed")
         self.assertIsNone(available_program(("absent",), lambda _program: None))
         self.assertTrue(all(len(row) == 4 for row in LUNA_CATEGORIES))
+
+    def test_control_panel_tasks_are_searchable_and_launchable(self):
+        self.assertEqual(set(LUNA_TASKS), {category[0] for category in LUNA_CATEGORIES})
+        for tasks in LUNA_TASKS.values():
+            self.assertGreater(len(tasks), 1)
+            for name, icon, programs, explanation in tasks:
+                self.assertTrue(name and icon and programs and explanation)
+                self.assertTrue(set(programs) <= LAUNCHABLE_TOOLS, (name, programs))
+        results = matching_tasks("keyboard")
+        self.assertTrue(any("Keyboard" in task[0] for _category, task in results))
+        self.assertFalse(matching_tasks("not-a-real-setting-123"))
 
     def test_luna_user_folders_use_xdg_and_ask_before_creation(self):
         shell = (project_root() / "macrice/aero_shell.py").read_text()

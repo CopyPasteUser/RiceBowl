@@ -110,6 +110,15 @@ secondary pages; prototypes and the release roadmap do not crowd the selector.
   Thunar; it cannot replace Thunar's actual shortcuts pane with Windows Explorer
   tasks. Missing Linux utilities remain visibly disabled. The window scrolls on
   compact monitors; XFCE taskbar/session recovery is unchanged.
+  XP flyouts are themed on the native GTK popup windows via `menu.luna-popup`,
+  not descendant selectors of the Start window. Ivory `#f9fbff`, cobalt
+  selection `#316ac5` and compact 25px rows carry through nested program,
+  recent-document and pin menus; flyouts retain focus during traversal.
+  Control Panel is navigable *category → task → installed Linux utility*;
+  Classic View lists individual applets, while search covers tasks and their
+  descriptions. Reopening returns to its home view, and unavailable leaf tools
+  show an explicit reason. `heritage_shell.py` remains the runtime palette owner;
+  the values here document the historical identity, not a parallel token source.
 - **98 / 2000:** visually faithful 1998 desktop: solid `#008080` wallpaper,
   compact 34px `#c0c0c0` taskbar, 19px original CRT/penguin Start badge,
   2px white/light-gray/dark recessed versus raised frames, `#000080` focused

@@ -83,3 +83,33 @@ Remaining fidelity limit: Thunar's functional GTK shortcuts pane cannot be
 turned into Windows Explorer's proprietary context-sensitive *File and Folder
 Tasks* pane with CSS alone. The current UI styles real Thunar actions, never
 adds fake filesystem operations or replaces its file-management engine.
+
+## Deep interaction pass — November 2026
+
+- [x] Style the actual detached GTK flyout windows, nested program categories,
+  recent files and app pin contexts consistently in Luna blue/ivory.
+- [x] Keep Start open while a nested menu owns focus; reset stale program search
+  results on next open and expose all Gio programs, including uncategorized apps.
+- [x] Replace direct-launch category cards with real category/task navigation,
+  Classic applet view, searchable tasks, back navigation and visible unavailable states.
+- [x] Extend the central approved utility launch set so installed XP applets
+  cannot silently fail after their first click.
+- [x] Cover the deeper interaction states in the native GTK smoke and virtual-X11
+  capture workflow; retain 1024×768 coverage and all six non-macOS profiles.
+- [ ] Physically verify nested flyout placement, keyboard/mouse focus and applet
+  launch paths on the owner's Mint XFCE laptop after the CI build passes.
+
+### Gaps that require a separate component
+
+- **riceExplorer integration**: true XP Explorer navigation/task pane, file copy
+  dialogs, multi-drive *My Computer*, property sheets, shared folder context menus,
+  thumbnails and real file-management operations cannot be delivered reliably by
+  changing Thunar's GTK stylesheet. Keep Thunar as a fallback until riceExplorer
+  has passed real transfer, mount and recovery acceptance.
+- **Optional desktop integrations**: a fully authentic XP notification balloon,
+  logon/logoff experience or Windows-style desktop icon grid would need a
+  dedicated session/desktop component. Do not hijack XFCE's existing session
+  controls or fabricate state for appearance's sake.
+- **Normal RiceBowl work, no side project needed**: usage-based recently launched
+  programs, better pinned Start favorites and context actions, fuller keyboard
+  traversal, date/time settings discovery and user-configurable Start menu layout.

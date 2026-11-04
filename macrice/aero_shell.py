@@ -22,6 +22,20 @@ from .aero_superbar import group_windows, select_groups
 
 APP_ID = "io.github.copypasteuser.RiceHub.AeroShell"
 
+# Explicitly approved desktop utilities used by the six shell profiles and
+# their Control Panels. A visible installed applet must never become a no-op.
+LAUNCHABLE_TOOLS = frozenset((
+    "xfce4-settings-manager", "xfce4-session-logout", "xfce4-session-settings",
+    "nm-connection-editor", "pavucontrol", "xfce4-display-settings", "blueman-manager",
+    "xfce4-appearance-settings", "xfce4-power-manager-settings", "system-config-printer",
+    "xfce4-appfinder", "xfce4-about", "yelp", "xfhelp4", "xfce4-mouse-settings",
+    "xfce4-keyboard-settings", "xfce4-notifyd-config", "xfce4-accessibility-settings",
+    "xfdesktop-settings", "xfwm4-settings", "exo-preferred-applications", "xfce4-mixer",
+    "mintinstall", "gnome-software", "synaptic", "xfce4-taskmanager",
+    "gnome-system-monitor", "users-admin", "mate-user-admin", "time-admin",
+    "gnome-control-center", "catfish",
+))
+
 
 def app_catalog(Gio):
     """Keep only visible, distinct real application launchers."""
@@ -107,6 +121,34 @@ def luna_programs(apps, pins: tuple[str, ...], query: str, limit: int = 8):
                 break
     featured = featured[:2]
     return tuple(featured), tuple(app for app in apps if app not in featured)[:limit]
+
+
+def luna_program_groups(apps):
+    """Every installed app appears exactly once in the XP All Programs flyout."""
+    categories = (
+        ("Accessories", "applications-utilities", ("Utility", "Accessories", "TextEditor")),
+        ("Games", "applications-games", ("Game",)),
+        ("Graphics", "applications-graphics", ("Graphics", "Photography")),
+        ("Internet", "applications-internet", ("Network", "WebBrowser", "Email")),
+        ("Multimedia", "applications-multimedia", ("Audio", "Video", "Player")),
+        ("Office", "applications-office", ("Office", "Spreadsheet", "WordProcessor")),
+        ("System Tools", "applications-system", ("System", "Settings", "FileManager", "TerminalEmulator")),
+    )
+    remaining = list(apps)
+    grouped = []
+    for title, icon, markers in categories:
+        members = []
+        for app in tuple(remaining):
+            reader = getattr(app, "get_categories", None)
+            names = (reader() or "").split(";") if callable(reader) else ()
+            if any(marker in names for marker in markers):
+                members.append(app)
+                remaining.remove(app)
+        if members:
+            grouped.append((title, icon, tuple(members)))
+    if remaining:
+        grouped.append(("Other Programs", "applications-other", tuple(remaining)))
+    return tuple(grouped)
 
 
 def win7_programs(apps, pins: tuple[str, ...], query: str, *, all_programs: bool = False,
@@ -394,6 +436,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._win7_peek_timer = 0
             self._win7_peek_active = False
             self._menu_focused = False
+            self._luna_popup_depth = 0
             self._tray = None
             self._status_pending = False
             self._status_widgets = {}
@@ -536,6 +579,21 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 assert not self.actions.get_visible()
                 if profile == "winxp":
                     assert self.luna_control_stack.get_visible_child_name() == "categories"
+                    assert self.luna_programs_popup.get_style_context().has_class("luna-popup")
+                    assert self.luna_recent_popup.get_style_context().has_class("luna-popup")
+                    self.luna_control_show_category("Appearance and Themes")
+                    assert self.luna_control_stack.get_visible_child_name() == "detail"
+                    assert len(self.luna_control_stack.get_visible_child().get_children()) >= 4
+                    self.luna_control_back.clicked()
+                    assert self.luna_control_stack.get_visible_child_name() == "categories"
+                    self.luna_control_search.set_text("keyboard")
+                    self.luna_control_search.emit("search-changed")
+                    assert self.luna_control_stack.get_visible_child_name() == "search"
+                    self.luna_control_search.set_text("not-a-real-setting-39083")
+                    self.luna_control_search.emit("search-changed")
+                    assert self.luna_control_stack.get_visible_child_name() == "search"
+                    self.luna_control_search.set_text("")
+                    self.luna_control_search.emit("search-changed")
                     self.luna_control_switch.clicked()
                     assert self.luna_control_stack.get_visible_child_name() == "classic"
                     self.luna_control_switch.clicked()
@@ -621,9 +679,42 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 if profile == "winxp":
                     self._assert_luna_run_link_visible()
                 self._capture_screen(f"ricebowl-{profile}-start-0.9.1{self._capture_variant}.png")
+                if profile == "winxp":
+                    self.luna_browse.set_active(True)
+                    GLib.timeout_add(350, self._capture_luna_flyout)
+                else:
+                    self._hide_menu()
+                    self._toggle_actions()
+                    assert self.actions.get_visible()
+                    GLib.timeout_add(400, self._capture_actions)
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._smoke_failed = True
+                self.quit()
+            return False
+
+        def _capture_luna_flyout(self):
+            try:
+                assert self.luna_programs_popup.get_mapped(), "XP All Programs popup not mapped"
+                category = next((item for item in self.luna_programs_popup.get_children()
+                                 if isinstance(item, Gtk.MenuItem) and item.get_submenu()), None)
+                if category:
+                    category.select()
+                GLib.timeout_add(450, self._capture_luna_nested)
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._smoke_failed = True
+                self.quit()
+            return False
+
+        def _capture_luna_nested(self):
+            try:
+                self._capture_screen(f"ricebowl-winxp-programs-0.9.1{self._capture_variant}.png")
+                self.luna_browse.set_active(False)
                 self._hide_menu()
                 self._toggle_actions()
-                assert self.actions.get_visible()
                 GLib.timeout_add(400, self._capture_actions)
             except Exception:
                 import traceback
@@ -638,6 +729,34 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 if profile in ("winxp", "winclassic"):
                     self._assert_control_footer_visible()
                 self._capture_screen(f"ricebowl-{profile}-controls-0.9.1{self._capture_variant}.png")
+                if profile == "winxp":
+                    self.luna_control_show_category("Appearance and Themes")
+                    GLib.timeout_add(350, self._capture_luna_detail)
+                    return False
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._smoke_failed = True
+            self.quit()
+            return False
+
+        def _capture_luna_detail(self):
+            try:
+                assert self.luna_control_stack.get_visible_child_name() == "detail"
+                self._capture_screen(f"ricebowl-winxp-detail-0.9.1{self._capture_variant}.png")
+                self.luna_control_switch.clicked()
+                GLib.timeout_add(350, self._capture_luna_classic)
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._smoke_failed = True
+                self.quit()
+            return False
+
+        def _capture_luna_classic(self):
+            try:
+                assert self.luna_control_stack.get_visible_child_name() == "classic"
+                self._capture_screen(f"ricebowl-winxp-classic-0.9.1{self._capture_variant}.png")
             except Exception:
                 import traceback
                 traceback.print_exc()
@@ -849,6 +968,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             if not identifier:
                 return False
             menu = Gtk.Menu()
+            if profile == "winxp":
+                self._track_luna_popup(menu)
             pinned = identifier in self._pinned_ids
             if profile == "aero" and widget.get_parent() is self.pinned_box:
                 menu.get_style_context().add_class("win7-jumplist")
@@ -867,8 +988,15 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                                      self._win7_launch_recent(selected, address))
                         menu.append(item)
                 menu.append(Gtk.SeparatorMenuItem())
+            elif profile == "winxp":
+                launch = self._luna_menu_item("Open " + (app.get_display_name() or app.get_name()),
+                                              app.get_icon() or "application-x-executable")
+                launch.connect("activate", lambda _item: self._launch(app))
+                menu.append(launch)
+                menu.append(Gtk.SeparatorMenuItem())
             label = "Unpin from taskbar" if pinned else "Pin to taskbar"
-            item = Gtk.MenuItem(label=label)
+            item = (self._luna_menu_item(label, "list-remove" if pinned else "list-add")
+                    if profile == "winxp" else Gtk.MenuItem(label=label))
             item.set_sensitive(pinned or len(self._pinned_ids) < PIN_LIMIT)
             item.connect("activate", lambda _item: self._change_pin(identifier, not pinned))
             menu.append(item)
@@ -973,14 +1101,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _open_tool(self, command):
             """Open a known XFCE utility without a shell or implicit system changes."""
-            allowed = ("xfce4-settings-manager", "xfce4-session-logout",
-                       "nm-connection-editor", "pavucontrol", "xfce4-display-settings",
-                       "blueman-manager", "xfce4-appearance-settings",
-                       "xfce4-power-manager-settings", "system-config-printer",
-                       "xfce4-appfinder", "xfce4-about", "yelp",
-                       "xfce4-mouse-settings", "xfce4-keyboard-settings",
-                       "xfce4-notifyd-config")
-            if command not in allowed:
+            if command not in LAUNCHABLE_TOOLS:
+                logging.getLogger(__name__).warning("Rejected unknown desktop utility: %r", command)
                 return
             executable = shutil.which(command)
             if not executable:
@@ -2043,6 +2165,44 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.menu, self.search = menu, search
             self._populate("")
 
+        def _track_luna_popup(self, menu):
+            """Style native GTK flyouts and preserve Start while a submenu owns focus."""
+            if profile != "winxp":
+                return menu
+            menu.get_style_context().add_class("luna-popup")
+
+            def mapped(_menu):
+                self._luna_popup_depth += 1
+                self._cancel_popup_hide("menu")
+
+            def unmapped(_menu):
+                self._luna_popup_depth = max(0, self._luna_popup_depth - 1)
+                if not self._luna_popup_depth and not self.menu.is_active():
+                    self._schedule_popup_hide("menu")
+
+            menu.connect("map", mapped)
+            menu.connect("unmap", unmapped)
+            return menu
+
+        def _luna_menu_item(self, title, icon=None):
+            """Period-appropriate icon and label for every Luna flyout depth."""
+            item = Gtk.MenuItem()
+            row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=9)
+            if icon is not None:
+                if isinstance(icon, Gio.Icon):
+                    image = Gtk.Image.new_from_gicon(icon, Gtk.IconSize.MENU)
+                else:
+                    image = self._icon(icon, Gtk.IconSize.MENU)
+                row.pack_start(image, False, False, 0)
+            label = Gtk.Label(label=title, xalign=0)
+            label.set_ellipsize(Pango.EllipsizeMode.END)
+            label.set_max_width_chars(35)
+            row.pack_start(label, True, True, 0)
+            item.add(row)
+            item.get_accessible().set_name(title)
+            item.set_tooltip_text(title)
+            return item
+
         def _programs_cascade(self, reveal_search):
             """One real .desktop category flyout for XP and Classic, no fake items."""
             groups = (
@@ -2054,28 +2214,39 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 ("Office", ("Office", "Spreadsheet", "WordProcessor")),
                 ("System Tools", ("System", "Settings", "FileManager", "Terminal")),
             )
-            programs_menu = Gtk.Menu()
-            for title, categories in groups:
-                submenu = Gtk.Menu()
-                count = 0
-                for app in self.apps:
-                    classifier = getattr(app, "get_categories", None)
-                    names = (classifier() or "").split(";") if callable(classifier) else []
-                    if not any(category in names for category in categories):
-                        continue
-                    item = Gtk.MenuItem(label=app.get_display_name() or app.get_name())
+            programs_menu = self._track_luna_popup(Gtk.Menu())
+            if profile == "winxp":
+                program_groups = luna_program_groups(self.apps)
+            else:
+                program_groups = []
+                for title, categories in groups:
+                    members = []
+                    for app in self.apps:
+                        classifier = getattr(app, "get_categories", None)
+                        names = (classifier() or "").split(";") if callable(classifier) else ()
+                        if any(category in names for category in categories):
+                            members.append(app)
+                        if len(members) >= 20:
+                            break
+                    if members:
+                        program_groups.append((title, None, members))
+            for title, icon, members in program_groups:
+                submenu = self._track_luna_popup(Gtk.Menu())
+                for app in members:
+                    name = app.get_display_name() or app.get_name()
+                    item = (self._luna_menu_item(name, app.get_icon() or "applications-other")
+                            if profile == "winxp" else Gtk.MenuItem(label=name))
                     item.connect("activate", lambda _item, selected=app: self._launch(selected))
                     submenu.append(item)
-                    count += 1
-                    if count >= 20:
-                        break
-                if count:
-                    parent = Gtk.MenuItem(label=title)
-                    parent.set_submenu(submenu)
-                    programs_menu.append(parent)
+                parent = (self._luna_menu_item(title, icon) if profile == "winxp" else
+                          Gtk.MenuItem(label=title))
+                parent.set_submenu(submenu)
+                programs_menu.append(parent)
             if programs_menu.get_children():
                 programs_menu.append(Gtk.SeparatorMenuItem())
-            all_item = Gtk.MenuItem(label="Search all installed programs…")
+            all_item = (self._luna_menu_item("Search all installed programs…", "system-search")
+                        if profile == "winxp" else
+                        Gtk.MenuItem(label="Search all installed programs…"))
             all_item.connect("activate", lambda *_args: reveal_search())
             programs_menu.append(all_item)
             programs_menu.show_all()
@@ -2141,20 +2312,22 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                                True, True, 0)
             content.pack_end(Gtk.Label(label="▸"), False, False, 0)
             button.add(content)
-            menu = Gtk.Menu()
+            button.set_direction(Gtk.ArrowType.RIGHT)
+            menu = self._track_luna_popup(Gtk.Menu())
+            self.luna_recent_popup = menu
             try:
                 items = (item for item in Gtk.RecentManager.get_default().get_items()
                          if item.exists() and item.get_uri().startswith("file:"))
                 for item in sorted(items, key=lambda entry: entry.get_modified(),
                                    reverse=True)[:10]:
-                    entry = Gtk.MenuItem(label=item.get_display_name())
+                    entry = self._luna_menu_item(item.get_display_name(), "text-x-generic")
                     entry.connect("activate", lambda _entry, uri=item.get_uri():
                                   self._open_uri(uri))
                     menu.append(entry)
             except (GLib.Error, OSError) as exc:
                 logging.getLogger(__name__).debug("Recent documents unavailable: %s", exc)
             if not menu.get_children():
-                entry = Gtk.MenuItem(label="No recent documents")
+                entry = self._luna_menu_item("No recent documents", "document-open-recent")
                 entry.set_sensitive(False)
                 menu.append(entry)
             menu.show_all()
@@ -2214,7 +2387,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             scroll.add(self.results)
             apps.pack_start(scroll, True, True, 0)
             browse = self._class(Gtk.MenuButton(label="All Programs  ▸"), "luna-all-programs")
-            browse.set_popup(self._programs_cascade(self._reveal_luna_search))
+            browse.set_direction(Gtk.ArrowType.RIGHT)
+            self.luna_programs_popup = self._programs_cascade(self._reveal_luna_search)
+            browse.set_popup(self.luna_programs_popup)
+            self.luna_browse = browse
             browse.get_accessible().set_name("Browse all installed programs")
             apps.pack_end(browse, False, False, 3)
             columns.pack_start(apps, True, True, 0)
@@ -3206,6 +3382,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
         def _hide_if_unfocused(self, name):
             self._popup_hide_sources[name] = 0
             window = self.menu if name == "menu" else self.actions
+            if name == "menu" and self._luna_popup_depth:
+                return False
             if window.get_visible() and not window.is_active():
                 if name == "menu":
                     self._hide_menu()
@@ -3230,6 +3408,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 if width < 410 or height < 320:
                     self._error("The display is too small for Control Panel.")
                     return
+                self.luna_control_show_home()
                 self.actions.show_all()
                 self.actions.resize(width, height)
                 self.actions.move(rect.x + (rect.width - width) // 2,
@@ -3602,6 +3781,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             if profile == "chromeos":
                 x = rect.x + min(16, max(8, rect.width - w))
             if profile == "winxp":
+                self._app_page_size = 24
+                self.search.set_text("")
+                self._populate("")
                 self.search.set_no_show_all(True)
                 self.search.hide()
             elif profile == "winclassic":
