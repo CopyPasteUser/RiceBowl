@@ -1,16 +1,20 @@
-# Riceware backend foundations
+# Riceware migration API 1.0
 
-These four lightweight Python modules expose a **functional starting point**
-for future RiceBowl renderers. They are not new applications, resident daemons,
-or complete reimplementations of XFCE/Wine. No rice changes its visual layout
-or native service ownership merely because these modules are installed.
+The supported Python integration contract is `macrice.riceware.API_VERSION =
+"1.0"`. Its four Linux backends are importable without starting services,
+changing desktops or probing hardware. This is an **API release for gradual
+UI migration**, not a claim that RiceBowl, standalone ricePlate or riceWine
+has passed full physical 1.0 acceptance.
 
 | Import path | Current contract | Intentionally deferred |
 | --- | --- | --- |
-| `macrice.riceware.spice` | `snapshot()`, `read(name)`, `change(action, value)` returning verified `Result` with serialized in-process writes | Asynchronous GTK binding, seven rice renderer migration, real-device acceptance |
-| `macrice.riceware.pop` | XFCE `status()`/history/unread/DND/mark/dismiss/clear and explicit native `send()` | A new notification host, cross-app action replay, separate history DB |
-| `macrice.riceware.plate` | Bounded/truncation-aware `snapshot()` and safe `manage_shortcuts(profile, action)` for XP/Win7 | Custom icon compositor, multi-monitor DnD, filesystem mutation |
-| `macrice.riceware.wine` | `wine_version()`, `list_prefixes()`, `create_prefix(name)`, `resume_prefix(name)`, `read_init_log(name)`, `launch(name, executable, args)` | Installer downloads, prefix import/deletion, game compatibility claims |
+| `macrice.riceware.spice` | `snapshot()`, `read(name)`, `change(action, value)`, typed `action_specs()` and verified `Result` | Real-hardware sign-off and actual renderer migration |
+| `macrice.riceware.pop` | XFCE status/history/actions, native `send()`, event-driven `watch()` with `close()` | Separate notification host, third-party action replay |
+| `macrice.riceware.plate` | Bounded snapshot with display labels/icons and safe XP/Win7 managed shortcuts | Separate desktop compositor, multi-monitor icon DnD |
+| `macrice.riceware.wine` | Private prefix create/resume/status/launch and log inspection | Downloads, arbitrary existing-prefix adoption, compatibility promises |
+| `macrice.riceware.wine_apps` | Safe per-prefix Windows-app catalog (`register`, `list_apps`, `launch_app`, `unregister`) | Automatic Windows program scanning and installer execution |
+| `macrice.riceware.worker` | `LatestRequestRunner(GLib.idle_add)` to keep GUI reads/writes off GTK thread and drop stale responses | One global resident polling daemon |
+| `macrice.riceware.profiles` | `family(style_key)` for all seven rice UI families | Reusing a single visual layout across rices |
 
 All APIs are importable without GTK or any resident service. Hardware mutations
 delegate to `macrice.hardware_status`; native notification history delegates to
@@ -21,11 +25,13 @@ delegate to `macrice.hardware_status`; native notification history delegates to
 From a checkout (or use `macrice` after the normal RiceBowl update):
 
 ```bash
+python3 -m macrice riceware manifest                 # Stable renderer API without I/O
 python3 -m macrice riceware spice status             # On-demand real hardware state
 python3 -m macrice riceware spice get wifi          # Read without changing it
 python3 -m macrice riceware pop list                # Existing XFCE log, if exposed
 python3 -m macrice riceware plate status            # Inventory; no file edits
 python3 -m macrice riceware wine status             # Wine version and managed prefixes
+python3 -m macrice riceware wine apps               # Registered Windows app starters
 ```
 
 Actions always require an explicit command:
@@ -42,6 +48,9 @@ python3 -m macrice riceware wine create demo
 python3 -m macrice riceware wine resume demo           # Only after failed initialization
 python3 -m macrice riceware wine log demo              # Private init-log tail
 python3 -m macrice riceware wine run demo /absolute/path/to/user-selected.exe
+python3 -m macrice riceware wine register demo editor "My Editor" /path/to/editor.exe
+python3 -m macrice riceware wine run-app demo editor
+python3 -m macrice riceware wine unregister demo editor --yes
 ```
 
 Only use device-changing examples when you intend that change. The notification
@@ -57,6 +66,29 @@ failure without deleting it; `log` shows only a bounded, sanitized tail. `run`
 reports an immediately failed Wine process but returns a started process ID,
 **not** proof that the selected Windows app runs correctly. No prefix is
 automatically deleted or migrated.
+
+Registered Wine application launchers are held in an atomic, locked private
+catalog inside each ready prefix. Unregistering removes only metadata; it
+never removes the Wine application, its files or its prefix. Malformed catalogs
+are preserved and reported as explicit issues. `riceware wine apps` can supply
+the same applications to every distinct RiceBowl launcher.
+
+## Rendering contract
+
+- The common backends own real Linux reads/actions. The active rice controls
+  visuals, icon assets, layout, navigation, error text and interaction design.
+- The versioned manifest (`from macrice.riceware import manifest`) is read-only.
+- Never run synchronous hardware or notification calls on GTK's main thread.
+  `LatestRequestRunner` owns at most 1–6 workers and 64 outstanding request keys;
+  it schedules callbacks through
+  an injected UI dispatcher such as `GLib.idle_add`. Close it with its window.
+- ricePop watches real XFCE signals; close each `NotificationWatch` when its UI
+  is destroyed. No new `org.freedesktop.Notifications` bus owner is started.
+- A missing provider yields an honest unavailable state. Keep XFCE/Thunar
+  fallbacks and preserve user MIME defaults, desktop files and pending jobs.
+
+See the [incremental migration guide](RICEWARE_MIGRATION_GUIDE.md) for working
+API examples and per-rice acceptance gates.
 
 ## Checks and next gate
 

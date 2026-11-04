@@ -1,5 +1,27 @@
-"""Opt-in shared Linux capabilities for future RiceBowl renderers.
+"""Versioned, opt-in shared Linux APIs for independent RiceBowl renderers.
 
-These modules have no background services and do not own the desktop session.
-Import individual backends explicitly; importing riceware performs no I/O.
+Importing this package never probes hardware or starts a background service.
+The API version is independent of RiceBowl's application/release version.
 """
+
+API_VERSION = "1.0"
+
+
+def manifest() -> dict[str, object]:
+    """Stable feature discovery without accessing hardware or user files."""
+    from . import profiles, spice
+
+    return {
+        "api_version": API_VERSION,
+        "profiles": dict(profiles.PROFILE_FAMILIES),
+        "components": {
+            "riceSpice": {"read": tuple(spice.READERS), "write": tuple(spice.WRITERS)},
+            "ricePop": {"read": ("status", "history", "unread", "quiet_mode"),
+                        "write": ("send", "mark_read", "dismiss", "clear_history",
+                                  "set_quiet_mode")},
+            "ricePlate": {"read": ("snapshot",), "write": ("manage_shortcuts",)},
+            "riceWine": {"read": ("wine_version", "list_prefixes", "list_apps"),
+                         "write": ("create_prefix", "resume_prefix", "launch",
+                                   "register", "unregister", "launch_app")},
+        },
+    }

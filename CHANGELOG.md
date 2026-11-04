@@ -1,5 +1,21 @@
 # RiceBowl changelog
 
+## Unreleased — Riceware migration API 1.0 (4 November 2026)
+
+- Introduced a source-compatible `macrice.riceware` 1.0 API contract, stable
+  style-to-rice-family mapping and capability/action discovery for independent
+  XP/Classic/Win7/Win10/ChromeOS/Frutiger/macOS renderers.
+- Added a bounded, lifecycle-owned GTK main-loop worker bridge with stale-result
+  suppression; no GTK calls or hardware subprocesses are required on UI threads.
+- Added typed riceSpice action metadata/validation, an opt-in event-driven XFCE
+  notification observer, and safe bounded desktop launcher metadata reads.
+- Added a private, locked, atomic riceWine app catalog with register/list/run/
+  unregister operations for shared Windows-app launchers. No application file,
+  user MIME default, Wine prefix or desktop settings are deleted.
+- Published a per-rice migration guide and new deterministic contract/security
+  tests. API 1.0 does **not** claim a RiceBowl 1.0 desktop release or completion
+  of physical Mint, Wine GUI or multi-rice interaction acceptance.
+
 ## Unreleased — Riceware backend reliability hardening (4 November 2026)
 
 - riceSpice now checks each requested mutation against actual device readback,

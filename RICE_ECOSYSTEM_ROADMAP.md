@@ -53,6 +53,21 @@ The names are stable enough for planning; reserve public executable names, D-Bus
 
 See [Riceware foundation API and manual checks](RICEWARE_FOUNDATIONS.md).
 
+### Migration API 1.0 checkpoint — 4 November 2026
+
+- [x] Stable `macrice.riceware.API_VERSION = "1.0"` and renderer-facing feature
+  manifest; source RiceBowl's existing eleven style keys through seven family IDs.
+- [x] Bounded worker dispatch for GTK, preserving the newest response and
+  preventing a destroyed window from receiving stale asynchronous results.
+- [x] Enumerated/range-checked riceSpice actions with real readback, XFCE
+  notification signals with unsubscribe, and bounded desktop launcher metadata.
+- [x] Safe per-prefix riceWine Windows-app catalog with explicit registration,
+  launch, unregister, atomic writes and corrupt-catalog preservation.
+- [x] [Per-rice migration guide](RICEWARE_MIGRATION_GUIDE.md) with independent
+  renderers, fallback rules and measurable acceptance requirements.
+- [ ] Migrate each actual renderer and pass physical Mint/XFCE, Wine and
+  multi-monitor tests. Do **not** equate API v1.0 with RiceBowl app v1.0.
+
 ### Reliability checkpoint — 4 November 2026
 
 - [x] Reject write/readback mismatches for supported riceSpice actions;
