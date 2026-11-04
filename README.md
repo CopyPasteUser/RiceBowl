@@ -26,7 +26,7 @@ RiceBowl changes the actual Linux desktop: GTK and XFWM4 themes, icons, wallpape
 | **[Windows XP · Luna](XP_LUNA_ROADMAP.md)** | `winxp` | Blue/green taskbar, themed cascading Start menus and navigable Control Panel tasks |
 | **[Windows 98 SE (classic)](CLASSIC_98_ROADMAP.md)** | `winclassic` | Teal desktop, recent documents/Favorites, Run/Find, Quick Launch, live window menus and classic Control Panel |
 | **[ChromeOS](CHROMEOS_ROADMAP.md)** | `chromeos` | Material You shelf, searchable app launcher and Quick Settings |
-| **Frutiger Aero** | `frutiger` | Water-and-nature wallpaper, pearl-glass bar and Aqua-style menus |
+| **[Frutiger Aero](FRUTIGER_AERO_ROADMAP.md)** | `frutiger` | Aqua World wallpaper, pearl-glass bar and original Apps/Places/Settings |
 
 The Windows 98 rice is still a work in progress: the new interactive Start descendants, all-icons Control Panel and tray dialogs require virtual-X11 and physical Mint acceptance. A separate historically authentic Windows 2000 preset is planned. [Detailed checklist](CLASSIC_98_ROADMAP.md).
 
