@@ -42,7 +42,7 @@ does not download theme archives or run package manager commands for you.
 
 The old layout illustrations were removed from the public gallery; they did not
 represent a running XFCE session. The interactive preview remains a native GTK
-window, and the [current gallery](README.md#latest-screenshots-from-main) shows
+window, and the [current gallery](README.md#current-screenshots) shows
 only actual virtual-X11 captures.
 
 ## Preview before applying

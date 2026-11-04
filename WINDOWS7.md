@@ -5,12 +5,12 @@ original RiceBowl Linux artwork, not Microsoft binaries, icons or wallpaper.
 
 ## Screenshots & coverage
 
-These are real XFWM4/GTK3 desktop captures. Start and Control Panel come from
-passing CI run [`41678284256`](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41678284256);
-the **new Explorer-style Thunar workspace** comes from passing native CI run
-[`41686544328`](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41686544328).
-The pipeline also checks **1024×768** Start/Control Panel and Thunar placement. Owner Mint
-hardware verification is separate.
+These are real XFWM4/GTK3 desktop captures of the **same current code** from
+[passing native CI run `41804502628`](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41804502628),
+source commit `f95c847c3f1b7faeb6f8241ed173b0e0c569b6ab` (4 November 2026).
+Start, Control Panel and Explorer-themed Thunar were captured together. The
+pipeline also checks **1024×768** placement. Owner Mint hardware verification
+remains separate.
 
 ### Desktop and taskbar
 
@@ -37,8 +37,9 @@ upright volume/mute and output devices, NetworkManager Wi-Fi discovery and
 connections, battery/backlight/power profiles, BlueZ Bluetooth status, and a
 real calendar. These use the existing bounded Linux backends and verify state
 changes; they are independently styled for Windows 7, not XP repaints.
-The screenshot below predates these flyouts and deeper navigation; new X11
-captures and physical Mint verification remain open.
+The current screenshot below shows the real Control Panel on native X11;
+individual flyout interactions and physical Mint verification still need
+their own acceptance coverage.
 
 ![Latest Aero Control Panel](screenshots/current/aero-controls.webp)
 

@@ -47,6 +47,9 @@ jobs:
           # independently proves that the functional control panel rendered.
           /usr/bin/python3 -c 'from pathlib import Path; import hashlib, struct; fs=sorted(Path("screenshots").glob("ricebowl-*-0.9.1.png")); assert len(fs)==20, f"Expected 20 GTK captures, found {len(fs)}"; data=[p.read_bytes() for p in fs]; assert all(len(b)>15000 and b[:8]==bytes.fromhex("89504e470d0a1a0a") and struct.unpack(">II", b[16:24])==(1600,900) for b in data), "Invalid or incomplete screenshot"; assert len({hashlib.sha256(b).digest() for b in data})==20, "Duplicate screenshot detected"'
           /usr/bin/python3 screenshots/validate_gallery.py
+          # Capture the real second-click ChromeOS notification and Settings
+          # pages, including honest unavailable-provider states in CI.
+          /usr/bin/python3 -c 'from pathlib import Path; import struct; names=("notifications","settings"); fs=[Path(f"screenshots/ricebowl-chromeos-{name}-0.9.1-extra.png") for name in names]; assert all(p.is_file() and p.stat().st_size>12000 and struct.unpack(">II",p.read_bytes()[16:24])==(1600,900) for p in fs), "Missing ChromeOS detail screenshots"'
           # Each desktop must also render a REAL application window, with its
           # own GTK theme, icons, Thunar controls and native XFWM4 titlebar.
           # The helper uses a temporary HOME inside a fresh DBus/Xvfb session.
@@ -86,6 +89,10 @@ jobs:
           RICEBOWL_CAPTURE_SIZE=1024 timeout 24s dbus-run-session -- xvfb-run -a -s '-screen 0 1024x768x24' /usr/bin/python3 -c 'from macrice.aero_shell import run; raise SystemExit(run(["ricebowl-chromeos-shell", "--capture-gallery"], profile="chromeos"))'
           /usr/bin/python3 -c 'from pathlib import Path; import struct; fs=sorted(Path("screenshots").glob("ricebowl-chromeos-*-0.9.1-1024.png")); assert len(fs)==2, "ChromeOS small-screen captures missing"; assert all(struct.unpack(">II", p.read_bytes()[16:24])==(1024,768) for p in fs), "ChromeOS 1024x768 capture invalid"'
           (cd components/macmenu && /usr/bin/python3 -m unittest discover -s tests -v)
+          # The macOS-style launcher is a separate GTK application. Capture
+          # the real widget, not an invented MacBar/Plank composite.
+          (cd components/macmenu && timeout 24s dbus-run-session -- xvfb-run -a -s '-screen 0 1600x900x24' /usr/bin/python3 capture_screenshot.py --theme dark --output ../../screenshots/ricebowl-macmenu-dark-current.png)
+          /usr/bin/python3 -c 'from pathlib import Path; from PIL import Image; p=Path("screenshots/ricebowl-macmenu-dark-current.png"); assert p.is_file() and p.stat().st_size>10000; im=Image.open(p); assert 320<=im.width<=1000 and 300<=im.height<=900, "MacMenu screenshot clipped"'
           (cd components/macbar && /usr/bin/python3 -m unittest discover -s tests -v)
           (cd components/control-center && PATH=/usr/bin:/bin bash run-tests.sh)
       - name: Archive virtual-X11 new rice screenshots
@@ -111,6 +118,8 @@ jobs:
             screenshots/ricebowl-winclassic-*-0.9.1-1024.png
             screenshots/ricebowl-windows10-*-0.9.1-1024.png
             screenshots/ricebowl-chromeos-*-0.9.1-1024.png
+            screenshots/ricebowl-chromeos-*-0.9.1-extra.png
+            screenshots/ricebowl-macmenu-dark-current.png
           if-no-files-found: ignore
 
   publish-ricebowl:

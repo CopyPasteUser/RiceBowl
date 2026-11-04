@@ -1166,6 +1166,40 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     self.luna_control_show_category("Appearance and Themes")
                     GLib.timeout_add(350, self._capture_luna_detail)
                     return False
+                if profile == "chromeos" and not self._capture_variant:
+                    # Include *secondary* ChromeOS screens in the gallery: the
+                    # shell overview alone misses the native notification log
+                    # and independent Settings window. Never inject fake alerts.
+                    self.chrome_quick_show_page("Notifications")
+                    GLib.timeout_add(1100, self._capture_chrome_notifications)
+                    return False
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._smoke_failed = True
+            self.quit()
+            return False
+
+        def _capture_chrome_notifications(self):
+            try:
+                assert self.chrome_quick_stack.get_visible_child_name() == "Notifications"
+                self._assert_popup_on_monitor(self.actions)
+                self._capture_screen("ricebowl-chromeos-notifications-0.9.1-extra.png")
+                self._open_chrome_settings(section="Device")
+                GLib.timeout_add(450, self._capture_chrome_settings)
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._smoke_failed = True
+                self.quit()
+            return False
+
+        def _capture_chrome_settings(self):
+            try:
+                assert self._chrome_settings is not None
+                assert self._chrome_settings.window.get_visible()
+                self._capture_screen("ricebowl-chromeos-settings-0.9.1-extra.png")
+                self._chrome_settings.window.hide()
             except Exception:
                 import traceback
                 traceback.print_exc()

@@ -2,6 +2,16 @@
 
 ## Post-0.9.1 — Cross-rice visual QA and real-window coverage (3 November 2026)
 
+**4 November screenshot refresh:** the current [32-image gallery](screenshots/current/README.md)
+and the six RiceBowl Hub thumbnail images were rebuilt from a single passing
+GitHub Actions native-X11 run. The gallery now covers 18 full-size shell /
+control / genuine Thunar views, XP Luna's additional dialogs and tray, the
+ChromeOS notification-history fallback and Settings app, and a standalone
+MacMenu dark window. CI retains 1024×768 screenshots. Source hashes and
+the capture revision are recorded in [the manifest](screenshots/current/manifest.json).
+This **does not** close the integrated MacBar/Plank screenshot or physical
+Mint XFCE acceptance milestones below.
+
 - [x] Correct XP Luna and Classic Control Panel initial heights, keeping their
   volume/mute controls reachable and retaining scroll on compact desktops.
 - [x] Make Classic's Control Panel a three-column icon view rather than an
@@ -28,7 +38,8 @@ work is already on main; neither improvement changes the published v0.9.1 packag
 
 The Windows 7 follow-up adds WM_CLASS application grouping, native GTK preview
 popovers, local-document Jump Lists and hover Peek. Its review branch also
-replaces 32 historical gallery images with 12 current virtual-X11 captures;
+replaced an early set of historical gallery images with authentic virtual-X11 captures;
+the later 4 November refresh supersedes those screenshots with one-run evidence.
 real Mint XFCE multi-monitor, resume and session switching remain owner tests.
 
 **RiceBowl is the umbrella application.** The 0.6.0 milestone introduced installable XP Luna, Windows 98/2000, ChromeOS and Frutiger Aero styles alongside macOS, Windows 7 and Windows 10. The new desktops share the tested session/recovery engine; physical Mint XFCE validation is still required for the 1.0 hardware-stability milestone. The original read-only design previews remain available. Unfinished Liquid Glass presets and Windows 11 are not planned. See the [new-rice acceptance checklist](CONCEPTS.md) and [historical project roadmap](RICEHUB.md#product-roadmap).
