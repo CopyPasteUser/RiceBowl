@@ -118,6 +118,22 @@ def frutiger_select_page(stack, buttons, section, search, page: str):
         search.grab_focus()
 
 
+def frutiger_tab_switcher(stack, buttons, section, search):
+    """Prevent GTK3 toggle-button state signals from re-entering tab changes."""
+    switching = [False]
+
+    def switch_to(page):
+        if switching[0]:
+            return
+        switching[0] = True
+        try:
+            frutiger_select_page(stack, buttons, section, search, page)
+        finally:
+            switching[0] = False
+
+    return switch_to
+
+
 def luna_programs(apps, pins: tuple[str, ...], query: str, limit: int = 8,
                   *, start_favorites=None, history=None):
     """Pick real installed apps for the XP pin band and the recent-program area."""
@@ -192,6 +208,11 @@ def win7_programs(apps, pins: tuple[str, ...], query: str, *, all_programs: bool
         favorites.extend(app for app in apps if app.get_id() == identifier and app not in favorites)
     favorites.extend(app for app in apps if app not in favorites and app.get_id() not in ids)
     return tuple(favorites[:limit])
+
+
+def win7_explorer_command(binary: str, folder: Path) -> tuple[str, ...]:
+    """Launch only the optional local Windows 7 renderer; preserve Thunar defaults."""
+    return (binary, "--theme", "win7", str(folder))
 
 
 def frutiger_status_summary(status) -> str:
@@ -382,6 +403,8 @@ CSS = b"""
 .win7-cp-content { background: #fff; padding: 24px 29px 20px; }
 .win7-cp-heading { color: #175483; font-size: 22px; }
 .win7-cp-viewby { color: #616f7c; font-size: 11px; }
+.win7-cp-view-select { color: #244966; background: #fff; border: 1px solid #a5bfd0;
+  border-radius: 2px; min-width: 112px; }
 .win7-cp-category { padding: 2px 4px 7px; min-width: 275px; }
 .win7-cp-category-title, .win7-cp-link {
   background: transparent; background-image: none; box-shadow: none;
@@ -394,6 +417,21 @@ CSS = b"""
   color: #084879; background: #e6f4ff; border-color: #b2d9f2;
 }
 .win7-cp-link:disabled { color: #667987; background: transparent; border-color: transparent; }
+.win7-cp-icon-tile { color: #204e73; background: transparent; border: 1px solid transparent;
+  border-radius: 3px; padding: 9px 5px; min-width: 132px; min-height: 94px; }
+.win7-cp-icon-tile:hover, .win7-cp-icon-tile:focus {
+  background-image: linear-gradient(to bottom, #f5fcff, #d6edfa);
+  border-color: #87b7d5;
+}
+.win7-cp-icon-tile label { color: #294f6b; font-size: 11px; }
+.win7-cp-task-info { color: #455a69; font-size: 12px; }
+.win7-cp-task-open { color: #155b93;
+  background-image: linear-gradient(to bottom, #fff, #dbeaf3);
+  border: 1px solid #93b3c7; border-radius: 3px; padding: 7px 11px; }
+.win7-cp-task-open:hover, .win7-cp-task-open:focus {
+  background-image: linear-gradient(to bottom, #f5fcff, #b5ddf5); border-color: #4d97c8;
+}
+.win7-cp-task-open:disabled { color: #788b97; background: #e8edf0; }
 .win7-cp-empty { color: #647989; font-size: 13px; }
 .win7-cp-status-expander { background: #eaf4fb; border-top: 1px solid #b0cfdf;
   padding: 5px 18px; color: #2f5c78; font-size: 11px; }
@@ -415,6 +453,54 @@ CSS = b"""
 .win7-jumplist { background: #f5fbff; color: #19456b;
   border: 1px solid #729fbd; padding: 5px; }
 .win7-jumplist menuitem:hover { background: #c4e8fb; }
+/* Native Windows 7 notification flyouts. These are independent floating GTK
+   windows; styling only the tiny 48px parent dock would clip their contents. */
+window.win7-tray-popup {
+  background: #f9fbfd; color: #23384c;
+  border: 1px solid #557fa6; border-radius: 5px;
+  box-shadow: 0 5px 15px rgba(9,31,60,.45), inset 0 1px #fff;
+}
+.win7-tray-scroll, .win7-tray-body { background: #f9fbfd; }
+.win7-tray-body { padding: 0 10px 11px; min-width: 270px; }
+.win7-tray-heading {
+  background-image: linear-gradient(to bottom, #eaf6ff, #b4d4eb 51%, #8dbad9);
+  border-bottom: 1px solid #749ab7; padding: 9px 10px;
+  margin: 0 -10px 4px;
+}
+.win7-tray-title { color: #153f64; font-size: 13px; font-weight: bold; }
+.win7-tray-caption { color: #3c5369; font-size: 11px; }
+.win7-tray-section { color: #234f76; font-size: 12px; font-weight: bold; }
+.win7-tray-popup button, .win7-tray-popup .win7-tray-link {
+  color: #1d527f; border: 1px solid transparent; background: transparent;
+  border-radius: 2px; box-shadow: none; padding: 5px 7px;
+}
+.win7-tray-popup button:hover, .win7-tray-popup button:focus {
+  background-image: linear-gradient(to bottom, #f5fcff, #c0e3fb);
+  border-color: #8ebcdd;
+}
+.win7-tray-popup button:disabled { color: #778a9b; background: transparent; }
+.win7-tray-popup .win7-tray-toggle {
+  border: 1px solid #8cabc4; background-image: linear-gradient(to bottom, #fff, #d5e8f4);
+}
+.win7-tray-popup .win7-tray-toggle:checked {
+  background-image: linear-gradient(to bottom, #c9eafa, #86c3e5); color: #0f4369;
+}
+.win7-tray-volume-row { background: #fff; border: 1px solid #d6e4ee;
+  border-radius: 3px; padding: 7px; }
+.win7-tray-popup scale trough { background: #dae5ec; border: 1px solid #9fb4c5; }
+.win7-tray-popup scale highlight { background: #62a8d5; }
+.win7-tray-popup scale slider { background-image: linear-gradient(to bottom, #fff, #c4ddeb);
+  border: 1px solid #6495b8; }
+.win7-tray-popup .luna-tray-network-row,
+.win7-tray-popup .luna-tray-device { border-bottom: 1px solid #d9e7f1; }
+.win7-tray-popup .luna-tray-current { color: #195a89; font-weight: bold; }
+.win7-tray-popup calendar { background: #fff; color: #1c415d; border: 1px solid #afc9d9; }
+.win7-clock-button { color: white; background: transparent; border: 1px solid transparent;
+  border-radius: 2px; padding: 2px 6px; }
+.win7-clock-button:hover, .win7-clock-button:focus {
+  background: rgba(239,250,255,.32); border-color: rgba(255,255,255,.65);
+}
+.win7-clock-button label { color: white; }
 """
 
 
@@ -668,6 +754,16 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                         self.luna_tray.toggle(name)
                         assert not self.luna_tray.popovers[name].get_visible()
                 if profile == "aero":
+                    assert set(self.luna_tray.popovers) == {
+                        "audio", "network", "battery", "clock", "bluetooth"}
+                    for popup in self.luna_tray.popovers.values():
+                        assert popup.get_style_context().has_class("win7-tray-popup")
+                        assert isinstance(popup, Gtk.Window)
+                    for name in ("audio", "network", "battery", "clock", "bluetooth"):
+                        self.luna_tray.toggle(name)
+                        assert self.luna_tray.popovers[name].get_visible()
+                        self.luna_tray.toggle(name)
+                        assert not self.luna_tray.popovers[name].get_visible()
                     assert len(self.win7_panel_rows) == 8
                     self.win7_panel_search.set_text("power")
                     # Gtk.SearchEntry emits search-changed 150ms after edits.
@@ -679,10 +775,22 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     assert not any(row.get_visible() for _, row in self.win7_panel_rows)
                     self.win7_panel_search.set_text("")
                     self.win7_panel_search.emit("search-changed")
+                    self.win7_panel_view_by.set_active(1)
+                    assert self.win7_panel_view_by.get_active() == 1
+                    self.win7_panel_view_by.set_active(2)
+                    assert self.win7_panel_view_by.get_active() == 2
+                    self.win7_panel_view_by.set_active(0)
                     self.win7_panel_show_category(self.win7_panel_rows[0][0])
                     assert self.win7_panel_back.get_sensitive()
+                    category = self.win7_panel_rows[0][0]
+                    self.win7_panel_show_task(category, category.tasks[0])
+                    assert self.win7_panel_forward.get_sensitive() is False
+                    self.win7_panel_back.clicked()
+                    assert self.win7_panel_forward.get_sensitive()
                     self.win7_panel_back.clicked()
                     assert not self.win7_panel_back.get_sensitive()
+                    self.win7_panel_forward.clicked()
+                    assert self.win7_panel_back.get_sensitive()
                     # Run the native group button / preview construction path
                     # even if the CI virtual desktop has no ordinary app windows.
                     first = WindowSnapshot(987654, "First window", False, None, "ricebowl-ci")
@@ -1501,6 +1609,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
                 self.luna_tray = LunaTray(self, Gtk, GLib)
                 self.luna_balloon = LunaBalloon(self, Gtk, Gdk, GLib)
+            elif profile == "aero":
+                from .win7_tray import Win7Tray
+
+                self.luna_tray = Win7Tray(self, Gtk, GLib)
             for name in ("battery", "network", "audio"):
                 button = self._class(Gtk.Button(), "rice-status")
                 button.get_style_context().add_class("rice-status-" + name)
@@ -1520,7 +1632,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     self.luna_tray.install(name, button)
             if self.luna_tray is not None:
                 bluetooth = self._class(Gtk.Button(), "rice-status")
-                bluetooth.add(self._icon("ricehub-luna-task-bluetooth", Gtk.IconSize.MENU))
+                bluetooth.add(self._icon("bluetooth-active" if profile == "aero" else
+                                         "ricehub-luna-task-bluetooth", Gtk.IconSize.MENU))
                 bluetooth.set_tooltip_text("Bluetooth devices and adapter")
                 bluetooth.get_accessible().set_name("Bluetooth device controls")
                 row.pack_end(bluetooth, False, False, 0)
@@ -1916,8 +2029,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 clock_button.get_accessible().set_name("Open Quick Settings")
                 clock_button.connect("clicked", lambda _button: self._toggle_actions())
                 right_area.pack_end(clock_button, False, False, 4)
-            elif profile == "winxp":
-                clock_button = self._class(Gtk.Button(), "luna-clock-button")
+            elif profile in ("winxp", "aero"):
+                clock_button = self._class(Gtk.Button(), "luna-clock-button" if profile == "winxp"
+                                           else "win7-clock-button")
                 clock_button.add(clock)
                 clock_button.get_accessible().set_name("Show date and calendar")
                 self._luna_clock_button = clock_button
@@ -2363,6 +2477,19 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 button.connect("clicked", lambda _button, program=selected: self._open_tool(program))
             return button
 
+        def _open_win7_explorer(self):
+            binary = shutil.which("rice-explorer")
+            if not binary:
+                self._error("Install RiceExplorer to use the optional Windows 7 file manager.")
+                return
+            try:
+                subprocess.Popen(win7_explorer_command(binary, Path.home()),
+                                 start_new_session=True)
+            except OSError as exc:
+                self._error("Could not start RiceExplorer: " + str(exc))
+                return
+            self._hide_menu()
+
         def _win7_expand_programs(self):
             self._win7_all_programs = not self._win7_all_programs
             self._app_page_size = 24
@@ -2435,6 +2562,13 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 ("Computer", "computer", Path("/")),
             ):
                 side.pack_start(self._win7_side_action(label, icon, path=folder), False, False, 0)
+            # The Rust file manager already ships a structural Win7 skin, but
+            # its mount/copy recovery gates are still open. Offer a visible
+            # opt-in launch without replacing Thunar or default MIME handlers.
+            if shutil.which("rice-explorer"):
+                side.pack_start(self._win7_side_action(
+                    "RiceExplorer (preview)", "system-file-manager",
+                    callback=self._open_win7_explorer), False, False, 0)
             side.pack_start(self._class(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL),
                                         "win7-side-separator"), False, False, 2)
             side.pack_start(self._win7_side_action(
@@ -3017,8 +3151,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             section.pack_end(section_hint, False, False, 0)
             section.set_no_show_all(True)
             root.pack_start(section, False, False, 0)
-            def switch_to(name):
-                frutiger_select_page(self.aqua_stack, buttons, section, search, name)
+            # Gtk.ToggleButton.set_active() can emit "clicked" in GTK3.
+            # The guarded switcher prevents cross-tab recursive re-entry.
+            switch_to = frutiger_tab_switcher(self.aqua_stack, buttons, section, search)
             self._frutiger_switch_to = switch_to
             self._frutiger_tab_buttons = buttons
             for name, button in buttons.items():
@@ -3860,7 +3995,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 # show_all also unhides no-show-all children: restore the
                 # authoritative category/search view before presenting.
                 self.win7_panel_search.set_text("")
-                self.win7_panel_show_home()
+                self.win7_panel_reset()
                 self.actions.resize(width, height)
                 self.actions.move(rect.x + (rect.width - width) // 2,
                                   rect.y + (rect.height - panel_height - height) // 2)

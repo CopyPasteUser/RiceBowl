@@ -511,7 +511,11 @@ def set_bluetooth_power(enabled: bool) -> BluetoothState:
 
         _powered, path, _devices = bluetooth_dbus.snapshot()
         bluetooth_dbus.set_power(path, enabled)
-        state = read_bluetooth()
+        # Verify through the backend that performed the write. A stalled CLI
+        # must not hide a successful, independently verified system-bus change.
+        state = _bluetooth_via_dbus()
+        if state is None:
+            raise RuntimeError("system D-Bus readback unavailable")
         if state.powered is enabled:
             return state
         errors.append("system D-Bus readback mismatch")
@@ -552,7 +556,9 @@ def set_bluetooth_connection(address: str, connected: bool) -> BluetoothState:
         from . import bluetooth_dbus
 
         bluetooth_dbus.set_connection(address, connected)
-        actual = read_bluetooth()
+        actual = _bluetooth_via_dbus()
+        if actual is None:
+            raise RuntimeError("system D-Bus readback unavailable")
         if any(item.address == address and item.connected == connected
                for item in actual.devices):
             return actual

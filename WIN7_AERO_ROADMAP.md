@@ -114,6 +114,33 @@ Keep the prior release/tag intact. Switch back via RiceBowl's backed-up rice res
 
 **Goal:** The live Windows 7 rice must remain recognizably **Windows 7**, not Frutiger Aero or a blue-tinted XFCE desktop, through the second and third click. This section is an **open acceptance backlog**, not shipped functionality; all checked historical milestones above remain valid. Keep the original RiceBowl/Linux artwork policy.
 
+### P0 progress — Aero notification flyouts and Control Panel depth
+
+- [x] Add five independently styled Windows 7 tray flyouts (volume, network,
+  battery, Bluetooth, date/calendar) to the actual 48px Superbar.
+- [x] Reuse bounded asynchronous, read-back-verified PipeWire/PulseAudio,
+  NetworkManager, power-profile, brightness and BlueZ operations. Missing
+  hardware and unsupported actions show unavailable states.
+- [x] Provide an upright volume slider/mute/output drawer, Wi-Fi scan and
+  connect/disconnect, battery/profile/backlight, Bluetooth adapter status,
+  and a clickable calendar.
+- [x] Add Category/Large icons/Small icons modes, Back/Forward navigation,
+  third-level applet task pages and explicit missing-tool messages to the
+  Windows 7 Control Panel.
+- [x] Add an optional Start launch into Rust RiceExplorer `--theme win7` only
+  when installed; keep Thunar and system file associations unchanged until
+  RiceExplorer's transfer/mount/recovery acceptance passes.
+- [x] Add focused regression assertions and native GTK/X11 smoke coverage.
+- [ ] Review fresh real-X11 flyout and deep Control Panel captures, then update
+  checked-in screenshots only from a passing revision.
+- [ ] Verify sound, device switching, network, brightness, Bluetooth, DPI and
+  popup placement on the owner's physical Mint XFCE ThinkPad.
+
+**Still open:** SNI icon overflow/personalization, genuine Windows 7 balloon
+events, deeper native applets, all physical acceptance, compositor limits and
+the independent RiceExplorer file-job/network-mount roadmap. The umbrella
+P0/P1/Sollkatalog checkboxes below stay open until fully accepted.
+
 ### P0 — Close the biggest depth and functionality gaps
 
 - [ ] **Authentic notification area and native-feeling flyouts:** small Aero-style controls anchored to the corresponding Superbar icon. Audio: real volume/mute and output switching; network: actual wired/Wi-Fi status, discovery, connect/disconnect through NetworkManager; power: battery/charge, supported brightness and power profile; clock: date/calendar; Bluetooth: adapter/device view when installed. Display success only after verifying the backend state. Handle absent hardware, offline mode, permission errors, timeouts and unsupported actions honestly. This is Windows 7's notification area, **not Windows 10's Action Center**.

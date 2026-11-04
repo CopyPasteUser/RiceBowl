@@ -256,6 +256,42 @@ class ExtraDeviceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "not currently known"):
             set_bluetooth_connection("AA:BB:CC:DD:EE:FF", True)
 
+    @patch("macrice.hardware_status._bluetooth_via_cli")
+    @patch("macrice.hardware_status._bluetooth_via_dbus")
+    @patch("macrice.hardware_status.shutil.which", return_value="/usr/bin/bluetoothctl")
+    @patch("macrice.hardware_status.subprocess.run")
+    @patch("macrice.bluetooth_dbus.snapshot", return_value=(False, "/org/bluez/hci0", ()))
+    @patch("macrice.bluetooth_dbus.set_power")
+    def test_power_fallback_verifies_direct_dbus_when_cli_is_stale(
+            self, setter, _snapshot, process, _which, dbus, cli):
+        from macrice.hardware_status import BluetoothState
+
+        cli.return_value = BluetoothState(False, (), backend="bluetoothctl")
+        dbus.return_value = BluetoothState(True, (), backend="D-Bus")
+        process.return_value.returncode = 1
+        state = set_bluetooth_power(True)
+        self.assertEqual(state.backend, "D-Bus")
+        setter.assert_called_once_with("/org/bluez/hci0", True)
+
+    @patch("macrice.hardware_status._bluetooth_via_cli")
+    @patch("macrice.hardware_status._bluetooth_via_dbus")
+    @patch("macrice.hardware_status.shutil.which", return_value="/usr/bin/bluetoothctl")
+    @patch("macrice.hardware_status.subprocess.run")
+    @patch("macrice.bluetooth_dbus.set_connection")
+    def test_device_fallback_verifies_direct_dbus_when_cli_is_stale(
+            self, setter, process, _which, dbus, cli):
+        from macrice.hardware_status import BluetoothDevice, BluetoothState
+
+        address = "AA:BB:CC:DD:EE:FF"
+        cli.return_value = BluetoothState(True, (),
+            (BluetoothDevice(address, "Keyboard", True, False),), "bluetoothctl")
+        dbus.return_value = BluetoothState(True, ("Keyboard",),
+            (BluetoothDevice(address, "Keyboard", True, True),), "D-Bus")
+        process.return_value.returncode = 1
+        state = set_bluetooth_connection(address, True)
+        self.assertEqual(state.backend, "D-Bus")
+        setter.assert_called_once_with(address, True)
+
 
 if __name__ == "__main__":
     unittest.main()

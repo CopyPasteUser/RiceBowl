@@ -1,5 +1,18 @@
 # RiceBowl changelog
 
+## Unreleased — Windows 7 Aero deep controls (4 November 2026)
+
+- Added distinctly Windows 7-style native tray windows for volume/output
+  devices, Wi-Fi, power/brightness, Bluetooth and date/calendar. They reuse
+  bounded asynchronous Linux hardware transactions with read-back verification;
+  unsupported hardware or permissions never become pretend toggles.
+- Added Control Panel Category/Large/Small views, browser-like Back/Forward
+  navigation and third-level Linux-app task pages with disabled states.
+- Added an optional Start shortcut for RiceExplorer's structural `win7`
+  renderer when installed, without changing Thunar or global file associations.
+- Extended unit and GTK/X11 smoke checks. Fresh native screenshots and physical
+  Mint acceptance remain pending; published v0.9.1 is unchanged.
+
 ## Unreleased — Frutiger Aero Pearl Glass polish (3 November 2026)
 
 - Rebalanced the real Aqua World launcher around pearl-white glass, calmer
