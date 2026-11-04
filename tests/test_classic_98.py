@@ -52,25 +52,31 @@ class Win98FidelityTests(unittest.TestCase):
 
     def test_native_menu_is_dense_with_real_flyouts_and_actions(self):
         shell = (ROOT / "macrice/aero_shell.py").read_text(encoding="utf-8")
-        classic = shell.split("def _create_classic_menu(self):", 1)[1].split(
-            "def _create_frutiger_menu(self):", 1)[0]
+        classic = (ROOT / "macrice/classic98_menu.py").read_text(encoding="utf-8")
+        control = (ROOT / "macrice/classic98_control_panel.py").read_text(encoding="utf-8")
+        tray = (ROOT / "macrice/classic98_tray.py").read_text(encoding="utf-8")
         for name in ("Programs", "Favorites", "Documents", "Settings", "Find",
                      "Help", "Run…", "Shut Down…", "Gtk.MenuButton", "set_direction",
-                     "_programs_cascade", "_open_tool", "folder_menu", "_reanchor_luna_menu"):
+                     "show_run", "show_file_search", "gtk_bookmarks", "get_items",
+                     "classic_refresh_submenus", "classic_menus"):
             with self.subTest(name=name):
                 self.assertIn(name, classic)
+        for name in ("APPLETS", "Gtk.FlowBox", "child-activated",
+                     "set_resizable", "View", "Close"):
+            with self.subTest(name=name):
+                self.assertIn(name, control)
+        for name in ("Volume Control", "Power Meter", "Network Connections",
+                     "Date and Time", "volume_scale", "mute_button"):
+            with self.subTest(name=name):
+                self.assertIn(name, tray)
         self.assertIn('34 if profile == "winclassic"', shell)
         self.assertIn('"winclassic": (262, 332)', shell)
         self.assertIn('"winclassic", "windows10")', shell)
         self.assertIn('and os.environ.get("RICEBOWL_CAPTURE_SIZE") == "1024"', shell)
-        self.assertIn("xfce4-appfinder", shell)
-        self.assertIn("xfce4-keyboard-settings", shell)
-        self.assertIn("classic-control-caption", shell)
-        self.assertIn("classic-control-grid", shell)
-        self.assertIn("grid.attach(button, index % 3", shell)
-        self.assertIn("Gtk.Orientation.VERTICAL if classic_icon", shell)
-        self.assertIn("Gtk.Justification.CENTER", shell)
-        self.assertIn("Close Control Panel", shell)
+        self.assertIn("from .classic98_menu import build", shell)
+        self.assertIn("from .classic98_control_panel import build", shell)
+        self.assertIn("classic98_tray_show", shell)
+        self.assertIn("classic98-quicklaunch", shell)
         self.assertEqual(PROFILES["winclassic"].wallpaper, "classic-teal.jpg")
 
     def test_gtk_and_live_shell_use_90s_widget_grammar(self):

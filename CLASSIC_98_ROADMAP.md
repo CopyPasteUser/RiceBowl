@@ -89,6 +89,23 @@ macOS behavior and artwork unchanged.
 
 Current evidence: source files, existing roadmap, current repository screenshot *inventory*, and CI declarations. The installed physical desktop and every nested popup have **not** been visually inspected in this pass. All below is an open acceptance backlog, not reported implementation.
 
+### Implementation checkpoint — functional shell phase A (4 November 2026)
+
+**Status: partial, pending CI and physical Mint validation.** The broad milestones below remain unchecked until their entire acceptance gates pass. This increment adds functional descendants without confusing them with complete Windows 98 fidelity.
+
+- [x] Split Win98-specific Start logic into `classic98_menu.py`: real Gio programs, categorized groups and unclassified applications without the previous 20-item truncation.
+- [x] Read GTK recent-file history for Documents; offer confirmation before clearing history without deleting any files.
+- [x] Import GTK bookmarks and maintain user-owned RiceBowl favorites with add, rename/update, remove, reorder and atomic 0600 persistence.
+- [x] Add a dedicated Run dialog with Browse, explicit error display, shell-free argument parsing and no persisted command history.
+- [x] Add cancellable, bounded, read-only filename search in a selected folder (not yet content/date/type search).
+- [x] Add local Help topics covering RiceBowl Win98 Linux behaviors.
+- [x] Add a normal movable/resizable Control Panel window with all-icons view, double-click/keyboard activation, available real Linux applets and disabled unavailable tools.
+- [x] Add a separated pinned-app Quick Launch strip, Show Desktop and Wnck-backed context menus on individual running-window buttons (Restore, Move, Size, Minimize, Maximize, Close with real capability checks).
+- [x] Add compact audio/network/battery/calendar popups using existing live hardware state and verified volume/mute handlers.
+- [x] Add nine focused tests for persistence, URI safety, shell-free Run, applet discovery, live Wnck action dispatch and centered screenshot-crop regression.
+
+**Still open:** complete original hover/cascade keyboard geometry; folders within Favorites; Programs context actions; complete Run history and .desktop targeting; Finder content/date/type search and computer discovery; dedicated Taskbar and Folder Options applets; full Display Properties tabs; independent Quick Launch configuration; comprehensive tray NetworkManager/XEmbed operation; window context menus; desktop virtual folders; structural riceExplorer skin; Win98/2000 preset split; era accessories; and physical Mint acceptance. Do not close a milestone until its full gate passes.
+
 ### Milestone 0 — Freeze references, safe state and test harness (P0)
 
 - [ ] Create an era-specific Win98 SE reference matrix with reference screenshots and behavior notes for: blank desktop, Start plus **each** flyout, crowded taskbar, Quick Launch, tray menus, My Computer, Explorer in classic and Web View, Control Panel and representative applets, Run, Find, shutdown, properties, copy conflict and error dialogs. Record source/date and observable behavior; never copy proprietary assets.
