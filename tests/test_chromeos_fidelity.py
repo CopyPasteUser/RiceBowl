@@ -8,6 +8,7 @@ from pathlib import Path
 
 from macrice.chrome_shell import CSS, launcher_favorites
 from macrice.chrome_quick_settings import QUICK_ACTIONS
+from macrice.chrome_settings import ACTIONS
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -52,17 +53,19 @@ class ChromeOSFidelityTests(unittest.TestCase):
                       b"chrome-status-pill", b"chrome-clock-button"):
             self.assertIn(token, CSS)
 
-    def test_actions_are_installed_linux_utilities_not_fake_toggles(self):
+    def test_quick_tiles_navigate_to_real_linux_settings(self):
         self.assertEqual(len(QUICK_ACTIONS), 6)
-        for label, icon, command, explanation in QUICK_ACTIONS:
-            self.assertTrue(all((label, icon, command, explanation)))
-            self.assertTrue(command.endswith(("settings", "editor", "manager", "config")))
+        for label, icon, destination, explanation in QUICK_ACTIONS:
+            self.assertTrue(all((label, icon, destination, explanation)))
+            self.assertIn(destination, {action.name for action in ACTIONS})
         source = (ROOT / "macrice/chrome_quick_settings.py").read_text()
         self.assertIn("actions.add(root)", source)
         self.assertIn("shutil.which(command)", source)
         self.assertIn("shell._queue_volume_change", source)
         self.assertIn("shell._toggle_output_mute", source)
         self.assertIn('Gtk.Label(label="›"), "chrome-quick-chevron"', source)
+        self.assertIn("shell.chrome_quick_show_page = show_page", source)
+        self.assertIn("shell._open_chrome_settings(action=item)", source)
         self.assertIn(b".chrome-quick-chevron", CSS)
         self.assertNotIn("sudo", source)
 

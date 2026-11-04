@@ -1,5 +1,20 @@
 # RiceBowl changelog
 
+## Unreleased — ChromeOS hierarchical device settings (4 November 2026)
+
+- Added an independent Material You Settings window with seven searchable
+  categories, section/detail navigation, Back/Escape behavior and deep links
+  from the launcher and Quick Settings. Missing installed Linux tools are
+  disabled with an explicit explanation, not represented as fake Google APIs.
+- Replaced the six first-click Quick Settings utility launches with navigable
+  detail pages, truthful live hardware status and explicit local Linux actions.
+- Reused the existing asynchronous, read-back-verified Wi-Fi, Bluetooth,
+  brightness, battery and power-profile controls with ChromeOS-scoped styling.
+  The network adapter's existing explicit radio-off confirmation is retained.
+- Added search, backend availability and status regression tests. The dedicated
+  ChromeOS X11 smoke path now exercises Quick Settings Back and multi-level
+  Settings navigation. Physical-device acceptance remains outstanding.
+
 ## Unreleased — Windows 7 persistent Superbar pin ordering (4 November 2026)
 
 - Reorder pinned Windows 7 launchers by dragging onto another pin's left/right

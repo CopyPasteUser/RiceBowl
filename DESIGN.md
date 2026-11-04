@@ -191,10 +191,17 @@ secondary pages; prototypes and the release roadmap do not crowd the selector.
   multirow grid, filter, keyboard focus, load-more and actual pin contexts.
   `macrice/chrome_quick_settings.py` renders a 396px bottom-right settings
   popup with date, verified Linux volume/mute, real network and battery status
-  and only installed XFCE/NetworkManager utility navigation. It deliberately
-  does not pretend to toggle Wi-Fi, Bluetooth or notifications; XFCE still
-  owns notifications. Settings links use navigation chevrons, reserving toggle
-  affordances for real controls whose state is verified.
+  and installed XFCE/NetworkManager utility navigation. All switches reflect
+  read-back-verified Linux state; XFCE still owns notifications. Settings
+  links use navigation chevrons rather than fake connection switches.
+  The latest milestone replaces direct utility launches with six navigable
+  Quick Settings detail pages and a separate `chrome_settings.py` Settings
+  window: seven categories, live search, detail navigation and contextual
+  Linux utility links. Quick Settings includes *real* read-back-verified
+  Wi-Fi, Bluetooth, backlight and power controls using shared asynchronous
+  adapters, styled with `chrome-native-*` instead of Aqua World CSS.
+  Unsupported devices show explicit unavailable states; no pretend Google
+  identity, Android, Cast or privacy policy switches are displayed.
   `macrice/chrome_shell.py` owns Chrome-only selectors and
   optional X11 rounded popup window shapes even without a compositor.
   `scripts/build_chrome_assets.py` generates this profile's original wallpaper,

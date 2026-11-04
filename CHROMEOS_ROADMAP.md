@@ -38,6 +38,27 @@ the right Quick Settings corners under *uncomposited* Xvfb; the native X11
 window bounding region itself is correctly rounded. Physical Mint XFCE
 hardware and compositor behavior still require on-device acceptance.
 
+### Progress update — 4 November 2026: hierarchical device settings
+
+- [x] Replace direct-launch Quick Settings tiles with six detail pages,
+  accessible Back/Escape navigation, meaningful local device status and deep
+  links into the dedicated ChromeOS Settings window.
+- [x] Introduce a standalone, searchable, seven-category ChromeOS Settings
+  navigator with sidebar, detail routes, working Back/Escape and honest
+  disabled/missing-utility states. Opening Settings no longer depends on the
+  presence of `xfce4-settings-manager`.
+- [x] Reuse the existing read-back-verified asynchronous Linux device controls
+  from Aqua World under **Chrome-only** Material You styles: Wi-Fi radio and
+  nearby SSIDs, Bluetooth power and connected devices, backlight brightness,
+  battery level and supported power profiles. Network radio-off requires an
+  explicit confirmation; unavailable hardware is not presented as connected.
+- [x] Keep every original rice's controls intact through a backwards-compatible
+  style-prefix parameter and add pure Python search/status/availability tests.
+- [ ] Validate native navigation and device state on Mint XFCE hardware and
+  review updated Quick Settings/Settings screenshots in CI. These are distinct
+  from full fidelity completion; pairing, capture, privacy policy, native
+  notifications and RiceExplorer integration remain open.
+
 ## Reference principles
 
 - Modern ChromeOS uses a Launcher for search/apps and an independently
@@ -376,7 +397,7 @@ with a pastel palette or Thunar with new icons.
 Build a dedicated ChromeOS Settings shell with searchable categories,
 ChromeOS visual components, depth navigation and real Linux adapters.
 
-- [ ] Shell layout: search bar, left sidebar, category overview,
+- [x] Shell layout: search bar, left sidebar, category overview,
   selected section and detail page, back/breadcrumb,
   deep links from Quick Settings, no dead settings entries.
 - [ ] Network: Ethernet, Wi-Fi, VPN, proxy and hotspot where

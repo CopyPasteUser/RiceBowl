@@ -1,8 +1,8 @@
-"""ChromeOS-like Quick Settings made of genuine Linux navigation and status.
+"""ChromeOS-inspired Quick Settings with genuine Linux navigation and status.
 
 The XFCE notification daemon continues to own external notifications. Network,
 Bluetooth, brightness and other privileged controls are *not* represented by
-fake on/off buttons. Every enabled action opens an installed XFCE utility.
+fake on/off buttons. Every tile navigates to an actual settings detail page.
 """
 
 from __future__ import annotations
@@ -10,16 +10,17 @@ from __future__ import annotations
 import shutil
 
 from .chrome_shell import apply_rounded_window_shape
+from .chrome_settings import ACTIONS, available_tool, status_text
+from .frutiger_native_controls import NativeAquaControls
 
 
 QUICK_ACTIONS = (
-    ("Network", "network-wireless", "nm-connection-editor", "Connection settings"),
-    ("Bluetooth", "bluetooth", "blueman-manager", "Bluetooth settings"),
-    ("Display", "video-display", "xfce4-display-settings", "Display & brightness"),
-    ("Notifications", "preferences-system-notifications",
-     "xfce4-notifyd-config", "Notification preferences"),
-    ("Power", "battery", "xfce4-power-manager-settings", "Power settings"),
-    ("Keyboard", "input-keyboard", "xfce4-keyboard-settings", "Keyboard settings"),
+    ("Network", "network-wireless", "Connections", "Connections & VPN"),
+    ("Bluetooth", "bluetooth", "Bluetooth devices", "Nearby devices"),
+    ("Display", "video-display", "Displays", "Displays & scaling"),
+    ("Notifications", "preferences-system-notifications", "Notifications", "Notification preferences"),
+    ("Power", "battery", "Power", "Battery & sleep"),
+    ("Keyboard", "input-keyboard", "Keyboard", "Keyboard & shortcuts"),
 )
 
 
@@ -39,34 +40,44 @@ def build(shell, Gtk, Gdk, GLib):
     root = shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12),
                         "chrome-quick-root")
     header = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=9)
+    back = shell._class(Gtk.Button(label="‹"), "chrome-quick-back")
+    back.set_tooltip_text("Back to Quick Settings")
+    back.get_accessible().set_name("Back to Quick Settings")
+    back.set_no_show_all(True)
+    header.pack_start(back, False, False, 0)
     title = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
-    title.pack_start(shell._class(
-        Gtk.Label(label="Quick Settings", xalign=0), "chrome-quick-title"),
-        False, False, 0)
+    heading = shell._class(Gtk.Label(label="Quick Settings", xalign=0),
+                           "chrome-quick-title")
+    title.pack_start(heading, False, False, 0)
     shell.chrome_quick_clock = shell._class(
         Gtk.Label(label="", xalign=0), "chrome-quick-date")
     title.pack_start(shell.chrome_quick_clock, False, False, 0)
     header.pack_start(title, True, True, 0)
     for name, icon, command in (
-        ("Settings", "preferences-system", "xfce4-settings-manager"),
+        ("Settings", "preferences-system", None),
         ("Sign out", "system-shutdown", "xfce4-session-logout"),
     ):
         button = shell._class(Gtk.Button(), "chrome-launcher-settings")
         button.set_image(shell._icon(icon, Gtk.IconSize.MENU))
         button.set_tooltip_text(
-            "Open " + name if shutil.which(command) else command + " is not installed")
+            "Open " + name if command is None or shutil.which(command) else
+            command + " is not installed")
         button.get_accessible().set_name("Open " + name)
-        button.set_sensitive(shutil.which(command) is not None)
-        button.connect("clicked", lambda _button, cmd=command: shell._open_tool(cmd))
+        button.set_sensitive(command is None or shutil.which(command) is not None)
+        button.connect("clicked", lambda _button, cmd=command:
+                       shell._open_chrome_settings() if cmd is None else shell._open_tool(cmd))
         header.pack_end(button, False, False, 0)
     root.pack_start(header, False, False, 0)
+    stack = Gtk.Stack()
+    stack.set_transition_type(Gtk.StackTransitionType.NONE)
+    overview = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
 
     section = shell._class(Gtk.Label(label="Connectivity & device", xalign=0),
                            "chrome-section-caption")
-    root.pack_start(section, False, False, 0)
+    overview.pack_start(section, False, False, 0)
     grid = Gtk.Grid(row_spacing=7, column_spacing=7)
     grid.set_column_homogeneous(True)
-    for index, (name, icon_name, command, explanation) in enumerate(QUICK_ACTIONS):
+    for index, (name, icon_name, action_name, explanation) in enumerate(QUICK_ACTIONS):
         button = shell._class(Gtk.Button(), "chrome-quick-button")
         content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=9)
         content.pack_start(shell._icon(icon_name, Gtk.IconSize.LARGE_TOOLBAR),
@@ -81,26 +92,22 @@ def build(shell, Gtk, Gdk, GLib):
         detail.set_max_width_chars(15)
         description.pack_start(detail, False, False, 0)
         content.pack_start(description, True, True, 0)
-        # These launch real Linux settings; the chevron makes that different
-        # from the actual on/off controls below, which verify their state.
+        # Every chevron navigates to a detail page, not a fake state toggle.
         arrow = shell._class(Gtk.Label(label="›"), "chrome-quick-chevron")
         content.pack_end(arrow, False, False, 0)
         button.add(content)
         button.get_accessible().set_name("Open " + name + " settings")
-        available = shutil.which(command) is not None
-        button.set_sensitive(available)
-        button.set_tooltip_text(
-            explanation if available else command + " is not installed")
-        button.connect("clicked", lambda _button, cmd=command: shell._open_tool(cmd))
+        button.set_tooltip_text("Show " + name + " details")
+        button.connect("clicked", lambda _button, page=name: show_page(page))
         grid.attach(button, index % 2, index // 2, 1, 1)
         if name == "Network":
             shell.chrome_network_detail = detail
-    root.pack_start(grid, False, False, 0)
+    overview.pack_start(grid, False, False, 0)
 
-    root.pack_start(shell._class(
+    overview.pack_start(shell._class(
         Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL), "chrome-divider"),
         False, False, 0)
-    root.pack_start(shell._class(
+    overview.pack_start(shell._class(
         Gtk.Label(label="Volume", xalign=0), "chrome-section-caption"),
         False, False, 0)
     audio = shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=9),
@@ -126,7 +133,7 @@ def build(shell, Gtk, Gdk, GLib):
     shell.mute_button.get_accessible().set_name("Mute or unmute system output")
     shell.mute_button.connect("clicked", shell._toggle_output_mute)
     audio.pack_start(shell.mute_button, False, False, 0)
-    root.pack_start(audio, False, False, 0)
+    overview.pack_start(audio, False, False, 0)
 
     hardware = shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5),
                             "chrome-surface")
@@ -139,7 +146,75 @@ def build(shell, Gtk, Gdk, GLib):
     hardware.pack_start(shell.control_network_label, False, False, 0)
     hardware.pack_start(shell.control_battery_label, False, False, 0)
     hardware.pack_start(shell.control_battery_level, False, False, 0)
-    root.pack_start(hardware, False, False, 0)
+    overview.pack_start(hardware, False, False, 0)
+    stack.add_named(overview, "overview")
+
+    shell.chrome_quick_status_labels = []
+    native_panels = {}
+    for name, _icon_name, action_name, explanation in QUICK_ACTIONS:
+        action = next(item for item in ACTIONS if item.name == action_name)
+        page = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12)
+        page.pack_start(shell._class(Gtk.Label(label=explanation, xalign=0),
+                                     "chrome-section-caption"), False, False, 0)
+        status = shell._class(Gtk.Label(xalign=0), "chrome-quick-page-status")
+        status.set_line_wrap(True)
+        status.set_text(status_text(action, shell._last_status) if action.status else
+                        "Uses installed Linux system settings")
+        page.pack_start(status, False, False, 0)
+        if action.status:
+            shell.chrome_quick_status_labels.append((action, status))
+        description = shell._class(Gtk.Label(label=action.description, xalign=0),
+                                   "chrome-quick-page-description")
+        description.set_line_wrap(True)
+        page.pack_start(description, False, False, 0)
+        native_panels[name] = []
+        controls = {"Network": ("wifi",), "Bluetooth": ("bluetooth",),
+                    "Display": ("display",), "Power": ("battery", "power")}
+        for kind in controls.get(name, ()):
+            panel = NativeAquaControls(
+                shell, Gtk, GLib, page,
+                is_current=lambda page_name=name:
+                    actions.get_visible() and stack.get_visible_child_name() == page_name,
+                style_prefix="chrome")
+            getattr(panel, kind)()
+            native_panels[name].append(panel)
+        open_settings = shell._class(Gtk.Button(label="View in Settings  ›"),
+                                     "chrome-quick-page-action")
+        open_settings.get_accessible().set_name("Open " + name + " in Settings")
+        open_settings.connect("clicked", lambda _button, item=action:
+                              shell._open_chrome_settings(action=item))
+        page.pack_start(open_settings, False, False, 0)
+        native = shell._class(Gtk.Button(label="Open Linux configuration utility"),
+                              "chrome-quick-page-action")
+        tool = available_tool(action)
+        native.set_sensitive(tool is not None)
+        native.set_tooltip_text("Installed system configuration" if tool else
+                                "Requires " + " or ".join(action.tools))
+        if tool is not None:
+            native.connect("clicked", lambda _button, cmd=tool: shell._open_tool(cmd))
+        page.pack_start(native, False, False, 0)
+        scroller = Gtk.ScrolledWindow()
+        scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scroller.add(page)
+        stack.add_named(scroller, name)
+
+    def show_home():
+        heading.set_text("Quick Settings")
+        stack.set_visible_child_name("overview")
+        back.hide()
+
+    def show_page(name):
+        heading.set_text(name)
+        stack.set_visible_child_name(name)
+        back.show()
+        for panel in native_panels[name]:
+            panel.refresh()
+
+    back.connect("clicked", lambda *_: show_home())
+    shell.chrome_quick_show_home = show_home
+    shell.chrome_quick_show_page = show_page
+    shell.chrome_quick_stack = stack
+    root.pack_start(stack, True, True, 0)
     # The real network/battery/sound states already appear directly above;
     # avoid a duplicated footer that gets clipped on 1024x768 laptops.
     # A plain GtkBox is windowless; it inherits the exact X11 shape of the

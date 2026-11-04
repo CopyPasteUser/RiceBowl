@@ -179,6 +179,83 @@ CSS = b"""
   border-radius: 17px; border: 1px solid #ccd5ed; padding: 7px 11px; }
 .chrome-quick-mute:checked { background: #c4d2ff; color: #293d82; }
 .chrome-quick-mute:disabled { color: #8b92a6; background: #eff0f5; }
+.chrome-quick-back { background: #e1e7fa; border: 1px solid #cbd5ef;
+  color: @chrome-ink; border-radius: 18px; min-width: 34px;
+  min-height: 34px; font-size: 20px; box-shadow: none; }
+.chrome-quick-back:hover, .chrome-quick-back:focus { background: #d0dcfd; }
+.chrome-quick-page-status { background: #e1e7fa; border-radius: 18px;
+  color: @chrome-ink; font-size: 13px; font-weight: 600; padding: 19px 15px; }
+.chrome-quick-page-description { color: @chrome-muted; font-size: 12px;
+  padding: 7px 5px; }
+.chrome-quick-page-action { background: #e6eafa; border: 1px solid #d5ddf5;
+  border-radius: 18px; color: @chrome-ink; padding: 13px 11px;
+  box-shadow: none; }
+.chrome-quick-page-action:hover, .chrome-quick-page-action:focus {
+  background: #d5dfff; border-color: #a7b8f1; }
+.chrome-quick-page-action:disabled { color: #838ba0; background: #f0f1f6; }
+.chrome-quick-root .chrome-native-panel { background: #eef0fb;
+  border: 1px solid #e0e6f6; border-radius: 18px; padding: 12px; }
+.chrome-quick-root .chrome-native-title { color: #41588f; font-size: 11px;
+  font-weight: 700; }
+.chrome-quick-root .chrome-native-status { color: #445577; font-size: 11px; }
+.chrome-quick-root .chrome-native-error { color: #a32e4f; }
+.chrome-quick-root .chrome-native-label, .chrome-quick-root .chrome-native-section {
+  color: @chrome-ink; font-size: 12px; font-weight: 600; }
+.chrome-quick-root .chrome-native-hint { color: @chrome-muted; font-size: 11px; }
+.chrome-quick-root .chrome-native-confirm { background: #fff1e7; color: #754328;
+  border-radius: 12px; padding: 8px; }
+.chrome-quick-root .chrome-native-action, .chrome-quick-root .chrome-native-mini {
+  background: #e0e7fd; border: 1px solid #cbd7f2; border-radius: 15px;
+  color: #293d79; padding: 7px 9px; box-shadow: none; }
+.chrome-quick-root .chrome-native-action:hover, .chrome-quick-root .chrome-native-mini:hover {
+  background: #cfdbfe; }
+.chrome-quick-root .chrome-native-panel switch { background: #cbd4e8;
+  border-radius: 20px; min-height: 20px; }
+.chrome-quick-root .chrome-native-panel switch:checked { background: @chrome-iris; }
+.chrome-quick-root .chrome-native-panel switch slider { background: #fff;
+  min-width: 16px; min-height: 16px; border-radius: 20px; }
+.chrome-quick-root .chrome-native-panel combobox button { background: #e0e7fd;
+  color: @chrome-ink; border-radius: 12px; }
+
+/* ChromeOS Settings is a separate, persistent app window, not an XFCE
+   Control Panel reskin. All selectors stay in the ChromeOS namespace. */
+.chrome-settings-root { background: #f9faff; color: @chrome-ink;
+  font-family: "Google Sans", "Noto Sans", sans-serif; }
+.chrome-settings-header { background: #e9edfc; border-bottom: 1px solid #cfd7ef;
+  padding: 13px 22px; }
+.chrome-settings-header button { background: #dce5fc; border: 1px solid #ced8f2;
+  border-radius: 18px; color: #33477d; padding: 8px 16px; box-shadow: none; }
+.chrome-settings-title { font-size: 19px; font-weight: 700; color: @chrome-ink; }
+.chrome-settings-root searchentry { background: #edf0fb; color: @chrome-ink;
+  border: 1px solid #d1d9ef; border-radius: 24px; padding: 11px 17px;
+  margin: 14px 22px; box-shadow: none; }
+.chrome-settings-root searchentry:focus { background: white; border-color: @chrome-iris; }
+.chrome-settings-sidebar { background: #f0f2fc; border-right: 1px solid #e2e5f2;
+  padding: 12px 11px; }
+.chrome-settings-nav { background: transparent; border: 1px solid transparent;
+  box-shadow: none; border-radius: 20px; padding: 11px 12px;
+  color: @chrome-ink; font-size: 12px; }
+.chrome-settings-nav:hover, .chrome-settings-nav:focus { background: #dce5ff;
+  border-color: #ccd7fa; }
+.chrome-settings-nav-selected { background: #d4ddff; border-color: #becbfa;
+  font-weight: 700; }
+.chrome-settings-content { padding: 22px 26px; }
+.chrome-settings-page-title { color: #252b43; font-size: 22px; font-weight: 700; }
+.chrome-settings-subtitle { color: @chrome-muted; font-size: 12px; }
+.chrome-settings-row { background: #edf0fb; color: @chrome-ink;
+  border: 1px solid #e0e5f5; border-radius: 15px; box-shadow: none;
+  padding: 12px 15px; }
+.chrome-settings-row:hover, .chrome-settings-row:focus { background: #dfe8ff;
+  border-color: #b2c4f4; }
+.chrome-settings-action { color: @chrome-ink; font-size: 13px; font-weight: 600; }
+.chrome-settings-state { background: #e5eafe; border-radius: 15px;
+  color: #354b83; font-size: 13px; padding: 14px 16px; }
+.chrome-settings-primary { background: #3c5ac9; color: white;
+  border: 1px solid #3550b7; border-radius: 24px;
+  box-shadow: none; padding: 12px 17px; }
+.chrome-settings-primary:hover, .chrome-settings-primary:focus { background: #496add; }
+.chrome-settings-primary:disabled { background: #e2e5f0; color: #6d778d;
+  border-color: #d4d9e7; }
 .chrome-quick-root scrollbar slider { background: #bcc8e8;
   border-radius: 6px; min-width: 7px; min-height: 13px; }
 button:focus { outline: 2px solid #6583e9; outline-offset: -2px; }
