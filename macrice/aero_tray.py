@@ -447,6 +447,7 @@ class StatusNotifierTray:
         settings_row.pack_start(count, False, False, 0)
         content.pack_start(settings_row, False, False, 0)
         scroll = Gtk.ScrolledWindow()
+        scroll.get_style_context().add_class(f"{theme}-tray-icon-list")
         scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
         scroll.set_min_content_height(170)
         scroll.set_max_content_height(360)
@@ -481,8 +482,21 @@ class StatusNotifierTray:
             grid.attach(choice, 1, row, 1, 1)
             row += 1
         if not row:
-            grid.attach(Gtk.Label(label="No notification applications are running.", xalign=0),
-                        0, 0, 2, 1)
+            empty = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=9)
+            empty.get_style_context().add_class(f"{theme}-tray-icon-empty")
+            empty.set_margin_top(35)
+            empty.set_margin_bottom(35)
+            empty.pack_start(Gtk.Image.new_from_icon_name(
+                "dialog-information", Gtk.IconSize.DIALOG), False, False, 0)
+            title = Gtk.Label(label="No application icons to customize")
+            title.get_style_context().add_class(f"{theme}-tray-icon-empty-heading")
+            empty.pack_start(title, False, False, 0)
+            explanation = Gtk.Label(label="When an application adds a notification icon,\n"
+                                          "its visibility options will appear here.")
+            explanation.set_justify(Gtk.Justification.CENTER)
+            explanation.set_line_wrap(True)
+            empty.pack_start(explanation, False, False, 0)
+            grid.attach(empty, 0, 0, 2, 1)
         scroll.add(grid)
         content.pack_start(scroll, True, True, 0)
         info = Gtk.Label(label=f"Preferences only affect RiceBowl {'Windows XP Luna' if theme == 'luna' else 'Windows 7'}.\n"
