@@ -131,6 +131,9 @@ read-only, refreshable Linux **System Properties** view instead of depending on
 external documentation software. Notification balloons additionally report
 real removable-drive mount/unmount events through Gio. Auto-hide and taskbar
 locking remain disabled until monitor-safe handling is verified.
+The Luna Start menu also supports **Up/Down** traversal of real application
+results; typing while an application is selected reveals and fills its own
+search field. Tab navigation remains available for the right-side XP links.
 
 The active rice uses **Super** for its app menu and **Right Ctrl** for Control Panel/Quick Settings. RiceBowl backs up previous shortcut bindings and coordinates its taskbar with XFCE Panel and Plank.
 
