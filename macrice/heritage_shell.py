@@ -670,6 +670,49 @@ CONTROL_DETAIL_CSS = {
   background: #000080; border-radius: 0; }
 .rice-mute { background: #c0c0c0; border: 2px outset #fff; border-radius: 0; box-shadow: none; }
 .rice-mute:checked { border: 2px inset #fff; background: #888; color: #111; }
+
+/* Separate 1998 shell descendants share the original bevel and focus grammar. */
+.classic98-quicklaunch { border-left: 2px groove #f0f0f0; padding: 1px 3px; }
+.classic98-quicklaunch .aero-pin, .classic98-desktop-quick {
+  background: #c0c0c0; border: 1px solid transparent; border-radius: 0;
+  box-shadow: none; padding: 2px; min-width: 23px; min-height: 22px; }
+.classic98-quicklaunch .aero-pin:hover, .classic98-desktop-quick:hover {
+  background: #dedede; border: 1px outset #f5f5f5; }
+.classic98-quicklaunch .aero-pin:active, .classic98-desktop-quick:active {
+  border: 1px inset #f5f5f5; background: #a9a9a9; }
+.classic98-clock-button { background: #c0c0c0; border: 2px inset #fff;
+  border-radius: 0; padding: 0; box-shadow: none; }
+.classic98-control { background: #ffffff; color: #111; font-size: 11px; }
+.classic98-control menubar { background: #c0c0c0; border-bottom: 1px solid #808080;
+  box-shadow: inset 0 1px #fff; padding: 1px 3px; }
+.classic98-control menuitem { border-radius: 0; padding: 3px 9px; }
+.classic98-control menuitem:hover { background: #000080; color: white; }
+.classic98-cp-address { background: #c0c0c0; border-bottom: 2px groove #f5f5f5;
+  padding: 4px 6px; }
+.classic98-control flowbox, .classic98-control flowboxchild,
+.classic98-control scrolledwindow, .classic98-control viewport {
+  background: #fff; border-radius: 0; box-shadow: none; }
+.classic98-cp-item { min-width: 110px; min-height: 86px; padding: 6px;
+  color: #111; border: 1px solid transparent; }
+.classic98-cp-item:selected, .classic98-cp-item:focus {
+  background: #000080; color: white; border: 1px dotted white; }
+.classic98-cp-item:disabled { opacity: .47; }
+.classic98-cp-status { background: #c0c0c0; border: 2px inset #f5f5f5;
+  padding: 3px 6px; color: #111; }
+.classic98-tray-popup { background: #c0c0c0; border: 2px outset #fff;
+  border-radius: 0; box-shadow: none; padding: 7px; color: #111; }
+.classic98-tray-title { background: #000080; padding: 2px 4px; }
+.classic98-tray-title label { color: #fff; font-weight: bold; font-size: 11px; }
+.classic98-tray-title button { color: #111; background: #c0c0c0;
+  border: 2px outset #fff; border-radius: 0; padding: 0 5px; }
+.classic98-tray-popup button { border-radius: 0; }
+.classic98-tray-popup scale trough { background: #fff; border: 2px inset #fff;
+  border-radius: 0; min-height: 8px; }
+.classic98-tray-popup scale slider { background: #c0c0c0; border: 2px outset #fff;
+  border-radius: 0; }
+.classic98-tray-popup scale highlight, .classic98-tray-popup levelbar block.filled {
+  background: #000080; border-radius: 0; }
+.classic98-flyout menuitem:hover { background: #000080; color: white; }
 """,
     "chromeos": b"""
 .rice-hardware-panel { background: #edf2ff; border: 1px solid #d4ddf1;
