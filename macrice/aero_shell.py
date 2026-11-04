@@ -118,6 +118,22 @@ def frutiger_select_page(stack, buttons, section, search, page: str):
         search.grab_focus()
 
 
+def frutiger_tab_switcher(stack, buttons, section, search):
+    """Prevent GTK3 toggle-button state signals from re-entering tab changes."""
+    switching = [False]
+
+    def switch_to(page):
+        if switching[0]:
+            return
+        switching[0] = True
+        try:
+            frutiger_select_page(stack, buttons, section, search, page)
+        finally:
+            switching[0] = False
+
+    return switch_to
+
+
 def luna_programs(apps, pins: tuple[str, ...], query: str, limit: int = 8,
                   *, start_favorites=None, history=None):
     """Pick real installed apps for the XP pin band and the recent-program area."""
@@ -2979,8 +2995,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             section.pack_end(section_hint, False, False, 0)
             section.set_no_show_all(True)
             root.pack_start(section, False, False, 0)
-            def switch_to(name):
-                frutiger_select_page(self.aqua_stack, buttons, section, search, name)
+            # Gtk.ToggleButton.set_active() can emit "clicked" in GTK3.
+            # The guarded switcher prevents cross-tab recursive re-entry.
+            switch_to = frutiger_tab_switcher(self.aqua_stack, buttons, section, search)
             self._frutiger_switch_to = switch_to
             self._frutiger_tab_buttons = buttons
             for name, button in buttons.items():

@@ -5,7 +5,7 @@ from pathlib import Path
 from unittest import mock
 from types import SimpleNamespace
 
-from macrice.aero_shell import frutiger_select_page
+from macrice.aero_shell import frutiger_select_page, frutiger_tab_switcher
 from macrice import hardware_status as hw
 
 
@@ -61,6 +61,29 @@ class LauncherRegressionTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             frutiger_select_page(DummyStack(), {"Apps": DummyButton()},
                                  DummySection(), DummySearch(), "Settings")
+
+    def test_gtk_toggle_click_signal_reentry_is_blocked(self):
+        class EmittingButton(DummyButton):
+            on_clicked = None
+
+            def set_active(self, active):
+                if self.active != active:
+                    self.active = active
+                    if self.on_clicked:
+                        self.on_clicked()
+
+        stack = DummyStack()
+        buttons = {name: EmittingButton() for name in ("Apps", "Places", "Settings")}
+        section, search = DummySection(), DummySearch()
+        switch_to = frutiger_tab_switcher(stack, buttons, section, search)
+        for name, button in buttons.items():
+            button.on_clicked = lambda chosen=name: switch_to(chosen)
+
+        for chosen in ("Apps", "Settings", "Places", "Settings", "Apps"):
+            buttons[chosen].set_active(True)
+            self.assertEqual(stack.visible, chosen)
+            self.assertEqual([name for name, button in buttons.items() if button.active],
+                             [chosen])
 
     def test_settings_scroll_is_independent_of_longest_page(self):
         source = (Path(__file__).resolve().parents[1] / "macrice/aero_shell.py").read_text()

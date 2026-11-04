@@ -147,7 +147,11 @@ the full P0 requirements below**:
 - The Settings tab can always return to **Apps** using its own visible Back
   button; the Apps/Places/Settings tab selection is synchronized and regression
   tested. The stack no longer sizes every page to the nine-row Settings view,
-  avoiding launcher height overflow when switching tabs.
+  avoiding launcher height overflow when switching tabs. A real GTK/Xvfb
+  smoke check exposed the underlying `Gtk.ToggleButton.set_active()` signal
+  re-entry: changing one tab could recursively fire another tab's click
+  handler. The guarded tab switcher prevents this and has a dedicated unit
+  regression simulating the GTK signal cascade.
 - `macrice/frutiger_native_controls.py` now builds independent Aqua-styled,
   interactive detail panels with real GTK sliders, switches, device dropdowns,
   network choices, manual refresh, loading/error states and asynchronous writes:
