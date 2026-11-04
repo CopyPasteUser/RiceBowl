@@ -154,6 +154,10 @@ CSS = b"""
 .chrome-quick-root { padding: 16px; }
 .chrome-quick-title { color: @chrome-ink; font-size: 17px; font-weight: 700; }
 .chrome-quick-date { color: @chrome-muted; font-size: 11px; }
+.chrome-quick-clock-button { background: transparent; border: 1px solid transparent;
+  border-radius: 10px; padding: 1px 3px; box-shadow: none; }
+.chrome-quick-clock-button:hover, .chrome-quick-clock-button:focus {
+  background: #e0e7fa; border-color: #ccd7f3; }
 .chrome-section-caption { color: #4a5676; font-size: 11px; font-weight: 700; }
 .chrome-quick-button { background: #e1e7fa; border: 1px solid #d4ddf3;
   color: @chrome-ink; border-radius: 19px; box-shadow: none;
@@ -187,6 +191,12 @@ CSS = b"""
   color: @chrome-ink; font-size: 13px; font-weight: 600; padding: 19px 15px; }
 .chrome-quick-page-description { color: @chrome-muted; font-size: 12px;
   padding: 7px 5px; }
+.chrome-quick-calendar-page { padding: 0 2px; }
+.chrome-quick-calendar { background: #edf0fc; color: @chrome-ink;
+  border: 1px solid #d6dff4; border-radius: 18px; padding: 9px; }
+.chrome-quick-calendar:selected { background: #526bd6; color: white; }
+.chrome-quick-calendar button { background: #e1e7fb; border-radius: 12px;
+  color: @chrome-ink; border: 0; box-shadow: none; }
 .chrome-quick-page-action { background: #e6eafa; border: 1px solid #d5ddf5;
   border-radius: 18px; color: @chrome-ink; padding: 13px 11px;
   box-shadow: none; }

@@ -202,6 +202,9 @@ secondary pages; prototypes and the release roadmap do not crowd the selector.
   adapters, styled with `chrome-native-*` instead of Aqua World CSS.
   Unsupported devices show explicit unavailable states; no pretend Google
   identity, Android, Cast or privacy policy switches are displayed.
+  The Shelf clock and date label in Quick Settings route to a shared embedded
+  GTK monthly calendar page; system locale and current local date are the
+  source of truth, and online events remain an explicitly absent integration.
   `macrice/chrome_shell.py` owns Chrome-only selectors and
   optional X11 rounded popup window shapes even without a compositor.
   `scripts/build_chrome_assets.py` generates this profile's original wallpaper,

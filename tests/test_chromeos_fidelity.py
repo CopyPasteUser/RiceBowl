@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import json
 import unittest
+from datetime import date
 from pathlib import Path
 
 from macrice.chrome_shell import CSS, launcher_favorites
-from macrice.chrome_quick_settings import QUICK_ACTIONS
+from macrice.chrome_quick_settings import QUICK_ACTIONS, calendar_today
 from macrice.chrome_settings import ACTIONS
 
 
@@ -68,6 +69,15 @@ class ChromeOSFidelityTests(unittest.TestCase):
         self.assertIn("shell._open_chrome_settings(action=item)", source)
         self.assertIn(b".chrome-quick-chevron", CSS)
         self.assertNotIn("sudo", source)
+
+    def test_calendar_tracks_local_month_without_fake_cloud_events(self):
+        self.assertEqual(calendar_today(date(2024, 2, 29)), (2024, 1, 29))
+        self.assertEqual(calendar_today(date(2027, 1, 1)), (2027, 0, 1))
+        source = (ROOT / "macrice/chrome_quick_settings.py").read_text()
+        self.assertIn('stack.add_named(calendar_page, "Calendar")', source)
+        self.assertIn("calendar.select_month(month, year)", source)
+        self.assertIn("Online events are not connected", source)
+        self.assertIn(b".chrome-quick-calendar", CSS)
 
     def test_generated_art_and_safe_prior_hashes(self):
         theme = ROOT / "assets/themes/RiceHub-Chrome"

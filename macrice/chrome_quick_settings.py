@@ -7,6 +7,7 @@ fake on/off buttons. Every tile navigates to an actual settings detail page.
 
 from __future__ import annotations
 
+from datetime import date
 import shutil
 
 from .chrome_shell import apply_rounded_window_shape
@@ -22,6 +23,12 @@ QUICK_ACTIONS = (
     ("Power", "battery", "Power", "Battery & sleep"),
     ("Keyboard", "input-keyboard", "Keyboard", "Keyboard & shortcuts"),
 )
+
+
+def calendar_today(today: date | None = None) -> tuple[int, int, int]:
+    """GTK Calendar uses zero-based months; the local system date is authoritative."""
+    value = today or date.today()
+    return value.year, value.month - 1, value.day
 
 
 def build(shell, Gtk, Gdk, GLib):
@@ -51,7 +58,12 @@ def build(shell, Gtk, Gdk, GLib):
     title.pack_start(heading, False, False, 0)
     shell.chrome_quick_clock = shell._class(
         Gtk.Label(label="", xalign=0), "chrome-quick-date")
-    title.pack_start(shell.chrome_quick_clock, False, False, 0)
+    date_button = shell._class(Gtk.Button(), "chrome-quick-clock-button")
+    date_button.add(shell.chrome_quick_clock)
+    date_button.set_tooltip_text("Open the local calendar")
+    date_button.get_accessible().set_name("Open the local calendar")
+    date_button.connect("clicked", lambda _button: show_page("Calendar"))
+    title.pack_start(date_button, False, False, 0)
     header.pack_start(title, True, True, 0)
     for name, icon, command in (
         ("Settings", "preferences-system", None),
@@ -198,6 +210,33 @@ def build(shell, Gtk, Gdk, GLib):
         scroller.add(page)
         stack.add_named(scroller, name)
 
+    calendar_page = shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12),
+                                 "chrome-quick-calendar-page")
+    calendar_page.pack_start(shell._class(
+        Gtk.Label(label="Local calendar", xalign=0), "chrome-section-caption"),
+        False, False, 0)
+    calendar = shell._class(Gtk.Calendar(), "chrome-quick-calendar")
+    calendar.get_accessible().set_name("Local monthly calendar")
+    calendar_page.pack_start(calendar, False, False, 0)
+    calendar_note = shell._class(
+        Gtk.Label(label="This shows your local dates. Online events are not connected.",
+                  xalign=0), "chrome-quick-page-description")
+    calendar_note.set_line_wrap(True)
+    calendar_page.pack_start(calendar_note, False, False, 0)
+
+    def reset_calendar():
+        year, month, day = calendar_today()
+        calendar.select_month(month, year)
+        calendar.select_day(day)
+
+    today_button = shell._class(Gtk.Button(label="Today"), "chrome-quick-page-action")
+    today_button.get_accessible().set_name("Return calendar to today")
+    today_button.connect("clicked", lambda _button: reset_calendar())
+    calendar_page.pack_start(today_button, False, False, 0)
+    stack.add_named(calendar_page, "Calendar")
+    native_panels["Calendar"] = []
+    shell.chrome_quick_calendar = calendar
+
     def show_home():
         heading.set_text("Quick Settings")
         stack.set_visible_child_name("overview")
@@ -207,6 +246,8 @@ def build(shell, Gtk, Gdk, GLib):
         heading.set_text(name)
         stack.set_visible_child_name(name)
         back.show()
+        if name == "Calendar":
+            reset_calendar()
         for panel in native_panels[name]:
             panel.refresh()
 
