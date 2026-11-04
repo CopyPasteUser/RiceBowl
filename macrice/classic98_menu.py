@@ -152,6 +152,7 @@ def remember_run(history: tuple[str, ...], value: str, maximum: int = 12) -> tup
 
 def show_run(shell, Gtk, Gio):
     """Win98 Run with browse, inline errors and a volatile recent-command list."""
+    shell._hide_menu()
     history = tuple(getattr(shell, "_classic98_run_history", ()))
     dialog = Gtk.Dialog(title="Run", transient_for=shell.bar, flags=Gtk.DialogFlags.MODAL)
     dialog.add_button("Cancel", Gtk.ResponseType.CANCEL)
