@@ -142,22 +142,47 @@ def launch_run_target(target: tuple[str, object], Gio):
         raise ValueError("Unsupported Run target")
 
 
+def remember_run(history: tuple[str, ...], value: str, maximum: int = 12) -> tuple[str, ...]:
+    """Session-only most-recent-first entries; no credentials written to disk."""
+    text = value.strip()
+    if not text:
+        return history[:maximum]
+    return (text, *(entry for entry in history if entry != text))[:maximum]
+
+
 def show_run(shell, Gtk, Gio):
+    """Win98 Run with browse, inline errors and a volatile recent-command list."""
+    history = tuple(getattr(shell, "_classic98_run_history", ()))
     dialog = Gtk.Dialog(title="Run", transient_for=shell.bar, flags=Gtk.DialogFlags.MODAL)
     dialog.add_button("Cancel", Gtk.ResponseType.CANCEL)
     dialog.add_button("OK", Gtk.ResponseType.OK)
     dialog.set_default_response(Gtk.ResponseType.OK)
+    dialog.set_default_size(450, -1)
     body = dialog.get_content_area()
     body.set_spacing(9)
     body.set_margin_start(14)
     body.set_margin_end(14)
     body.set_margin_top(12)
-    body.pack_start(Gtk.Label(label="Type a program, folder, document, or Internet address:",
-                              xalign=0), False, False, 0)
-    entry = Gtk.Entry()
+    body.set_margin_bottom(12)
+    prompt = Gtk.Label(label="Type the name of a program, folder, document, or Internet resource:",
+                       xalign=0)
+    prompt.set_line_wrap(True)
+    body.pack_start(prompt, False, False, 0)
+    row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+    row.pack_start(Gtk.Label(label="Open:"), False, False, 0)
+    combo = Gtk.ComboBoxText.new_with_entry()
+    combo.set_hexpand(True)
+    entry = combo.get_child()
     entry.set_activates_default(True)
-    entry.get_accessible().set_name("Run command")
-    body.pack_start(entry, False, False, 0)
+    entry.get_accessible().set_name("Open command or address")
+    for previous in history:
+        combo.append_text(previous)
+    row.pack_start(combo, True, True, 0)
+    body.pack_start(row, False, False, 0)
+    feedback = Gtk.Label(xalign=0)
+    feedback.set_line_wrap(True)
+    feedback.set_no_show_all(True)
+    body.pack_start(feedback, False, False, 0)
 
     def browse(_button):
         chooser = Gtk.FileChooserDialog(title="Browse", transient_for=dialog,
@@ -165,24 +190,45 @@ def show_run(shell, Gtk, Gio):
         chooser.add_buttons("Cancel", Gtk.ResponseType.CANCEL, "Open", Gtk.ResponseType.OK)
         try:
             if chooser.run() == Gtk.ResponseType.OK:
-                entry.set_text(shlex.quote(chooser.get_filename()))
+                selected = chooser.get_filename()
+                if selected:
+                    entry.set_text(shlex.quote(selected))
+                    feedback.hide()
         finally:
             chooser.destroy()
 
-    button = Gtk.Button(label="Browse…")
-    button.connect("clicked", browse)
-    body.pack_start(button, False, False, 0)
+    tools = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
+    browse_button = Gtk.Button(label="Browse…")
+    browse_button.connect("clicked", browse)
+    tools.pack_start(browse_button, False, False, 0)
+    clear = Gtk.Button(label="Clear history")
+    clear.set_sensitive(bool(history))
+    def clear_history(_button):
+        shell._classic98_run_history = ()
+        combo.remove_all()
+        clear.set_sensitive(False)
+    clear.connect("clicked", clear_history)
+    tools.pack_start(clear, False, False, 0)
+    body.pack_start(tools, False, False, 0)
     dialog.show_all()
+    feedback.hide()
     entry.grab_focus()
     try:
         while dialog.run() == Gtk.ResponseType.OK:
+            typed = entry.get_text()
             try:
-                launch_run_target(parse_run_target(entry.get_text()), Gio)
-                shell._hide_menu()
-                return
+                target = parse_run_target(typed)
+                launch_run_target(target, Gio)
             except Exception as exc:
-                # Gio raises GLib.Error; show it without terminating the dialog.
-                shell._error(str(exc))
+                # GLib.Error and OSError are shown without closing the modal.
+                feedback.set_text("Could not open: " + str(exc))
+                feedback.show()
+                entry.grab_focus()
+                continue
+            shell._classic98_run_history = remember_run(
+                tuple(getattr(shell, "_classic98_run_history", ())), typed)
+            shell._hide_menu()
+            break
     finally:
         dialog.destroy()
 
