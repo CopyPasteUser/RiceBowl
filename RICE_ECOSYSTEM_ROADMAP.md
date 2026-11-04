@@ -1,6 +1,6 @@
 # RiceBowl riceware ecosystem roadmap
 
-Status: **shared API 1.0 implemented; XP Luna hardware/tray migration started, other renderers and physical acceptance open** (4 November 2026). This remains the implementation contract for shared capabilities behind the seven structurally distinct rice families, not an announcement of completed standalone applications or a desktop release.
+Status: **shared API 1.0 implemented; XP Luna and Windows 7 Aero device/tray integration wired, five other renderers and physical acceptance open** (4 November 2026). This remains the implementation contract for shared capabilities behind the seven structurally distinct rice families, not an announcement of completed standalone applications or a desktop release.
 
 **Goal:** one dependable Linux capability layer with seven deliberately different desktop experiences. A rice must be able to change component structure, navigation, controls and visual assets—not just colors—without duplicating filesystem safety logic, inventing system state or breaking a running session.
 
@@ -78,7 +78,20 @@ See [Riceware foundation API and manual checks](RICEWARE_FOUNDATIONS.md).
 - [x] Add hermetic XP adapter interaction regressions and retain the existing
   XP deep-click/small-screen X11 smoke paths.
 - [ ] Physical Mint verification; additional Control Panel applet consolidation,
-  native ricePop history integration and all other rice consumers remain open.
+  native ricePop history integration and the remaining rice consumers remain open.
+
+### Windows 7 Aero second consumer — 4 November 2026
+
+- [x] Win7Tray inherits the same verified riceSpice hardware adapters and
+  bounded worker as LunaTray while retaining separate Aero GTK layouts.
+- [x] Aero taskbar status, Control Panel audio slider/mute and Win7 flyouts
+  now share the Riceware worker path instead of legacy per-action threads.
+- [x] Win7 desktop shortcut confirmation is routed through ricePlate with the
+  same opt-in and user-modification protections.
+- [x] Add isolated Win7 adapter tests; preserve the existing Win7 X11 GUI and
+  1024/1600 screenshot checks.
+- [ ] Complete real Mint, notifications, deep applet and full session-switch
+  acceptance before describing the entire Windows 7 rice as fully migrated.
 
 ### Reliability checkpoint — 4 November 2026
 

@@ -99,6 +99,15 @@ third-party notifications; XP's local hardware-event balloons are not yet
 a ricePop notification-history consumer. This is **not** physical hardware
 acceptance or completion of all XP Control Panel applets.
 
+**Windows 7 checkpoint (4 November 2026):** Aero's own vertically arranged
+volume flyout, Wi-Fi/Bluetooth/battery UI, taskbar status and Linux
+device controls in the Control Panel now consume the same bounded riceSpice
+worker as XP; opt-in Win7 desktop shortcuts use ricePlate. Aero's glass
+Superbar, calendar, SNI tray and native Control Panel navigation remain visually and
+structurally distinct. Third-party notifications stay with XFCE and deeper
+Control Panel tasks still use available Linux tools. Physical hardware and
+full seven-rice switch testing are not claimed.
+
 The family mapping changes **selection only**; per-rice windows, menu flows,
 icons, keyboard shortcuts, layouts and styling must remain independent.
 Do not substitute a generic themed Settings page for any of the seven.

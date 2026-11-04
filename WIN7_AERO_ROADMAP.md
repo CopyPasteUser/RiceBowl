@@ -1,5 +1,21 @@
 # Windows 7 Aero fidelity — implementation and acceptance
 
+## Riceware backend migration — 4 November 2026
+
+- [x] Keep the distinct Windows 7 Aero glass taskbar, vertical volume flyout,
+  native Control Panel and SNI watcher while consuming riceSpice through the
+  inherited, bounded Win7Tray worker.
+- [x] Route taskbar status, verified audio output/volume/mute, Wi-Fi,
+  Bluetooth, battery/brightness and power-profile views/actions through
+  shared riceSpice results rather than independent per-click hardware threads.
+- [x] Route explicitly confirmed Win7 desktop shortcuts through ricePlate;
+  preserve existing user edits and XFDesktop ownership.
+- [x] Add Win7-specific fake-device regressions and retain real GTK/X11
+  Superbar/Control Panel/tray smoke and screenshot checks in CI.
+- [ ] Physically verify device actions, monitor scaling, profile switches,
+  deeper Control Panel applets and native notification presentation on Mint.
+
+
 Status: Windows 7 cosmetic fidelity shipped to `main` via PR #14. The additional
 Superbar milestone (grouping, previews, Jump Lists, Peek and latest gallery) passed
 native Xvfb CI in pull request #15. Physical Mint/XFCE acceptance remains open. The published

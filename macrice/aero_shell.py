@@ -1550,7 +1550,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self._tray = None
             if self.luna_balloon is not None:
                 self.luna_balloon.close()
-            if profile == "winxp" and self.luna_tray is not None:
+            if profile in ("winxp", "aero") and self.luna_tray is not None:
                 self.luna_tray.close()
             if self._volume_write_source:
                 GLib.source_remove(self._volume_write_source)
@@ -2033,7 +2033,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             if self._status_pending:
                 return True
             self._status_pending = True
-            if profile == "winxp" and self.luna_tray is not None:
+            if profile in ("winxp", "aero") and self.luna_tray is not None:
                 self.luna_tray.refresh_status(self._apply_status)
                 return True
             def worker():
@@ -2210,7 +2210,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.volume_status_label.set_text(f"Adjusting volume to {value}%…")
             if self.luna_tray is not None:
                 self.luna_tray.volume_pending(value)
-            if profile == "winxp" and self.luna_tray is not None:
+            if profile in ("winxp", "aero") and self.luna_tray is not None:
                 self.luna_tray.change_audio("audio_volume", value, self._volume_change_complete)
             else:
                 def worker():
@@ -2257,7 +2257,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self.luna_tray.audio_mute.set_sensitive(False)
             self._mute_writing = True
 
-            if profile == "winxp" and self.luna_tray is not None:
+            if profile in ("winxp", "aero") and self.luna_tray is not None:
                 self.luna_tray.change_audio("audio_mute", requested, self._mute_change_complete)
             else:
                 def worker():
@@ -2749,14 +2749,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             """Install/remove only our unedited links after explicit confirmation."""
             if profile != style:
                 return
-            if style == "aero":
-                from .win7_desktop import manage
-                era = "Windows 7"
-            else:
-                from .riceware.plate import manage_shortcuts
-                def manage(selected):
-                    return manage_shortcuts("xp", selected)
-                era = "XP"
+            from .riceware.plate import manage_shortcuts
+
+            era = "Windows 7" if style == "aero" else "XP"
+            managed_profile = "win7" if style == "aero" else "xp"
 
             title = ("Add " + era + " desktop icons?" if action == "install" else
                      "Remove RiceBowl " + era + " desktop icons?")
@@ -2772,7 +2768,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             if answer != Gtk.ResponseType.YES:
                 return
             try:
-                changed, kept = manage(action)
+                changed, kept = manage_shortcuts(managed_profile, action)
             except (OSError, RuntimeError, ValueError) as exc:
                 self._error(str(exc), title=era + " desktop icons")
                 return

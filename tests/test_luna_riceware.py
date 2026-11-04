@@ -62,8 +62,8 @@ class FakeBox:
         pass
 
 
-def tray():
-    instance = object.__new__(LunaTray)
+def tray(tray_type=LunaTray):
+    instance = object.__new__(tray_type)
     instance._requests = InlineRunner()
     instance._network_busy = False
     instance._network_error = None
