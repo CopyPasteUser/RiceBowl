@@ -106,6 +106,7 @@ Current evidence: source files, existing roadmap, current repository screenshot 
 - [x] Add dedicated classic Taskbar Properties, reachable from Start, Control Panel and a taskbar context menu: persistent per-rice clock/Quick Launch toggles with working Apply/OK/Cancel, private atomic settings and four regression tests. Unsupported auto-hide/position settings remain disabled.
 
 - [x] Refine Win98 Run with a 12-item in-memory history, a Clear history action and inline failure text. Four ordering/bounds tests added; hardware interaction remains to be validated.
+- [x] Add Programs submenu context actions for Open / Add to Quick Launch / Remove from Quick Launch, respecting the existing per-rice pin limit, with three focused menu-state tests. Real pointer/focus acceptance remains open.
 
 **Still open:** complete original hover/cascade keyboard geometry; folders within Favorites; Programs context actions; persistent opt-in Run history and .desktop targeting; Finder content/date/type search and computer discovery; advanced Taskbar options (auto-hide/position), dedicated Folder Options; full Display Properties tabs; independent Quick Launch configuration; comprehensive tray NetworkManager/XEmbed operation; window context menus; desktop virtual folders; structural riceExplorer skin; Win98/2000 preset split; era accessories; and physical Mint acceptance. Do not close a milestone until its full gate passes.
 
