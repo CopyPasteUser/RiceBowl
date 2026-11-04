@@ -83,7 +83,11 @@ secondary pages; prototypes and the release roadmap do not crowd the selector.
   mirrors their purpose rather than introducing duplicate runtime tokens.
   The optional SNI application icons use a small Aero chevron for overflow:
   three directly visible active icons, `NeedsAttention` prioritized, `Passive`
-  hidden, and an accessible native menu for actual activation. This is not a
+  hidden, and an accessible native menu for actual activation. An original Aero
+  settings dialog can set an explicit visible icon count (0–8) and individual
+  Automatic/Show/Hide behavior for stable StatusNotifier IDs. Its preferences
+  live in the narrowly scoped `ricehub/win7-tray.json`, not XFCE settings.
+  This is not a
   Windows 10 Action Center or synthetic status feed. XFDesktop owns the
   desktop icons; Windows 7's original Computer/Documents/Network/Recycle Bin
   links are opt-in and removable only when unmodified. The shell must not take

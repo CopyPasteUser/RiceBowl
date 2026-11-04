@@ -160,8 +160,23 @@ P0/P1/Sollkatalog checkboxes below stay open until fully accepted.
 - [ ] Physically validate XFDesktop launcher placement, permissions, GIO
   `computer:///`, `network:///`, `trash:///`, theme icons and multi-monitor.
 
-**Still open:** per-icon user customization of visible/hidden positions, native
-Win7 balloon notifications, Snap/Shake fidelity and additional deep applets.
+### P1 progress — persistent per-app notification preferences
+
+- [x] Implement a native Windows 7 dialog to choose maximum displayed SNI
+  app icons and Automatic/Show/Hide placement for each running application.
+- [x] Persist only stable StatusNotifier protocol IDs in a bounded, versioned
+  JSON file with atomic writes, user-only permissions and explicit corruption/
+  symlink rejection. Ephemeral DBus names never become saved identities.
+- [x] Provide Restore defaults and apply preference changes immediately,
+  preserving `NeedsAttention` priority for automatic apps and excluding passive
+  entries. No other rice reads or writes this configuration.
+- [x] Add targeted preference validation, migration-format, symlink,
+  broken-file-preservation and icon-priority tests.
+- [ ] Perform real GTK/X11 dialog and multi-SNI application interaction
+  capture, including keyboard/focus, narrow-monitor placement and app restarts.
+
+**Still open:** native Win7 balloon notifications, Snap/Shake fidelity,
+deep applets and physical hardware acceptance.
 
 ### P0 — Close the biggest depth and functionality gaps
 

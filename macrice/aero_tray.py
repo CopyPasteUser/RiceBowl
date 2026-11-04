@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import os
 import re
+import logging
 
 WATCHER = "org.kde.StatusNotifierWatcher"
 PATH = "/StatusNotifierWatcher"
@@ -64,7 +65,7 @@ def pixel_rgba(width: int, height: int, pixels: bytes) -> bytes | None:
     return bytes(result)
 
 
-def select_tray_icons(items, visible_limit):
+def select_tray_icons(items, visible_limit, overrides=None):
     """Select live SNI icons; prioritize attention without exposing Passive items."""
     active = [(identifier, status) for identifier, status in items
               if status in ("Active", "NeedsAttention")]
@@ -72,9 +73,13 @@ def select_tray_icons(items, visible_limit):
         return tuple(identifier for identifier, _ in active), ()
     if not isinstance(visible_limit, int) or isinstance(visible_limit, bool) or visible_limit < 0:
         raise ValueError("visible_limit must be a non-negative integer or None")
-    attention = [identifier for identifier, status in active if status == "NeedsAttention"]
-    normal = [identifier for identifier, status in active if status == "Active"]
-    visible = tuple((attention + normal)[:visible_limit])
+    overrides = overrides or {}
+    always = [identifier for identifier, _ in active if overrides.get(identifier) == "show"]
+    attention = [identifier for identifier, status in active
+                 if status == "NeedsAttention" and overrides.get(identifier, "auto") == "auto"]
+    normal = [identifier for identifier, status in active
+              if status == "Active" and overrides.get(identifier, "auto") == "auto"]
+    visible = tuple((always + attention + normal)[:visible_limit])
     return visible, tuple(identifier for identifier, _ in active if identifier not in visible)
 
 
@@ -86,10 +91,23 @@ class StatusNotifierTray:
         self.items = {}
         self.item_signals = {}
         self.item_state = {}
+        self.item_stable_ids = {}
+        self._refresh_serial = 0
+        self._refresh_versions = {}
         self.visible_limit = visible_limit
+        self.preferences = None
         self.overflow_ids = ()
+        self._overflow_menu = None
         self.overflow_button = None
         if visible_limit is not None:
+            from .win7_tray_prefs import TrayPreferences, load
+
+            try:
+                self.preferences = load()
+            except (OSError, ValueError) as exc:
+                logging.getLogger(__name__).warning("Invalid Windows 7 SNI preferences: %s", exc)
+                self.preferences = TrayPreferences()
+            self.visible_limit = self.preferences.visible_limit
             self.overflow_button = Gtk.Button(label="▴")
             self.overflow_button.get_style_context().add_class("win7-tray-chevron")
             self.overflow_button.set_relief(Gtk.ReliefStyle.NONE)
@@ -232,6 +250,7 @@ class StatusNotifierTray:
         self.box.pack_start(button, False, False, 0)
         self.items[identifier] = (button, img)
         self.item_state[identifier] = ("Passive", service)
+        self.item_stable_ids[identifier] = None
         self.item_signals[identifier] = self.bus.signal_subscribe(
             service, ITEM_IFACE, None, path, None, self.Gio.DBusSignalFlags.NONE,
             self._item_signal, identifier)
@@ -244,6 +263,8 @@ class StatusNotifierTray:
             self.bus.signal_unsubscribe(subscription)
         item = self.items.pop(identifier, None)
         self.item_state.pop(identifier, None)
+        self.item_stable_ids.pop(identifier, None)
+        self._refresh_versions.pop(identifier, None)
         if item:
             self.box.remove(item[0])
         self._reflow()
@@ -260,8 +281,12 @@ class StatusNotifierTray:
         if identifier not in self.items:
             return
         service, path = parse_item_id(identifier)
+        self._refresh_serial += 1
+        version = self._refresh_serial
+        self._refresh_versions[identifier] = version
         def received(reply):
-            if identifier not in self.items:
+            if (identifier not in self.items or
+                    self._refresh_versions.get(identifier) != version):
                 return
             try:
                 props = {key: unpack_variant(value) for key, value in reply.unpack()[0].items()}
@@ -271,6 +296,8 @@ class StatusNotifierTray:
             status = props.get("Status")
             title = str(props.get("Title") or service)[:128]
             self.item_state[identifier] = (status, title)
+            from .win7_tray_prefs import stable_icon_id
+            self.item_stable_ids[identifier] = stable_icon_id(props.get("Id"))
             if status == "Passive":
                 button.set_no_show_all(True)
                 button.hide()
@@ -295,9 +322,18 @@ class StatusNotifierTray:
     def _reflow(self):
         if self.visible_limit is None:
             return
+        overrides = {}
+        prefs = getattr(self, "preferences", None)
+        if prefs is not None:
+            overrides = {identifier: prefs.icons.get(stable_id, "auto")
+                         for identifier, stable_id in getattr(self, "item_stable_ids", {}).items()
+                         if stable_id is not None}
+        previous_overflow = getattr(self, "overflow_ids", ())
         visible, self.overflow_ids = select_tray_icons(
             ((identifier, self.item_state.get(identifier, ("Passive", ""))[0])
-             for identifier in self.items), self.visible_limit)
+             for identifier in self.items), self.visible_limit, overrides)
+        if getattr(self, "_overflow_menu", None) is not None and previous_overflow != self.overflow_ids:
+            self._overflow_menu.popdown()
         visible_set = set(visible)
         for identifier, (button, _image) in self.items.items():
             should_show = identifier in visible_set
@@ -316,7 +352,10 @@ class StatusNotifierTray:
 
         if not self.overflow_ids:
             return
+        if self._overflow_menu is not None:
+            self._overflow_menu.popdown()
         menu = self.Gtk.Menu()
+        self._overflow_menu = menu
         menu.get_style_context().add_class("win7-tray-overflow-menu")
         for identifier in self.overflow_ids:
             if identifier not in self.items:
@@ -342,9 +381,129 @@ class StatusNotifierTray:
             item.connect("button-press-event", lambda _item, event, s=service, p=path:
                          self._context(s, p, event))
             menu.append(item)
-        menu.connect("deactivate", lambda widget: widget.destroy())
+        menu.append(self.Gtk.SeparatorMenuItem())
+        customize = self.Gtk.MenuItem(label="Customize notification icons…")
+        customize.connect("activate", lambda *_args: self.open_preferences())
+        menu.append(customize)
+        menu.connect("deactivate", self._overflow_menu_closed)
         menu.show_all()
         menu.popup_at_widget(button, Gdk.Gravity.NORTH_WEST, Gdk.Gravity.SOUTH_WEST, None)
+
+    def _overflow_menu_closed(self, menu):
+        if self._overflow_menu is menu:
+            self._overflow_menu = None
+        menu.destroy()
+
+    def open_preferences(self):
+        """Open a native, explicit Win7 dialog; never modify XFCE tray settings."""
+        if self.preferences is None:
+            return
+        self.GLib.idle_add(self._open_preferences)
+
+    def _open_preferences(self):
+        from .win7_tray_prefs import TrayPreferences, save
+
+        Gtk = self.Gtk
+        parent = self.box.get_toplevel()
+        dialog = Gtk.Dialog(title="Customize Notification Area Icons",
+                            transient_for=parent if isinstance(parent, Gtk.Window) else None,
+                            flags=Gtk.DialogFlags.MODAL)
+        dialog.get_style_context().add_class("win7-tray-customize")
+        dialog.set_default_size(500, 350)
+        dialog.add_button("Cancel", Gtk.ResponseType.CANCEL)
+        dialog.add_button("Restore defaults", Gtk.ResponseType.APPLY)
+        dialog.add_button("Save", Gtk.ResponseType.OK)
+        content = dialog.get_content_area()
+        content.set_spacing(10)
+        content.set_margin_start(16)
+        content.set_margin_end(16)
+        content.set_margin_top(12)
+        content.set_margin_bottom(12)
+        heading = Gtk.Label(label="Choose which icons appear on the taskbar", xalign=0)
+        heading.get_style_context().add_class("win7-tray-customize-heading")
+        content.pack_start(heading, False, False, 0)
+        settings_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
+        settings_row.pack_start(Gtk.Label(label="Visible icons", xalign=0), True, True, 0)
+        count = Gtk.ComboBoxText()
+        for size in range(9):
+            count.append(str(size), str(size))
+        count.set_active_id(str(self.visible_limit))
+        count.get_accessible().set_name("Maximum visible notification icons")
+        settings_row.pack_start(count, False, False, 0)
+        content.pack_start(settings_row, False, False, 0)
+        scroll = Gtk.ScrolledWindow()
+        scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scroll.set_min_content_height(170)
+        scroll.set_max_content_height(360)
+        grid = Gtk.Grid(column_spacing=18, row_spacing=8)
+        grid.set_margin_start(5)
+        grid.set_margin_end(5)
+        editors = {}
+        seen = set()
+        row = 0
+        for identifier in self.items:
+            stable_id = self.item_stable_ids.get(identifier)
+            status, title = self.item_state.get(identifier, ("Passive", identifier))
+            if stable_id in seen and stable_id is not None:
+                continue
+            if stable_id:
+                seen.add(stable_id)
+            label = Gtk.Label(label=title, xalign=0)
+            label.set_max_width_chars(28)
+            label.set_line_wrap(True)
+            grid.attach(label, 0, row, 1, 1)
+            choice = Gtk.ComboBoxText()
+            for mode, name in (("auto", "Automatic"), ("show", "Show on taskbar"),
+                               ("hide", "Hide in overflow")):
+                choice.append(mode, name)
+            choice.set_active_id(self.preferences.icons.get(stable_id, "auto"))
+            choice.set_sensitive(stable_id is not None)
+            if stable_id is None:
+                choice.set_tooltip_text("This app has no persistent StatusNotifier ID")
+            else:
+                editors[stable_id] = choice
+            choice.get_accessible().set_name("Notification icon display for " + title)
+            grid.attach(choice, 1, row, 1, 1)
+            row += 1
+        if not row:
+            grid.attach(Gtk.Label(label="No notification applications are running.", xalign=0),
+                        0, 0, 2, 1)
+        scroll.add(grid)
+        content.pack_start(scroll, True, True, 0)
+        info = Gtk.Label(label="Preferences only affect RiceBowl Windows 7.\n"
+                               "Applications without a stable ID use automatic placement.", xalign=0)
+        info.set_line_wrap(True)
+        content.pack_start(info, False, False, 0)
+        dialog.show_all()
+        response = dialog.run()
+        if response in (Gtk.ResponseType.OK, Gtk.ResponseType.APPLY):
+            icons = dict(self.preferences.icons)
+            if response == Gtk.ResponseType.APPLY:
+                candidate = TrayPreferences()
+            else:
+                for stable_id, editor in editors.items():
+                    mode = editor.get_active_id()
+                    if mode == "auto":
+                        icons.pop(stable_id, None)
+                    elif mode in ("show", "hide"):
+                        icons[stable_id] = mode
+                candidate = TrayPreferences(int(count.get_active_id()), icons)
+            try:
+                save(candidate)
+            except (OSError, ValueError) as exc:
+                problem = Gtk.MessageDialog(transient_for=dialog, flags=Gtk.DialogFlags.MODAL,
+                                            message_type=Gtk.MessageType.ERROR,
+                                            buttons=Gtk.ButtonsType.CLOSE,
+                                            text="Could not save notification preferences")
+                problem.format_secondary_text(str(exc))
+                problem.run()
+                problem.destroy()
+            else:
+                self.preferences = candidate
+                self.visible_limit = candidate.visible_limit
+                self._reflow()
+        dialog.destroy()
+        return False
 
     def _pixmap(self, image, pixmaps):
         for width, height, raw in sorted(pixmaps, key=lambda p: p[0] * p[1]):
@@ -379,6 +538,8 @@ class StatusNotifierTray:
         return False
 
     def close(self):
+        if self._overflow_menu is not None:
+            self._overflow_menu.popdown()
         for subscription in self.subscriptions:
             self.bus.signal_unsubscribe(subscription)
         if self.registration is not None:

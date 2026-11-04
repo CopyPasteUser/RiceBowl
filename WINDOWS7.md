@@ -128,10 +128,15 @@ promise currently unsupported remote mounts and complete transfer recovery.
 
 ### Customization and compatibility
 
-- **Notification chevron:** At most three active application SNI icons appear
+- **Notification chevron:** By default, at most three active application SNI icons appear
   directly beside the clock/system icons. The upward arrow opens the remaining
   entries; those marked `NeedsAttention` take priority. Right-click the hidden
-  entry to request its application's context menu. This only affects Aero.
+  entry to request its application's context menu. Choose **Customize notification
+  icons…** from that menu or a blank Superbar right-click to set the visible
+  limit (0–8), and each application's Automatic / Show / Hide preference.
+  Applications without stable protocol IDs remain automatic. Settings are saved
+  at `${XDG_CONFIG_HOME:-~/.config}/ricehub/win7-tray.json`; **Restore defaults**
+  returns to three directly visible icons. This only affects Aero.
 - **Real desktop links:** Right-click a *blank section* of the Windows 7
   Superbar to add or remove RiceBowl's Computer, Documents, Network and
   Recycle Bin shortcuts. The action asks permission, uses XFDesktop's actual

@@ -41,7 +41,8 @@ The Windows 98 rice is still a work in progress: classic Taskbar Properties now 
 Windows 7 now has dedicated audio, Wi-Fi, power, Bluetooth and calendar
 flyouts, a genuine hidden-application-icon chevron, opt-in desktop shortcuts
 (Computer/Documents/Network/Recycle Bin, via blank-Superbar right-click),
-and multi-view Control Panel navigation. Installed
+per-app notification-icon preferences and multi-view Control Panel navigation.
+Configure visible icons from the chevron or blank-Superbar context menu. Installed
 [RiceExplorer](https://github.com/CopyPasteUser/riceExplorer) appears as an
 optional Windows 7 preview in Start; Thunar remains the default while file
 operation and mount recovery are validated. Screenshots below show the previous

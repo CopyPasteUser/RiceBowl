@@ -1,5 +1,19 @@
 # RiceBowl changelog
 
+## Unreleased — Windows 7 personalized notification icons (4 November 2026)
+
+- Added an Aero-themed **Customize Notification Area Icons** dialog reachable
+  from the hidden-icons chevron or a blank Superbar right-click. Choose 0–8
+  directly displayed app icons and per-app Automatic / Show / Hide preferences.
+- Persist preferences only for valid stable StatusNotifier `Id` values in a
+  bounded, versioned, atomically written user-local JSON file. Ephemeral D-Bus
+  names are never saved; malformed or symlinked configuration is preserved.
+  A Restore defaults button clears stored overrides.
+- Preference changes reorder real running SNI icons immediately, without
+  affecting device widgets or any non-Windows-7 rice.
+- Added filesystem, format, symlink, priority and regression tests. Real device
+  and live third-party SNI testing on the owner's laptop remains open.
+
 ## Unreleased — Windows 98 classic functionality (4 November 2026)
 
 - Enhanced Find with real type, extension, date, size and hidden-file filters, plus bounded text-content search (1 MiB/file, 32 MiB total). The search remains cancellable, read-only and capped at 50,000 entries / 500 results.

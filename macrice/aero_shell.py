@@ -272,6 +272,19 @@ menu.win7-tray-overflow-menu menuitem:hover,
 menu.win7-tray-overflow-menu menuitem:focus {
   background: #c9e7fc; color: #0a3558;
 }
+window.win7-tray-customize {
+  background: #f5f9fc; color: #173f61; border: 1px solid #8fadc4;
+}
+.win7-tray-customize-heading {
+  color: #174c75; font-size: 14px; font-weight: bold;
+}
+window.win7-tray-customize combobox, window.win7-tray-customize button {
+  border: 1px solid #9bb7cf; background: #eef6fb; color: #174365;
+  border-radius: 3px; padding: 4px 8px;
+}
+window.win7-tray-customize button:hover, window.win7-tray-customize button:focus {
+  background: #d6ebf9; border-color: #4387ba;
+}
 .aero-glass { background-image: linear-gradient(to bottom, rgba(205,242,255,.79), rgba(94,172,221,.83) 48%, rgba(26,81,139,.90)); }
 .aero-time { color: #fff; font-size: 11px; font-weight: bold; }
 .aero-quick { background: transparent; border: 1px solid transparent; color: white; border-radius: 4px; padding: 4px; }
@@ -774,10 +787,25 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                         assert not self.luna_tray.popovers[name].get_visible()
                 if profile == "aero":
                     if self._tray is not None:
-                        assert self._tray.visible_limit == 3
+                        assert 0 <= self._tray.visible_limit <= 8
+                        assert self._tray.preferences is not None
                         assert self._tray.overflow_button is not None
                         assert self._tray.overflow_button.get_style_context().has_class(
                             "win7-tray-chevron")
+                        # Construct the actual configuration dialog in virtual
+                        # X11. Auto-cancel it; the smoke must not write any
+                        # real user preferences or block on manual input.
+                        saved_dialog_run = Gtk.Dialog.run
+                        def cancel_preferences(dialog):
+                            assert dialog.get_style_context().has_class(
+                                "win7-tray-customize")
+                            assert dialog.get_title() == "Customize Notification Area Icons"
+                            return Gtk.ResponseType.CANCEL
+                        try:
+                            Gtk.Dialog.run = cancel_preferences
+                            self._tray._open_preferences()
+                        finally:
+                            Gtk.Dialog.run = saved_dialog_run
                     assert set(self.luna_tray.popovers) == {
                         "audio", "network", "battery", "clock", "bluetooth"}
                     for popup in self.luna_tray.popovers.values():
@@ -2176,6 +2204,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             menu.get_style_context().add_class("win7-jumplist")
             for title, action in (
                 ("Show the desktop", self._show_desktop),
+                ("Customize notification icons…", lambda: self._tray.open_preferences()
+                 if self._tray is not None else None),
                 ("Add Windows 7 desktop icons…", lambda: self._win7_manage_desktop("install")),
                 ("Remove RiceBowl desktop icons…", lambda: self._win7_manage_desktop("remove")),
                 ("Personalize…", lambda: self._open_tool("xfdesktop-settings")),
@@ -2185,6 +2215,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 item = Gtk.MenuItem(label=title)
                 if title == "Personalize…":
                     item.set_sensitive(shutil.which("xfdesktop-settings") is not None)
+                elif title == "Customize notification icons…":
+                    item.set_sensitive(self._tray is not None)
                 item.connect("activate", lambda _item, callback=action: callback())
                 menu.append(item)
             menu.show_all()
