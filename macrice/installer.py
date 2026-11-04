@@ -59,6 +59,14 @@ def _check_layout(source: Path) -> None:
         "macrice/rice.py",
         "macrice/asset_upgrade.py",
         "macrice/hardware_status.py",
+        "macrice/riceware_cli.py",
+        "macrice/riceware/__init__.py",
+        "macrice/riceware/spice.py",
+        "macrice/riceware/pop.py",
+        "macrice/riceware/plate.py",
+        "macrice/riceware/wine.py",
+        "RICEWARE_FOUNDATIONS.md",
+        "RICE_ECOSYSTEM_ROADMAP.md",
         "macrice/preview.py",
         "macrice/thunar.py",
         "macrice/performance.py",
@@ -152,7 +160,9 @@ def _copy_bundle(source: Path, stage: Path) -> None:
 
     for folder in ("macrice", "components", "assets"):
         shutil.copytree(source / folder, stage / folder, ignore=ignore)
-    for file in ("launcher.py", "README.md", "LICENSE", "ROADMAP.md", "RICE.md", "RICEHUB.md", "RICEBOWL.md", "CONTRIBUTORS.md"):
+    for file in ("launcher.py", "README.md", "LICENSE", "ROADMAP.md", "RICE.md",
+                 "RICEHUB.md", "RICEBOWL.md", "RICE_ECOSYSTEM_ROADMAP.md",
+                 "RICEWARE_FOUNDATIONS.md", "CONTRIBUTORS.md"):
         shutil.copy2(source / file, stage / file)
     (stage / MANAGED_MARKER).write_text("Managed by MacRice XFCE\n", encoding="ascii")
 

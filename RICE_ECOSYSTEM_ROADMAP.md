@@ -1,6 +1,6 @@
 # RiceBowl riceware ecosystem roadmap
 
-Status: **proposed / not yet implemented** (4 November 2026). This is the implementation contract for shared capabilities behind the seven structurally distinct rice families, not an announcement of new applications or a release.
+Status: **initial backend foundations implemented, renderer migration and acceptance open** (4 November 2026). This remains the implementation contract for shared capabilities behind the seven structurally distinct rice families, not an announcement of completed applications or a release.
 
 **Goal:** one dependable Linux capability layer with seven deliberately different desktop experiences. A rice must be able to change component structure, navigation, controls and visual assets—not just colors—without duplicating filesystem safety logic, inventing system state or breaking a running session.
 
@@ -12,7 +12,7 @@ Status: **proposed / not yet implemented** (4 November 2026). This is the implem
 | **riceSpice** | Initially an internal RiceBowl capability module plus rice-owned renderers | **Build incrementally from existing backends**; no new daemon/repository now | Separate app/process only when independent lifecycle and multiple frontends materially require it |
 | **ricePop** | Initially adapters around existing native/XFCE notifications | **Conditional independent notification host** | Only when authentic cross-application history/actions cannot be provided safely through existing supported APIs |
 | **ricePlate** | Initially XFDesktop + existing rice-specific desktop adapters | **Conditional independent desktop surface** | Only when tested desktop requirements cannot be delivered through XFDesktop and scoped extensions |
-| **riceWine** | Optional future Windows-application compatibility helper | **Research first; not required for RiceBowl 1.0** | Only after a demonstrated need beyond existing Wine/Bottles/Lutris launch flows |
+| **riceWine** | Opt-in internal prototype, future independent helper if justified | **Minimal isolated-prefix prototype; not required for RiceBowl 1.0** | Separate repository only after demonstrated need beyond Wine/Bottles/Lutris launch flows |
 | RiceBowl shell/session | Existing RiceBowl repository | **Keep shared**: profile switching, backup/restore, launcher/taskbar/window tracking, tray ownership | Do not create a second shell manager |
 | Linux infrastructure | NetworkManager, BlueZ, PipeWire/PulseAudio, UPower, UDisks2/GVfs, XFWM4/XFCE | **Reuse platform services** | Never create a competing network, Bluetooth, audio or window-management daemon for aesthetic fidelity |
 
@@ -22,7 +22,7 @@ Existing code to preserve and audit: `macrice/hardware_status.py`, `bluetooth_db
 
 ## Names and project identity
 
-All helper names use the same **rice** family but keep an immediately understandable subtitle. These names are **reserved in the roadmap, not claims of shipped programs or repositories**.
+All helper names use the same **rice** family but keep an immediately understandable subtitle. Four names now refer to importable internal backend foundations, **not shipped standalone programs or repositories**.
 
 | Name | User-facing purpose |
 | --- | --- |
@@ -33,6 +33,25 @@ All helper names use the same **rice** family but keep an immediately understand
 | **riceWine** | Opt-in Wine application setup, per-app prefixes and launch integration (future optional project) |
 
 The names are stable enough for planning; reserve public executable names, D-Bus IDs and separate repositories only when implementation boundaries have passed their decision gates. A new rice is **not** required to depend on all five helpers.
+
+## Backend foundation checkpoint — 4 November 2026
+
+- [x] `macrice.riceware.spice`: on-demand structured hardware state and explicit
+  actions delegating to existing verified backends, without session mutation.
+- [x] `macrice.riceware.pop`: XFCE-native notification history, read/dismiss,
+  quiet mode and an explicit, bounded `notify-send` operation. No duplicate log.
+- [x] `macrice.riceware.plate`: read-only desktop item model and existing safe
+  XP/Win7 shortcut management. No XFDesktop replacement or file mutation engine.
+- [x] `macrice.riceware.wine`: optional local prefix creation and explicit
+  unprivileged process start using installed Wine tools; never scans/imports,
+  edits or removes other prefixes. Failed initialization remains recoverable.
+- [x] `macrice riceware` CLI, module tests and bundled installer verification.
+- [ ] Migrate individual rice renderers once API contracts are validated on
+  actual Linux Mint hardware; do not check off S0–S6 by inference.
+- [ ] Evaluate an independent ricePlate process/host, ricePop notification
+  ownership and riceWine standalone project only after their respective gates.
+
+See [Riceware foundation API and manual checks](RICEWARE_FOUNDATIONS.md).
 
 ## Required architectural contracts
 

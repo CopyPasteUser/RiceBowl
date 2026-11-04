@@ -84,11 +84,12 @@ The active rice uses **Super** for its launcher and **Right Ctrl** for Control P
 
 - **XFCE/X11** is the supported target; Wayland and full Windows DWM-style blur are outside current support.
 - **Thunar stays available.** [riceExplorer](https://github.com/CopyPasteUser/riceExplorer) is a separate, still-developing Rust file manager and is not yet the default.
+- **Riceware foundations are available on `main`:** riceSpice, ricePop, ricePlate and an optional riceWine prototype expose real Linux capabilities through `macrice riceware`; seven-rice UI migration is still pending. [Commands and limits](RICEWARE_FOUNDATIONS.md).
 - Linux hardware availability and permissions determine which real actions are enabled. Missing capabilities are explained instead of simulated.
 - All artwork is original. RiceBowl is not affiliated with Apple, Google or Microsoft.
 
 ## Roadmaps
 
 - [RiceBowl 1.0 roadmap](ROADMAP.md) — shared session, release and hardware gates
-- [Riceware ecosystem](RICE_ECOSYSTEM_ROADMAP.md) — **riceExplorer, riceSpice, ricePop, ricePlate and riceWine**
+- [Riceware ecosystem](RICE_ECOSYSTEM_ROADMAP.md) — **riceExplorer, riceSpice, ricePop, ricePlate and riceWine** · [backend usage](RICEWARE_FOUNDATIONS.md)
 - [Changelog](CHANGELOG.md) · [CI checks](https://github.com/CopyPasteUser/RiceBowl/actions) · [Contributing](CONTRIBUTING.md) · [MIT license](LICENSE)

@@ -1,5 +1,18 @@
 # RiceBowl changelog
 
+## Unreleased — Shared Riceware backend foundations (4 November 2026)
+
+- Added on-demand `macrice.riceware` backends for riceSpice (real hardware reads,
+  explicit writes and readback), ricePop (XFCE-native notification history and
+  delivery), ricePlate (read-only desktop inventory plus reversible existing
+  XP/Win7 shortcuts) and an opt-in riceWine managed-prefix prototype.
+- Added `macrice riceware` commands for manual/backend testing. No new daemon,
+  desktop owner, Wine requirement, default file-manager switch or theme/UI
+  migration is introduced.
+- Added hermetic contract/security tests and required bundle file checks.
+  Hardware, Wine GUI execution and seven-rice renderer integration remain
+  separate acceptance gates; the tagged v0.9.1 release is unchanged.
+
 ## Unreleased — Verified one-run screenshot refresh (4 November 2026)
 
 - Replaced the six current desktop-style Start/launcher, control and genuine
