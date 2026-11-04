@@ -142,6 +142,16 @@ def launch_run_target(target: tuple[str, object], Gio):
         raise ValueError("Unsupported Run target")
 
 
+def quick_launch_menu_action(identifier: str | None, pins: tuple[str, ...],
+                             limit: int) -> tuple[str, bool, bool] | None:
+    """Label, enabled, intended pin state for the real per-rice pins store."""
+    if not identifier:
+        return None
+    already_pinned = identifier in pins
+    return ("Remove from Quick Launch" if already_pinned else "Add to Quick Launch",
+            already_pinned or len(pins) < limit, not already_pinned)
+
+
 def remember_run(history: tuple[str, ...], value: str, maximum: int = 12) -> tuple[str, ...]:
     """Session-only most-recent-first entries; no credentials written to disk."""
     text = value.strip()
@@ -607,13 +617,13 @@ def build(shell, Gtk, Gdk, Gio, GLib, Pango):
                     open_item.connect("activate", lambda _item: shell._launch(selected))
                     context.append(open_item)
                     if identifier:
-                        pinned = identifier in shell._pinned_ids
-                        pin_item = Gtk.MenuItem(
-                            label="Remove from Quick Launch" if pinned else "Add to Quick Launch")
                         from .aero_pins import PIN_LIMIT
-                        pin_item.set_sensitive(pinned or len(shell._pinned_ids) < PIN_LIMIT)
+                        label, enabled, should_pin = quick_launch_menu_action(
+                            identifier, shell._pinned_ids, PIN_LIMIT)
+                        pin_item = Gtk.MenuItem(label=label)
+                        pin_item.set_sensitive(enabled)
                         pin_item.connect("activate", lambda _item:
-                                         shell._change_pin(identifier, not pinned))
+                                         shell._change_pin(identifier, should_pin))
                         context.append(pin_item)
                     context.show_all()
                     if event is not None:
