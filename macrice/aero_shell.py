@@ -1069,6 +1069,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 if profile == "frutiger":
                     # Reproduce the Settings dead-end under an actual GTK/Xvfb
                     # event environment, not only through mocked tab objects.
+                    assert self.frutiger_controller is not None
+                    assert self.aqua_notifications_button is not None
                     self._toggle_menu()
                     assert self.menu.get_visible()
                     for name in ("Settings", "Places", "Settings", "Apps"):
@@ -1101,6 +1103,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     assert any(widget.get_style_context().has_class("aqua-native-panel")
                                for widget in walk(self.actions))
                     self._hide_actions()
+                    self.aqua_notifications_button.clicked()
+                    assert self._aqua_notifications.popover.get_visible()
+                    self._aqua_notifications.popover.popdown()
             except Exception:
                 import traceback
                 traceback.print_exc()
@@ -1644,6 +1649,12 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     self.chrome_notifications.close()
                 if self._chrome_settings is not None:
                     self._chrome_settings.close()
+            if profile == "frutiger" and hasattr(self, "frutiger_controller"):
+                if hasattr(self, "aqua_control_suspend"):
+                    self.aqua_control_suspend()
+                if hasattr(self, "_aqua_notifications"):
+                    self._aqua_notifications.close()
+                self.frutiger_controller.close()
             if profile == "winclassic" and hasattr(self, "classic98_controller"):
                 self.classic98_controller.close()
             for component in ("ten_network", "ten_settings", "ten_task_view"):
@@ -2120,6 +2131,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 from .chrome_riceware import ChromeController
 
                 self.chrome_controller = ChromeController(GLib)
+            elif profile == "frutiger":
+                from .frutiger_riceware import FrutigerController
+
+                self.frutiger_controller = FrutigerController(GLib)
             for name in ("battery", "network", "audio"):
                 button = self._class(Gtk.Button(), "rice-status")
                 button.get_style_context().add_class("rice-status-" + name)
@@ -2153,6 +2168,14 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     alert.get_accessible().set_name("Windows 7 Action Center notifications")
                     row.pack_end(alert, False, False, 0)
                     self.luna_tray.install("alerts", alert)
+            elif profile == "frutiger":
+                notifications = self._class(Gtk.Button(), "rice-status")
+                notifications.add(self._icon("preferences-desktop-notification", Gtk.IconSize.MENU))
+                notifications.get_accessible().set_name("Open Aqua notifications")
+                notifications.set_tooltip_text("Native XFCE notifications · Aqua World")
+                notifications.connect("clicked", lambda _button: self._show_aqua_notifications())
+                row.pack_end(notifications, False, False, 0)
+                self.aqua_notifications_button = notifications
             elif profile == "winclassic":
                 bluetooth = self._class(Gtk.Button(), "rice-status")
                 bluetooth.add(self._icon("bluetooth-active", Gtk.IconSize.MENU))
@@ -2180,6 +2203,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 return True
             if profile == "chromeos":
                 self.chrome_controller.refresh_status(self._apply_status)
+                return True
+            if profile == "frutiger":
+                self.frutiger_controller.refresh_status(self._apply_status)
                 return True
             def worker():
                 try:
@@ -2376,6 +2402,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             elif profile == "chromeos":
                 self.chrome_controller.change_audio("audio_volume", value,
                                                     self._volume_change_complete)
+            elif profile == "frutiger":
+                self.frutiger_controller.change_audio("audio_volume", value,
+                                                      self._volume_change_complete)
             else:
                 def worker():
                     from .hardware_status import set_sound_volume
@@ -2432,6 +2461,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             elif profile == "chromeos":
                 self.chrome_controller.change_audio("audio_mute", requested,
                                                     self._mute_change_complete)
+            elif profile == "frutiger":
+                self.frutiger_controller.change_audio("audio_mute", requested,
+                                                      self._mute_change_complete)
             else:
                 def worker():
                     from .hardware_status import set_sound_mute
@@ -5063,12 +5095,28 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     self.chrome_quick_suspend_all()
             if profile == "windows10" and hasattr(self, "ten_controller"):
                 self.ten_controller.discard()
+            if profile == "frutiger" and hasattr(self, "aqua_control_suspend"):
+                self.aqua_control_suspend()
             self.actions.hide()
+
+        def _show_aqua_notifications(self):
+            if profile != "frutiger":
+                return
+            if not hasattr(self, "_aqua_notifications"):
+                from .frutiger_notifications import AquaNotifications
+
+                self._aqua_notifications = AquaNotifications(self, Gtk)
+            if hasattr(self, "_aqua_flyouts"):
+                for popover in self._aqua_flyouts.popovers.values():
+                    popover.popdown()
+            self._aqua_notifications.show()
 
         def _show_aqua_control(self, category=None, task=None):
             """Open a real Aqua detail page without toggling an open panel shut."""
             if profile != "frutiger":
                 return
+            if hasattr(self, "_aqua_notifications"):
+                self._aqua_notifications.popover.popdown()
             if hasattr(self, "_aqua_flyouts"):
                 for popover in self._aqua_flyouts.popovers.values():
                     popover.popdown()

@@ -1,5 +1,20 @@
 # RiceBowl changelog
 
+## Unreleased — Frutiger Aero shared Riceware integration (4 November 2026)
+
+- Migrated Aqua World taskbar hardware status, volume and mute controls to one
+  per-shell bounded riceSpice worker with verified readback and safe shutdown.
+- Shared the native hardware facade with ChromeOS without coupling the two
+  independently styled desktop UIs. Aqua Control Center device controls and
+  bounded read-only Linux probes now use the Frutiger worker; navigating away
+  disposes stale callbacks and debounced writes.
+- Added an original Aqua notification bubble for XFCE's existing ricePop
+  history, real Do Not Disturb with verification and explicit mark-read. No
+  replacement notification daemon, synthetic toggles or new persistence.
+- Expanded adapter and notification tests plus Frutiger GTK smoke coverage.
+  Actual Mint hardware, suspend/resume and the complete Aqua P0 roadmap
+  remain open.
+
 ## Unreleased — ChromeOS shared Riceware integration (4 November 2026)
 
 - Migrated Material You shelf device status, Quick Settings volume/mute and

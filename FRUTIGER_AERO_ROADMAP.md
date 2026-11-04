@@ -170,6 +170,28 @@ the full P0 requirements below**:
   GTK3 CSS parser. **Native X11 screenshot and actual Mint/XFCE acceptance
   remain unverified in this runtime**.
 
+#### Riceware 1.0 integration checkpoint · 4 November 2026
+
+- [x] Tray status and volume/mute use a closeable bounded riceSpice controller,
+  not Frutiger-only hardware threads; changes require real backend readback.
+- [x] Native Aqua Control Center device pages use that same worker and a shared
+  allowlisted hardware facade. Detail navigation cancels pending debounce,
+  invalidates late results and frees detached control surfaces.
+- [x] Supplemental Wi-Fi/BlueZ/output/display/system information probes share
+  the bounded worker; unavailable data produces explicit errors.
+- [x] A separate pearl-glass Aqua notification popover reads XFCE's real
+  ricePop history on opening, displays at most six notices, offers verified
+  Do Not Disturb and explicit mark-read, and forgets private rows on close.
+  XFCE retains the notification daemon and notification log.
+- [x] Hermetic tests cover shared hardware verification and popup lifecycle;
+  expanded native GTK/X11 smoke is part of CI. Physical Mint device acceptance
+  and multi-monitor checks are **not claimed**.
+
+**Still open after this integration:** Full P0 Aqua interactions, native
+Bluetooth/USB/calendar/media one-click flyouts, advanced Wi-Fi credentials,
+notification actions and grouping, rich iconography, RiceExplorer Aqua theme,
+hardware/suspend acceptance and all end-to-end fidelity criteria below.
+
 **Still open:** Wi-Fi password entry and advanced connection editing, Bluetooth
 pairing/device management, complete monitor layout/scaling, persistence for
 visual personalization, richer notification/media flyouts,
