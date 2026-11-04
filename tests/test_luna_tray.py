@@ -5,12 +5,36 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from macrice.luna_tray import LunaTray
 from macrice.hardware_status import (
     _nmcli_fields, connect_wifi, disconnect_wifi, read_bluetooth, read_brightness,
     read_power_profiles, read_sound_outputs, read_wifi_networks, read_wifi_radio,
     set_bluetooth_power, set_brightness, set_power_profile, set_sound_output,
     set_wifi_radio,
 )
+
+
+class LunaTrayVisibilityTests(unittest.TestCase):
+    def test_closing_tray_is_immediate_even_with_gtk_transitions(self):
+        class AnimatedPopover:
+            visible = True
+
+            def get_visible(self):
+                return self.visible
+
+            def popdown(self):
+                # Gtk.Popover.popdown starts an animation; it may still be
+                # visible until the next GTK frame.
+                pass
+
+            def hide(self):
+                self.visible = False
+
+        tray = object.__new__(LunaTray)
+        popup = AnimatedPopover()
+        tray.popovers = {"audio": popup}
+        tray.toggle("audio")
+        self.assertFalse(popup.get_visible())
 
 
 class WifiTrayTests(unittest.TestCase):

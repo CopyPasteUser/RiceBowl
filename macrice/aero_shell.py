@@ -3618,7 +3618,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._cancel_popup_hide("control")
             if self.luna_tray is not None:
                 for popup in self.luna_tray.popovers.values():
-                    popup.popdown()
+                    popup.hide()
             if self.actions.get_visible():
                 self._hide_actions()
                 return
@@ -3977,7 +3977,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._cancel_popup_hide("menu")
             if self.luna_tray is not None:
                 for popup in self.luna_tray.popovers.values():
-                    popup.popdown()
+                    popup.hide()
             if self.menu.get_visible():
                 self._hide_menu()
                 return

@@ -197,11 +197,14 @@ class LunaTray:
     def toggle(self, name):
         pop = self.popovers[name]
         if pop.get_visible():
-            pop.popdown()
+            # GtkPopover.popdown() leaves the widget visible during its exit
+            # transition. XP menus dismiss immediately and must be closed
+            # before another tray/menu surface can claim focus.
+            pop.hide()
             return
         for other in self.popovers.values():
             if other.get_visible():
-                other.popdown()
+                other.hide()
         self.shell._hide_menu()
         self.shell._hide_actions()
         self.shell._refresh_status_async()
