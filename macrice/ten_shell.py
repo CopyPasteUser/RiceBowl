@@ -160,6 +160,47 @@ CSS = b"""
 .ten-action-root scale highlight { background: @ten-blue; }
 .ten-action-root scale slider { background: white; min-width: 13px; min-height: 13px; }
 .ten-action-root levelbar block.filled { background: @ten-blue; }
+/* Independent Windows 10 Settings, network and Task View windows. */
+.ten-settings-root, .ten-network-root, .ten-taskview-root {
+  background: #202020; color: #f4f4f4; border: 1px solid #484848;
+  border-radius: 0; font-family: "Segoe UI", "Noto Sans", sans-serif;
+}
+.ten-settings-toolbar { background: #202020; padding: 9px 15px;
+  border-bottom: 1px solid #444444; }
+.ten-settings-sidebar { background: #191919; border-right: 1px solid #393939;
+  padding: 15px 9px; }
+.ten-settings-sidebar entry { background: #f5f5f5; color: #202020;
+  border-radius: 0; padding: 6px; }
+.ten-settings-nav { background: transparent; color: #eeeeee; border: 0;
+  border-radius: 0; padding: 10px; min-height: 32px; box-shadow: none; }
+.ten-settings-nav:hover, .ten-settings-nav:focus { background: #3a3a3a; }
+.ten-settings-page { background: #242424; padding: 22px 25px; }
+.ten-settings-heading { color: #ffffff; font-size: 24px; font-weight: 400; }
+.ten-settings-tile { background: #292929; color: white; border: 1px solid #424242;
+  border-radius: 0; padding: 17px 13px; min-height: 76px; }
+.ten-settings-tile:hover, .ten-settings-tile:focus { background: #383838;
+  border-color: #81caff; }
+.ten-settings-action { background: #353535; color: white; border: 1px solid #646464;
+  border-radius: 0; padding: 7px 10px; min-height: 26px; }
+.ten-settings-action:hover, .ten-settings-action:focus { background: #444444;
+  border-color: #86cfff; }
+.ten-settings-action:disabled { background: #292929; color: #919191; }
+.ten-settings-page scale trough { background: #575757; min-height: 4px; }
+.ten-settings-page scale highlight { background: @ten-blue; }
+.ten-settings-page scale slider { background: #f4f4f4;
+  min-width: 14px; min-height: 14px; }
+.ten-network-root { padding: 16px 15px; }
+.ten-network-item { background: #2b2b2b; border-left: 2px solid #565656;
+  padding: 9px 7px; }
+.ten-network-item:hover { background: #333333; border-left-color: @ten-blue; }
+.ten-network-name { color: white; font-size: 12px; }
+.ten-taskview-root { padding: 16px 18px; }
+.ten-taskview-desktop { color: #f8f8f8; background: #333333;
+  border: 1px solid #535353; border-radius: 0; padding: 11px 18px; }
+.ten-taskview-desktop:hover { background: #434343; }
+.ten-taskview-active { background: #145b92; border-color: #79c7ff; }
+.ten-taskview-window { background: #303030; color: white;
+  border: 1px solid #474747; padding: 9px 11px; }
 .rice-status { background: transparent; border: 0; border-radius: 0;
   color: white; box-shadow: none; padding: 5px 3px; }
 .rice-status:hover, .rice-status:focus { background: #333338; }

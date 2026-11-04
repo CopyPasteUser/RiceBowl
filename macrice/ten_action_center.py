@@ -110,11 +110,20 @@ def build(shell, Gtk, Gdk):
         tile.pack_start(caption, False, False, 0)
         button.add(tile)
         button.get_accessible().set_name("Open " + name)
-        available = shutil.which(command) is not None
+        native_page = {"Network": "network", "Bluetooth": "devices",
+                       "Display": "display", "All settings": "home",
+                       "Sound": "sound", "Power": "system"}.get(name)
+        available = native_page is not None or shutil.which(command) is not None
         button.set_tooltip_text("Open " + name if available else
                                 command + " is not installed")
         button.set_sensitive(available)
-        button.connect("clicked", lambda _button, cmd=command: shell._open_tool(cmd))
+        if name == "Network":
+            button.connect("clicked", lambda _button: shell._toggle_ten_network())
+        elif native_page is not None:
+            button.connect("clicked", lambda _button, page=native_page:
+                           shell._open_ten_settings(page))
+        else:
+            button.connect("clicked", lambda _button, cmd=command: shell._open_tool(cmd))
         grid.attach(button, index % 4, index // 4, 1, 1)
         if name == "Network":
             shell.ten_network_action = button

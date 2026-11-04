@@ -127,6 +127,16 @@ not fake toggles. This is **a migration checkpoint**, not full Windows 10
 Airplane/VPN/Project modes, Explorer UI, touch/scaling and multi-monitor gates
 remain open.
 
+**Windows 10 next-stage checkpoint:** Native Settings, network flyout and
+Task View now consume the same Riceware/XFCE contracts. Settings is an
+independent renderer with real category navigation; a missing Linux tool is
+disabled, not simulated. NetworkManager owns Wi-Fi connections, with explicit
+user actions, verified readback and honest saved-credential errors. Task View
+uses existing libwnck/XFCE workspaces and never creates its own desktop owner.
+An installed RiceExplorer binary is offered as an opt-in `win10` launcher only;
+Thunar and default MIME handlers are left untouched. Advanced Settings and
+physical-hardware acceptance are still open gates.
+
 The family mapping changes **selection only**; per-rice windows, menu flows,
 icons, keyboard shortcuts, layouts and styling must remain independent.
 Do not substitute a generic themed Settings page for any of the seven.

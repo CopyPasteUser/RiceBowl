@@ -14,7 +14,7 @@ A lightweight, native Python/GTK3 desktop customization hub for **Linux Mint XFC
 
 RiceBowl changes real Linux desktop elements—taskbar, Start/launcher, menus, system controls, wallpaper, GTK/XFWM4 themes, icons and Thunar styling. Applications and device controls use real Linux backends. No Electron, telemetry or proprietary OS assets.
 
-> **Development status:** `main` is ahead of the [v0.9.1 pre-release](https://github.com/CopyPasteUser/RiceBowl/releases/tag/v0.9.1). XP Luna, Windows 7 Aero and Windows 10 now integrate the shared Riceware 1.0 backends. Automated tests do not replace physical Mint device, multi-monitor and suspend acceptance.
+> **Development status:** `main` is ahead of the [v0.9.1 pre-release](https://github.com/CopyPasteUser/RiceBowl/releases/tag/v0.9.1). XP Luna, Windows 7 Aero and Windows 10 integrate shared Riceware 1.0 backends. Windows 10 additionally has its own Settings, network and Task View surfaces. Physical Mint device, multi-monitor and suspend acceptance remain open.
 
 ## Styles
 
@@ -22,7 +22,7 @@ RiceBowl changes real Linux desktop elements—taskbar, Start/launcher, menus, s
 | --- | --- |
 | **macOS Aurora** | MacBar, MacMenu, Control Center and optional Plank dock |
 | **[Windows 7 Aero](WIN7_AERO_ROADMAP.md)** | Glass Superbar, classic Start, window actions, Control Panel and native-history Action Center flag |
-| **[Windows 10](WINDOWS10_ROADMAP.md)** | Flat taskbar, Start tiles, XFCE notification history and real radio/Focus Assist quick actions |
+| **[Windows 10](WINDOWS10_ROADMAP.md)** | Flat taskbar and Start tiles, native Settings, network list, Task View and real device/notification controls |
 | **[Windows XP Luna](XP_LUNA_ROADMAP.md)** | Blue/green taskbar, XP Start, Help and Control Panel |
 | **[Windows 98](CLASSIC_98_ROADMAP.md)** | Classic Start/Run/Find/Help, Quick Launch and System Properties |
 | **[ChromeOS](CHROMEOS_ROADMAP.md)** | Shelf, Launcher, Quick Settings, calendar and Settings |
@@ -86,6 +86,7 @@ The active rice uses **Super** for its launcher and **Right Ctrl** for Control P
 - **Thunar stays available.** [riceExplorer](https://github.com/CopyPasteUser/riceExplorer) is a separate, still-developing Rust file manager and is not yet the default.
 - **Riceware API 1.0:** shared, opt-in Linux backends for [riceSpice, ricePop, ricePlate and riceWine](RICEWARE_FOUNDATIONS.md). These are internal modules, not four additional background daemons.
 - **Migration status:** XP Luna and Windows 7 Aero use riceSpice for taskbar status, audio/Wi-Fi/Bluetooth/power/brightness flyouts and ricePlate for safe desktop shortcuts. Windows 7 reads XFCE notification history via ricePop and respects quiet mode in device-event balloons. **Windows 10** uses bounded riceSpice calls for taskbar status and verified audio changes; its own dark Action Center shows genuine XFCE notification history with mark-read/dismiss controls, verified Wi-Fi/Bluetooth switches and native Focus Assist (XFCE Do Not Disturb). Advanced settings still open installed Linux tools. [Migration checklist](RICEWARE_MIGRATION_GUIDE.md). Other Rices retain their backends; no default file manager or notification owner is replaced.
+- **Windows 10 next-stage UI:** Its Start Settings entry opens a **separate Windows-10-styled Settings shell** with category search, back navigation, Sound/Display/Notifications pages and verified hardware controls. The taskbar network icon opens a real NetworkManager Wi-Fi list with rescan, connect/disconnect and truthful credential errors; Task View switches actual X11 windows and XFCE workspaces, with user-triggered create/move/safe-last-desktop removal. Where installed, Start offers an **opt-in RiceExplorer preview** using `rice-explorer --theme win10`, with Thunar left as the default. Global Win+I/Win+Tab bindings, deep per-category Settings features and physical hardware acceptance are **not complete**.
 - Linux hardware availability and permissions determine which real actions are enabled. Missing capabilities are explained instead of simulated.
 - All artwork is original. RiceBowl is not affiliated with Apple, Google or Microsoft.
 
