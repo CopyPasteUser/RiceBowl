@@ -37,12 +37,14 @@ ACTION_SPECS = {
     "bluetooth_power": ActionSpec("bluetooth_power", "boolean"),
     "bluetooth_connect": ActionSpec("bluetooth_connect", "address"),
     "bluetooth_disconnect": ActionSpec("bluetooth_disconnect", "address"),
+    "bluetooth_pair": ActionSpec("bluetooth_pair", "address"),
     "brightness": ActionSpec("brightness", "integer", 1, 100),
     "microphone_volume": ActionSpec("microphone_volume", "integer", 0, 100),
     "microphone_mute": ActionSpec("microphone_mute", "boolean"),
     "power_profile": ActionSpec("power_profile", "selection"),
     "wifi": ActionSpec("wifi", "boolean"),
     "wifi_connect": ActionSpec("wifi_connect", "ssid"),
+    "wifi_connect_secure": ActionSpec("wifi_connect_secure", "credentials"),
     "wifi_disconnect": ActionSpec("wifi_disconnect", "none"),
 }
 
@@ -54,6 +56,19 @@ def action_specs() -> tuple[ActionSpec, ...]:
 
 def _validate(action: str, value: Any) -> None:
     spec = ACTION_SPECS[action]
+    if spec.kind == "credentials":
+        if (not isinstance(value, tuple) or len(value) != 2 or
+                not all(isinstance(part, str) for part in value)):
+            raise ValueError("Choose an SSID and a WPA password")
+        ssid, password = value
+        try:
+            ssid_size = len(ssid.encode("utf-8"))
+        except UnicodeEncodeError as exc:
+            raise ValueError("Wi-Fi SSID is not valid UTF-8") from exc
+        if (not ssid or "\x00" in ssid or ssid_size > 32 or
+                not 8 <= len(password) <= 63 or any(c in password for c in "\r\n\x00")):
+            raise ValueError("Invalid SSID or WPA password length")
+        return
     if spec.kind == "none":
         if value is not None:
             raise ValueError(f"{action} takes no value")
@@ -103,12 +118,14 @@ WRITERS: dict[str, tuple[Callable[..., Any], str]] = {
     "bluetooth_connect": (lambda address: hardware.set_bluetooth_connection(address, True), "bluetooth"),
     "bluetooth_disconnect": (
         lambda address: hardware.set_bluetooth_connection(address, False), "bluetooth"),
+    "bluetooth_pair": (hardware.pair_bluetooth_device, "bluetooth"),
     "brightness": (hardware.set_brightness, "brightness"),
     "microphone_volume": (hardware.set_microphone_volume, "microphone"),
     "microphone_mute": (hardware.set_microphone_mute, "microphone"),
     "power_profile": (hardware.set_power_profile, "power_profiles"),
     "wifi": (hardware.set_wifi_radio, "wifi"),
     "wifi_connect": (hardware.connect_wifi, "wifi_networks"),
+    "wifi_connect_secure": (lambda credentials: hardware.connect_wifi_secured(*credentials), "wifi_networks"),
     "wifi_disconnect": (hardware.disconnect_wifi, "wifi_networks"),
 }
 
@@ -195,6 +212,8 @@ def _matches(action: str, requested: Any, actual: Any) -> bool:
     if action in ("bluetooth_connect", "bluetooth_disconnect"):
         expected = action == "bluetooth_connect"
         return any(item.address == requested and item.connected is expected for item in actual.devices)
+    if action == "bluetooth_pair":
+        return any(item.address.lower() == requested.lower() and item.paired for item in actual.devices)
     if action == "brightness":
         return isinstance(requested, int) and not isinstance(requested, bool) and \
             abs(actual - requested) <= 5
@@ -202,8 +221,9 @@ def _matches(action: str, requested: Any, actual: Any) -> bool:
         return actual[0] == requested
     if action == "wifi":
         return isinstance(requested, bool) and actual is requested
-    if action == "wifi_connect":
-        return any(item.ssid == requested and item.connected for item in actual)
+    if action in ("wifi_connect", "wifi_connect_secure"):
+        ssid = requested[0] if action == "wifi_connect_secure" else requested
+        return any(item.ssid == ssid and item.connected for item in actual)
     if action == "wifi_disconnect":
         return not any(item.connected for item in actual)
     return False
@@ -223,7 +243,7 @@ def change(action: str, value: Any = None) -> Result:
                 outcome = writer()
             else:
                 outcome = writer(value)
-            if action in ("wifi_connect", "wifi_disconnect") and outcome is not True:
+            if action in ("wifi_connect", "wifi_connect_secure", "wifi_disconnect") and outcome is not True:
                 raise RuntimeError("NetworkManager could not verify the connection state")
         except (OSError, RuntimeError, ValueError, TypeError) as exc:
             return Result(action, "error", reason=str(exc))

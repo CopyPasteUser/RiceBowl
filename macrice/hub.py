@@ -160,6 +160,7 @@ def run() -> int:
             self._image_cache = {}
             self._preview_style = "night"
             self._preview_rendered = None
+            self._update_plan = None
             try:
                 self.set_icon_from_file(str(project_root() / "assets/ricebowl-symbolic.svg"))
             except (OSError, GLib.Error):
@@ -445,6 +446,34 @@ def run() -> int:
 
         def _build_backups(self):
             body = self._page("backups", "Recovery", "Restore previous desktop settings without overwriting newer personal changes.")
+            body.pack_start(label("SYSTEM HEALTH", "hub-overline"), False, False, 0)
+            body.pack_start(label("Check the current XFCE session and installed backends without modifying system settings.",
+                                  "hub-hint", True), False, False, 0)
+            self.doctor_button = action("Run read-only system check", lambda _: self._run_doctor())
+            body.pack_start(self.doctor_button, False, False, 0)
+            self.doctor_summary = label("Not checked yet", "hub-hint", True)
+            body.pack_start(self.doctor_summary, False, False, 0)
+            doctor_scroll = Gtk.ScrolledWindow()
+            doctor_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+            doctor_scroll.set_size_request(-1, 152)
+            self.doctor_results = vertical(6)
+            doctor_scroll.add(self.doctor_results)
+            body.pack_start(doctor_scroll, False, False, 0)
+            body.pack_start(label("SAFE UPDATES", "hub-overline"), False, False, 0)
+            body.pack_start(label("Preview a fast-forward revision from the official repository. "
+                                  "Updates are never installed automatically.", "hub-hint", True),
+                            False, False, 0)
+            self.update_label = label("Not checked yet. Existing Rice and personal settings are preserved.",
+                                      "hub-hint", True)
+            body.pack_start(self.update_label, False, False, 0)
+            updates = horizontal(9)
+            body.pack_start(updates, False, False, 0)
+            self.update_check_button = action("Check GitHub revision", lambda _: self._check_update())
+            self.update_apply_button = action("Install checked revision…", lambda _: self._confirm_update(), True)
+            self.update_apply_button.set_sensitive(False)
+            updates.pack_start(self.update_check_button, False, False, 0)
+            updates.pack_start(self.update_apply_button, False, False, 0)
+            body.pack_start(label("RESTORE POINTS", "hub-overline"), False, False, 0)
             self.backup_list = cls(vertical(11), "hub-card")
             body.pack_start(self.backup_list, False, False, 0)
             buttons = horizontal(10)
@@ -585,7 +614,8 @@ def run() -> int:
         def _set_busy(self, busy):
             self._busy = busy
             for name in ("apply_button", "plan_button", "repair_button", "install_button", "restore_button",
-                         "performance_button", "measure_button"):
+                         "performance_button", "measure_button", "doctor_button",
+                         "update_check_button", "update_apply_button"):
                 button = getattr(self, name, None)
                 if button:
                     button.set_sensitive(not busy)
@@ -594,6 +624,8 @@ def run() -> int:
                     self.performance_picker.get_active_id() in PERFORMANCE_PROFILES)
             if not busy and hasattr(self, "restore_button"):
                 self.restore_button.set_sensitive(bool(recent_backups()))
+            if not busy and hasattr(self, "update_apply_button"):
+                self.update_apply_button.set_sensitive(bool(self._update_plan and self._update_plan.needed))
 
         def _work(self, message, job, completed=None):
             if self._busy:
@@ -712,6 +744,69 @@ def run() -> int:
                 lambda: self._work("Restoring your desktop…", restore, self._after_restore),
                 "Restore desktop",
             )
+
+        def _run_doctor(self):
+            from .doctor import diagnose
+            self.doctor_summary.set_text("Checking the current session…")
+            self._work("Running read-only RiceBowl health checks…", diagnose, self._show_doctor)
+
+        def _show_doctor(self, checks):
+            from .doctor import summary
+            for child in tuple(self.doctor_results.get_children()):
+                child.destroy()
+            for item in checks:
+                caption = ("✓" if item.status == "ok" else "!" if item.status == "warning" else "·")
+                details = item.message + (" — " + item.advice if item.advice else "")
+                self.doctor_results.pack_start(label(caption + " " + details, "hub-hint", True),
+                                               False, False, 0)
+            self.doctor_results.show_all()
+            ok, warnings, optional = summary(checks)
+            self.doctor_summary.set_text(f"{ok} ready · {warnings} need attention · {optional} optional")
+            self._notify("Health check complete." if not warnings else
+                         f"Health check found {warnings} issue(s); review Recovery.",
+                         error=bool(warnings))
+
+        def _check_update(self):
+            from .updater import inspect
+            self._update_plan = None
+            self.update_apply_button.set_sensitive(False)
+            self.update_label.set_text("Checking the official repository…")
+            self._work("Checking available RiceBowl revision…",
+                       lambda: inspect(refresh=True), self._show_update)
+
+        def _show_update(self, plan):
+            self._update_plan = plan
+            self.update_label.set_text(
+                f"Installed source {plan.current[:12]} · origin/main {plan.available[:12]} · "
+                f"{plan.commits} new commit(s)" if plan.needed else
+                f"Source already up to date at {plan.current[:12]}")
+            self.update_apply_button.set_sensitive(plan.needed)
+            self._notify("A checked fast-forward update is available." if plan.needed else
+                         "RiceBowl source is up to date.")
+
+        def _confirm_update(self):
+            from .updater import apply as apply_update
+            plan = self._update_plan
+            if not plan or not plan.needed:
+                return
+            self._confirm(
+                "Install this checked RiceBowl revision?",
+                "Update from " + plan.current[:12] + " to " + plan.available[:12] +
+                ". Current installed files are archived. The manager may need restarting; "
+                "existing desktop theme settings will not be switched.",
+                lambda: self._work("Installing checked update with recovery…",
+                                   lambda: apply_update(source=plan.source,
+                                                        expected_revision=plan.available),
+                                   self._update_finished),
+                "Install update",
+            )
+
+        def _update_finished(self, plan):
+            self._update_plan = None
+            self.update_apply_button.set_sensitive(False)
+            self.update_label.set_text("Installed " + plan.available[:12] +
+                                       ". Restart RiceBowl to load updated code.")
+            self._notify("Update installed. Restart RiceBowl; active rice was not switched.")
 
         def _after_restore(self, backup):
             def reconcile():

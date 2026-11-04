@@ -316,6 +316,37 @@ def connect_wifi(ssid: str) -> bool:
     return any(item.connected and item.ssid == ssid for item in read_wifi_networks())
 
 
+def connect_wifi_secured(ssid: str, password: str) -> bool:
+    """Supply a WPA passphrase on stdin, never in argv, a file or application logs.
+
+    NetworkManager owns persistence via its normal connection profile. Complex
+    enterprise authentication remains with the system connection editor.
+    """
+    if not isinstance(ssid, str) or not ssid or "\x00" in ssid:
+        raise ValueError("Select a valid Wi-Fi SSID")
+    try:
+        length = len(ssid.encode("utf-8"))
+    except UnicodeEncodeError as exc:
+        raise ValueError("Wi-Fi SSID is not valid UTF-8") from exc
+    if length > 32:
+        raise ValueError("Wi-Fi SSIDs must not exceed 32 bytes")
+    if not isinstance(password, str) or not 8 <= len(password) <= 63 or any(
+            char in password for char in ("\r", "\n", "\x00")):
+        raise ValueError("WPA passphrase must be 8–63 characters without line breaks")
+    if not shutil.which("nmcli"):
+        raise RuntimeError("NetworkManager nmcli is not installed")
+    try:
+        result = subprocess.run(
+            ["nmcli", "--ask", "--wait", "18", "device", "wifi", "connect", ssid],
+            input=password + "\n", capture_output=True, text=True, timeout=24,
+            check=False)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise RuntimeError("Wi-Fi password request timed out or failed") from exc
+    if result.returncode:
+        raise RuntimeError("Wi-Fi authentication failed; check the password or use the network editor")
+    return any(item.connected and item.ssid == ssid for item in read_wifi_networks())
+
+
 def read_brightness(root: Path = Path("/sys/class/backlight")) -> int | None:
     """Read active backlight percentage without privileged commands."""
     try:
@@ -449,7 +480,10 @@ def _bluetooth_via_cli() -> BluetoothState | None:
         _run(["bluetoothctl", "devices", "Connected"], timeout=2.5))
     paired = _bluetooth_device_lines(
         _run(["bluetoothctl", "devices", "Paired"], timeout=2.5))
-    all_devices = {**paired, **connected}
+    # BlueZ's plain `devices` view includes previously discovered nearby
+    # devices, not only paired ones. This is cached discovery, no active scan.
+    discovered = _bluetooth_device_lines(_run(["bluetoothctl", "devices"], timeout=2.5))
+    all_devices = {**discovered, **paired, **connected}
     devices = tuple(BluetoothDevice(address, name, address in paired,
                                     address in connected)
                     for address, name in sorted(all_devices.items(),
@@ -566,6 +600,38 @@ def set_bluetooth_connection(address: str, connected: bool) -> BluetoothState:
     except Exception as exc:
         failures.append("system D-Bus: " + str(exc)[:120])
     raise RuntimeError("Bluetooth device action could not be verified: " + "; ".join(failures))
+
+
+def pair_bluetooth_device(address: str) -> BluetoothState:
+    """Try pairing an already discovered device; PIN workflows need BlueZ UI.
+
+    No auto-trust or blind connection, and no new resident pairing agent.
+    """
+    if not isinstance(address, str) or not re.fullmatch(
+            r"[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5}", address):
+        raise ValueError("Select a valid Bluetooth address")
+    state = read_bluetooth()
+    device = next((item for item in state.devices if item.address.lower() == address.lower()), None)
+    if device is None:
+        raise ValueError("Discover the Bluetooth device in system settings first")
+    if state.powered is not True:
+        raise RuntimeError("Switch Bluetooth on before pairing")
+    if device.paired:
+        return state
+    if not shutil.which("bluetoothctl"):
+        raise RuntimeError("BlueZ bluetoothctl is not installed")
+    try:
+        result = subprocess.run(["bluetoothctl", "pair", device.address],
+                                capture_output=True, text=True, timeout=22, check=False)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise RuntimeError("Bluetooth pairing timed out; use the system pairing dialog") from exc
+    if result.returncode:
+        raise RuntimeError("Pairing needs confirmation or a passkey; use the system Bluetooth dialog")
+    verified = read_bluetooth()
+    if not any(item.address.lower() == address.lower() and item.paired
+               for item in verified.devices):
+        raise RuntimeError("Bluetooth pairing was not verified")
+    return verified
 
 
 def read_microphone() -> SoundState:

@@ -69,6 +69,14 @@ def parser() -> argparse.ArgumentParser:
     xp_desktop.add_argument("action", choices=("status", "install", "remove"))
     commands.add_parser("status", help="Show installed components and the detected appearance")
     commands.add_parser("inspect", help="Print a safe, read-only JSON appearance report")
+    doctor = commands.add_parser("doctor", help="Run read-only RiceBowl/XFCE health checks")
+    doctor.add_argument("--json", action="store_true", help="Print machine-readable health results")
+    updater = commands.add_parser("update", help="Inspect or explicitly install a verified fast-forward revision")
+    updater.add_argument("action", choices=("check", "apply"))
+    updater.add_argument("--source", type=Path, help="Trusted RiceBowl Git checkout (defaults to ~/RiceBowl)")
+    updater.add_argument("--refresh", action="store_true", help="Fetch origin/main before checking")
+    updater.add_argument("--yes", action="store_true", help="Confirm a staged update with recovery")
+    updater.add_argument("--revision", help="Optional exact 40-digit revision from update check")
     installer = commands.add_parser("install", help="Install or repair the three bundled apps; preserve Plank")
     installer.add_argument("--dry-run", action="store_true", help="Do not write or start anything")
     installer.add_argument("--no-start", action="store_true", help="Install without launching GTK")
@@ -85,6 +93,9 @@ def parser() -> argparse.ArgumentParser:
     rice.add_argument("style", nargs="?", choices=tuple(STYLES))
     profile = commands.add_parser("performance", help="Apply a Control Center resource profile")
     profile.add_argument("profile", choices=("light", "balanced", "visual", "report"))
+    profile.add_argument("--json", action="store_true", help="Machine-readable on-demand report")
+    profile.add_argument("--samples", type=int, default=3, metavar="N",
+                         help="Read 1–9 short CPU/PSS samples for the report (default: 3)")
     from .riceware_cli import add_commands
     add_commands(commands)
     return p
@@ -191,21 +202,66 @@ def main(argv: list[str] | None = None) -> int:
                     print("Taskbar warning:", warning, file=sys.stderr)
             return 0
         if args.command == "performance":
-            from .performance import apply_profile, measure_processes
+            from .performance import apply_profile, measure_processes, summarize_samples
             if args.profile == "report":
-                processes = measure_processes()
-                if not processes:
-                    print("No MacRice components or Plank processes found for this user.")
-                for item in processes:
+                if not 1 <= args.samples <= 9:
+                    raise ValueError("--samples must be between 1 and 9")
+                result = summarize_samples([measure_processes() for _ in range(args.samples)])
+                if args.json:
+                    print(json.dumps(result, indent=2))
+                    return 0
+                if not result["components"]:
+                    print("No RiceBowl components or Plank processes found for this user.")
+                for item in result["components"]:
                     pss = f"{item['pss_kib'] / 1024:.1f} MiB" if item["pss_kib"] is not None else "unavailable"
                     cpu = f"{item['cpu_percent']:.1f}%" if item["cpu_percent"] is not None else "unavailable"
                     threads = str(item["threads"]) if item["threads"] is not None else "unavailable"
                     print(f"{item['name']} (PID {item['pid']}): PSS {pss} · CPU {cpu} · Threads {threads}")
+                if result["total_pss_kib"] is not None:
+                    print(f"Sampled total PSS: {result['total_pss_kib'] / 1024:.1f} MiB"
+                          + (" (partial)" if result["partial"] else ""))
             else:
+                if args.json or args.samples != 3:
+                    raise ValueError("--json and --samples apply only to 'performance report'")
                 print(f"Performance profile {args.profile} applied; backup:", apply_profile(args.profile))
             return 0
         if args.command == "inspect":
             print(json.dumps(detect().as_dict(), indent=2, ensure_ascii=False))
+            return 0
+        if args.command == "doctor":
+            from .doctor import diagnose, summary
+            checks = diagnose()
+            if args.json:
+                print(json.dumps({"checks": [item.as_dict() for item in checks],
+                                  "summary": dict(zip(("ok", "warning", "info"), summary(checks)))},
+                                 indent=2, ensure_ascii=False))
+            else:
+                for item in checks:
+                    print(f"[{item.status.upper():7}] {item.message}")
+                    if item.advice:
+                        print("          " + item.advice)
+                ok, warnings, optional = summary(checks)
+                print(f"{ok} ready · {warnings} attention · {optional} optional")
+            return 1 if any(item.status == "warning" for item in checks) else 0
+        if args.command == "update":
+            from .updater import UpdateError, apply as apply_update, inspect as inspect_update
+            if args.action == "apply":
+                if not args.yes:
+                    raise UpdateError("Use update check --refresh first, then update apply --yes")
+                if args.revision and (len(args.revision) != 40 or any(
+                        character not in "0123456789abcdefABCDEF" for character in args.revision)):
+                    raise UpdateError("--revision must be a full Git commit SHA (40 hex digits)")
+                plan = apply_update(source=args.source, expected_revision=args.revision)
+                print("RiceBowl updated to " + plan.available[:12] if plan.needed else
+                      "RiceBowl already up to date")
+                print("Restart the manager to load the new code; your desktop rice was not switched.")
+            else:
+                plan = inspect_update(source=args.source, refresh=args.refresh)
+                print("Local revision: " + plan.current[:12])
+                print("Available:      " + plan.available)
+                print(f"New commits:    {plan.commits}" +
+                      (" — run update apply --yes (optionally --revision SHA) after review" if plan.needed else
+                       " — up to date (cached; use --refresh to check GitHub)"))
             return 0
         if args.command == "status":
             print("MacRice " + __version__)

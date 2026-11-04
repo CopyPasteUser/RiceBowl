@@ -1,5 +1,36 @@
 # RiceBowl roadmap to 1.0
 
+## Current engineering checkpoint (4 November 2026) · not a 1.0 release
+
+- [x] `macrice doctor` / `--json`: read-only XFCE/X11, managed-install,
+  launcher, optional hardware-backend and private shortcut-recovery checks.
+- [x] Opt-in official-origin fast-forward update: `macrice update check
+  --refresh`, then `macrice update apply --yes`; stage a pinned Git revision,
+  preserve user edits, save previous bundle and attempt reinstall on failure.
+  GUI equivalents live in the Hub's existing Recovery tab. **Not signed
+  release verification or globally atomic rollback**.
+- [x] Frutiger native WPA password input via nmcli stdin (not command-line
+  arguments), pairing of already-discovered BlueZ devices with system-dialog
+  fallback, and a real local GTK date/calendar popover.
+- [x] Frutiger media detail in the sound flyout reads bounded session MPRIS
+  players and dispatches only supported Play/Pause/Next/Previous methods;
+  no player daemon or persistent listening loop. Gio VolumeMonitor powers
+  a second native mounted-location popup with open and user-confirmed,
+  asynchronous unmount; pending/failed requests are visible.
+- [x] Sequential seven-profile recovery simulations across non-macOS shells,
+  including a failed mid-transition handoff; regression coverage in CI.
+- [x] On-demand repeated CPU/PSS/thread measurement with per-PID medians and
+  machine-readable JSON. No new resident monitor or unmeasured RAM claims.
+- [ ] Xvfb native smoke of **new** calendar and secret-entry popovers on CI;
+  physical hardware acceptance and 1.0 security/fidelity gates still pending.
+- [ ] Validate the new USB/media/date/credentials GTK surfaces in virtual X11
+  and on the physical laptop; complete advanced Frutiger monitor layout,
+  full Bluetooth discovery and separate riceExplorer Aqua renderer integration.
+
+Owner-facing [1.0 acceptance sheet](ACCEPTANCE_1_0.md) defines the exact
+session-switch, Wi-Fi/Bluetooth, external HDMI, suspend and PSS measurements.
+macOS Aurora visuals remain unchanged.
+
 > **Riceware ecosystem plan:** [riceExplorer, riceSpice, ricePop, ricePlate and riceWine](RICE_ECOSYSTEM_ROADMAP.md). Defines shared backends, distinct renderers, ownership, conditional independent programs and acceptance gates. Planning only; no new service is deployed.
 
 ## 1.0 hardening pass — session, resource visibility and Aqua flyouts (4 November 2026)
@@ -18,8 +49,8 @@
   callbacks, and add deterministic unit tests plus native GTK smoke assertions.
 - [ ] Verify real settled PSS/CPU, device behavior, suspended-session recovery,
   repeated rice switching and multi-monitor layouts on Linux Mint XFCE/X11.
-- [ ] Finish Frutiger's remaining feature/fidelity backlog (Wi-Fi credentials,
-  Bluetooth pairing, deep power/display configuration and Aqua riceExplorer).
+- [ ] Finish Frutiger's remaining feature/fidelity backlog (full Bluetooth
+  discovery/PIN wizard, monitor layouts, USB/media and Aqua riceExplorer).
 
 **Scope:** The macOS Aurora UI and its existing startup path remain unchanged.
 
@@ -145,11 +176,14 @@ MacRice is deliberately a thin integration layer. MacMenu, Control Center and Ma
 - [ ] Measure actual PSS, idle CPU and open/close latency on the owner's ThinkPad under each profile; do not claim unmeasured savings.
 - [ ] Test the panel coexistence, login startup and an explicit rollback on the real machine.
 
-## 0.5 — Coordinated update and recovery
+## 0.5 — Coordinated update and recovery (historical objectives)
 
-- [ ] Add a revision-aware updater that can verify signed release checksums.
+- [x] Add a revision-aware **fast-forward Git updater** with a checked official
+  origin and archived rollback. Signed release checksums remain a separate gate.
 - [ ] Give the manager a single backup/restore view across all three components.
-- [ ] Add concise health checks for missing GTK, NetworkManager, icons and shortcut conflicts.
+- [x] Add concise, read-only health checks for missing GTK, NetworkManager,
+  managed launchers and unsafe shortcut recovery state. Live xfconf conflicts
+  still require owner testing.
 - [ ] Add an opt-in migration path from older installations; never replace unrelated apps.
 
 ## 0.8 — Integration polish
