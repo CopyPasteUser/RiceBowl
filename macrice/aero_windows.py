@@ -7,6 +7,7 @@ missing, Aero still offers pinned launchers, search and a clock.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from math import ceil, sqrt
 
 
 @dataclass(frozen=True)
@@ -52,6 +53,41 @@ def closest_workarea(window_geometry: tuple[int, int, int, int],
     return min(workareas, key=distance)
 
 
+def window_layout(workarea: tuple[int, int, int, int], count: int,
+                  layout: str) -> tuple[tuple[int, int, int, int], ...]:
+    """Safe native-X11 window positions for the Win7 taskbar arrangement menu.
+
+    To prevent postage-stamp windows the menu refuses more than 12 at once.
+    Tiled rectangles cover the workarea exactly, including odd pixel sizes.
+    """
+    if layout not in ("cascade", "stacked", "side-by-side"):
+        raise ValueError("Unknown window layout")
+    x, y, width, height = workarea
+    if count <= 0 or count > 12 or width < 320 or height < 240:
+        return ()
+    if layout == "cascade":
+        step = min(32, width // (count + 4), height // (count + 4))
+        rectangles = [(x + index * step, y + index * step,
+                       width - step * (count - 1) - width // 5,
+                       height - step * (count - 1) - height // 5)
+                      for index in range(count)]
+    else:
+        if count <= 3:
+            columns = count if layout == "side-by-side" else 1
+        else:
+            columns = ceil(sqrt(count)) if layout == "side-by-side" else max(1, int(sqrt(count)))
+        rows = ceil(count / columns)
+        rectangles = []
+        for index in range(count):
+            row, column = divmod(index, columns)
+            left, right = x + width * column // columns, x + width * (column + 1) // columns
+            top, bottom = y + height * row // rows, y + height * (row + 1) // rows
+            rectangles.append((left, top, right - left, bottom - top))
+    if any(width < 180 or height < 120 for _x, _y, width, height in rectangles):
+        return ()
+    return tuple(rectangles)
+
+
 class WindowSnapController:
     """Use the existing X11 WM; never install global window hooks or hotkeys.
 
@@ -69,6 +105,24 @@ class WindowSnapController:
         for xid in tuple(self.original):
             if xid not in live:
                 del self.original[xid]
+
+    def place(self, xid: int, geometry: tuple[int, int, int, int], timestamp: int) -> bool:
+        """Position an existing normal window, keeping one reversible snapshot."""
+        if len(geometry) != 4 or geometry[2] < 1 or geometry[3] < 1:
+            return False
+        window = self.wnck.Window.get(xid)
+        if (window is None or window.get_window_type() != self.wnck.WindowType.NORMAL
+                or window.is_skip_tasklist() or window.is_fullscreen()):
+            return False
+        if xid not in self.original:
+            self.original[xid] = (tuple(window.get_geometry()), bool(window.is_maximized()))
+        if window.is_maximized():
+            window.unmaximize()
+        self._move(window, geometry)
+        if window.is_minimized():
+            window.unminimize(timestamp)
+        window.activate(timestamp)
+        return True
 
     def arrange(self, xid: int, action: str, workarea: tuple[int, int, int, int],
                 timestamp: int) -> bool:
@@ -95,14 +149,10 @@ class WindowSnapController:
                     target = half_screen_geometry(workarea, action)
                 except ValueError:
                     return False
+                return self.place(xid, target, timestamp)
             if xid not in self.original:
                 self.original[xid] = (tuple(window.get_geometry()), bool(window.is_maximized()))
-            if action == "maximize":
-                window.maximize()
-            else:
-                if window.is_maximized():
-                    window.unmaximize()
-                self._move(window, target)
+            window.maximize()
         if window.is_minimized():
             window.unminimize(timestamp)
         window.activate(timestamp)

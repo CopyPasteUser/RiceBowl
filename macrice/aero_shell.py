@@ -566,7 +566,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
     from .aero_layout import actual_popup_y
     from .aero_windows import (WindowSnapshot, WindowSnapController, closest_workarea,
-                               create_window_tracker, toggle_window_id)
+                               create_window_tracker, is_task_window, toggle_window_id,
+                               window_layout)
     from .installer import project_root
 
     class AeroShell(Gtk.Application):
@@ -919,6 +920,13 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                                and item.get_submenu() is not None
                                for item in menu.get_children() if isinstance(item, Gtk.MenuItem))
                     menu.destroy()
+                    taskbar_menu = self._win7_taskbar_menu()
+                    taskbar_labels = {item.get_label() for item in taskbar_menu.get_children()
+                                      if isinstance(item, Gtk.MenuItem)}
+                    assert {"Cascade windows", "Show windows stacked",
+                            "Show windows side by side", "Undo window arrangement",
+                            "Start Task Manager"} <= taskbar_labels
+                    taskbar_menu.destroy()
                     self._win7_show_preview("app:ricebowl-ci", button)
                     assert self._win7_preview is not None
                     self._win7_stop_preview()
@@ -2374,8 +2382,66 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             """Windows 7 blank Superbar area, without stealing app/SNI clicks."""
             if profile != "aero" or event.button != 3:
                 return False
+            menu = self._win7_taskbar_menu()
+            menu.show_all()
+            menu.popup_at_pointer(event)
+            return True
+
+        def _win7_visible_layout_windows(self):
+            """Only normal visible windows on the focused monitor can be tiled."""
+            tracker = self._window_tracker
+            if tracker is None or self._win7_snap is None:
+                return None, ()
+            windows = []
+            for window in tracker.screen.get_windows():
+                if (is_task_window(window, tracker.wnck) and not window.is_minimized()
+                        and not window.is_fullscreen()):
+                    area = self._win7_window_workarea(int(window.get_xid()))
+                    if area is not None:
+                        windows.append((int(window.get_xid()), area))
+            if not windows:
+                return None, ()
+            active = tracker.screen.get_active_window()
+            active_xid = int(active.get_xid()) if active is not None else None
+            selected_area = next((area for xid, area in windows if xid == active_xid), windows[0][1])
+            return selected_area, tuple(xid for xid, area in windows if area == selected_area)
+
+        def _win7_arrange_desktop_windows(self, mode):
+            if self._win7_snap is None:
+                return
+            if mode == "undo":
+                previous = tuple(self._win7_snap.original)
+                for xid in previous:
+                    self._win7_arrange_window(xid, "restore")
+                return
+            area, xids = self._win7_visible_layout_windows()
+            if area is None:
+                return
+            positions = window_layout(area, len(xids), mode)
+            timestamp = Gtk.get_current_event_time()
+            for xid, geometry in zip(xids, positions):
+                self._win7_snap.place(xid, geometry, timestamp)
+
+        def _win7_taskbar_menu(self):
+            """Create real Windows 7 desktop actions with supported backends."""
             menu = Gtk.Menu()
             menu.get_style_context().add_class("win7-jumplist")
+            area, xids = self._win7_visible_layout_windows()
+            for title, mode in (("Cascade windows", "cascade"),
+                                ("Show windows stacked", "stacked"),
+                                ("Show windows side by side", "side-by-side"),
+                                ("Undo window arrangement", "undo")):
+                item = Gtk.MenuItem(label=title)
+                if mode == "undo":
+                    available = bool(self._win7_snap and self._win7_snap.original)
+                else:
+                    available = bool(area and window_layout(area, len(xids), mode))
+                item.set_sensitive(available)
+                item.set_tooltip_text("Only normal, visible windows on the active monitor; up to 12 at once")
+                item.connect("activate", lambda _item, selected=mode:
+                             self._win7_arrange_desktop_windows(selected))
+                menu.append(item)
+            menu.append(Gtk.SeparatorMenuItem())
             for title, action in (
                 ("Show the desktop", self._show_desktop),
                 ("Customize notification icons…", lambda: self._tray.open_preferences()
@@ -2393,9 +2459,17 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     item.set_sensitive(self._tray is not None)
                 item.connect("activate", lambda _item, callback=action: callback())
                 menu.append(item)
-            menu.show_all()
-            menu.popup_at_pointer(event)
-            return True
+            menu.append(Gtk.SeparatorMenuItem())
+            task_manager = next((name for name in ("xfce4-taskmanager", "gnome-system-monitor")
+                                 if shutil.which(name)), None)
+            item = Gtk.MenuItem(label="Start Task Manager")
+            item.set_sensitive(task_manager is not None)
+            if task_manager is None:
+                item.set_tooltip_text("Install xfce4-taskmanager or gnome-system-monitor")
+            else:
+                item.connect("activate", lambda _item, name=task_manager: self._open_tool(name))
+            menu.append(item)
+            return menu
 
         def _win7_manage_desktop(self, action):
             self._manage_desktop_shortcuts(action, "aero")

@@ -1,5 +1,18 @@
 # RiceBowl changelog
 
+## Unreleased — Windows 7 taskbar window layout and Task Manager (4 November 2026)
+
+- Completed native blank-Superbar context actions for **Cascade windows**,
+  **Show windows stacked**, **Show windows side by side**, and **Undo window
+  arrangement**. Move only normal, visible, non-fullscreen windows on the
+  active monitor; cap at 12 and disable layouts with unusably small cells.
+  The original per-window geometry is retained for an explicit restore.
+- Added **Start Task Manager** backed by the installed `xfce4-taskmanager` or
+  `gnome-system-monitor`; without either utility it is honestly disabled.
+- Added pure geometry and reversible-lifecycle tests plus a native GTK/X11
+  smoke check for all new menu entries. RiceExplorer and other rice shells
+  are unaffected. Physical Mint/XFCE window-management acceptance remains open.
+
 ## Unreleased — Windows 7 native window arrangement and attention (4 November 2026)
 
 - Show a distinct amber Aero Superbar state for real X11 window-attention

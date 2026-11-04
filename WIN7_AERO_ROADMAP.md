@@ -201,6 +201,24 @@ deep applets and physical hardware acceptance.
 The complete Superbar/Snap umbrella tasks below remain open. The available
 right-click arrangement is **not** a substitute for edge-drag/keyboard Snap.
 
+### P1 progress — native taskbar window layouts and Task Manager
+
+- [x] Add real **Cascade**, **Stacked** and **Side by side** commands to the
+  blank Windows 7 Superbar menu, operating on visible normal windows on the
+  active monitor (never fullscreen, minimized or non-task windows).
+- [x] Save only window geometry/maximization for reversible **Undo window
+  arrangement**. Refuse overcrowded layouts (over 12 windows or unusably small
+  workareas) rather than creating tiny windows or moving apps to other displays.
+- [x] Add **Start Task Manager** with `xfce4-taskmanager` / `gnome-system-monitor`
+  backend discovery and a genuinely disabled unavailable state.
+- [x] Add exact rectangle, negative-monitor, undo, invalid-layout and native
+  GTK/X11 context-menu smoke assertions without activating real user windows.
+- [ ] Physically validate layered window ordering, geometry constraints and
+  Task Manager launch on the owner's Mint/XFCE system, including dual HDMI.
+
+This covers native taskbar arrangement actions but not taskbar locking,
+relocation, autohide, complete Win7 Jump Lists or edge-drag Snap/Shake.
+
 ### P0 — Close the biggest depth and functionality gaps
 
 - [ ] **Authentic notification area and native-feeling flyouts:** small Aero-style controls anchored to the corresponding Superbar icon. Audio: real volume/mute and output switching; network: actual wired/Wi-Fi status, discovery, connect/disconnect through NetworkManager; power: battery/charge, supported brightness and power profile; clock: date/calendar; Bluetooth: adapter/device view when installed. Display success only after verifying the backend state. Handle absent hardware, offline mode, permission errors, timeouts and unsupported actions honestly. This is Windows 7's notification area, **not Windows 10's Action Center**.
