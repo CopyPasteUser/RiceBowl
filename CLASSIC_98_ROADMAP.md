@@ -106,6 +106,20 @@ Current evidence: source files, existing roadmap, current repository screenshot 
 
 **Still open:** complete original hover/cascade keyboard geometry; folders within Favorites; Programs context actions; complete Run history and .desktop targeting; Finder content/date/type search and computer discovery; dedicated Taskbar and Folder Options applets; full Display Properties tabs; independent Quick Launch configuration; comprehensive tray NetworkManager/XEmbed operation; window context menus; desktop virtual folders; structural riceExplorer skin; Win98/2000 preset split; era accessories; and physical Mint acceptance. Do not close a milestone until its full gate passes.
 
+### Implementation checkpoint — Taskbar Properties phase B (4 November 2026)
+
+**Implemented on feature branch, pending PR CI and physical Mint validation.** This completes a narrow portion of Milestone 2, not the full Taskbar Properties acceptance gate.
+
+- [x] Add Win98-only clock/Quick Launch visibility preferences with separate JSON configuration under the user's XDG directory.
+- [x] Add Taskbar Properties dialog with meaningful **Show clock**, **Show Quick Launch toolbar**, Apply/OK/Cancel actions and immediate widget readback.
+- [x] Connect **Start → Settings → Taskbar & Start Menu** to the new dialog rather than the generic XFCE settings manager; add taskbar blank-area context menu → Properties.
+- [x] Atomic, owner-readable-only configuration writes, strict booleans, corrupt/oversized input fallback and symlink overwrite refusal.
+- [x] Add seven headless regression test cases for persistence and widget application; CI and hardware execution remain to be verified.
+- [ ] Add Auto Hide, Lock Taskbar, toolbars configuration, screen-edge position, small icons, and WM capability-aware Always On Top with reversible session ownership.
+- [ ] Verify context menu placement, Apply/Cancel semantics and clock/Quick Launch visibility across login and rice switching on physical Mint/XFCE.
+
+**Scope note:** No XP, Windows 7, Windows 10, macOS, ChromeOS or Frutiger widget is modified by this feature. No global XFCE taskbar setting is changed.
+
 ### Milestone 0 — Freeze references, safe state and test harness (P0)
 
 - [ ] Create an era-specific Win98 SE reference matrix with reference screenshots and behavior notes for: blank desktop, Start plus **each** flyout, crowded taskbar, Quick Launch, tray menus, My Computer, Explorer in classic and Web View, Control Panel and representative applets, Run, Find, shutdown, properties, copy conflict and error dialogs. Record source/date and observable behavior; never copy proprietary assets.
