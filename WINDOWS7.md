@@ -59,6 +59,13 @@ captures and physical Mint verification remain open.
   Original window dimensions and maximization state are retained for restore,
   then discarded when the window closes. No system-wide keyboard shortcut or
   window manager configuration is overridden.
+- Right-click blank Superbar space for **Cascade windows**, **Show windows
+  stacked**, **Show windows side by side**, **Undo window arrangement**, and
+  **Start Task Manager**. The layouts act only on existing normal, visible,
+  non-fullscreen windows on the active monitor; a layout with more than 12
+  windows or unusably small window cells is disabled. Undo restores only
+  windows rearranged by RiceBowl. Task Manager opens `xfce4-taskmanager` or
+  `gnome-system-monitor` only when installed; otherwise the menu is disabled.
 - Right-click pinned programs to open real MIME-compatible local recent files
   through that program. Empty Jump Lists never invent entries.
 - Hover **Show Desktop** to temporarily reveal the desktop; moving away restores
@@ -76,7 +83,7 @@ items; the context menu is the available native arrangement entry point.
 | --- | --- | --- |
 | **Start orb** | [Aero Penguin](assets/aero-penguin.svg) | Original branded Linux Start button; toggles a real GTK window |
 | **Start menu** | [aero_shell.py](macrice/aero_shell.py) | Installed desktop programs, search, Enter/Escape/Down keyboard operation, paging, Home/Computer/Documents, Control Panel, safe XFCE session dialog |
-| **Taskbar** | [aero_shell.py](macrice/aero_shell.py) / [aero_superbar.py](macrice/aero_superbar.py) | 48px glass Superbar, real app icons and attention states, WM_CLASS grouping, previews, Jump Lists, native context-menu Snap/maximize/restore, overflow |
+| **Taskbar** | [aero_shell.py](macrice/aero_shell.py) / [aero_superbar.py](macrice/aero_superbar.py) | 48px glass Superbar, real attention states, WM_CLASS grouping, previews, Jump Lists, Snap/maximize/restore, Cascade/Stack/Side-by-side/Undo, installed Task Manager, overflow |
 | **Control Panel** | [win7_control_panel.py](macrice/win7_control_panel.py) | Eight categories, three views, Back/Forward, applet details, installed Linux actions and unavailable states |
 | **Pinned applications** | [aero_pins.py](macrice/aero_pins.py) | Right-click a Start result to pin, right-click taskbar icon to unpin; 6 persistent launchers maximum |
 | **Show Desktop** | [aero_windows.py](macrice/aero_windows.py) | Wnck Show Desktop with safe reversible hover Peek and click action |

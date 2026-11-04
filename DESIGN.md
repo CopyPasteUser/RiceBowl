@@ -59,7 +59,10 @@ secondary pages; prototypes and the release roadmap do not crowd the selector.
   an amber Aero highlight, not an artificial timer. Running-window context
   menus offer left/right half-tiling, maximize and restore of the previous
   window geometry; the native Wnck actions use the actual display workarea and
-  leave XFWM4 shortcuts untouched. Edge-drag, global Win+Arrow and Shake remain
+  leave XFWM4 shortcuts untouched. The blank taskbar's classic Arrange commands
+  cascade, stack or place genuine visible windows side by side on the active
+  monitor, with reversible snapshots and an optional installed Task Manager.
+  Edge-drag, global Win+Arrow and Shake remain
   open. A 450ms Show Desktop hover provides reversible Peek; it is not full
   compositor transparency. `scripts/build_aero_assets.py` owns generated art;
   curated generic-folder SVG is maintained directly in `assets/icons/RiceHub-Aero/`.

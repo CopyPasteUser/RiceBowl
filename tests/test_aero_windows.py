@@ -11,7 +11,7 @@ from types import SimpleNamespace
 
 from macrice.aero_windows import (WindowSnapshot, WindowSnapController, WindowTracker,
                                  closest_workarea, half_screen_geometry, is_task_window,
-                                 toggle_window, toggle_window_id)
+                                 toggle_window, toggle_window_id, window_layout)
 
 
 class FakeWindow:
@@ -146,6 +146,41 @@ class AeroWindowTests(unittest.TestCase):
         self.assertEqual(right[0] + right[2], -1)
         with self.assertRaises(ValueError):
             half_screen_geometry((0, 0, 1, 90), "left")
+
+    def test_desktop_layouts_use_available_monitor_area(self):
+        area = (-1920, 40, 1919, 1001)
+        side = window_layout(area, 3, "side-by-side")
+        self.assertEqual(len(side), 3)
+        self.assertEqual(side[0][0], -1920)
+        self.assertEqual(side[-1][0] + side[-1][2], -1)
+        self.assertTrue(all(r[1] == 40 and r[3] == 1001 for r in side))
+        stacked = window_layout(area, 3, "stacked")
+        self.assertEqual(len(stacked), 3)
+        self.assertEqual(stacked[-1][1] + stacked[-1][3], 1041)
+        cascaded = window_layout(area, 3, "cascade")
+        self.assertEqual(len(cascaded), 3)
+        self.assertLess(cascaded[0][0], cascaded[-1][0])
+        self.assertLess(cascaded[0][1], cascaded[-1][1])
+        self.assertTrue(all(x >= -1920 and y >= 40 for x, y, _, _ in cascaded))
+
+    def test_desktop_layout_refuses_unusable_screens_or_overcrowding(self):
+        area = (0, 0, 800, 600)
+        for layout in ("cascade", "stacked", "side-by-side"):
+            self.assertEqual(window_layout(area, 0, layout), ())
+            self.assertEqual(window_layout(area, 13, layout), ())
+        self.assertEqual(window_layout((0, 0, 320, 240), 12, "stacked"), ())
+        with self.assertRaises(ValueError):
+            window_layout(area, 2, "random")
+
+    def test_desktop_layout_can_arrange_and_undo_using_original_geometry(self):
+        window = FakeWindow("Editor")
+        controller = self._snapper(window)
+        position = window_layout((0, 0, 1000, 700), 2, "side-by-side")[0]
+        self.assertTrue(controller.place(window.xid, position, 20))
+        self.assertEqual(window.geometry, (0, 0, 500, 700))
+        self.assertTrue(controller.arrange(window.xid, "restore", (0, 0, 1000, 700), 21))
+        self.assertEqual(window.geometry, (150, 160, 640, 460))
+        self.assertFalse(controller.place(window.xid, (0, 0, 0, 400), 22))
 
     def test_snap_selects_correct_workarea_on_negative_monitor(self):
         areas = ((0, 0, 1920, 1040), (-1920, 30, 1920, 1050))

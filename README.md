@@ -45,6 +45,8 @@ per-app notification-icon preferences and multi-view Control Panel navigation.
 Running apps now indicate real X11 requests for attention; their right-click
 menus can tile individual windows left/right, maximize and restore their
 original position using the monitor's available workarea.
+Right-click empty Superbar space for real Cascade/Stacked/Side-by-side window
+layouts, Undo window arrangement and an installed Linux Task Manager.
 Configure visible icons from the chevron or blank-Superbar context menu. Installed
 [RiceExplorer](https://github.com/CopyPasteUser/riceExplorer) appears as an
 optional Windows 7 preview in Start; Thunar remains the default while file
