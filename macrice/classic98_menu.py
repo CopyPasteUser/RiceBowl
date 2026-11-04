@@ -507,7 +507,7 @@ def show_help(shell, Gtk):
         "Getting started": "Start > Programs lists applications installed on Linux. Open a folder or launch an application from its submenu.",
         "Favorites": "Add or remove your own folder and website shortcuts through Start > Favorites > Organize Favorites. GTK bookmarks are also displayed.",
         "Recent documents": "Start > Documents reads GTK's actual recent-files history. Your files remain in their original folders.",
-        "Finding files": "Start > Find > Files or Folders searches names within a selected folder. You can stop the search at any time.",
+        "Finding files": "Start > Find > Files or Folders searches names and, under Advanced, extension, type, date, size and limited UTF-8 text contents. Searches run asynchronously, examine at most 50,000 entries and return at most 500 results. Text search only reads regular files up to 1 MiB each (32 MiB total). Stop cancels the search; no file content is changed.",
         "Run": "Run accepts a command and its arguments, a file or folder path, or a supported URL. Commands do not execute through a shell.",
         "Linux compatibility": "The desktop imitates Windows 98 SE, but runs native Linux programs. Windows executable files are not automatically supported.",
     }
