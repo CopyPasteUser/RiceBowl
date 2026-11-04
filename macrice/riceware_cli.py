@@ -15,14 +15,16 @@ def add_commands(commands) -> None:
     spice.add_argument("name", nargs="?")
     spice.add_argument("value", nargs="?")
     pop = backends.add_parser("pop", help="Use the existing XFCE notification service")
-    pop.add_argument("action", choices=("status", "list", "mark-read", "dismiss", "clear", "quiet", "send"))
+    pop.add_argument("action", choices=("status", "list", "mark-read", "dismiss",
+                                        "clear", "quiet", "send"))
     pop.add_argument("value", nargs="?")
     pop.add_argument("body", nargs="?")
+    pop.add_argument("--yes", action="store_true", help="Confirm irreversible history clearing")
     plate = backends.add_parser("plate", help="Inspect desktop or manage owned XFDesktop shortcuts")
     plate.add_argument("action", choices=("status", "install", "remove"))
     plate.add_argument("--profile", choices=("xp", "win7"))
     wine = backends.add_parser("wine", help="Manage private Wine prefixes without system changes")
-    wine.add_argument("action", choices=("status", "list", "create", "run"))
+    wine.add_argument("action", choices=("status", "list", "create", "resume", "run", "log"))
     wine.add_argument("name", nargs="?")
     wine.add_argument("executable", nargs="?")
     wine.add_argument("arguments", nargs=argparse.REMAINDER)
@@ -75,8 +77,13 @@ def run(args) -> int:
     if args.riceware_backend == "pop":
         from .riceware import pop
 
+        if args.action in ("status", "list", "clear") and (
+                args.value is not None or args.body is not None):
+            raise ValueError(f"pop {args.action} takes no positional arguments")
+        if args.action not in ("send", "status", "list", "clear") and args.body is not None:
+            raise ValueError(f"pop {args.action} takes only one value")
         if args.action == "status":
-            _dump({"host": "xfce-notifyd", "unread": pop.unread(), "quiet": pop.quiet_mode()})
+            _dump(pop.status())
         elif args.action == "list":
             _dump(pop.history())
         elif args.action == "quiet":
@@ -94,6 +101,8 @@ def run(args) -> int:
         elif args.action == "mark-read":
             pop.mark_read((args.value,) if args.value else None)
         elif args.action == "clear":
+            if not args.yes:
+                raise ValueError("Clearing notification history requires --yes")
             pop.clear_history()
         return 0
     if args.riceware_backend == "plate":
@@ -114,10 +123,15 @@ def run(args) -> int:
             _dump({"wine_version": wine.wine_version(), "prefixes": wine.list_prefixes()})
         elif args.action == "list":
             _dump(wine.list_prefixes())
-        elif args.action == "create":
+        elif args.action in ("create", "resume"):
             if args.name is None or args.executable is not None:
-                raise ValueError("Usage: riceware wine create NAME")
-            _dump(wine.create_prefix(args.name))
+                raise ValueError("Usage: riceware wine create|resume NAME")
+            _dump(wine.create_prefix(args.name) if args.action == "create"
+                  else wine.resume_prefix(args.name))
+        elif args.action == "log":
+            if args.name is None or args.executable is not None:
+                raise ValueError("Usage: riceware wine log NAME")
+            print(wine.read_init_log(args.name))
         else:
             if args.name is None or args.executable is None:
                 raise ValueError("Usage: riceware wine run NAME EXECUTABLE [ARGS...]")

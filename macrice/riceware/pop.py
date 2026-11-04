@@ -8,11 +8,35 @@ from __future__ import annotations
 
 import shutil
 import subprocess
+from dataclasses import dataclass
 
 from .. import chrome_notification_backend as xfce
 
 Notification = xfce.LoggedNotification
 NotificationUnavailable = xfce.NotificationUnavailable
+
+
+@dataclass(frozen=True)
+class NotificationStatus:
+    history_available: bool
+    unread: bool | None
+    quiet: bool | None
+    reason: str | None = None
+
+
+def status() -> NotificationStatus:
+    """Truthful capabilities even if the optional XFCE log is not exposed."""
+    quiet = xfce.read_dnd()
+    try:
+        return NotificationStatus(True, xfce.has_unread(), quiet)
+    except NotificationUnavailable as exc:
+        return NotificationStatus(False, None, quiet, str(exc))
+
+
+def _identifier(value: str) -> str:
+    if not isinstance(value, str) or not 1 <= len(value) <= 192 or not value.isprintable():
+        raise ValueError("Invalid notification identifier")
+    return value
 
 
 def history() -> tuple[Notification, ...]:
@@ -32,11 +56,15 @@ def set_quiet_mode(enabled: bool) -> bool:
 
 
 def mark_read(ids: tuple[str, ...] | None = None) -> None:
+    if ids is not None:
+        if len(ids) > xfce.MAX_ITEMS:
+            raise ValueError("Too many notification identifiers")
+        ids = tuple(_identifier(item) for item in ids)
     xfce.mark_read(ids)
 
 
 def dismiss(identifier: str) -> None:
-    xfce.delete_notification(identifier)
+    xfce.delete_notification(_identifier(identifier))
 
 
 def clear_history() -> None:

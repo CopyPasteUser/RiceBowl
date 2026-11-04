@@ -53,6 +53,20 @@ The names are stable enough for planning; reserve public executable names, D-Bus
 
 See [Riceware foundation API and manual checks](RICEWARE_FOUNDATIONS.md).
 
+### Reliability checkpoint — 4 November 2026
+
+- [x] Reject write/readback mismatches for supported riceSpice actions;
+  serialize concurrent writes within one process by device family.
+- [x] Expose an honest ricePop capability status when XFCE Notifyd is missing;
+  guard notification IDs and require CLI confirmation before history deletion.
+- [x] Keep ricePlate inventories bounded and report truncated listings;
+  continue using byte-identical, opt-in XFDesktop shortcut management.
+- [x] Verify riceWine registry creation, private prefix ownership and startup
+  exit status; support locked init/resume, bounded opt-in diagnostic reads and
+  timeout cleanup of the initialized process group.
+- [ ] Complete physical Mint/XFCE/Wine acceptance, fault/restart/relogin tests
+  and independent UI consumers before claiming production readiness.
+
 ## Required architectural contracts
 
 1. **One source of truth:** use the active RiceBowl profile/session state for renderer selection. Switching a rice updates UI presentation without replaying device changes, changing file associations or killing in-flight riceExplorer jobs.

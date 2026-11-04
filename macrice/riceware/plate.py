@@ -6,6 +6,7 @@ This module never replaces XFDesktop or modifies wallpaper and icon positions.
 
 from __future__ import annotations
 
+import heapq
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -24,6 +25,7 @@ class DesktopSnapshot:
     folder: str
     exists: bool
     items: tuple[DesktopItem, ...]
+    truncated: bool = False
 
 
 def snapshot(folder: Path | None = None, *, limit: int = 512) -> DesktopSnapshot:
@@ -35,13 +37,15 @@ def snapshot(folder: Path | None = None, *, limit: int = 512) -> DesktopSnapshot
     if not folder.exists():
         return DesktopSnapshot(str(folder), False, ())
     items = []
-    # A bounded inventory avoids reading file contents or following symlinks.
-    for path in sorted(folder.iterdir(), key=lambda item: item.name.casefold())[:limit]:
+    # Bounded memory even with an unexpectedly huge desktop directory.
+    selected = heapq.nsmallest(limit + 1, folder.iterdir(),
+                               key=lambda item: (item.name.casefold(), item.name))
+    for path in selected[:limit]:
         kind = ("link" if path.is_symlink() else "directory" if path.is_dir()
                 else "launcher" if path.suffix == ".desktop" and path.is_file()
-                else "file")
+                else "file" if path.is_file() else "other")
         items.append(DesktopItem(path.name, str(path), kind))
-    return DesktopSnapshot(str(folder), True, tuple(items))
+    return DesktopSnapshot(str(folder), True, tuple(items), len(selected) > limit)
 
 
 def manage_shortcuts(profile: str, action: str, *, folder: Path | None = None,
