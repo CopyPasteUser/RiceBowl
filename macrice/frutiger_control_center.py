@@ -3,8 +3,6 @@
 from __future__ import annotations
 
 import shutil
-import threading
-import logging
 
 from .frutiger_device_details import ProbeResult, probe
 from .frutiger_native_controls import NATIVE_TASKS, build_native_controls
@@ -186,12 +184,27 @@ def build(shell, Gtk, Gdk):
 
     current = ["home", None, None]
     request_serial = [0]
+    active_native = [None]
+
+    def suspend_detail():
+        request_serial[0] += 1
+        if active_native[0] is not None:
+            active_native[0].suspend()
+
+    shell.aqua_control_suspend = suspend_detail
+
+    def dispose_detail():
+        if active_native[0] is not None:
+            active_native[0].dispose()
+            active_native[0] = None
 
     def clear_box(box):
         for child in tuple(box.get_children()):
             box.remove(child)
 
     def navigate(page, category=None, task=None):
+        if current[0] == "detail":
+            dispose_detail()
         request_serial[0] += 1
         current[:] = [page, category, task]
         stack.set_visible_child_name(page)
@@ -257,6 +270,7 @@ def build(shell, Gtk, Gdk):
         navigate("category", category)
 
     def show_detail(category, task):
+        dispose_detail()
         clear_box(details)
         shell.aqua_control_detail_status = None
         details.pack_start(shell._class(Gtk.Label(label=task[0], xalign=0),
@@ -306,38 +320,30 @@ def build(shell, Gtk, Gdk):
         serial = request_serial[0]
         native = build_native_controls(shell, Gtk, GLib, details, category[0], task[0],
                                        is_current=lambda: serial == request_serial[0]
-                                       and current[0] == "detail" and current[2] == task)
+                                       and current[0] == "detail" and current[2] == task,
+                                       backend=shell.frutiger_controller.hardware,
+                                       runner=shell.frutiger_controller.runner)
         if native is not None:
+            active_native[0] = native
             # The functional controls are the primary action; installed XFCE
             # utilities and device-probe explanations remain below as fallbacks.
             details.reorder_child(native.surface, 2)
         details.show_all()
         if kind:
-            def worker():
-                try:
-                    result = probe(kind)
-                except Exception as exc:
-                    logging.getLogger(__name__).warning(
-                        "Aqua device probe %s failed: %s", kind, type(exc).__name__)
-                    result = ProbeResult("Device information", (),
-                                         "This device could not be read; try again later")
+            def apply(response):
+                if (serial != request_serial[0] or current[0] != "detail"
+                        or current[2] != task):
+                    return
+                result = response.value if not response.error else ProbeResult(
+                    "Device information", (), "This device could not be read; try again later")
+                result_heading.set_text(result.title)
+                if result.error:
+                    result_body.get_style_context().add_class("aqua-control-probe-error")
+                    result_body.set_text(result.error)
+                else:
+                    result_body.set_text("\n".join(result.lines))
 
-                def apply():
-                    if (serial != request_serial[0] or current[0] != "detail"
-                            or current[2] != task):
-                        return False
-                    result_heading.set_text(result.title)
-                    if result.error:
-                        result_body.get_style_context().add_class("aqua-control-probe-error")
-                        result_body.set_text(result.error)
-                    else:
-                        result_body.set_text("\n".join(result.lines))
-                    return False
-
-                GLib.idle_add(apply)
-
-            threading.Thread(target=worker, daemon=True,
-                             name="ricebowl-aqua-" + kind).start()
+            shell.frutiger_controller.submit("probe-" + kind, lambda: probe(kind), apply)
 
     def show_home():
         shell.aqua_control_detail_status = None
@@ -418,5 +424,6 @@ def build(shell, Gtk, Gdk):
 
     shell.aqua_control_show_category = show_named_category
     shell.aqua_control_show_task = show_named_task
+    window.connect("destroy", lambda *_args: dispose_detail())
     show_home()
     return window

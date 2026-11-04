@@ -164,6 +164,22 @@ device pages discard late callbacks; the shared runner and D-Bus observer
 close on session shutdown. Hardware/suspend acceptance and the broader
 Material You fidelity checklist remain open.
 
+**Frutiger Aero checkpoint (4 November 2026):** Aqua World's taskbar
+status and audio writes now use a bounded, closeable riceSpice worker;
+its original multi-level Aqua Control Center injects the same shared
+verified hardware facade into Wi-Fi, Bluetooth, audio/microphone, display,
+battery and power detail panels. Returning from a detail page disposes its
+pending callbacks and debounced actions. Supplemental read-only device
+probes also run on the bounded worker, with stale detail results ignored.
+The independent pearl-glass tray and Control Center remain intact. A compact
+Aqua notification flyout reads actual XFCE ricePop history and verified Do
+Not Disturb, offers explicit mark-read and clears private entries when hidden;
+XFCE keeps notification ownership. The shared hardware facade is now reused
+by ChromeOS too, without changing ChromeOS UI behavior. Tests cover verified
+readback, missing providers, lifecycle cleanup and notification preview bounds.
+Physical Mint device, suspend/resume and full Aqua fidelity acceptance are
+**still open**.
+
 The family mapping changes **selection only**; per-rice windows, menu flows,
 icons, keyboard shortcuts, layouts and styling must remain independent.
 Do not substitute a generic themed Settings page for any of the seven.

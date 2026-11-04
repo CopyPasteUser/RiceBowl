@@ -463,12 +463,14 @@ class NativeAquaControls:
         self.bind(self.backend.read_power_profiles, render)
 
 
-def build_native_controls(shell, Gtk, GLib, parent, category, title, *, is_current):
+def build_native_controls(shell, Gtk, GLib, parent, category, title, *, is_current,
+                          backend=None, runner=None):
     """Attach a device-specific Linux control surface when one is supported."""
     key = (category, title)
     if key not in NATIVE_TASKS:
         return None
-    panel = NativeAquaControls(shell, Gtk, GLib, parent, is_current=is_current)
+    panel = NativeAquaControls(shell, Gtk, GLib, parent, is_current=is_current,
+                               backend=backend, runner=runner)
     handler = {
         ("connections", "Network connections"): panel.wifi,
         ("connections", "Bluetooth devices"): panel.bluetooth,

@@ -18,6 +18,8 @@ class AquaFlyouts:
     def show(self, kind: str):
         if kind not in ("network", "audio", "battery"):
             return
+        if hasattr(self.shell, "_aqua_notifications"):
+            self.shell._aqua_notifications.popover.popdown()
         popover = self.popovers.get(kind)
         if popover is None:
             popover = self._build(kind)
