@@ -85,12 +85,17 @@ def parser() -> argparse.ArgumentParser:
     rice.add_argument("style", nargs="?", choices=tuple(STYLES))
     profile = commands.add_parser("performance", help="Apply a Control Center resource profile")
     profile.add_argument("profile", choices=("light", "balanced", "visual", "report"))
+    from .riceware_cli import add_commands
+    add_commands(commands)
     return p
 
 
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     try:
+        if args.command == "riceware":
+            from .riceware_cli import run as run_riceware
+            return run_riceware(args)
         if args.command in (None, "gui"):
             from .gui import run
             return run()
