@@ -800,6 +800,12 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 assert self.actions.get_visible()
                 if profile == "chromeos":
                     from .chrome_settings import ACTIONS
+                    from .chrome_quick_settings import calendar_today
+                    self._toggle_chrome_calendar()
+                    assert self.chrome_quick_stack.get_visible_child_name() == "Calendar"
+                    assert self.chrome_quick_calendar.get_date() == calendar_today()
+                    self._action_key(type("Event", (), {"keyval": Gdk.KEY_Escape})())
+                    assert self.chrome_quick_stack.get_visible_child_name() == "overview"
                     self.chrome_quick_show_page("Network")
                     assert self.chrome_quick_stack.get_visible_child_name() == "Network"
                     self._action_key(type("Event", (), {"keyval": Gdk.KEY_Escape})())
@@ -2379,9 +2385,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             elif profile == "chromeos":
                 clock_button = self._class(Gtk.Button(), "chrome-clock-button")
                 clock_button.add(clock)
-                clock_button.set_tooltip_text("Open Quick Settings")
-                clock_button.get_accessible().set_name("Open Quick Settings")
-                clock_button.connect("clicked", lambda _button: self._toggle_actions())
+                clock_button.set_tooltip_text("Open local calendar")
+                clock_button.get_accessible().set_name("Open local calendar")
+                clock_button.connect("clicked", lambda _button: self._toggle_chrome_calendar())
                 right_area.pack_end(clock_button, False, False, 4)
             elif profile in ("winxp", "aero"):
                 clock_button = self._class(Gtk.Button(), "luna-clock-button" if profile == "winxp"
@@ -4745,6 +4751,22 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 else:
                     self.aqua_control_show_home()
                 self.actions.present()
+
+        def _toggle_chrome_calendar(self):
+            """The clock opens a real month view without breaking system-menu toggle."""
+            if profile != "chromeos":
+                return
+            self._cancel_popup_hide("control")
+            if self.actions.get_visible():
+                if self.chrome_quick_stack.get_visible_child_name() == "Calendar":
+                    self._hide_actions()
+                else:
+                    self.chrome_quick_show_page("Calendar")
+                    self.actions.present()
+                return
+            self._toggle_actions()
+            if self.actions.get_visible():
+                self.chrome_quick_show_page("Calendar")
 
         def _toggle_actions(self):
             self._cancel_popup_hide("control")

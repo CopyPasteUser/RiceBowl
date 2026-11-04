@@ -64,7 +64,10 @@ separate XFCE utility on the first click. Its Network, Bluetooth, Display and
 Power detail pages reuse read-back-verified Linux controls for Wi-Fi, nearby
 networks, adapter power, screen brightness, battery and supported performance
 profiles; unsupported hardware remains clearly unavailable. The Linux service
-adapters run off the UI thread. Google-only services, native notifications and
+adapters run off the UI thread. Clicking the ChromeOS **Shelf clock** opens a
+native local monthly calendar with month navigation and a Today action; the
+date in Quick Settings opens the same view. Google-only services, native
+notifications and
 [RiceExplorer](https://github.com/CopyPasteUser/riceExplorer) integration are
 still separate roadmap work. Updated deep-page screenshots and physical Mint
 XFCE acceptance are pending. [ChromeOS roadmap](CHROMEOS_ROADMAP.md).

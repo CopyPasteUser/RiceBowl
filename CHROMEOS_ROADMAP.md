@@ -59,6 +59,18 @@ hardware and compositor behavior still require on-device acceptance.
   from full fidelity completion; pairing, capture, privacy policy, native
   notifications and RiceExplorer integration remain open.
 
+### Progress update — 4 November 2026: shelf calendar
+
+- [x] Open a real GTK monthly calendar by clicking the Shelf clock; the
+  date in Quick Settings also opens the same calendar page.
+- [x] Keep GTK's native local-date, locale, month navigation, current-day
+  highlighting and leap-year behavior, plus an explicit **Today** button.
+- [x] Preserve the existing Quick Settings back/Escape behavior and provide
+  accessible names; do not synthesize Google Calendar events or account data.
+- [ ] Validate clock/date click geometry and keyboard navigation on the
+  physical Mint XFCE desktop. Freedesktop notifications and any authenticated
+  events provider remain separate open work.
+
 ## Reference principles
 
 - Modern ChromeOS uses a Launcher for search/apps and an independently
@@ -259,7 +271,7 @@ surface with actual connectivity switches and device menus.
 - [ ] Empty notifications vs muted vs unavailable daemon
   states: distinct copy/visuals and recoverable action;
   never show expired private content after a session restart.
-- [ ] Date in Shelf opens monthly calendar surface with navigation,
+- [x] Date in Shelf opens monthly calendar surface with navigation,
   locale, first weekday/timezone, today highlighting,
   current day and DST; events appear only through a real
   user-authorized calendar provider, not invented data.

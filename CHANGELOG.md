@@ -1,5 +1,15 @@
 # RiceBowl changelog
 
+## Unreleased — ChromeOS local Shelf calendar (4 November 2026)
+
+- The ChromeOS Shelf clock now opens a genuine local monthly calendar rather
+  than simply toggling Quick Settings. The Quick Settings date also opens it.
+- GTK provides locale-aware month/day navigation and current-day highlighting,
+  with a dedicated Today button, Back and Escape. There are no synthetic
+  online event entries or implied Google-account synchronization.
+- Added a leap-year/month-index regression test and extended the virtual-X11
+  ChromeOS smoke flow to open, verify and leave the calendar page.
+
 ## Unreleased — ChromeOS hierarchical device settings (4 November 2026)
 
 - Added an independent Material You Settings window with seven searchable
