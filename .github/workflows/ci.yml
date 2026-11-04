@@ -20,6 +20,8 @@ jobs:
           /usr/bin/python3 -m unittest discover -s tests -v
           # Exercise the actual Win98 Find GTK widgets, not only parser contracts.
           timeout 18s dbus-run-session -- xvfb-run -a /usr/bin/python3 -m unittest tests.test_classic98_find_gui -v
+          # Exercise the second-click Win98 Help topics, Back and local Search in a real GTK window.
+          timeout 18s dbus-run-session -- xvfb-run -a /usr/bin/python3 -m unittest tests.test_classic98_help_gui -v
           # Catch GTK constructor/style/asset regressions in the real hub.
           RICEBOWL_HUB_SMOKE=1 timeout 18s dbus-run-session -- xvfb-run -a -s '-screen 0 1024x768x24' /usr/bin/python3 -c 'from macrice.hub import run; raise SystemExit(run())'
           timeout 18s dbus-run-session -- xvfb-run -a /usr/bin/python3 -c 'from macrice.aero_shell import run; raise SystemExit(run(["ricehub-aero-shell", "--smoke-test"]))'

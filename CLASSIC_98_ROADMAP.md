@@ -121,6 +121,17 @@ Current evidence: source files, existing roadmap, current repository screenshot 
 
 **Still open:** complete original hover/cascade keyboard geometry; folders within Favorites; Programs context actions; persistent opt-in Run history and .desktop targeting; Finder Computer discovery, full-text indexing and rich search results; advanced Taskbar options (auto-hide/position), dedicated Folder Options; full Display Properties tabs; independent Quick Launch configuration; comprehensive tray NetworkManager/XEmbed operation; window context menus; desktop virtual folders; structural riceExplorer skin; Win98/2000 preset split; era accessories; and physical Mint acceptance. Do not close a milestone until its full gate passes.
 
+### Implementation checkpoint — navigable Classic Help (4 November 2026)
+
+**Implementation on feature branch; awaiting CI and physical Mint validation.**
+
+- [x] Replace the original six-topic static Help dialog with a dedicated local Windows 98-style viewer offering Contents, alphabetical Index and on-device Search.
+- [x] Add functional Back, Forward and Home navigation with real topic history and clearly labeled UI controls; topic pages document actual Linux behaviors, supported options and feature limitations.
+- [x] Add four content/index/search regression tests plus a native GTK/Xvfb interaction test for opening topics, going Back and filtering Search.
+- [ ] Complete contextual Help links from every Control Panel applet, localized documentation and advanced keyboard/screen-reader acceptance on physical Mint.
+
+**Gate:** Help search and navigation must work after multiple clicks without opening a generic browser, losing focus or making unsupported Windows functionality claims.
+
 ### Milestone 0 — Freeze references, safe state and test harness (P0)
 
 - [ ] Create an era-specific Win98 SE reference matrix with reference screenshots and behavior notes for: blank desktop, Start plus **each** flyout, crowded taskbar, Quick Launch, tray menus, My Computer, Explorer in classic and Web View, Control Panel and representative applets, Run, Find, shutdown, properties, copy conflict and error dialogs. Record source/date and observable behavior; never copy proprietary assets.
