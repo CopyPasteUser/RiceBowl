@@ -623,7 +623,8 @@ def build(shell, Gtk, Gdk, Gio, GLib, Pango):
     replace_children(settings, (
         item("Control Panel", "classic-control-panel", shell._toggle_actions),
         available_tool("Printers", ("system-config-printer",)),
-        available_tool("Taskbar & Start Menu", ("xfce4-settings-manager",)),
+        item("Taskbar & Start Menu", "preferences-desktop",
+             shell.classic98_open_taskbar_properties),
         available_tool("Folder Options", ("xfce4-settings-manager",)),
     ))
     replace_children(finder, (
