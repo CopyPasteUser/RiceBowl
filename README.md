@@ -21,7 +21,7 @@ RiceBowl changes the actual Linux desktop: GTK and XFWM4 themes, icons, wallpape
 | Style | Preset(s) | What changes |
 | --- | --- | --- |
 | **macOS · Aurora** | `night`, `day`, `aqua` | MacBar, MacMenu, Control Center; optional Plank dock |
-| **[Windows 7 · Aero](WIN7_AERO_ROADMAP.md)** | `aero-meadow`, `aero-cascade` | Glass Superbar, two-column Start, previews, Jump Lists and Control Panel |
+| **[Windows 7 · Aero](WIN7_AERO_ROADMAP.md)** | `aero-meadow`, `aero-cascade` | Glass Superbar, Start, Jump Lists, Aero device flyouts and deeper Control Panel |
 | **[Windows 10](WINDOWS10_ROADMAP.md)** | `ten-light`, `ten-dark` | Flat taskbar, pinned Start tiles and Action Center |
 | **[Windows XP · Luna](XP_LUNA_ROADMAP.md)** | `winxp` | XP Control Panel artwork, favorites/recent apps and audio/Wi-Fi/power/Bluetooth/calendar tray menus |
 | **[Windows 98 SE (classic)](CLASSIC_98_ROADMAP.md)** | `winclassic` | Teal desktop, real Start descendants, Win98 Control Panel, Quick Launch/taskbar preferences and live tray menus |
@@ -31,6 +31,13 @@ RiceBowl changes the actual Linux desktop: GTK and XFWM4 themes, icons, wallpape
 The latest Classic Run dialog supports a private session-only recent-command list, Clear history and inline error feedback. No shell commands are interpreted implicitly. Windows 98 Programs flyouts also support right-click Open / Quick Launch pin actions where desktop applications have valid IDs.
 
 The Windows 98 rice is still a work in progress: classic Taskbar Properties now saves real clock/Quick Launch options; auto-hide, taskbar relocation and Explorer internals remain open. GTK/X11 CI is in place, and physical Mint acceptance is still required. A separate historically authentic Windows 2000 preset is planned. [Detailed checklist](CLASSIC_98_ROADMAP.md).
+
+Windows 7 now has dedicated audio, Wi-Fi, power, Bluetooth and calendar
+flyouts plus multi-view Control Panel navigation. Installed
+[RiceExplorer](https://github.com/CopyPasteUser/riceExplorer) appears as an
+optional Windows 7 preview in Start; Thunar remains the default while file
+operation and mount recovery are validated. Screenshots below show the previous
+verified shell; updated deep-surface captures are pending native X11 CI.
 
 ### Current screenshots
 

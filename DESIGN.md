@@ -65,16 +65,26 @@ secondary pages; prototypes and the release roadmap do not crowd the selector.
   Runtime colors are owned by the `win7-*` CSS in `aero_shell.py` and mirrored
   here as design intent. `macrice/win7_control_panel.py` owns a separate real
   decorated 810×565 Control Panel window using the eight historical Windows 7
-  categories, clickable task links, working category/detail/back navigation and
-  search. Only installed XFCE/Linux tools can launch; missing actions are
-  disabled with explanatory tooltips. Real device status and volume controls
+  categories, Category/Large/Small views, Back/Forward navigation, nested task
+  detail pages and search. Only installed XFCE/Linux tools can launch; missing
+  actions are disabled with explanatory tooltips. Real device status and volume controls
   remain in a clearly named expandable Linux hardware region, never a fake
   Windows toggle. Its eight 64×64 original SVG category icons live exclusively
   in the Aero theme's `scalable/apps/ricehub-cp-*.svg` assets, avoiding accidental
   changes to other rices or missing system-theme glyphs. The Control Panel is
   opened from Start or `Control_R`; no
-  anachronistic Control Panel gear occupies the right notification area. The
-  48px bar carries larger pinned and running-app icons; Wnck supplies original
+  anachronistic Control Panel gear occupies the right notification area.
+  `macrice/win7_tray.py` owns five independent Aero status flyout layouts
+  (sound/output, Wi-Fi, power/backlight, Bluetooth, calendar) with silver-blue
+  headers and white bodies, including the Win7-style upright speaker slider.
+  Its inherited backend transactions live in `luna_tray.py`: reusing hardware
+  code does not mean reusing XP's flyout skin. The Win7-specific CSS in
+  `aero_shell.py` is canonical for these visual states; this DESIGN entry
+  mirrors their purpose rather than introducing duplicate runtime tokens.
+  An installed Rust RiceExplorer can be launched from Start in explicit
+  `--theme win7` preview mode, leaving Thunar and system MIME defaults alone
+  until file recovery and mount support pass acceptance. The 48px bar carries
+  larger pinned and running-app icons; Wnck supplies original
   large icons where available. XP, Classic, Frutiger and Ten stay untouched.
 - **Windows 10:** native 22H2-era flat charcoal (#101014) 40px taskbar,
   compact four-pane/penguin Start mark, icon-only taskbar search opening the
