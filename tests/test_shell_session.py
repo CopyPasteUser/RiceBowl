@@ -225,6 +225,89 @@ class SessionTests(unittest.TestCase):
         start.assert_called_once_with("xfce4-panel", ["/usr/bin/xfce4-panel"])
         restore.assert_called_once_with()
 
+    @mock.patch.dict("os.environ", {"DISPLAY": ":99"})
+    def test_all_six_rices_switch_sequentially_and_restore_stock_panel(self):
+        """Model a live session, rather than testing six isolated launches."""
+        active = set()
+        panel = {"running": True}
+        recovered = []
+
+        def shell(profile, quit):
+            if quit:
+                active.discard(profile)
+            else:
+                active.add(profile)
+            return []
+
+        def handoff(theme):
+            self.assertEqual(len(active), 1, theme)
+            panel["running"] = False
+            return []
+
+        def recover():
+            panel["running"] = True
+            recovered.append(tuple(sorted(active)))
+            return []
+
+        sequences = (
+            ("RiceHub-Luna", "winxp"),
+            ("RiceHub-Aero", "aero"),
+            ("RiceHub-Ten-Dark", "ten"),
+            ("RiceHub-Chrome", "chromeos"),
+            ("RiceHub-Classic", "winclassic"),
+            ("RiceHub-Frutiger", "frutiger"),
+            ("RiceHub-Luna", "winxp"),
+        )
+        with mock.patch.object(s, "_shell", side_effect=shell), \
+             mock.patch.object(s, "_stop", return_value=[]), \
+             mock.patch.object(s, "_stop_macbar", return_value=[]), \
+             mock.patch.object(s, "_activate_session_controls", side_effect=handoff), \
+             mock.patch.object(s, "_recover_xfce_panel", side_effect=recover):
+            for theme, expected in sequences:
+                self.assertEqual(s.sync_theme(theme), ())
+                self.assertEqual(active, {expected})
+                self.assertFalse(panel["running"])
+            self.assertEqual(s.sync_theme("Mint-Y"), ())
+        self.assertEqual(active, set())
+        self.assertTrue(panel["running"])
+        self.assertEqual(recovered, [()])
+
+    @mock.patch.dict("os.environ", {"DISPLAY": ":99"})
+    def test_failed_mid_sequence_handoff_terminates_failed_shell_and_recovers(self):
+        active = set()
+        panel = {"running": True}
+
+        def shell(profile, quit):
+            if quit:
+                active.discard(profile)
+            else:
+                active.add(profile)
+            return []
+
+        def handoff(theme):
+            if theme == "RiceHub-Chrome":
+                return ["panel handoff failed"]
+            panel["running"] = False
+            return []
+
+        def recover():
+            panel["running"] = True
+            return []
+
+        with mock.patch.object(s, "_shell", side_effect=shell), \
+             mock.patch.object(s, "_stop", return_value=[]), \
+             mock.patch.object(s, "_stop_macbar", return_value=[]), \
+             mock.patch.object(s, "_activate_session_controls", side_effect=handoff), \
+             mock.patch.object(s, "_recover_xfce_panel", side_effect=recover):
+            self.assertEqual(s.sync_theme("RiceHub-Frutiger"), ())
+            self.assertEqual(active, {"frutiger"})
+            self.assertFalse(panel["running"])
+            self.assertIn("panel handoff failed", s.sync_theme("RiceHub-Chrome"))
+            self.assertEqual(active, set())
+            self.assertTrue(panel["running"])
+            self.assertEqual(s.sync_theme("RiceHub-Aero"), ())
+            self.assertEqual(active, {"aero"})
+
 
 class PanelAndShortcutTests(unittest.TestCase):
     def test_taskbar_start_preserves_private_diagnostic_log(self):

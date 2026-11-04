@@ -7,7 +7,7 @@ which reads back mutations rather than trusting successful subprocess exits.
 from __future__ import annotations
 
 from ..hardware_status import BluetoothState, SoundState
-from . import spice
+from . import media, spice
 
 
 READS = {
@@ -25,8 +25,10 @@ READS = {
 WRITES = {
     "set_wifi_radio": "wifi",
     "connect_wifi": "wifi_connect",
+    "connect_wifi_secured": "wifi_connect_secure",
     "disconnect_wifi": "wifi_disconnect",
     "set_bluetooth_power": "bluetooth_power",
+    "pair_bluetooth_device": "bluetooth_pair",
     "set_sound_volume": "audio_volume",
     "set_sound_mute": "audio_mute",
     "set_sound_output": "audio_output",
@@ -68,3 +70,12 @@ class RicewareHardware:
         if result.status != "ok":
             raise RuntimeError(result.reason or "Bluetooth connection was not verified")
         return result.value
+
+    def connect_wifi_secured(self, ssid, password):
+        return self._write("connect_wifi_secured", (ssid, password))
+
+    def read_media_players(self):
+        return media.read_media_players()
+
+    def media_action(self, player, command):
+        return media.media_action(player, command)

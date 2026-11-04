@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import os
 import shutil
+import statistics
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -117,6 +118,47 @@ def measure_processes(*, proc_root: Path = Path("/proc"), sample_ms: int = 200) 
                        "threads": item["threads"],
                        "cpu_percent": round(100 * delta / (elapsed * ticks_per_second), 1) if delta is not None else None})
     return result
+
+
+def summarize_samples(samples: list[list[dict]]) -> dict:
+    """Median per-PID resource snapshot; absent counters stay explicitly unknown.
+
+    PSS estimates unique resident footprint; summing RSS would double count
+    shared libraries. Per-process CPU is a one-core percentage, not a machine
+    total, and sampling does not run unless explicitly requested.
+    """
+    grouped = {}
+    for sample in samples:
+        for item in sample:
+            key = (item["name"], item["pid"])
+            grouped.setdefault(key, []).append(item)
+    components = []
+    for (name, pid), readings in sorted(grouped.items()):
+        medians = {}
+        for field in ("pss_kib", "cpu_percent", "threads"):
+            values = [item[field] for item in readings if item[field] is not None]
+            medians[field] = round(statistics.median(values), 1) if values else None
+        components.append({"name": name, "pid": pid, "observations": len(readings),
+                           **medians})
+    totals = {field: [] for field in ("pss_kib", "cpu_percent")}
+    partial = False
+    for sample in samples:
+        for field in totals:
+            observed = [item[field] for item in sample if item[field] is not None]
+            if sample and len(observed) == len(sample):
+                totals[field].append(sum(observed))
+            elif sample:
+                partial = True
+    partial |= any(entry[field] is None for entry in components
+                   for field in ("pss_kib", "cpu_percent"))
+    return {
+        "samples": len(samples), "components": components,
+        "total_pss_kib": round(statistics.median(totals["pss_kib"]), 1)
+        if totals["pss_kib"] else None,
+        "total_cpu_percent": round(statistics.median(totals["cpu_percent"]), 1)
+        if totals["cpu_percent"] else None,
+        "partial": partial,
+    }
 
 
 def apply_profile(name: str, *, config_root: Path | None = None,

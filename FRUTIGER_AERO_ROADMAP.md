@@ -204,12 +204,26 @@ hardware/suspend acceptance and all end-to-end fidelity criteria below.
   inspectable; closing popovers drops stale responses and private network rows.
 - [x] Hermetic tests for true backends, missing-provider errors and stale UI
   callbacks, plus an expanded native GTK smoke path.
-- [ ] Wi-Fi password entry, Bluetooth discovery/pairing, USB/media/calendar
-  popovers, physical-device and compact-screen acceptance are still open.
+- [x] One-shot masked WPA password entry via nmcli stdin, with no application
+  credential storage and strict enterprise-network deferral; known unpaired
+  BlueZ devices have a verified Pair action (PIN wizard delegated to BlueZ UI).
+- [x] The real tray clock opens a Frutiger-only native GTK Calendar; no daemon,
+  remote account, bogus event synchronization or macOS changes.
+- [x] The sound flyout now includes bounded MPRIS playback metadata and native
+  Play/Pause/Previous/Next buttons with capability checks. Live player commands
+  re-read status, and sessions that disappear are reported without claiming a
+  successful media change. No additional media service is installed.
+- [x] A dedicated Aqua mounted-location flyout uses the existing Gio mount
+  monitor; opened locations go through Linux's URI handler, and unmount
+  requires a confirmation and uses Gio's asynchronous completion callback.
+  It does not forcibly eject drives, reveal private mount data after closing
+  or take over XFDesktop/Thunar.
+- [ ] Full BlueZ discovery/passkey agent, richer USB eject/power-off control,
+  physical-device and compact-screen acceptance remain open.
 
-**Still open:** Wi-Fi password entry and advanced connection editing, Bluetooth
-pairing/device management, complete monitor layout/scaling, persistence for
-visual personalization, richer notification/media flyouts,
+**Still open:** Advanced enterprise Wi-Fi connection editing, complete
+Bluetooth discovery/PIN workflows, monitor layout/scaling, persistence for
+visual personalization, advanced USB and richer notification/media flyouts,
 RiceExplorer Aqua renderer, icon family, screenshots and the 35 end-to-end
 acceptance scenarios.
 

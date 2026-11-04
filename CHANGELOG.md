@@ -1,5 +1,42 @@
 # RiceBowl changelog
 
+## Unreleased — Frutiger media and mounted-location follow-up (4 November 2026)
+
+- Added native MPRIS player status and capability-gated Play/Pause/Next/Previous
+  inside Aqua's existing Sound & Media flyout. Media metadata is queried only
+  on user-triggered refresh and discarded on closing the popup; no resident
+  monitoring, additional service or new mandatory Python dependency.
+- Added a separate pearl-glass connected-locations tray flyout based on Gio's
+  existing event-driven VolumeMonitor. It opens real mounted locations,
+  displays empty/provider states and offers explicitly confirmed asynchronous
+  unmount without forcing device ejection.
+- Added hermetic MPRIS allowlist/readback and mount confirmation tests, plus a
+  native GTK constructor/signal smoke case for the new mounted-locations UI.
+- Made 1.0 readiness and missing release gates more prominent in the README.
+  macOS Aurora remains visually unchanged; live-device and native-X11 CI
+  signoff for this follow-up are pending.
+
+## Unreleased — read-only diagnostics, safe updater and 1.0 acceptance preflight (4 November 2026)
+
+- Added `macrice doctor [--json]` and a native Hub Recovery diagnostics panel;
+  it inspects XFCE/X11, package/launcher availability, optional backends and
+  private shortcut recovery records without starting processes or exposing
+  private shortcut commands.
+- Added opt-in `macrice update check --refresh` / `update apply --yes` and Hub
+  update confirmation. Only clean `main` with an allowlisted official remote
+  can fast-forward. A pinned staged installation retains the prior managed
+  bundle and attempts recovery on failure; no unattended update. Signed release
+  verification and fully atomic multi-component rollback remain future gates.
+- Extended Aqua Wi-Fi with a password-only-on-stdin WPA connection flow and
+  BlueZ Pair on known, discovered devices (PIN/enterprise cases keep native
+  system fallbacks), plus a local GTK Calendar on Frutiger's tray clock.
+- Added sequential multi-rice/failure-handoff simulations, updater rollback and
+  wrong-origin security tests, credentials non-disclosure contracts, and an
+  on-demand `performance report --samples N --json` median snapshot.
+- Documented physical Mint/X11, external monitor, battery, suspend, PSS and
+  incomplete Frutiger P0 acceptance gates in `ACCEPTANCE_1_0.md`. No Aurora
+  visual changes and **no stable 1.0 sign-off**.
+
 ## Unreleased — session fallback, resource reporting and Aqua quick controls (4 November 2026)
 
 - Fixed the session synchronization escape hatch: returning to a stock XFCE

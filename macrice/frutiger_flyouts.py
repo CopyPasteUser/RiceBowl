@@ -26,6 +26,10 @@ class AquaFlyouts:
             return
         if hasattr(self.shell, "_aqua_notifications"):
             self.shell._aqua_notifications.popover.popdown()
+        if hasattr(self.shell, "_aqua_drives"):
+            self.shell._aqua_drives.popover.popdown()
+        if hasattr(self.shell, "_aqua_calendar"):
+            self.shell._aqua_calendar.popover.popdown()
         popover = self.popovers.get(kind)
         if popover is None:
             popover = self._build(kind)
@@ -49,6 +53,7 @@ class AquaFlyouts:
         self._generations[kind] = self._generations.get(kind, 0) + 1
         self._busy.discard(kind)
         self._confirming.discard(kind)
+        self._confirming.discard(kind + "-password")
         if kind in self.details:
             self._clear(self.details[kind])
 
@@ -139,7 +144,12 @@ class AquaFlyouts:
         if kind == "bluetooth":
             return hw.read_bluetooth()
         if kind == "audio":
-            return hw.read_sound_outputs()
+            outputs = hw.read_sound_outputs()
+            try:
+                players = hw.read_media_players()
+            except RuntimeError:
+                players = None  # Audio controls remain usable if the session bus is down.
+            return outputs, players
         return hw.read_power_profiles()
 
     def _refresh_details(self, kind, *, feedback=None):
@@ -147,6 +157,7 @@ class AquaFlyouts:
             return
         self._busy.add(kind)
         self._confirming.discard(kind)
+        self._confirming.discard(kind + "-password")
         self._generations[kind] = self._generations.get(kind, 0) + 1
         generation = self._generations[kind]
         self.detail_status[kind].set_text("Reading actual Linux devices…")
@@ -168,7 +179,7 @@ class AquaFlyouts:
         self.controller.submit("aqua-read-" + kind,
                                lambda: self._read_details(kind), complete)
 
-    def _change(self, kind, operation):
+    def _change(self, kind, operation, *, feedback="Change applied and verified"):
         if (kind in self._busy or kind not in self.popovers
                 or not self.popovers[kind].get_visible()):
             return
@@ -187,11 +198,12 @@ class AquaFlyouts:
                 self.details[kind].set_sensitive(True)
                 self.detail_status[kind].set_text("Change failed: " + response.error[:165])
             else:
-                self._refresh_details(kind, feedback="Change applied and verified")
+                self._refresh_details(kind, feedback=feedback)
 
         self.controller.submit("aqua-write-" + kind, operation, complete)
 
-    def _row(self, parent, title, *, button=None, action=None):
+    def _row(self, parent, title, *, button=None, action=None,
+             secondary_button=None, secondary_action=None):
         Gtk = self.Gtk
         row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
         label = Gtk.Label(label=title, xalign=0)
@@ -203,7 +215,44 @@ class AquaFlyouts:
             control.get_accessible().set_name(button + ": " + title)
             control.connect("clicked", lambda _button: action())
             row.pack_end(control, False, False, 0)
+        if secondary_button is not None:
+            control = self.shell._class(Gtk.Button(label=secondary_button), "aqua-flyout-more")
+            control.get_accessible().set_name(secondary_button + ": " + title)
+            control.connect("clicked", lambda _button: secondary_action())
+            row.pack_end(control, False, False, 0)
         parent.pack_start(row, False, False, 0)
+
+    def _password_prompt(self, ssid):
+        """One-shot WPA entry; never show, store or log the entered secret."""
+        kind = "network"
+        if kind in self._busy or kind not in self.popovers or not self.popovers[kind].get_visible():
+            return
+        if kind + "-password" in self._confirming:
+            return
+        self._confirming.add(kind + "-password")
+        Gtk = self.Gtk
+        box = self.details[kind]
+        self._confirming.discard(kind)
+        box.pack_start(Gtk.Label(label="Wi-Fi password for " + ssid[:32], xalign=0), False, False, 0)
+        entry = Gtk.Entry()
+        entry.set_visibility(False)
+        entry.set_max_length(63)
+        entry.set_input_purpose(Gtk.InputPurpose.PASSWORD)
+        entry.get_accessible().set_name("WPA password for " + ssid[:32])
+        box.pack_start(entry, False, False, 0)
+
+        def submit():
+            secret = entry.get_text()
+            entry.set_text("")
+            # The verified Riceware facade passes secrets on nmcli stdin.
+            self._change("network", lambda: self.controller.hardware.connect_wifi_secured(ssid, secret))
+
+        entry.connect("activate", lambda _entry: submit())
+        self._row(box, "Use password once", button="Connect", action=submit)
+        self._row(box, "Return to networks", button="Cancel",
+                  action=lambda: self._refresh_details("network"))
+        box.show_all()
+        entry.grab_focus()
 
     def _confirm_radio_off(self, kind, action):
         """Explicit second click: disabling a radio can drop remote sessions."""
@@ -240,12 +289,18 @@ class AquaFlyouts:
                 caption = ("● " if network.connected else "") + (
                     f"{network.ssid[:36]} · {network.signal}%")
                 if enabled is True:
+                    security = network.security.upper()
+                    password_supported = (not network.connected and "WPA" in security and
+                                          not any(value in security for value in ("EAP", "802.1X", "ENTERPRISE")))
                     self._row(box, caption,
                               button="Disconnect" if network.connected else "Connect",
                               action=(lambda: self._change("network", hw.disconnect_wifi))
                               if network.connected else
                               (lambda ssid=network.ssid: self._change(
-                                  "network", lambda: hw.connect_wifi(ssid))))
+                                  "network", lambda: hw.connect_wifi(ssid))),
+                              secondary_button="Password…" if password_supported else None,
+                              secondary_action=(lambda ssid=network.ssid: self._password_prompt(ssid))
+                              if password_supported else None)
                 else:
                     self._row(box, caption)
         elif kind == "bluetooth":
@@ -260,7 +315,7 @@ class AquaFlyouts:
                                       hw.set_bluetooth_power(False))) if state.powered else
                                   lambda: self._change("bluetooth", lambda: hw.set_bluetooth_power(True)))
             if not state.devices:
-                self._row(box, "No paired Bluetooth devices reported")
+                self._row(box, "No known Bluetooth devices · discover in system settings")
             for device in state.devices[:5]:
                 caption = device.name[:42] + (" · Connected" if device.connected else "")
                 if state.powered is True and device.paired:
@@ -269,10 +324,14 @@ class AquaFlyouts:
                               action=lambda item=device: self._change(
                                   "bluetooth", lambda: hw.set_bluetooth_connection(
                                       item.address, not item.connected)))
+                elif state.powered is True and not device.paired:
+                    self._row(box, caption, button="Pair",
+                              action=lambda item=device: self._change(
+                                  "bluetooth", lambda: hw.pair_bluetooth_device(item.address)))
                 else:
                     self._row(box, caption)
         elif kind == "audio":
-            outputs = snapshot
+            outputs, players = snapshot
             if not outputs:
                 self._row(box, "No audio output devices reported")
             for output in outputs[:5]:
@@ -280,6 +339,30 @@ class AquaFlyouts:
                           button=None if output.active else "Use",
                           action=(lambda name=output.name: self._change(
                               "audio", lambda: hw.set_sound_output(name))))
+            self._row(box, "NOW PLAYING · MPRIS SESSION")
+            if players is None:
+                self._row(box, "Session media bus unavailable")
+            elif not players:
+                self._row(box, "No compatible player is currently running")
+            for item in (players or ())[:2]:
+                self._row(box, item.title[:42] +
+                          (" · " + item.artist[:27] if item.artist else "") +
+                          " · " + item.label)
+                controls = self.Gtk.Box(orientation=self.Gtk.Orientation.HORIZONTAL, spacing=6)
+                for caption, command, enabled in (
+                    ("◀ Previous", "Previous", item.can_previous),
+                    ("Pause" if item.status == "Playing" else "Play",
+                     "PlayPause", item.can_play_pause),
+                    ("Next ▶", "Next", item.can_next),
+                ):
+                    button = self.shell._class(self.Gtk.Button(label=caption), "aqua-flyout-more")
+                    button.set_sensitive(enabled)
+                    button.get_accessible().set_name(caption + " · " + item.label)
+                    button.connect("clicked", lambda _button, player=item.bus_name, cmd=command:
+                                   self._change("audio", lambda: hw.media_action(player, cmd),
+                                                feedback="Player command acknowledged; state refreshed"))
+                    controls.pack_start(button, True, True, 0)
+                box.pack_start(controls, False, False, 0)
         else:
             current, available = snapshot
             if not current or not available:

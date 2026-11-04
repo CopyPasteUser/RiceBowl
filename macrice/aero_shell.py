@@ -1663,6 +1663,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     self.aqua_control_suspend()
                 if hasattr(self, "_aqua_flyouts"):
                     self._aqua_flyouts.close()
+                if hasattr(self, "_aqua_drives"):
+                    self._aqua_drives.close()
                 if hasattr(self, "_aqua_notifications"):
                     self._aqua_notifications.close()
                 self.frutiger_controller.close()
@@ -2187,6 +2189,20 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 bluetooth.connect("clicked", lambda _button: self._status_action("bluetooth"))
                 row.pack_end(bluetooth, False, False, 0)
                 self.aqua_bluetooth_button = bluetooth
+                drives = self._class(Gtk.Button(), "rice-status")
+                drives.add(self._icon("drive-removable-media", Gtk.IconSize.MENU))
+                drives.get_accessible().set_name("Open Aqua connected locations")
+                drives.set_tooltip_text("Mounted USB and network locations · Aqua World")
+
+                def show_drives(_button):
+                    if not hasattr(self, "_aqua_drives"):
+                        from .frutiger_drives import AquaDrives
+                        self._aqua_drives = AquaDrives(self, Gtk, Gio)
+                    self._aqua_drives.show()
+
+                drives.connect("clicked", show_drives)
+                row.pack_end(drives, False, False, 0)
+                self.aqua_drives_button = drives
                 notifications = self._class(Gtk.Button(), "rice-status")
                 notifications.add(self._icon("preferences-desktop-notification", Gtk.IconSize.MENU))
                 notifications.get_accessible().set_name("Open Aqua notifications")
@@ -2693,6 +2709,27 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self._luna_clock_button = clock_button
                 if profile == "winxp":
                     clock_button.set_tooltip_text("Show the current date and calendar")
+                right_area.pack_end(clock_button, False, False, 6)
+            elif profile == "frutiger":
+                clock_button = self._class(Gtk.Button(), "rice-status")
+                clock_button.add(clock)
+                clock_button.get_accessible().set_name("Open Aqua calendar")
+                clock_button.set_tooltip_text("Show the current date and local calendar")
+
+                def show_aqua_calendar(_button):
+                    if hasattr(self, "_aqua_notifications"):
+                        self._aqua_notifications.popover.popdown()
+                    if hasattr(self, "_aqua_flyouts"):
+                        for other in self._aqua_flyouts.popovers.values():
+                            other.popdown()
+                    if hasattr(self, "_aqua_drives"):
+                        self._aqua_drives.popover.popdown()
+                    if not hasattr(self, "_aqua_calendar"):
+                        from .frutiger_calendar import AquaCalendar
+                        self._aqua_calendar = AquaCalendar(clock_button, Gtk)
+                    self._aqua_calendar.show()
+
+                clock_button.connect("clicked", show_aqua_calendar)
                 right_area.pack_end(clock_button, False, False, 6)
             else:
                 right_area.pack_end(clock, False, False, 6)
@@ -5127,6 +5164,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             if hasattr(self, "_aqua_flyouts"):
                 for popover in self._aqua_flyouts.popovers.values():
                     popover.popdown()
+            if hasattr(self, "_aqua_drives"):
+                self._aqua_drives.popover.popdown()
+            if hasattr(self, "_aqua_calendar"):
+                self._aqua_calendar.popover.popdown()
             self._aqua_notifications.show()
 
         def _show_aqua_control(self, category=None, task=None):
@@ -5138,6 +5179,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             if hasattr(self, "_aqua_flyouts"):
                 for popover in self._aqua_flyouts.popovers.values():
                     popover.popdown()
+            if hasattr(self, "_aqua_drives"):
+                self._aqua_drives.popover.popdown()
+            if hasattr(self, "_aqua_calendar"):
+                self._aqua_calendar.popover.popdown()
             if not self.actions.get_visible():
                 self._toggle_actions()
             if self.actions.get_visible():

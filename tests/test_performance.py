@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from macrice.performance import PROFILES, _component, apply_profile, measure_processes
+from macrice.performance import PROFILES, _component, apply_profile, measure_processes, summarize_samples
 
 
 class PerformanceTests(unittest.TestCase):
@@ -73,6 +73,38 @@ class PerformanceTests(unittest.TestCase):
     def test_empty_proc_report_is_safe(self):
         with tempfile.TemporaryDirectory() as tmp:
             self.assertEqual(measure_processes(proc_root=Path(tmp)), [])
+
+    def test_on_demand_medians_do_not_double_count_duplicate_process_observations(self):
+        samples = [
+            [{"name": "RiceBowl ChromeOS", "pid": 12, "pss_kib": 1000,
+              "cpu_percent": 2, "threads": 3}],
+            [{"name": "RiceBowl ChromeOS", "pid": 12, "pss_kib": 3000,
+              "cpu_percent": 4, "threads": 3}],
+            [{"name": "RiceBowl ChromeOS", "pid": 12, "pss_kib": None,
+              "cpu_percent": None, "threads": None}],
+        ]
+        result = summarize_samples(samples)
+        self.assertEqual(result["total_pss_kib"], 2000)
+        self.assertEqual(result["total_cpu_percent"], 3)
+        self.assertEqual(result["components"][0]["observations"], 3)
+        self.assertTrue(result["partial"])  # One sample lacked counters.
+
+    def test_missing_proc_counters_are_not_faked_as_zero(self):
+        result = summarize_samples([[{"name": "Plank", "pid": 29, "pss_kib": None,
+                                      "cpu_percent": None, "threads": 1}]])
+        self.assertIsNone(result["total_pss_kib"])
+        self.assertIsNone(result["total_cpu_percent"])
+        self.assertTrue(result["partial"])
+
+    def test_process_restart_does_not_add_two_sequential_processes_to_total(self):
+        first = {"name": "Plank", "pid": 12, "pss_kib": 3000,
+                 "cpu_percent": 1, "threads": 2}
+        restarted = {"name": "Plank", "pid": 45, "pss_kib": 4000,
+                     "cpu_percent": 3, "threads": 2}
+        result = summarize_samples([[first], [restarted]])
+        self.assertEqual(result["total_pss_kib"], 3500)
+        self.assertEqual(result["total_cpu_percent"], 2)
+        self.assertEqual(len(result["components"]), 2)
 
 
 if __name__ == "__main__":

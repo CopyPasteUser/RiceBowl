@@ -181,12 +181,17 @@ class ExtraDeviceTests(unittest.TestCase):
     def test_bluetooth_power_and_connected_devices(self, _which, run):
         run.side_effect = ["Controller XX\nPowered: yes",
                            "Device 00:11:22:33:44:55 Headphones",
-                           "Device 00:11:22:33:44:55 Headphones"]
+                           "Device 00:11:22:33:44:55 Headphones",
+                           "Device 00:11:22:33:44:55 Headphones\n"
+                           "Device AA:BB:CC:DD:EE:FF New speaker"]
         state = read_bluetooth()
         self.assertTrue(state.powered)
         self.assertEqual(state.connected, ("Headphones",))
         self.assertEqual(state.backend, "bluetoothctl")
         self.assertTrue(state.devices[0].paired)
+        new = next(device for device in state.devices if device.address == "AA:BB:CC:DD:EE:FF")
+        self.assertFalse(new.paired)
+        self.assertFalse(new.connected)
 
     @patch("macrice.hardware_status.read_bluetooth")
     @patch("macrice.hardware_status.subprocess.run")
