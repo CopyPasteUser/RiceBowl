@@ -57,6 +57,10 @@ class LunaTray:
         Gtk = self.Gtk
         popup = self.shell._class(Gtk.Popover.new(anchor), "luna-tray-popup")
         popup.set_position(Gtk.PositionType.TOP)
+        # The anchor lives inside a DOCK toplevel only panel_height tall.
+        # GTK3 defaults to PopoverConstraint.WINDOW, which clips/repositions
+        # the flyout into that thin taskbar instead of above it.
+        popup.set_constrain_to(Gtk.PopoverConstraint.NONE)
         popup.set_modal(True)
         body = self.shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8),
                                   "luna-tray-card")
