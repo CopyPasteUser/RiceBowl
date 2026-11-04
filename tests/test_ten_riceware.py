@@ -161,6 +161,29 @@ class Win10RicewareTests(unittest.TestCase):
         self.assertFalse(self.buttons["quiet"].active)
         self.assertIn("Permission denied", self.feedback.text)
 
+    def test_periodic_read_does_not_reenable_pending_switch(self):
+        class Bluetooth:
+            powered = False
+
+        self.controller.opened = True
+        self.controller._states["wifi"] = (False, True)
+        self.buttons["wifi"].callback()
+        self.assertFalse(self.buttons["wifi"].sensitive)
+
+        def probe(name):
+            if name == "wifi":
+                return spice.Result(name, "ok", False)
+            return spice.Result(name, "ok", Bluetooth())
+
+        with patch("macrice.ten_riceware.spice.read", side_effect=probe), \
+             patch("macrice.ten_riceware.pop.quiet_mode", return_value=False):
+            self.controller.refresh_switches()
+            # Deliver the radio read before the queued hardware write.
+            self.runner.queued[0], self.runner.queued[1] = (
+                self.runner.queued[1], self.runner.queued[0])
+            self.runner.deliver()
+        self.assertFalse(self.buttons["wifi"].sensitive)
+
     def test_notification_watch_closes_with_shell(self):
         class Watch:
             closed = False

@@ -66,7 +66,8 @@ are independently drawn, Linux-specific, and do not imply Microsoft branding.
   empty, unavailable, mark-read and per-notification dismiss states. Only the
   user can dismiss; third-party actions are never replayed.
 - [x] Real Wi-Fi, Bluetooth and Focus Assist toggles use their actual providers,
-  disable themselves when unavailable and reconcile readback after mutation.
+  disable themselves when unavailable, reconcile readback after mutation and
+  refresh while the drawer stays open; in-flight switches stay disabled.
 - [x] Stale notification callbacks are discarded on close and all workers/
   XFCE notification observers are released on shell shutdown.
 - [x] Hermetic adapter tests and existing seven-rice Python regression suite.

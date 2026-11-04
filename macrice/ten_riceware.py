@@ -46,6 +46,7 @@ class TenController:
         self._watch = None
         self._ids = ()
         self._states = {name: (None, False) for name in TOGGLES}
+        self._writing = set()
 
     def bind(self, *, switches, history_box, history_message, mark_button, feedback):
         self.switches = switches
@@ -121,7 +122,7 @@ class TenController:
             self._states = switch_state(response.value)
             for name, button in self.switches.items():
                 enabled, available = self._states[name]
-                button.set_sensitive(available)
+                button.set_sensitive(available and name not in self._writing)
                 if available:
                     button.set_active(enabled)
                 else:
@@ -135,10 +136,11 @@ class TenController:
 
     def _toggle_clicked(self, button, name):
         enabled, available = self._states[name]
-        if not available or self.closed:
+        if not available or self.closed or name in self._writing:
             button.set_active(bool(enabled))
             return
         requested = not enabled
+        self._writing.add(name)
         button.set_active(enabled)  # GTK toggles optimistically; await verification.
         button.set_sensitive(False)
         self._message("Applying " + name + "…")
@@ -151,7 +153,10 @@ class TenController:
                                 requested)
 
         def done(response):
+            self._writing.discard(name)
             if epoch != self.epoch or not self.opened:
+                if self.opened:
+                    self.refresh_switches()
                 return
             result = response.value
             success = (response.error is None and

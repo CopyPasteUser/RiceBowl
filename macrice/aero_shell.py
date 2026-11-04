@@ -2096,6 +2096,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 return True
             if profile == "windows10":
                 self.ten_controller.refresh_status(self._apply_status)
+                if self.ten_controller.opened:
+                    self.ten_controller.refresh_switches()
                 return True
             def worker():
                 try:
