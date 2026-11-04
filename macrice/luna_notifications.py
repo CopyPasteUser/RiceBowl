@@ -46,6 +46,9 @@ def removable_mount_message(mount, *, added: bool) -> str | None:
 class LunaBalloon:
     """Dismissible, auto-expiring lightweight notification above the taskbar."""
 
+    css_prefix = "luna-balloon"
+    heading_text = "RiceBowl · Windows XP"
+
     def __init__(self, shell, Gtk, Gdk, GLib):
         self.shell, self.Gtk, self.GLib = shell, Gtk, GLib
         self.window = None
@@ -55,7 +58,7 @@ class LunaBalloon:
         self.close()
         Gtk, Gdk = self.Gtk, self.Gdk
         window = self.shell._class(Gtk.Window(type=Gtk.WindowType.TOPLEVEL),
-                                   "luna-balloon")
+                                   self.css_prefix)
         window.set_decorated(False)
         window.set_resizable(False)
         window.set_skip_taskbar_hint(True)
@@ -65,14 +68,15 @@ class LunaBalloon:
         window.set_accept_focus(False)
         window.set_default_size(240, -1)
         body = self.shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6),
-                                 "luna-balloon-body")
-        heading = self.shell._class(Gtk.Label(label="RiceBowl · Windows XP", xalign=0),
-                                    "luna-balloon-title")
+                                 self.css_prefix + "-body")
+        heading = self.shell._class(Gtk.Label(label=self.heading_text, xalign=0),
+                                    self.css_prefix + "-title")
         body.pack_start(heading, False, False, 0)
         detail = Gtk.Label(label=message, xalign=0)
         detail.set_line_wrap(True)
         body.pack_start(detail, False, False, 0)
-        dismiss = self.shell._class(Gtk.Button(label="Dismiss"), "luna-balloon-dismiss")
+        dismiss = self.shell._class(Gtk.Button(label="Dismiss"),
+                                    self.css_prefix + "-dismiss")
         dismiss.connect("clicked", lambda _button: self.close())
         body.pack_end(dismiss, False, False, 0)
         window.add(body)

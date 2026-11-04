@@ -14,14 +14,14 @@ A lightweight, native Python/GTK3 desktop customization hub for **Linux Mint XFC
 
 RiceBowl changes real Linux desktop elements—taskbar, Start/launcher, menus, system controls, wallpaper, GTK/XFWM4 themes, icons and Thunar styling. Applications and device controls use real Linux backends. No Electron, telemetry or proprietary OS assets.
 
-> **Development status:** `main` is ahead of the [v0.9.1 pre-release](https://github.com/CopyPasteUser/RiceBowl/releases/tag/v0.9.1). Shared Riceware 1.0 is in use by XP Luna and Windows 7 Aero. [XP's virtual-X11 workflow passed](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41886783079); physical Mint device, multi-monitor and suspend acceptance is still open.
+> **Development status:** `main` is ahead of the [v0.9.1 pre-release](https://github.com/CopyPasteUser/RiceBowl/releases/tag/v0.9.1). Shared Riceware 1.0 is in use by XP Luna and Windows 7 Aero. [The previous Windows 7 migration passed virtual-X11 CI](https://github.com/CopyPasteUser/RiceBowl/actions/runs/41888354263); physical Mint device, multi-monitor and suspend acceptance is still open.
 
 ## Styles
 
 | Desktop | Distinctive experience |
 | --- | --- |
 | **macOS Aurora** | MacBar, MacMenu, Control Center and optional Plank dock |
-| **[Windows 7 Aero](WIN7_AERO_ROADMAP.md)** | Glass Superbar, classic Start, window actions and Control Panel |
+| **[Windows 7 Aero](WIN7_AERO_ROADMAP.md)** | Glass Superbar, classic Start, window actions, Control Panel and native-history Action Center flag |
 | **[Windows 10](WINDOWS10_ROADMAP.md)** | Flat taskbar, Start tiles and Action Center |
 | **[Windows XP Luna](XP_LUNA_ROADMAP.md)** | Blue/green taskbar, XP Start, Help and Control Panel |
 | **[Windows 98](CLASSIC_98_ROADMAP.md)** | Classic Start/Run/Find/Help, Quick Launch and System Properties |
@@ -85,7 +85,7 @@ The active rice uses **Super** for its launcher and **Right Ctrl** for Control P
 - **XFCE/X11** is the supported target; Wayland and full Windows DWM-style blur are outside current support.
 - **Thunar stays available.** [riceExplorer](https://github.com/CopyPasteUser/riceExplorer) is a separate, still-developing Rust file manager and is not yet the default.
 - **Riceware API 1.0:** shared, opt-in Linux backends for [riceSpice, ricePop, ricePlate and riceWine](RICEWARE_FOUNDATIONS.md). These are internal modules, not four additional background daemons.
-- **Migration status:** XP Luna and Windows 7 Aero use riceSpice for taskbar status, audio/Wi-Fi/Bluetooth/power/brightness flyouts and ricePlate for safe desktop shortcuts. [Migration checklist](RICEWARE_MIGRATION_GUIDE.md). Other Rices retain their backends; no default file manager or notification owner is replaced.
+- **Migration status:** XP Luna and Windows 7 Aero use riceSpice for taskbar status, audio/Wi-Fi/Bluetooth/power/brightness flyouts and ricePlate for safe desktop shortcuts. Windows 7 additionally reads XFCE notification history through ricePop in its own small Action Center flyout, with no competing notification daemon; device-transition balloons respect XFCE quiet mode. Deep Control Panel tasks open the same native hardware controls, with installed Linux tools for advanced settings. [Migration checklist](RICEWARE_MIGRATION_GUIDE.md). Other Rices retain their backends; no default file manager or notification owner is replaced.
 - Linux hardware availability and permissions determine which real actions are enabled. Missing capabilities are explained instead of simulated.
 - All artwork is original. RiceBowl is not affiliated with Apple, Google or Microsoft.
 

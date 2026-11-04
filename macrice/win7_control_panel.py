@@ -14,6 +14,7 @@ import shutil
 class Task:
     name: str
     commands: tuple[str, ...]
+    device: str | None = None
 
 
 @dataclass(frozen=True)
@@ -26,15 +27,16 @@ class Category:
 CATEGORIES = (
     Category("System and Security", "ricehub-cp-system", (
         Task("System settings", ("xfce4-settings-manager",)),
-        Task("Power options", ("xfce4-power-manager-settings",)),
+        Task("Power options", ("xfce4-power-manager-settings",), "battery"),
         Task("Session and startup", ("xfce4-session-settings",)),
     )),
     Category("Network and Internet", "ricehub-cp-network", (
-        Task("View network connections", ("nm-connection-editor",)),
+        Task("View network connections", ("nm-connection-editor",), "network"),
         Task("Network settings", ("nm-connection-editor", "nm-applet")),
     )),
     Category("Hardware and Sound", "ricehub-cp-hardware", (
-        Task("Sound", ("pavucontrol", "xfce4-mixer")),
+        Task("Sound", ("pavucontrol", "xfce4-mixer"), "audio"),
+        Task("Bluetooth devices", ("blueman-manager",), "bluetooth"),
         Task("Devices and printers", ("system-config-printer",)),
         Task("Display", ("xfce4-display-settings",)),
     )),
@@ -219,10 +221,22 @@ def build(shell, Gtk, Gdk):
         breadcrumb.set_label("Control Panel  ›  " + category.name + "  ›  " + task.name)
         heading.set_text(task.name)
         command = installed_command(task)
+        native_available = bool(task.device and getattr(shell, "luna_tray", None)
+                                and task.device in shell.luna_tray.popovers)
         details.pack_start(shell._class(Gtk.Label(
-            label=("Configure this Linux feature using its installed settings utility."
+            label=("Control this Linux device directly, or open advanced system settings."
+                   if native_available else
+                   "Configure this Linux feature using its installed settings utility."
                    if command else "This Linux settings utility is not installed."),
             xalign=0), "win7-cp-task-info"), False, False, 0)
+        if native_available:
+            native = shell._class(Gtk.Button(label="Open " + task.name + " controls"),
+                                  "win7-cp-task-open")
+            native.set_halign(Gtk.Align.START)
+            native.get_accessible().set_name("Open native " + task.name + " controls")
+            native.connect("clicked", lambda _button, selected=task.device:
+                           shell.luna_tray.toggle(selected))
+            details.pack_start(native, False, False, 4)
         action = shell._class(Gtk.Button(label="Open " + task.name + " settings"),
                               "win7-cp-task-open")
         action.set_halign(Gtk.Align.START)

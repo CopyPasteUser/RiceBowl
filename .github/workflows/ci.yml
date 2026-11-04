@@ -69,6 +69,7 @@ jobs:
           # framed Control Panel, both fitting a 1024x768 XFWM4 desktop.
           RICEBOWL_CAPTURE_SIZE=1024 timeout 35s dbus-run-session -- xvfb-run -a -s '-screen 0 1024x768x24' /usr/bin/python3 screenshots/capture_win7_panel.py
           /usr/bin/python3 -c 'from pathlib import Path; import struct; fs=sorted(Path("screenshots").glob("ricebowl-aero-*-0.9.1-1024.png")); assert len(fs)==2, "Aero small-screen captures missing"; assert all(struct.unpack(">II", p.read_bytes()[16:24])==(1024,768) for p in fs), "Aero 1024x768 capture invalid"'
+          /usr/bin/python3 -c 'from pathlib import Path; import struct; files=(Path("screenshots/ricebowl-aero-action-center-0.9.1-extra.png"),Path("screenshots/ricebowl-aero-action-center-0.9.1-1024-extra.png")); assert all(p.exists() and p.stat().st_size>12000 for p in files), "Aero Action Center captures missing"; assert [struct.unpack(">II",p.read_bytes()[16:24]) for p in files]==[(1600,900),(1024,768)], "Aero Action Center captures have wrong dimensions"'
           # The actual Thunar Explorer window must fit the same compact screen.
           RICEBOWL_CAPTURE_SIZE=1024 timeout 35s dbus-run-session -- xvfb-run -a -s '-screen 0 1024x768x24' /usr/bin/python3 screenshots/capture_native_workspace.py aero
           /usr/bin/python3 -c 'from pathlib import Path; import struct; p=Path("screenshots/ricebowl-aero-workspace-0.9.1-1024.png"); b=p.read_bytes(); assert len(b)>30000 and struct.unpack(">II", b[16:24])==(1024,768), "Aero 1024x768 Thunar window invalid"'
@@ -113,6 +114,7 @@ jobs:
             screenshots/ricebowl-winxp-run-0.9.1*-extra.png
             screenshots/ricebowl-winxp-workspace-0.9.1-1024.png
             screenshots/ricebowl-aero-*-0.9.1-1024.png
+            screenshots/ricebowl-aero-action-center-0.9.1*-extra.png
             screenshots/ricebowl-frutiger-*-0.9.1-1024.png
             screenshots/ricebowl-frutiger-workspace-0.9.1-1024.png
             screenshots/ricebowl-winclassic-*-0.9.1-1024.png

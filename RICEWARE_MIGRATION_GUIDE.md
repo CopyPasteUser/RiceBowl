@@ -105,7 +105,12 @@ device controls in the Control Panel now consume the same bounded riceSpice
 worker as XP; opt-in Win7 desktop shortcuts use ricePlate. Aero's glass
 Superbar, calendar, SNI tray and native Control Panel navigation remain visually and
 structurally distinct. Third-party notifications stay with XFCE and deeper
-Control Panel tasks still use available Linux tools. Physical hardware and
+Control Panel tasks provide the same native Power/Network/Sound/Bluetooth
+flyouts alongside advanced Linux tools. Aero's small Action Center flyout reads
+XFCE's real notification history via `ricePop`, allows explicitly marking it
+read, and uses a separate, quiet-mode-aware balloon only for observed local
+device events. It does not replace XFCE Notifyd or replay third-party actions.
+Physical hardware and
 full seven-rice switch testing are not claimed.
 
 The family mapping changes **selection only**; per-rice windows, menu flows,
