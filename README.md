@@ -134,6 +134,14 @@ read-only, refreshable Linux **System Properties** view instead of depending on
 external documentation software. Notification balloons additionally report
 real removable-drive mount/unmount events through Gio. Auto-hide and taskbar
 locking remain disabled until monitor-safe handling is verified.
+The XP notification area also provides a **hidden-icon chevron** whenever
+active StatusNotifier applications exceed the visible icon limit. Right-click
+the taskbar or open that menu to choose **Customize notification icons…**:
+set the number of visible icons (0–8) and persist Show/Hide/Automatic per
+application with a stable protocol ID. This uses separate
+`~/.config/ricehub/winxp-tray.json` preferences; the Windows 7 tray and XFCE
+panel settings are unchanged. Applications using legacy XEmbed instead of
+StatusNotifier are not hosted by this tray.
 
 The active rice uses **Super** for its app menu and **Right Ctrl** for Control Panel/Quick Settings. RiceBowl backs up previous shortcut bindings and coordinates its taskbar with XFCE Panel and Plank.
 
