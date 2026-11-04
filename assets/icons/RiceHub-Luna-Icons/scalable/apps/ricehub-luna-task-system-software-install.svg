@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><title>RiceBowl XP Control Panel: system-software-install</title><defs>
+<linearGradient id="screen" x2="0" y2="1"><stop stop-color="#f8ffff"/><stop offset=".46" stop-color="#b0e0fc"/><stop offset="1" stop-color="#2877ca"/></linearGradient>
+<linearGradient id="steel" x2="0" y2="1"><stop stop-color="#f6f9ff"/><stop offset=".53" stop-color="#a5b5cb"/><stop offset="1" stop-color="#657996"/></linearGradient>
+<linearGradient id="gold" x2="0" y2="1"><stop stop-color="#fff5bb"/><stop offset=".48" stop-color="#f6bf60"/><stop offset="1" stop-color="#c7832b"/></linearGradient>
+<radialGradient id="globe" cx=".37" cy=".25"><stop stop-color="#e3ffff"/><stop offset=".55" stop-color="#69c8ee"/><stop offset="1" stop-color="#2170bf"/></radialGradient>
+<linearGradient id="disc" x2=".7" y2="1"><stop stop-color="#f4f5fe"/><stop offset=".4" stop-color="#a5e3f4"/><stop offset=".65" stop-color="#f6cadb"/><stop offset="1" stop-color="#94b3df"/></linearGradient>
+</defs>
+<rect x="3" y="22" width="44" height="34" rx="3" fill="url(#gold)" stroke="#97611f" stroke-width="2"/>
+<path d="M3 27h44M11 22v34" stroke="#e2b56d" stroke-width="2"/>
+<circle cx="41" cy="24" r="20" fill="url(#disc)" stroke="#7085a4" stroke-width="1.5"/>
+<circle cx="41" cy="24" r="5" fill="#71859b" stroke="#fff" stroke-width="2"/>
+<path d="M28 12q17-14 27 3" fill="none" stroke="#fff" stroke-width="5" opacity=".85"/>
+<path d="M17 43l7 7 11-14" fill="none" stroke="#267e37" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="49" cy="49" r="14" fill="#fffdf0" stroke="#9aacc4" stroke-width="1.6"/><path d="M40 43h18v12H40z" fill="#f6b857" stroke="#a96826"/><path d="M49 40v15m-5-5 5 5 5-5" stroke="#2b8d3b" fill="none" stroke-width="3"/></svg>

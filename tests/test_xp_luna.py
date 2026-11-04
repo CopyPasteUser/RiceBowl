@@ -11,7 +11,9 @@ from macrice.aero_layout import actual_popup_y, bottom_strut, menu_geometry
 from macrice.aero_shell import LAUNCHABLE_TOOLS, luna_program_groups, luna_programs
 from macrice.asset_upgrade import AssetConflict, git_blob_sha, inspect_bundle, install_bundle, trusted_assets
 from macrice.installer import project_root
-from macrice.luna_control_panel import LUNA_CATEGORIES, LUNA_TASKS, available_program, matching_tasks
+from macrice.luna_control_panel import (
+    LUNA_CATEGORIES, LUNA_TASKS, available_program, matching_tasks, task_art,
+)
 
 
 class App:
@@ -70,6 +72,16 @@ class LunaProgramsTests(unittest.TestCase):
         app = NoCategories()
         self.assertEqual(luna_programs((app,), ("bare.desktop",), ""), ((app,), ()))
 
+    def test_user_start_favorites_and_last_launched_apps(self):
+        apps = (App("browser.desktop", "Browser", "Network;WebBrowser;"),
+                App("mail.desktop", "Mail", "Email;"),
+                App("paint.desktop", "Paint"), App("terminal.desktop", "Terminal"))
+        featured, recent = luna_programs(apps, (), "", start_favorites=("terminal.desktop",),
+                                         history={"paint.desktop": (2, 500),
+                                                  "mail.desktop": (10, 100)})
+        self.assertEqual(featured, (apps[3],))
+        self.assertEqual(recent, (apps[2], apps[1], apps[0]))
+
 
 class LunaGeometryTests(unittest.TestCase):
     def test_control_panel_has_a_dedicated_monitor_constrained_window(self):
@@ -124,6 +136,35 @@ class LunaGeometryTests(unittest.TestCase):
 
 
 class LunaArtworkTests(unittest.TestCase):
+    def test_every_category_and_leaf_uses_a_distinct_luna_asset(self):
+        directory = project_root() / "assets/icons/RiceHub-Luna-Icons/scalable/apps"
+        for name, icon, _cmds, _summary in LUNA_CATEGORIES:
+            with self.subTest(category=name):
+                self.assertTrue((directory / (icon + ".svg")).is_file())
+                self.assertIn("ricehub-luna-cp-", icon)
+            for _title, task_icon, _commands, _detail in LUNA_TASKS[name]:
+                with self.subTest(task=task_icon):
+                    resolved = task_art(name, task_icon)
+                    self.assertEqual(resolved, "ricehub-luna-task-" + task_icon)
+                    source = directory / (resolved + ".svg")
+                    self.assertEqual(ElementTree.parse(source).getroot().tag,
+                                     "{http://www.w3.org/2000/svg}svg")
+
+    def test_category_icons_render_at_xp_control_panel_sizes(self):
+        try:
+            import gi
+            gi.require_version("GdkPixbuf", "2.0")
+            from gi.repository import GdkPixbuf
+        except (ImportError, ValueError):
+            self.skipTest("GTK Pixbuf is optional without the desktop runtime")
+        directory = project_root() / "assets/icons/RiceHub-Luna-Icons/scalable/apps"
+        for _name, icon, _commands, _description in LUNA_CATEGORIES:
+            for size in (16, 24, 32, 48):
+                with self.subTest(icon=icon, size=size):
+                    image = GdkPixbuf.Pixbuf.new_from_file_at_scale(
+                        str(directory / (icon + ".svg")), size, size, True)
+                    self.assertEqual((image.get_width(), image.get_height()), (size, size))
+
     def test_nested_program_group_icons_are_original_luna_assets(self):
         icons = project_root() / "assets/icons/RiceHub-Luna-Icons/scalable"
         for name, directory in (("accessories-text-editor", "apps"),

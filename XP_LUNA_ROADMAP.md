@@ -121,7 +121,7 @@ adds fake filesystem operations or replaces its file-management engine.
 
 ### P0 — Close the most visible interaction gaps
 
-- [ ] **Control Panel icon fidelity:** replace washed-out/generic or missing category and applet glyphs with one original, coherent, vivid XP-style set. Validate each category, task page and Classic View at actual 16/24/32/48 px sizes; preserve readable focus, disabled, hover and high-contrast states. Keep the existing working category → task → Linux utility navigation and search.
+- [x] **Control Panel icon fidelity:** replace washed-out/generic or missing category and applet glyphs with one original, coherent, vivid XP-style set. Validate each category, task page and Classic View at actual 16/24/32/48 px sizes; preserve readable focus, disabled, hover and high-contrast states. Keep the existing working category → task → Linux utility navigation and search. (Automated SVG/GTK sizing covered; owner visual signoff remains.)
 - [ ] **Native-feeling notification-area flyouts:** provide small Luna-styled, focus-safe popups anchored to the clicked tray icon — not a modern combined Control Center. Audio needs a verified volume slider, mute and output selection; network needs real connection information and Wi-Fi discovery/connect/disconnect through NetworkManager; power needs battery/charge information, supported brightness and power-profile controls; clock needs date/calendar; Bluetooth needs an actual adapter/device view when available. Missing hardware or permissions must produce honest disabled/error states. Never optimistically claim a system change succeeded.
 - [ ] **RiceExplorer handoff and integration:** adopt riceExplorer for `winxp` only once its real file operations, trash, removable media, SMB/SFTP/network locations, mounts, errors and recovery are accepted. Its XP skin must change **structure**, not only colors: My Computer device/volume view, Explorer command/address/navigation bars, context-sensitive File and Folder Tasks sidebar, details, icons, property sheets, copy/move/progress dialogs, views/groups/thumbnails/filmstrip and actual context menus. Keep a functioning Thunar fallback, with no silent changes to file associations.
 - [ ] **ThinkPad hardware validation:** verify all P0 popups with real Wi-Fi, audio, battery/charging and brightness; also test external HDMI, wake from suspend, login/relogin, Plank autostart and repeated switching/restoring across all seven rices.
@@ -150,3 +150,26 @@ adds fake filesystem operations or replaces its file-management engine.
 - Final owner acceptance: install/update on Linux Mint XFCE, seven-rice switch/restore, rollback after failure, suspend/resume, dual monitors, real network/mount/file operations and idle CPU/PSS/startup measurements on the ThinkPad. No claim of XP Luna 1.0 completeness before these pass.
 
 **Scope:** these are XP-specific product goals. Do not redesign the other rice identities or replace working XFCE services as a side effect.
+## Notification-area and original icon pass — November 2026
+
+- [x] Replace missing GTK symbolic icon fallback with nine original, recognizable
+  3D Luna Control Panel category devices and individually badged applet SVGs.
+- [x] Keep artwork reproducible through `scripts/build_luna_control_icons.py`;
+  install it only into XP's icon theme, preserving all other rices.
+- [x] Audio icon: small native popover with verified volume slider, mute,
+  selection among real PulseAudio/PipeWire output devices, and settings link;
+  Control Panel uses the same output backend.
+- [x] WLAN icon: real NetworkManager radio state, sorted nearby SSIDs, refresh,
+  join/disconnect actions and connection editor, with asynchronous error/empty states.
+- [x] Battery icon: accurate battery state, optional verified brightness slider,
+  supported power profiles and settings; desktops show an honest no-battery message.
+- [x] Bluetooth icon: live BlueZ adapter state and connected devices, verified
+  power action and Blueman settings; unavailable adapters reported as such.
+- [x] Clock: clickable calendar popup with date/time settings.
+- [x] Start favorites/context actions are independent of taskbar pins, have
+  reversible ordering, and successful launches populate a bounded recent list.
+- [ ] Validate screenshot regression captures for five popovers and original
+  icons at 1600×900 and 1024×768 in native GTK CI (coverage implemented).
+- [x] Add focused backend and SVG contract tests for the tray and Control Panel.
+- [ ] Hardware acceptance on the owner's physical Mint XFCE laptop: real audio,
+  NetworkManager connection changes, backlight permissions, focus, external monitor.

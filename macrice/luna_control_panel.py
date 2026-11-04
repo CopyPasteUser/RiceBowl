@@ -10,25 +10,37 @@ import shutil
 
 
 LUNA_CATEGORIES = (
-    ("Appearance and Themes", "preferences-desktop-theme",
+    ("Appearance and Themes", "ricehub-luna-cp-appearance",
      ("xfce4-appearance-settings",), "Colors, fonts and window appearance"),
-    ("Network and Internet Connections", "network-workgroup",
+    ("Network and Internet Connections", "ricehub-luna-cp-network",
      ("nm-connection-editor", "nm-applet"), "Configure network connections"),
-    ("Add or Remove Programs", "system-software-install",
+    ("Add or Remove Programs", "ricehub-luna-cp-programs",
      ("mintinstall", "gnome-software", "synaptic"), "Install or remove applications"),
-    ("Sounds, Speech, and Audio Devices", "audio-card",
+    ("Sounds, Speech, and Audio Devices", "ricehub-luna-cp-audio",
      ("pavucontrol", "xfce4-mixer"), "Playback and input devices"),
-    ("Performance and Maintenance", "utilities-system-monitor",
+    ("Performance and Maintenance", "ricehub-luna-cp-performance",
      ("xfce4-taskmanager", "gnome-system-monitor"), "Inspect running processes"),
-    ("Printers and Other Hardware", "printer",
+    ("Printers and Other Hardware", "ricehub-luna-cp-hardware",
      ("system-config-printer",), "Set up printers"),
-    ("User Accounts", "system-users",
+    ("User Accounts", "ricehub-luna-cp-accounts",
      ("users-admin", "gnome-control-center"), "Manage local accounts"),
-    ("Date, Time, Language, and Regional Options", "preferences-system-time",
+    ("Date, Time, Language, and Regional Options", "ricehub-luna-cp-regional",
      ("time-admin", "xfce4-settings-manager"), "Open regional and time settings"),
-    ("Accessibility Options", "preferences-desktop-accessibility",
+    ("Accessibility Options", "ricehub-luna-cp-accessibility",
      ("xfce4-accessibility-settings",), "Make input and display easier to use"),
 )
+
+LUNA_CATEGORY_ICONS = {name: icon for name, icon, _tools, _hint in LUNA_CATEGORIES}
+
+
+def task_art(category, icon):
+    """A bespoke XP category glyph always exists; generic missing-icon squares do not."""
+    from .installer import project_root
+
+    themed_name = "ricehub-luna-task-" + icon
+    themed = (project_root() / "assets/icons/RiceHub-Luna-Icons/scalable/apps" /
+              (themed_name + ".svg"))
+    return themed_name if themed.is_file() else LUNA_CATEGORY_ICONS[category]
 
 # Windows XP's categories lead to task pages; only leaf actions launch Linux
 # settings utilities. This is also the source for Classic View and search.
@@ -192,13 +204,13 @@ def build(shell, Gtk, Gdk):
     main.pack_start(stack, True, True, 2)
     home_view = ["categories"]
 
-    def task_button(task, *, compact=False):
+    def task_button(category, task, *, compact=False):
         name, icon, commands, explanation = task
         program = available_program(commands)
         button = shell._class(Gtk.Button(),
                               "luna-control-applet" if compact else "luna-control-task")
         line = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=9)
-        image = shell._icon(icon, Gtk.IconSize.MENU if compact else Gtk.IconSize.LARGE_TOOLBAR)
+        image = shell._icon(task_art(category, icon), Gtk.IconSize.LARGE_TOOLBAR)
         line.pack_start(image, False, False, 0)
         labels = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=2)
         title = shell._class(Gtk.Label(label=name, xalign=0), "luna-control-link")
@@ -250,7 +262,7 @@ def build(shell, Gtk, Gdk):
                                            "luna-control-intro"), True, True, 0)
             details.pack_start(header, False, False, 6)
         for task in LUNA_TASKS[category]:
-            details.pack_start(task_button(task), False, False, 0)
+            details.pack_start(task_button(category, task), False, False, 0)
         details.show_all()
         stack.set_visible_child_name("detail")
         heading.set_text(category)
@@ -279,10 +291,11 @@ def build(shell, Gtk, Gdk):
         category_grid.attach(button, index % columns, index // columns, 1, 1)
 
     # Classic View lists real individual applets, not duplicate category cards.
-    distinct = {task[0]: task for group in LUNA_TASKS.values() for task in group}
-    for index, task in enumerate(distinct.values()):
+    distinct = {task[0]: (category, task) for category, group in LUNA_TASKS.items()
+                for task in group}
+    for index, (category, task) in enumerate(distinct.values()):
         columns = 1 if compact_layout else 2
-        classic_grid.attach(task_button(task, compact=True), index % columns,
+        classic_grid.attach(task_button(category, task, compact=True), index % columns,
                             index // columns, 1, 1)
 
     def on_search(entry):
@@ -303,7 +316,7 @@ def build(shell, Gtk, Gdk):
                     matches.pack_start(shell._class(Gtk.Label(label=category, xalign=0),
                                                     "luna-control-result-heading"), False, False, 4)
                     last_category = category
-                matches.pack_start(task_button(task), False, False, 0)
+                matches.pack_start(task_button(category, task), False, False, 0)
         matches.show_all()
         stack.set_visible_child_name("search")
         heading.set_text("Search results")

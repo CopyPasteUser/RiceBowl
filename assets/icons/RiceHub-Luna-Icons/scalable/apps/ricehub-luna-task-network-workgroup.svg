@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><title>RiceBowl XP Control Panel: network-workgroup</title><defs>
+<linearGradient id="screen" x2="0" y2="1"><stop stop-color="#f8ffff"/><stop offset=".46" stop-color="#b0e0fc"/><stop offset="1" stop-color="#2877ca"/></linearGradient>
+<linearGradient id="steel" x2="0" y2="1"><stop stop-color="#f6f9ff"/><stop offset=".53" stop-color="#a5b5cb"/><stop offset="1" stop-color="#657996"/></linearGradient>
+<linearGradient id="gold" x2="0" y2="1"><stop stop-color="#fff5bb"/><stop offset=".48" stop-color="#f6bf60"/><stop offset="1" stop-color="#c7832b"/></linearGradient>
+<radialGradient id="globe" cx=".37" cy=".25"><stop stop-color="#e3ffff"/><stop offset=".55" stop-color="#69c8ee"/><stop offset="1" stop-color="#2170bf"/></radialGradient>
+<linearGradient id="disc" x2=".7" y2="1"><stop stop-color="#f4f5fe"/><stop offset=".4" stop-color="#a5e3f4"/><stop offset=".65" stop-color="#f6cadb"/><stop offset="1" stop-color="#94b3df"/></linearGradient>
+</defs>
+<circle cx="37" cy="26" r="22" fill="url(#globe)" stroke="#2260a0" stroke-width="2"/>
+<ellipse cx="37" cy="26" rx="11" ry="21" fill="none" stroke="#e5ffff" stroke-width="2"/>
+<path d="M17 26h40M23 14h28M23 39h28" fill="none" stroke="#d5faff" stroke-width="2"/>
+<path d="M20 12Q30 4 47 10" fill="none" stroke="#fff" stroke-width="4" opacity=".65"/>
+<rect x="2" y="34" width="30" height="22" rx="3" fill="url(#steel)" stroke="#304967" stroke-width="2"/>
+<rect x="5" y="37" width="24" height="15" fill="url(#screen)"/>
+<path d="M15 57h6v3h7v2H8v-2h7z" fill="#63788b"/>
+<circle cx="49" cy="49" r="14" fill="#fffdf0" stroke="#9aacc4" stroke-width="1.6"/><path d="M39 49h8l5-8 6 10" fill="none" stroke="#266ac4" stroke-width="4"/></svg>
