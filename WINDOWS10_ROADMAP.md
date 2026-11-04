@@ -80,6 +80,30 @@ are independently drawn, Linux-specific, and do not imply Microsoft branding.
 The completed checkpoints are distinct from the broader uncompleted 22H2
 criteria below. XFCE Notifyd remains the only notification service.
 
+## Native Settings, Network and Task View checkpoint — 4 November 2026
+
+- [x] Start and Action Center link to an independent dark Windows 10 Settings
+  window, with home-category search, back/breadcrumb navigation and explicit
+  System Sound/Display/Notifications/About subpages. Enabled controls use
+  verified riceSpice/ricePop results, not fake XFCE toggles.
+- [x] Network tray flyout lists at most 12 real SSIDs, signal/security, Wi-Fi
+  radio-off/unavailable, manual rescan and explicit NetworkManager
+  connect/disconnect with real error/credential handoff to native settings.
+- [x] Taskbar Task View button shows Wnck-tracked real windows and XFCE
+  workspaces. Switching/activating/moving, new desktop and safe last-empty-
+  desktop removal use native X11 APIs. The window list is bounded.
+- [x] Optional Windows 10 RiceExplorer launch uses the real `--theme win10`
+  CLI only if installed; **does not replace Thunar** or change MIME defaults.
+- [x] Hermetic Linux-backend adapter regressions and GTK CSS parse.
+- [ ] Native X11 CI smoke and small-screen screenshots for the new surfaces;
+  physical Mint/NetworkManager and multi-monitor acceptance remain separate.
+- [ ] Complete Settings categories, global Win+Tab/Win+I key binding with
+  backed-up XFCE shortcuts, task previews/Snap Assist, interactive network
+  credential dialog, notification grouping and full Win10 Explorer acceptance.
+
+The original 22H2 fidelity checklist below remains authoritative: new
+entry points do **not** mean every Windows 10 feature is implemented.
+
 
 ---
 

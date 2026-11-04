@@ -814,6 +814,22 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 assert not self.menu.get_visible()
                 self._toggle_actions()
                 assert self.actions.get_visible()
+                if profile == "windows10":
+                    self._toggle_ten_network()
+                    assert self.ten_network.window.get_visible()
+                    assert self.ten_network.networks is not None
+                    self.ten_network.hide()
+                    self._open_ten_settings("network")
+                    assert self.ten_settings.window.get_visible()
+                    assert self.ten_settings.stack.get_visible_child_name() == "network"
+                    self.ten_settings.navigate("sound")
+                    assert self.ten_settings.stack.get_visible_child_name() == "sound"
+                    self.ten_settings.hide()
+                    self._toggle_ten_task_view()
+                    assert self.ten_task_view.window.get_visible()
+                    self.ten_task_view.hide()
+                    self._toggle_actions()
+                    assert self.actions.get_visible()
                 if profile == "chromeos":
                     from .chrome_settings import ACTIONS
                     from .chrome_quick_settings import calendar_today
@@ -1599,6 +1615,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self.luna_tray.close()
             if profile == "windows10" and hasattr(self, "ten_controller"):
                 self.ten_controller.close()
+            for component in ("ten_network", "ten_settings", "ten_task_view"):
+                instance = getattr(self, component, None)
+                if instance is not None:
+                    instance.close()
             if self._volume_write_source:
                 GLib.source_remove(self._volume_write_source)
                 self._volume_write_source = 0
@@ -1631,6 +1651,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self._hide_menu()
             if self.actions.get_visible():
                 self._hide_actions()
+            if profile == "windows10":
+                self.ten_network.hide()
+                if hasattr(self, "ten_task_view"):
+                    self.ten_task_view.hide()
 
         def _render_pins(self):
             for child in self.pinned_box.get_children():
@@ -2063,7 +2087,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 contents.pack_start(label, False, False, 0)
                 button.add(contents)
                 button.get_accessible().set_name(name.capitalize() + " status")
-                if self.luna_tray is None:
+                if profile == "windows10" and name == "network":
+                    button.connect("clicked", lambda _button: self._toggle_ten_network())
+                elif self.luna_tray is None:
                     button.connect("clicked", lambda _button, selected=name:
                                    self._status_action(selected))
                 row.pack_end(button, False, False, 0)
@@ -2433,6 +2459,12 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 search_button.set_tooltip_text("Search installed applications")
                 search_button.connect("clicked", lambda _button: self._open_search())
                 row.pack_start(search_button, False, False, 0)
+                view = self._class(Gtk.Button(), "ten-search")
+                view.add(self._icon("view-grid-symbolic", Gtk.IconSize.BUTTON))
+                view.get_accessible().set_name("Task View: open windows and desktops")
+                view.set_tooltip_text("Task View")
+                view.connect("clicked", lambda _button: self._toggle_ten_task_view())
+                row.pack_start(view, False, False, 0)
             self.pinned_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
             if profile == "frutiger":
                 self.pinned_box.get_style_context().add_class("frutiger-pins")
@@ -2595,6 +2627,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self._luna_apply_taskbar_options()
             win.move(rect.x, rect.y + rect.height - panel_height)
             self.bar = win
+            if profile == "windows10":
+                from .ten_network import TenNetworkFlyout
+
+                self.ten_network = TenNetworkFlyout(self, Gtk, Gdk,
+                                                    self.ten_controller.runner)
 
         def _classic98_apply_taskbar_options(self):
             if profile != "winclassic" or self._classic98_taskbar_options is None:
@@ -2945,6 +2982,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             elif self.overflow_button.get_parent() is self.tasks:
                 self.tasks.remove(self.overflow_button)
             self.tasks.show_all()
+            if profile == "windows10" and hasattr(self, "ten_task_view"):
+                self.ten_task_view.refresh()
 
         def _luna_windows_grouped(self, windows, active):
             """XP combines siblings only when needed, never by title alone."""
@@ -4251,6 +4290,63 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.menu, self.search = menu, search
             self._populate("")
 
+        def _open_ten_settings(self, page="home"):
+            """Open the independent Windows 10 Settings renderer, not XFCE Manager."""
+            if profile != "windows10":
+                return
+            self._hide_menu()
+            self._hide_actions()
+            self.ten_network.hide()
+            if not hasattr(self, "ten_settings"):
+                from .ten_settings import TenSettings
+
+                self.ten_settings = TenSettings(self, Gtk, Gdk, GLib,
+                                                self.ten_controller.runner)
+            self.ten_settings.show(page)
+
+        def _toggle_ten_network(self):
+            if profile != "windows10":
+                return
+            if self.ten_network.window.get_visible():
+                self.ten_network.hide()
+                return
+            self._hide_menu()
+            self._hide_actions()
+            if hasattr(self, "ten_task_view"):
+                self.ten_task_view.hide()
+            self.ten_network.show()
+
+        def _toggle_ten_task_view(self):
+            if profile != "windows10":
+                return
+            if not hasattr(self, "ten_task_view"):
+                from .ten_task_view import TenTaskView
+
+                self.ten_task_view = TenTaskView(self, Gtk, Gdk, GLib)
+            if self.ten_task_view.window.get_visible():
+                self.ten_task_view.hide()
+                return
+            self._hide_menu()
+            self._hide_actions()
+            self.ten_network.hide()
+            self.ten_task_view.show()
+
+        def _open_ten_explorer(self):
+            """Opt-in Rust renderer; never change Thunar/MIME defaults."""
+            if profile != "windows10":
+                return
+            binary = shutil.which("rice-explorer")
+            if not binary:
+                self._error("RiceExplorer is not installed; Thunar remains available.")
+                return
+            try:
+                subprocess.Popen((binary, "--theme", "win10", str(Path.home())),
+                                 start_new_session=True)
+            except OSError as exc:
+                self._error("Could not start RiceExplorer: " + str(exc))
+                return
+            self._hide_menu()
+
         def _create_ten_menu(self):
             """Windows 10 Start: navigation rail, alphabetical apps, grouped live tiles."""
             if profile == "chromeos":
@@ -4299,8 +4395,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     item.connect("activate", lambda _item, location=uri: self._open_uri(location))
                 else:
                     command = next((cmd for cmd in commands if shutil.which(cmd)), None)
-                    item.set_sensitive(command is not None)
-                    if command:
+                    if label == "Settings":
+                        item.connect("activate", lambda _item: self._open_ten_settings())
+                    else:
+                        item.set_sensitive(command is not None)
+                    if command and label != "Settings":
                         item.connect("activate", lambda _item, cmd=command: self._open_tool(cmd))
                 navigation_menu.append(item)
             navigation_menu.show_all()
@@ -4319,12 +4418,23 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 button.set_tooltip_text(text)
                 button.get_accessible().set_name(text)
                 if command:
-                    button.set_sensitive(shutil.which(command) is not None)
-                    button.connect("clicked", lambda _button, cmd=command: self._open_tool(cmd))
+                    if text == "Settings":
+                        button.connect("clicked", lambda _button: self._open_ten_settings())
+                    else:
+                        button.set_sensitive(shutil.which(command) is not None)
+                        button.connect("clicked", lambda _button, cmd=command:
+                                       self._open_tool(cmd))
                 else:
                     button.set_sensitive(Gio.File.new_for_uri(uri).query_exists(None))
                     button.connect("clicked", lambda _button, location=uri: self._open_uri(location))
                 rail.pack_start(button, False, False, 0)
+            if shutil.which("rice-explorer"):
+                explorer = self._class(Gtk.Button(), "ten-rail-button")
+                explorer.set_image(self._icon("system-file-manager", Gtk.IconSize.LARGE_TOOLBAR))
+                explorer.set_tooltip_text("RiceExplorer · Windows 10 (preview)")
+                explorer.get_accessible().set_name("Open optional RiceExplorer Windows 10")
+                explorer.connect("clicked", lambda _button: self._open_ten_explorer())
+                rail.pack_start(explorer, False, False, 0)
             root.pack_start(rail, False, False, 0)
 
             main = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10), "ten-menu-main")
@@ -4937,6 +5047,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _toggle_actions(self):
             self._cancel_popup_hide("control")
+            if profile == "windows10":
+                self.ten_network.hide()
+                if hasattr(self, "ten_task_view"):
+                    self.ten_task_view.hide()
             if self.luna_tray is not None:
                 for popup in self.luna_tray.popovers.values():
                     popup.hide()
@@ -5433,6 +5547,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _toggle_menu(self):
             self._cancel_popup_hide("menu")
+            if profile == "windows10":
+                self.ten_network.hide()
+                if hasattr(self, "ten_task_view"):
+                    self.ten_task_view.hide()
             if self.luna_tray is not None:
                 for popup in self.luna_tray.popovers.values():
                     popup.hide()

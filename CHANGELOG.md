@@ -1,5 +1,20 @@
 # RiceBowl changelog
 
+## Unreleased — Windows 10 native Settings, Network and Task View (4 November 2026)
+
+- Added independently rendered Windows 10 Settings with nine discoverable
+  categories and real sound/mute/brightness, Wi-Fi/Bluetooth and Focus Assist
+  controls, category/subpage navigation and explicit native advanced-tool links.
+- Added a NetworkManager-backed network flyout with bounded SSID list, manual
+  rescan, explicit connect/disconnect and honest unavailable/credential states.
+- Added Task View over real libwnck windows and XFCE workspaces, with explicit
+  switching, window relocation and guarded workspace create/remove operations;
+  no additional window manager or desktop daemon.
+- Added an optional RiceExplorer `--theme win10` launch in Start when installed,
+  without modifying Thunar, MIME defaults or file associations.
+- Expanded regression and native X11 smoke coverage; full Win10 Settings and
+  global shortcut coverage, physical devices and multi-monitor tests remain open.
+
 ## Unreleased — Windows 10 Riceware Action Center migration (4 November 2026)
 
 - Migrated Windows 10 taskbar hardware status and Action Center volume/mute
