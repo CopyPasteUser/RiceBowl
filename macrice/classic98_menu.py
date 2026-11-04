@@ -232,10 +232,14 @@ def show_run(shell, Gtk, Gio, *, theme="winclassic"):
     tools.pack_start(browse_button, False, False, 0)
     clear = Gtk.Button(label="Clear history")
     clear.set_sensitive(bool(history))
+    if theme == "winxp" and not history:
+        clear.set_no_show_all(True)
     def clear_history(_button):
         setattr(shell, history_name, ())
         combo.remove_all()
         clear.set_sensitive(False)
+        if theme == "winxp":
+            clear.hide()
     clear.connect("clicked", clear_history)
     tools.pack_start(clear, False, False, 0)
     body.pack_start(tools, False, False, 0)
