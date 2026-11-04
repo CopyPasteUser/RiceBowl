@@ -188,5 +188,7 @@ def search_folder(
 
     if reason == "complete" and first_error:
         reason = "some folders could not be accessed"
+    if text_query and skipped:
+        reason += f" · {skipped} files skipped (size, format or access)"
     emit(pending, scanned, True, reason)
     return FindSummary(scanned, matches, reason, skipped)
