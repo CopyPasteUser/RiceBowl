@@ -2224,7 +2224,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                                                 self._effective_task_pin_count(), 230)
             if getattr(self, "_window_tracker", None) is not None:
                 self._window_tracker.refresh()
-            if hasattr(self, "menu") and self.menu.get_visible():
+            if getattr(self, "menu", None) is not None and self.menu.get_visible():
                 self._populate(self.search.get_text())
 
         def _luna_install_volume_notifications(self):
