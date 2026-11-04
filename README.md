@@ -14,6 +14,8 @@ Native Python/GTK3 desktop customization for Linux Mint XFCE and other **XFCE/X1
 
 RiceBowl changes the actual Linux desktop: GTK and XFWM4 themes, icons, wallpaper, taskbar, launcher and Thunar styling. Its menus launch installed applications, and system controls use real Linux backends. No Electron, telemetry or proprietary Windows/macOS/ChromeOS assets.
 
+The [shared-components architecture roadmap](SHARED_COMPONENTS_ROADMAP.md) explains how riceExplorer and future common Settings, notifications and desktop functionality fit together. New programs are conditional; no additional service is installed by this documentation plan.
+
 > **Version note:** `main` contains the latest improvements. The tagged [v0.9.1 release](https://github.com/CopyPasteUser/RiceBowl/releases/tag/v0.9.1) is older.
 
 ## Styles
