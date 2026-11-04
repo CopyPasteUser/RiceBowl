@@ -1,5 +1,17 @@
 # RiceBowl changelog
 
+## Unreleased — Windows XP Luna shared Riceware migration (4 November 2026)
+
+- Migrated XP Luna's live taskbar hardware status, audio volume/mute/output,
+  Wi-Fi radio/scan/connect/disconnect, Bluetooth power/device connections,
+  power profiles and brightness onto the shared riceSpice API with verified
+  state readback and per-shell bounded GTK worker dispatch.
+- Routed opt-in XP desktop shortcuts through ricePlate while retaining the
+  existing safe XFDesktop ownership and user-modified-file preservation.
+- Added explicit riceSpice Wi-Fi rescan and deterministic XP adapter regressions;
+  left other rice renderers, native XFCE advanced tools and Linux services
+  untouched. GUI/physical hardware certification is tracked separately.
+
 ## Unreleased — Riceware migration API 1.0 (4 November 2026)
 
 - Introduced a source-compatible `macrice.riceware` 1.0 API contract, stable

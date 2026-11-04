@@ -1,6 +1,6 @@
 # RiceBowl riceware ecosystem roadmap
 
-Status: **initial backend foundations implemented, renderer migration and acceptance open** (4 November 2026). This remains the implementation contract for shared capabilities behind the seven structurally distinct rice families, not an announcement of completed applications or a release.
+Status: **shared API 1.0 implemented; XP Luna hardware/tray migration started, other renderers and physical acceptance open** (4 November 2026). This remains the implementation contract for shared capabilities behind the seven structurally distinct rice families, not an announcement of completed standalone applications or a desktop release.
 
 **Goal:** one dependable Linux capability layer with seven deliberately different desktop experiences. A rice must be able to change component structure, navigation, controls and visual assets—not just colors—without duplicating filesystem safety logic, inventing system state or breaking a running session.
 
@@ -67,6 +67,18 @@ See [Riceware foundation API and manual checks](RICEWARE_FOUNDATIONS.md).
   renderers, fallback rules and measurable acceptance requirements.
 - [ ] Migrate each actual renderer and pass physical Mint/XFCE, Wine and
   multi-monitor tests. Do **not** equate API v1.0 with RiceBowl app v1.0.
+
+### XP Luna first consumer — 4 November 2026
+
+- [x] XP taskbar hardware status and its device flyouts use riceSpice and
+  per-shell bounded GTK requests, including explicit Wi-Fi rescan and verified
+  writes for audio, Bluetooth, power profiles, Wi-Fi and brightness.
+- [x] XP desktop shortcut confirmation now calls ricePlate; the existing
+  modification/overwrite protections and XFDesktop ownership remain intact.
+- [x] Add hermetic XP adapter interaction regressions and retain the existing
+  XP deep-click/small-screen X11 smoke paths.
+- [ ] Physical Mint verification; additional Control Panel applet consolidation,
+  native ricePop history integration and all other rice consumers remain open.
 
 ### Reliability checkpoint — 4 November 2026
 

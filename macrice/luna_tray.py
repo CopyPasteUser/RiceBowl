@@ -6,18 +6,10 @@ backends. Never invents hardware state or installs a background daemon.
 
 from __future__ import annotations
 
-import logging
 import shutil
-import threading
 
-from .hardware_status import (
-    connect_wifi, disconnect_wifi, read_bluetooth, read_brightness,
-    read_power_profiles, read_sound_outputs, read_wifi_networks, read_wifi_radio,
-    set_bluetooth_connection, set_bluetooth_power, set_brightness, set_power_profile, set_sound_output,
-    set_wifi_radio,
-)
-
-LOG = logging.getLogger(__name__)
+from .riceware import spice
+from .riceware.worker import LatestRequestRunner
 
 
 def tray_flyout_position(monitor_x, monitor_y, monitor_width, monitor_height,
@@ -35,7 +27,7 @@ class LunaTray:
         self.shell, self.Gtk, self.GLib = shell, Gtk, GLib
         self.popovers = {}
         self.anchors = {}
-        self._network_request = 0
+        self._requests = LatestRequestRunner(GLib.idle_add, workers=3)
         self._network_busy = False
         self._network_error = None
         self._brightness_writing = False
@@ -47,6 +39,34 @@ class LunaTray:
         self._bluetooth_busy = False
         self._profile_error = None
         self._bluetooth_error = None
+
+    def _submit(self, key, operation, complete):
+        """Bring one Riceware result onto GTK's main thread for the XP renderer."""
+        def delivered(reply):
+            value = (spice.Result(key, "error", reason=reply.error)
+                     if reply.error else reply.value)
+            complete(value)
+
+        self._requests.submit(key, operation, delivered)
+
+    def change_audio(self, action, value, complete):
+        """XP's shared volume/mute widgets keep shell debouncing and readback UI."""
+        def finished(result):
+            complete(result.value if result.status == "ok" else None,
+                     None if result.status == "ok" else result.reason or "Unavailable")
+
+        self._submit(action, lambda: spice.change(action, value), finished)
+
+    def refresh_status(self, complete):
+        """One worker-owned, on-demand status probe for the XP taskbar."""
+        self._submit("desktop-status", lambda: spice.read("desktop_status"),
+                     lambda result: complete(result.value if result.status == "ok" else None))
+
+    def close(self):
+        if self._brightness_source:
+            self.GLib.source_remove(self._brightness_source)
+            self._brightness_source = 0
+        self._requests.close()
 
     def _label(self, value, kind="luna-tray-caption"):
         label = self.shell._class(self.Gtk.Label(label=value, xalign=0), kind)
@@ -347,15 +367,7 @@ class LunaTray:
             return
         self._audio_output_busy = True
         self._set_list_message(self.output_list, "Checking outputs…")
-
-        def worker():
-            try:
-                outputs = read_sound_outputs()
-            except (OSError, RuntimeError, ValueError):
-                outputs = ()
-            self.GLib.idle_add(self._outputs_ready, outputs)
-
-        threading.Thread(target=worker, daemon=True, name="ricebowl-xp-audio-outputs").start()
+        self._submit("audio-outputs", lambda: spice.read("audio_outputs"), self._outputs_ready)
 
     def _set_list_message(self, box, message):
         for child in box.get_children():
@@ -363,10 +375,12 @@ class LunaTray:
         box.pack_start(self._label(message), False, False, 0)
         box.show_all()
 
-    def _outputs_ready(self, outputs):
+    def _outputs_ready(self, result):
         self._audio_output_busy = False
+        outputs = result.value if result.status == "ok" else ()
         if not outputs:
-            self._set_list_message(self.output_list, "No selectable outputs (pactl unavailable)")
+            self._set_list_message(self.output_list, result.reason or
+                                   "No selectable outputs (pactl unavailable)")
             return False
         for child in self.output_list.get_children():
             self.output_list.remove(child)
@@ -391,19 +405,15 @@ class LunaTray:
         self._audio_output_busy = True
         self.audio_label.set_text("Switching audio output…")
 
-        def worker():
-            try:
-                selected, error = set_sound_output(name), None
-            except (OSError, RuntimeError, ValueError) as exc:
-                selected, error = None, str(exc)
-            self.GLib.idle_add(self._output_changed, selected, error)
+        self._submit("audio-output-write", lambda: spice.change("audio_output", name),
+                     self._output_changed)
 
-        threading.Thread(target=worker, daemon=True, name="ricebowl-xp-select-output").start()
-
-    def _output_changed(self, selected, error):
+    def _output_changed(self, result):
         self._audio_output_busy = False
-        self.audio_label.set_text("Output change failed: " + error if error else
-                                  "Using " + selected.label)
+        active = (next((item for item in result.value if item.active), None)
+                  if result.status == "ok" else None)
+        self.audio_label.set_text("Using " + active.label if active is not None else
+                                  "Output change failed: " + (result.reason or "Not verified"))
         self.refresh_outputs()
         self.shell._refresh_status_async()
         return False
@@ -412,31 +422,25 @@ class LunaTray:
         if self._network_busy:
             return
         self._network_busy = True
-        self._network_request += 1
-        request = self._network_request
         self.network_label.set_text("Looking for Wi-Fi connections…")
 
-        def worker():
-            try:
-                state, networks = read_wifi_radio(), read_wifi_networks(rescan=rescan)
-            except (OSError, RuntimeError, ValueError) as exc:
-                LOG.warning("Wi-Fi status unavailable: %s", exc)
-                state, networks = None, ()
-            self.GLib.idle_add(self._network_ready, request, state, networks)
+        self._submit("wifi-list", lambda: (spice.read("wifi"),
+                                           spice.scan_wifi(rescan=rescan)), self._network_ready)
 
-        threading.Thread(target=worker, daemon=True, name="ricebowl-xp-wifi").start()
-
-    def _network_ready(self, request, radio, networks):
-        if request != self._network_request:
-            return False
+    def _network_ready(self, results):
         self._network_busy = False
+        radio_result, networks_result = (results if isinstance(results, tuple) else
+                                         (results, results))
+        radio = radio_result.value if radio_result.status == "ok" else None
+        networks = networks_result.value if networks_result.status == "ok" else ()
         if radio is None:
-            self.network_label.set_text("NetworkManager is unavailable")
+            self.network_label.set_text(radio_result.reason or "NetworkManager is unavailable")
             self.wifi_toggle.set_sensitive(False)
             self.wifi_toggle.set_label("Wi-Fi unavailable")
         else:
             self.network_label.set_text(self._network_error or
-                                        ("Wi-Fi is on" if radio else "Wi-Fi is off"))
+                                        (networks_result.reason if networks_result.status == "error"
+                                         else "Wi-Fi is on" if radio else "Wi-Fi is off"))
             self.wifi_toggle.set_sensitive(True)
             self.wifi_toggle.set_label("Turn Wi-Fi off" if radio else "Turn Wi-Fi on")
         self.wifi_disconnect.set_sensitive(bool(radio) and any(n.connected for n in networks))
@@ -481,22 +485,18 @@ class LunaTray:
         self.wifi_toggle.set_sensitive(False)
         self.network_label.set_text("Applying Wi-Fi change…")
 
-        def worker():
-            try:
-                current = read_wifi_radio()
-                if current is None:
-                    raise RuntimeError("NetworkManager is unavailable")
-                set_wifi_radio(not current)
-                error = None
-            except (OSError, ValueError, RuntimeError) as exc:
-                error = str(exc)
-            self.GLib.idle_add(self._wifi_changed, error)
+        def toggle():
+            current = spice.read("wifi")
+            if current.status != "ok":
+                return current
+            return spice.change("wifi", not current.value)
 
-        threading.Thread(target=worker, daemon=True, name="ricebowl-xp-wifi-switch").start()
+        self._submit("wifi-write", toggle, self._wifi_changed)
 
-    def _wifi_changed(self, error):
+    def _wifi_changed(self, result):
         self._network_busy = False
-        self._network_error = "Wi-Fi change failed: " + error if error else None
+        self._network_error = ("Wi-Fi change failed: " + (result.reason or "Not verified")
+                               if result.status != "ok" else None)
         self.refresh_network()
         return False
 
@@ -508,21 +508,14 @@ class LunaTray:
         self.wifi_toggle.set_sensitive(False)
         self.network_label.set_text("Connecting to " + ssid + "…")
 
-        def worker():
-            try:
-                if not connect_wifi(ssid):
-                    raise RuntimeError("Connected network could not be verified")
-                error = None
-            except (OSError, ValueError, RuntimeError) as exc:
-                error = str(exc)
-            self.GLib.idle_add(self._wifi_joined, error)
+        self._submit("wifi-write", lambda: spice.change("wifi_connect", ssid),
+                     self._wifi_joined)
 
-        threading.Thread(target=worker, daemon=True, name="ricebowl-xp-wifi-connect").start()
-
-    def _wifi_joined(self, error):
+    def _wifi_joined(self, result):
         self._network_busy = False
-        self._network_error = ("Unable to connect: " + error +
-                               ". Use Connections… to enter credentials." if error else None)
+        self._network_error = ("Wi-Fi action failed: " + (result.reason or "Not verified") +
+                               ". Use Connections… to enter credentials."
+                               if result.status != "ok" else None)
         self.refresh_network()
         return False
 
@@ -533,37 +526,25 @@ class LunaTray:
         self.wifi_disconnect.set_sensitive(False)
         self.network_label.set_text("Disconnecting Wi-Fi…")
 
-        def worker():
-            try:
-                if not disconnect_wifi():
-                    raise RuntimeError("Wi-Fi disconnection was not verified")
-                error = None
-            except (OSError, RuntimeError, ValueError) as exc:
-                error = str(exc)
-            self.GLib.idle_add(self._wifi_joined, error)
-
-        threading.Thread(target=worker, daemon=True, name="ricebowl-xp-wifi-disconnect").start()
+        self._submit("wifi-write", lambda: spice.change("wifi_disconnect"),
+                     self._wifi_joined)
 
     def refresh_profiles(self):
         if self._power_profile_busy:
             return
         self._power_profile_busy = True
 
-        def worker():
-            try:
-                state = read_power_profiles()
-            except (OSError, RuntimeError, ValueError):
-                state = None, ()
-            self.GLib.idle_add(self._profiles_ready, *state)
+        self._submit("power-profiles", lambda: spice.read("power_profiles"),
+                     self._profiles_ready)
 
-        threading.Thread(target=worker, daemon=True, name="ricebowl-xp-power-profiles").start()
-
-    def _profiles_ready(self, current, supported):
+    def _profiles_ready(self, result):
         self._power_profile_busy = False
+        current, supported = result.value if result.status == "ok" else (None, ())
         for child in self.profile_buttons.get_children():
             self.profile_buttons.remove(child)
         if not supported:
-            self.profile_label.set_text(self._profile_error or "Power profiles not supported")
+            self.profile_label.set_text(self._profile_error or result.reason or
+                                        "Power profiles not supported")
             return False
         self.profile_label.set_text(self._profile_error or
                                     ("Active: " + (current or "Unknown")))
@@ -588,18 +569,13 @@ class LunaTray:
         self._profile_error = None
         self.profile_label.set_text("Selecting " + profile + "…")
 
-        def worker():
-            try:
-                state, error = set_power_profile(profile), None
-            except (OSError, ValueError, RuntimeError) as exc:
-                state, error = None, str(exc)
-            self.GLib.idle_add(self._profile_changed, state, error)
+        self._submit("power-profile-write", lambda: spice.change("power_profile", profile),
+                     self._profile_changed)
 
-        threading.Thread(target=worker, daemon=True, name="ricebowl-xp-set-power-profile").start()
-
-    def _profile_changed(self, state, error):
+    def _profile_changed(self, result):
         self._power_profile_busy = False
-        self._profile_error = "Power profile change failed: " + error if error else None
+        self._profile_error = ("Power profile change failed: " + (result.reason or "Not verified")
+                               if result.status != "ok" else None)
         self.refresh_profiles()
         return False
 
@@ -608,19 +584,13 @@ class LunaTray:
             return
         self._bluetooth_busy = True
 
-        def worker():
-            try:
-                state = read_bluetooth()
-            except (OSError, ValueError, RuntimeError):
-                state = None
-            self.GLib.idle_add(self._bluetooth_ready, state)
+        self._submit("bluetooth", lambda: spice.read("bluetooth"), self._bluetooth_ready)
 
-        threading.Thread(target=worker, daemon=True, name="ricebowl-xp-bluetooth").start()
-
-    def _bluetooth_ready(self, state):
+    def _bluetooth_ready(self, result):
         self._bluetooth_busy = False
+        state = result.value
         if state is None or state.powered is None:
-            reason = "Bluetooth adapter not available (no BlueZ control service)"
+            reason = result.reason or "Bluetooth adapter not available (no BlueZ control service)"
             if state is not None and state.hard_blocked:
                 reason = "Bluetooth is hardware-blocked (check the radio switch)"
             elif state is not None and state.soft_blocked:
@@ -679,16 +649,9 @@ class LunaTray:
         self.bluetooth_label.set_text("Connecting device…" if connected else
                                       "Disconnecting device…")
 
-        def worker():
-            try:
-                set_bluetooth_connection(address, connected)
-                error = None
-            except (OSError, ValueError, RuntimeError) as exc:
-                error = str(exc)
-            self.GLib.idle_add(self._bluetooth_changed, error)
-
-        threading.Thread(target=worker, daemon=True,
-                         name="ricebowl-xp-bluetooth-device").start()
+        action = "bluetooth_connect" if connected else "bluetooth_disconnect"
+        self._submit("bluetooth-write", lambda: spice.change(action, address),
+                     self._bluetooth_changed)
 
     def _toggle_bluetooth(self, _button):
         if self._bluetooth_busy:
@@ -698,39 +661,35 @@ class LunaTray:
         self.bluetooth_switch.set_sensitive(False)
         self.bluetooth_label.set_text("Applying Bluetooth change…")
 
-        def worker():
-            try:
-                current = read_bluetooth().powered
-                if current is None:
-                    raise RuntimeError("Bluetooth adapter not found")
-                set_bluetooth_power(not current)
-                error = None
-            except (OSError, ValueError, RuntimeError) as exc:
-                error = str(exc)
-            self.GLib.idle_add(self._bluetooth_changed, error)
+        def toggle():
+            current = spice.read("bluetooth")
+            if current.status != "ok":
+                return current
+            return spice.change("bluetooth_power", not current.value.powered)
 
-        threading.Thread(target=worker, daemon=True, name="ricebowl-xp-bluetooth-switch").start()
+        self._submit("bluetooth-write", toggle, self._bluetooth_changed)
 
-    def _bluetooth_changed(self, error):
+    def _bluetooth_changed(self, result):
         self._bluetooth_busy = False
-        self._bluetooth_error = "Bluetooth change failed: " + error if error else None
+        self._bluetooth_error = ("Bluetooth change failed: " + (result.reason or "Not verified")
+                                 if result.status != "ok" else None)
         self.refresh_bluetooth()
         return False
 
     def refresh_brightness(self):
-        def worker():
-            try:
-                value = read_brightness()
-                writable = shutil.which("brightnessctl") is not None
-            except (OSError, ValueError):
-                value, writable = None, False
-            self.GLib.idle_add(self._brightness_ready, value, writable)
+        def scan():
+            return spice.read("brightness"), shutil.which("brightnessctl") is not None
 
-        threading.Thread(target=worker, daemon=True, name="ricebowl-xp-backlight").start()
+        self._submit("brightness", scan, self._brightness_ready)
 
-    def _brightness_ready(self, value, writable):
+    def _brightness_ready(self, answer):
         if self._brightness_writing or self._brightness_queued is not None:
             return False
+        if isinstance(answer, tuple):
+            result, writable = answer
+        else:
+            result, writable = answer, False
+        value = result.value if result.status == "ok" else None
         self._brightness_programmatic = True
         try:
             if value is not None:
@@ -762,20 +721,15 @@ class LunaTray:
         self._brightness_writing = True
         self.brightness_label.set_text(f"Setting brightness to {target}%…")
 
-        def worker():
-            try:
-                actual, error = set_brightness(target), None
-            except (OSError, ValueError, RuntimeError) as exc:
-                actual, error = None, str(exc)
-            self.GLib.idle_add(self._brightness_done, actual, error)
-
-        threading.Thread(target=worker, daemon=True, name="ricebowl-xp-set-backlight").start()
+        self._submit("brightness-write", lambda: spice.change("brightness", target),
+                     self._brightness_done)
         return False
 
-    def _brightness_done(self, actual, error):
+    def _brightness_done(self, result):
         self._brightness_writing = False
-        self.brightness_label.set_text("Brightness adjustment failed: " + error if error else
-                                       f"Brightness: {actual}%")
+        self.brightness_label.set_text(
+            f"Brightness: {result.value}%" if result.status == "ok" else
+            "Brightness adjustment failed: " + (result.reason or "Not verified"))
         if self._brightness_queued is not None:
             self._brightness_source = self.GLib.timeout_add(180, self._commit_brightness)
         else:

@@ -89,6 +89,16 @@ if XFCE Notifyd is missing, retain the existing fallback view.
 | 6 | Frutiger Aero (`frutiger`) | Distinct control-center controls with shared hardware results |
 | 7 | macOS (`night`, `day`, `aqua`) | MacBar/Control Center and native notification presentation |
 
+**XP checkpoint (4 November 2026):** XP Luna's taskbar status, audio
+volume/mute and output selection, Wi-Fi scan/connect/disconnect/radio,
+Bluetooth power/device connections, power profiles, brightness and safe desktop
+shortcut management are now wired through riceSpice/ricePlate and a per-shell
+bounded worker. The existing XP Control Panel can still open native XFCE
+tools for unsupported advanced tasks. XFCE Notifyd remains the owner of
+third-party notifications; XP's local hardware-event balloons are not yet
+a ricePop notification-history consumer. This is **not** physical hardware
+acceptance or completion of all XP Control Panel applets.
+
 The family mapping changes **selection only**; per-rice windows, menu flows,
 icons, keyboard shortcuts, layouts and styling must remain independent.
 Do not substitute a generic themed Settings page for any of the seven.

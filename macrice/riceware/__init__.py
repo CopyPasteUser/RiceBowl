@@ -15,7 +15,8 @@ def manifest() -> dict[str, object]:
         "api_version": API_VERSION,
         "profiles": dict(profiles.PROFILE_FAMILIES),
         "components": {
-            "riceSpice": {"read": tuple(spice.READERS), "write": tuple(spice.WRITERS)},
+            "riceSpice": {"read": (*spice.READERS, "scan_wifi"),
+                          "write": tuple(spice.WRITERS)},
             "ricePop": {"read": ("status", "history", "unread", "quiet_mode"),
                         "write": ("send", "mark_read", "dismiss", "clear_history",
                                   "set_quiet_mode")},

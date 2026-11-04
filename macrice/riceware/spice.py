@@ -85,6 +85,7 @@ READERS: dict[str, Callable[[], Any]] = {
     "battery": hardware.read_battery,
     "bluetooth": hardware.read_bluetooth,
     "brightness": hardware.read_brightness,
+    "desktop_status": hardware.read_status,
     "microphone": hardware.read_microphone,
     "network": hardware.read_network,
     "power_profiles": hardware.read_power_profiles,
@@ -161,9 +162,23 @@ def read(name: str) -> Result:
     return Result(name, "ok", value=value)
 
 
+def scan_wifi(*, rescan: bool = False) -> Result:
+    """Read Wi-Fi networks; explicit Refresh can request an actual NM rescan."""
+    if type(rescan) is not bool:
+        raise ValueError("rescan must be a boolean")
+    try:
+        value = hardware.read_wifi_networks(rescan=rescan)
+        available = _available("wifi_networks", value)
+    except (OSError, RuntimeError, ValueError, TypeError, AttributeError) as exc:
+        return Result("wifi_networks", "error", reason=str(exc))
+    if not available:
+        return Result("wifi_networks", "unavailable", value, "NetworkManager unavailable")
+    return Result("wifi_networks", "ok", value)
+
+
 def snapshot() -> tuple[Result, ...]:
-    """A bounded on-demand read, never a permanent polling loop."""
-    return tuple(read(name) for name in READERS)
+    """On-demand capabilities, without the aggregate status's duplicate probes."""
+    return tuple(read(name) for name in READERS if name != "desktop_status")
 
 
 def _matches(action: str, requested: Any, actual: Any) -> bool:
