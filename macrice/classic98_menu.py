@@ -455,36 +455,10 @@ def show_file_search(shell, Gtk, GLib):
 
 
 def show_help(shell, Gtk):
-    topics = {
-        "Getting started": "Start > Programs lists applications installed on Linux. Open a folder or launch an application from its submenu.",
-        "Favorites": "Add or remove your own folder and website shortcuts through Start > Favorites > Organize Favorites. GTK bookmarks are also displayed.",
-        "Recent documents": "Start > Documents reads GTK's actual recent-files history. Your files remain in their original folders.",
-        "Finding files": "Start > Find > Files or Folders searches names within a selected folder. You can stop the search at any time.",
-        "Run": "Run accepts a command and its arguments, a file or folder path, or a supported URL. Commands do not execute through a shell.",
-        "Linux compatibility": "The desktop imitates Windows 98 SE, but runs native Linux programs. Windows executable files are not automatically supported.",
-    }
-    dialog = Gtk.Dialog(title="RiceBowl Help", transient_for=shell.bar)
-    dialog.add_button("Close", Gtk.ResponseType.CLOSE)
-    dialog.set_default_size(560, 360)
-    box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
-    tree = Gtk.ListBox()
-    page = Gtk.Label(xalign=0, yalign=0)
-    page.set_line_wrap(True)
-    page.set_max_width_chars(52)
-    for name in topics:
-        row = Gtk.ListBoxRow()
-        row._rice_topic = name
-        row.add(Gtk.Label(label=name, xalign=0))
-        tree.add(row)
-    tree.connect("row-selected", lambda _tree, row:
-                 page.set_text(topics[row._rice_topic]) if row is not None else None)
-    box.pack_start(tree, False, False, 10)
-    box.pack_start(page, True, True, 10)
-    dialog.get_content_area().pack_start(box, True, True, 10)
-    dialog.show_all()
-    tree.select_row(tree.get_row_at_index(0))
-    dialog.run()
-    dialog.destroy()
+    """Open the classic navigable help viewer."""
+    from .classic98_help import show_help as open_help
+    open_help(shell, Gtk)
+
 
 
 def build(shell, Gtk, Gdk, Gio, GLib, Pango):
