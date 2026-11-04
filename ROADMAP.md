@@ -1,6 +1,6 @@
 # RiceBowl roadmap to 1.0
 
-> **Shared architecture plan:** [riceExplorer, riceSettings, riceNotify and riceDesktop](SHARED_COMPONENTS_ROADMAP.md). The plan defines incremental reuse, ownership, conditional separate programs, integration gates and the dependency order. Documentation only; no new service or component is deployed by this entry.
+> **Riceware ecosystem plan:** [riceExplorer, riceSpice, ricePop, ricePlate and riceWine](RICE_ECOSYSTEM_ROADMAP.md). Defines shared backends, distinct renderers, ownership, conditional independent programs and acceptance gates. Planning only; no new service is deployed.
 
 ## Post-0.9.1 — Cross-rice visual QA and real-window coverage (3 November 2026)
 
