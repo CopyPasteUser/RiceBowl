@@ -407,6 +407,16 @@ def build(shell, Gtk, Gdk):
                 return
         show_home()
 
+    def show_named_task(name, task_name):
+        for category in AQUA_CATEGORIES:
+            if category[0] == name:
+                for task in category[4]:
+                    if task[0] == task_name:
+                        show_detail(category, task)
+                        return
+        show_named_category(name)
+
     shell.aqua_control_show_category = show_named_category
+    shell.aqua_control_show_task = show_named_task
     show_home()
     return window

@@ -2674,10 +2674,12 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             root.pack_start(tabs, False, False, 0)
             section = self._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8),
                                   "aqua-section")
-            section.pack_start(self._class(Gtk.Label(label="DISCOVER YOUR APPS", xalign=0),
-                                           "aqua-section-title"), True, True, 0)
-            section.pack_end(self._class(Gtk.Label(label="Right-click to pin", xalign=1),
-                                         "aqua-section-hint"), False, False, 0)
+            section_title = self._class(Gtk.Label(label="DISCOVER YOUR APPS", xalign=0),
+                                        "aqua-section-title")
+            section_hint = self._class(Gtk.Label(label="Right-click to pin", xalign=1),
+                                       "aqua-section-hint")
+            section.pack_start(section_title, True, True, 0)
+            section.pack_end(section_hint, False, False, 0)
             root.pack_start(section, False, False, 0)
             def switch_to(name):
                 self.aqua_stack.set_visible_child_name(name)
@@ -2829,6 +2831,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             menu.connect("focus-out-event", self._menu_focus_out)
             def search_changed(*_args):
                 self._app_page_size = 24
+                searching = bool(search.get_text().strip())
+                section_title.set_text("SEARCH YOUR WORLD" if searching else "DISCOVER YOUR APPS")
+                section_hint.set_text("Apps · Places · Settings" if searching else
+                                      "Right-click to pin")
                 if search.get_text().strip():
                     switch_to("Apps")
                 self._populate(search.get_text())
@@ -3453,7 +3459,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._cancel_popup_hide("control")
             self.actions.hide()
 
-        def _show_aqua_control(self, category=None):
+        def _show_aqua_control(self, category=None, task=None):
             """Open a real Aqua detail page without toggling an open panel shut."""
             if profile != "frutiger":
                 return
@@ -3463,7 +3469,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             if not self.actions.get_visible():
                 self._toggle_actions()
             if self.actions.get_visible():
-                if category:
+                if category and task:
+                    self.aqua_control_show_task(category, task)
+                elif category:
                     self.aqua_control_show_category(category)
                 else:
                     self.aqua_control_show_home()
@@ -3676,7 +3684,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.results.show_all()
 
         def _populate_frutiger(self, query):
-            """Icon-first, fully functional Aqua grid of installed Gio apps."""
+            """Icon-first Gio apps plus bounded real places/settings search."""
             matches = frutiger_apps(self.apps, self._pinned_ids, query)
             for app in matches[:self._app_page_size]:
                 title = app.get_display_name() or app.get_name() or "Application"
@@ -3702,8 +3710,70 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 button.connect("popup-menu", lambda widget, selected=app:
                                self._pin_context(widget, selected))
                 self.results.add(button)
-            if not matches:
-                empty = self._class(Gtk.Label(label="No matching applications"),
+            extra_results = 0
+            if query.strip():
+                from .frutiger_control_center import search_aqua
+
+                needle = query.casefold().strip()
+                special_dirs = (
+                    ("Home", "user-home", Path.home()),
+                    ("Desktop", "user-desktop", Path(
+                        GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DESKTOP)
+                        or Path.home() / "Desktop")),
+                    ("Documents", "folder-documents", Path(
+                        GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DOCUMENTS)
+                        or Path.home() / "Documents")),
+                    ("Downloads", "folder-download", Path(
+                        GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_DOWNLOAD)
+                        or Path.home() / "Downloads")),
+                    ("Music", "folder-music", Path(
+                        GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_MUSIC)
+                        or Path.home() / "Music")),
+                    ("Pictures", "folder-pictures", Path(
+                        GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_PICTURES)
+                        or Path.home() / "Pictures")),
+                    ("Videos", "folder-videos", Path(
+                        GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_VIDEOS)
+                        or Path.home() / "Videos")),
+                )
+                for title, icon_name, path in special_dirs:
+                    if needle not in title.casefold():
+                        continue
+                    button = self._class(Gtk.Button(), "aqua-app-tile")
+                    inside = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+                    inside.pack_start(self._icon(icon_name, Gtk.IconSize.DIALOG),
+                                      False, False, 0)
+                    inside.pack_start(Gtk.Label(label=title), False, False, 0)
+                    button.add(inside)
+                    button.get_accessible().set_name("Open location " + title)
+                    button.connect("clicked", lambda _button, folder=path:
+                                   self._open_luna_user_folder(folder))
+                    self.results.add(button)
+                    extra_results += 1
+                if "trash" in needle or needle in "trash":
+                    button = self._class(Gtk.Button(label="Trash"), "aqua-app-tile")
+                    button.get_accessible().set_name("Open Trash")
+                    button.connect("clicked", lambda _button: self._open_uri("trash:///"))
+                    self.results.add(button)
+                    extra_results += 1
+                for category, task in search_aqua(query):
+                    button = self._class(Gtk.Button(), "aqua-app-tile")
+                    inside = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+                    inside.pack_start(self._icon(task[1], Gtk.IconSize.DIALOG),
+                                      False, False, 0)
+                    title = Gtk.Label(label=task[0])
+                    title.set_line_wrap(True)
+                    title.set_max_width_chars(20)
+                    inside.pack_start(title, False, False, 0)
+                    button.add(inside)
+                    button.get_accessible().set_name("Open setting " + task[0])
+                    button.set_tooltip_text(category[1] + " · " + task[3])
+                    button.connect("clicked", lambda _button, page=category[0], item=task[0]:
+                                   self._show_aqua_control(page, item))
+                    self.results.add(button)
+                    extra_results += 1
+            if not matches and not extra_results:
+                empty = self._class(Gtk.Label(label="No matching apps, places or settings"),
                                     "aqua-empty")
                 self.results.add(empty)
             if len(matches) > self._app_page_size:

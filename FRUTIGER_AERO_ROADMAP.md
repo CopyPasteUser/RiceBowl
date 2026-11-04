@@ -140,6 +140,10 @@ the full P0 requirements below**:
   changed. Fine-grained connect/pair/device changes still use installed tools.
 - Places adds Desktop, File system, real Trash, mounted removable/network
   volumes and event-driven Gio mount hotplug updates without background polls.
+- Launcher search now returns installed Gio apps, actual XDG Places/Trash and
+  Control Center settings, opening matching settings detail pages directly.
+  This is metadata-only local filtering; no recursive filesystem scan runs
+  on keypress. Full document search and recent-file indexing remain open.
 - CSS scope: only the Frutiger rice receives the deeper Aqua material system.
   Session ownership, apply/restore logic and all other rice profiles are intact.
 - Verification: the Python suite, new targeted contracts and native headless

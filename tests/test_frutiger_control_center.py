@@ -97,6 +97,21 @@ class AquaControlCenterTests(unittest.TestCase):
                            'self._open_uri("trash:///")', 'DIRECTORY_DESKTOP'):
             self.assertIn(expression, launcher)
 
+    def test_launcher_search_covers_apps_real_places_and_aqua_settings(self):
+        source = (ROOT / "macrice/aero_shell.py").read_text(encoding="utf-8")
+        results = source[source.index("def _populate_frutiger(self, query):"):
+                         source.index("def _populate_win7(self, query):")]
+        for marker in ('frutiger_apps(self.apps, self._pinned_ids, query)',
+                       'from .frutiger_control_center import search_aqua',
+                       'GLib.UserDirectory.DIRECTORY_DOWNLOAD',
+                       'self._open_luna_user_folder(folder)',
+                       'self._open_uri("trash:///")',
+                       'self._show_aqua_control(page, item)',
+                       'No matching apps, places or settings'):
+            self.assertIn(marker, results)
+        self.assertIn('shell.aqua_control_show_task = show_named_task',
+                      (ROOT / 'macrice/frutiger_control_center.py').read_text(encoding='utf-8'))
+
     def test_nmcli_escaped_colons_and_sorted_real_networks(self):
         self.assertEqual(split_nmcli_fields(r"yes:Cafe\:2.4G:90:WPA2"),
                          ("yes", "Cafe:2.4G", "90", "WPA2"))

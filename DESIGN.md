@@ -168,6 +168,10 @@ secondary pages; prototypes and the release roadmap do not crowd the selector.
   installed allowlisted Linux utilities are available from their detail pages
   with explicit feedback when missing. `Your World` Places uses Gio's real
   mount monitor for hotplugged storage and network locations, plus XDG Trash.
+  The native `Your World` search merges installed Gio apps, bounded XDG place
+  names, Trash and indexed Control Center task metadata. Settings search results
+  navigate directly to the matching native detail leaf, without filesystem
+  traversal or network lookups on typing.
   `macrice/frutiger_device_details.py` provides bounded asynchronous read-only
   probes (NetworkManager Wi-Fi names/strengths, BlueZ adapter, audio sinks,
   XRandR displays, actual kernel/disk details). Stale views cannot overwrite
