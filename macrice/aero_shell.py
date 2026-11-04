@@ -861,6 +861,20 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     self._toggle_actions()
                 self._toggle_actions()
                 assert not self.actions.get_visible()
+                if profile == "winclassic":
+                    assert self.classic98_controller is not None
+                    assert set(self.classic98_tray_popups) == {
+                        "audio", "network", "battery", "clock", "bluetooth"}
+                    for kind in self.classic98_tray_popups:
+                        self.classic98_tray_show(kind)
+                        assert self.classic98_tray_popups[kind].get_visible()
+                        self.classic98_tray_show(kind)
+                        assert not self.classic98_tray_popups[kind].get_visible()
+                    from .classic98_desktop import Classic98Desktop
+                    self.classic98_desktop = Classic98Desktop(self, Gtk)
+                    self.classic98_desktop.show()
+                    assert self.classic98_desktop.window.get_visible()
+                    self.classic98_desktop.hide()
                 if profile == "winxp":
                     if self._tray is not None:
                         assert self._tray.theme == "luna"
@@ -1615,6 +1629,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self.luna_tray.close()
             if profile == "windows10" and hasattr(self, "ten_controller"):
                 self.ten_controller.close()
+            if profile == "winclassic" and hasattr(self, "classic98_controller"):
+                self.classic98_controller.close()
             for component in ("ten_network", "ten_settings", "ten_task_view"):
                 instance = getattr(self, component, None)
                 if instance is not None:
@@ -1629,6 +1645,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self._luna_volume_monitor = None
             if profile == "winclassic" and hasattr(self, "classic98_tray_close"):
                 self.classic98_tray_close()
+            if profile == "winclassic" and hasattr(self, "classic98_desktop"):
+                self.classic98_desktop.close()
             if hasattr(self, "actions"):
                 self.actions.destroy()
 
@@ -1655,6 +1673,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self.ten_network.hide()
                 if hasattr(self, "ten_task_view"):
                     self.ten_task_view.hide()
+            if profile == "winclassic" and hasattr(self, "classic98_tray_hide"):
+                self.classic98_tray_hide()
 
         def _render_pins(self):
             for child in self.pinned_box.get_children():
@@ -2077,6 +2097,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 from .ten_riceware import TenController
 
                 self.ten_controller = TenController(self, Gtk, GLib)
+            elif profile == "winclassic":
+                from .classic98_riceware import Classic98Controller
+
+                self.classic98_controller = Classic98Controller(GLib)
             for name in ("battery", "network", "audio"):
                 button = self._class(Gtk.Button(), "rice-status")
                 button.get_style_context().add_class("rice-status-" + name)
@@ -2110,6 +2134,13 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     alert.get_accessible().set_name("Windows 7 Action Center notifications")
                     row.pack_end(alert, False, False, 0)
                     self.luna_tray.install("alerts", alert)
+            elif profile == "winclassic":
+                bluetooth = self._class(Gtk.Button(), "rice-status")
+                bluetooth.add(self._icon("bluetooth-active", Gtk.IconSize.MENU))
+                bluetooth.set_tooltip_text("Bluetooth devices and adapter")
+                bluetooth.get_accessible().set_name("Bluetooth controls")
+                bluetooth.connect("clicked", lambda _button: self.classic98_tray_show("bluetooth"))
+                row.pack_end(bluetooth, False, False, 0)
             self._refresh_status_async()
             GLib.timeout_add_seconds(20, self._refresh_status_async)
 
@@ -2124,6 +2155,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self.ten_controller.refresh_status(self._apply_status)
                 if self.ten_controller.opened:
                     self.ten_controller.refresh_switches()
+                return True
+            if profile == "winclassic":
+                self.classic98_controller.refresh_status(self._apply_status)
                 return True
             def worker():
                 try:
@@ -2146,7 +2180,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     self.luna_tray.on_status(None)
                 if hasattr(self, "frutiger_status_label"):
                     self.frutiger_status_label.set_text(frutiger_status_summary(None))
-                if profile == "windows10" and hasattr(self, "volume_status_label"):
+                if profile in ("windows10", "winclassic") and hasattr(self, "volume_status_label"):
                     self.control_network_label.set_text("Network: unavailable — retrying")
                     self.control_battery_label.set_text("Battery: unavailable — retrying")
                     self.volume_status_label.set_text("Audio backend unavailable — retrying")
@@ -2167,7 +2201,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     # Luna's tray popovers are also the recovery path when a
                     # transient probe fails; keep them openable for details.
                     button.set_sensitive(self.luna_tray is not None or
-                                         profile == "windows10")
+                                         profile in ("windows10", "winclassic"))
                     button.set_tooltip_text("Hardware status temporarily unavailable")
                 return False
             previous_status = self._last_status
@@ -2241,7 +2275,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             battery_button, battery_icon, battery_label = self._status_widgets["battery"]
             battery = status.battery
             if battery is None:
-                if self.luna_tray is None:
+                if self.luna_tray is None and profile != "winclassic":
                     battery_button.hide()
                 else:
                     battery_button.show_all()
@@ -2314,6 +2348,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             elif profile == "windows10":
                 self.ten_controller.change_audio("audio_volume", value,
                                                  self._volume_change_complete)
+            elif profile == "winclassic":
+                self.classic98_controller.change_audio("audio_volume", value,
+                                                        self._volume_change_complete)
             else:
                 def worker():
                     from .hardware_status import set_sound_volume
@@ -2364,6 +2401,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             elif profile == "windows10":
                 self.ten_controller.change_audio("audio_mute", requested,
                                                  self._mute_change_complete)
+            elif profile == "winclassic":
+                self.classic98_controller.change_audio("audio_mute", requested,
+                                                        self._mute_change_complete)
             else:
                 def worker():
                     from .hardware_status import set_sound_mute
@@ -3601,7 +3641,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 # a narrow program list with a vertical branded side rail.
                 badge = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL), "classic-brand")
                 badge.set_size_request(38, -1)
-                brand = self._class(Gtk.Label(label="RiceBowl   98 / 2000"), "classic-brand-label")
+                brand = self._class(Gtk.Label(label="RiceBowl   98"), "classic-brand-label")
                 brand.set_angle(90)
                 badge.pack_end(brand, False, False, 18)
                 body.pack_start(badge, False, False, 0)
@@ -5047,6 +5087,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _toggle_actions(self):
             self._cancel_popup_hide("control")
+            if profile == "winclassic" and hasattr(self, "classic98_tray_hide"):
+                self.classic98_tray_hide()
             if profile == "windows10":
                 self.ten_network.hide()
                 if hasattr(self, "ten_task_view"):
@@ -5547,6 +5589,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _toggle_menu(self):
             self._cancel_popup_hide("menu")
+            if profile == "winclassic" and hasattr(self, "classic98_tray_hide"):
+                self.classic98_tray_hide()
             if profile == "windows10":
                 self.ten_network.hide()
                 if hasattr(self, "ten_task_view"):

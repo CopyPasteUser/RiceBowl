@@ -33,7 +33,7 @@ PROFILES = {
     "winxp": HeritageProfile("winxp", "Windows XP Luna", "RiceHub-Luna", "RiceHub-Luna-Icons",
                               "luna-hills.jpg", "start", "All Programs", "Control Panel",
                               "ricebowl-xp-start.svg", "classic"),
-    "winclassic": HeritageProfile("winclassic", "Windows 98 / 2000", "RiceHub-Classic", "RiceHub-Classic-Icons",
+    "winclassic": HeritageProfile("winclassic", "Windows 98 SE", "RiceHub-Classic", "RiceHub-Classic-Icons",
                                    "classic-teal.jpg", "Start", "Programs", "Control Panel",
                                    "ricebowl-classic-start.svg", "classic"),
     "chromeos": HeritageProfile("chromeos", "ChromeOS", "RiceHub-Chrome", "RiceHub-Chrome-Icons",

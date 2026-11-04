@@ -1,4 +1,4 @@
-# Windows 98 / 2000 Classic · implementation roadmap
+# Windows 98 SE Classic · implementation roadmap
 
 The goal is a **recognizable, genuinely functional Windows 98-style Linux XFCE
 desktop**, not a generic silver recolor, an XP menu or a static illustration.
@@ -77,7 +77,7 @@ macOS behavior and artwork unchanged.
 ### Product definition and boundaries
 
 - Reference target: **Windows 98 Second Edition**, default classic desktop with the IE4 Desktop Update-era shell. Preserve the authentic late-1990s information architecture, control density, menu hierarchy, keyboard semantics and multi-click workflows while performing real Linux operations.
-- Current `winclassic` combines “Windows 98 / 2000”. **Split the identities in the catalog and documentation** before claiming fidelity: implement Windows 98 SE first; a separate optional Windows 2000 preset may reuse a classic component library but needs its own title bars, taskbar, icons, startup and shell details.
+- `winclassic` now identifies **Windows 98 SE** only. A separate Windows 2000 preset remains future work and must have its own title bars, taskbar, icons, startup and shell details before being advertised.
 - Keep the existing XFCE/X11 session, file associations, login manager, rollback journal and all six other rices safe. No proprietary Microsoft binaries, icon extractions, sounds, fonts, desktop bitmaps, IE/ActiveX, registry emulator or false C: drive semantics. This is a Linux shell inspired by Windows 98, not Windows 98 binary compatibility.
 - **One-click promise:** every enabled item completes a real action; unavailable hardware/backend options remain visible where historically meaningful, disabled with the reason and a recovery path. Dialogs explain errors in the visual language of this rice, not as an unrelated modern dashboard.
 - **Second-click promise:** every submenu, details window, property tab, context action, modal confirmation and system setting is as polished and interactive as the first Start-menu click. No fake controls or inert buttons.
@@ -88,6 +88,38 @@ macOS behavior and artwork unchanged.
 `macrice/aero_shell.py:_create_classic_menu()` currently builds a 262×332 GTK Start popup with the vertical RiceBowl 98 rail, Gio Programs flyout, fixed Favorites/Documents folder lists, a small Settings flyout, in-menu Find, XFCE Help/Run and XFCE session logout. The bottom taskbar and Wnck window list are real. `macrice/heritage_shell.py` applies period colors and bevels, while `scripts/build_heritage_assets.py` produces the classic XFWM/GTK theme and limited original icons. `macrice/thunar.py` styles actual Thunar rather than supplying Explorer's navigation model. The `winclassic` branch in `_create_actions()` produces a bottom-right, undecorated 382px Control Panel popup with **eight launcher tiles**, hardware status and a verified volume control; it is not a full Control Panel application. Tray status clicks route audio/battery to that shared popup and network to a Linux editor. `tests/test_classic_98.py` largely tests markup, assets, style contracts and configured geometry; do not treat it as exhaustive end-to-end interaction coverage.
 
 Current evidence: source files, existing roadmap, current repository screenshot *inventory*, and CI declarations. The installed physical desktop and every nested popup have **not** been visually inspected in this pass. All below is an open acceptance backlog, not reported implementation.
+
+### Implementation checkpoint — riceSpice/ricePlate migration (4 November 2026)
+
+**Code complete; physical Mint acceptance pending.** This checkpoint migrates
+existing device flows without claiming the much wider Windows 98 SE backlog is
+finished.
+
+- [x] Route Classic taskbar status and verified volume/mute changes through a
+  single closeable, bounded riceSpice GTK worker. Remove Classic-specific
+  per-action threads, keep XFCE audio/network ownership and no extra daemon.
+- [x] Give the small Classic Network dialog an actual Wi-Fi radio switch,
+  available SSID list, manual scan, connect/disconnect and explicit failures;
+  password-required connections hand off to the installed NM editor.
+- [x] Add Bluetooth radio and paired-device actions plus audio output choice,
+  brightness and available power schemes. Unsupported features stay disabled;
+  every write is verified by the shared backend before success is shown.
+- [x] Open these separate, beveled classic dialogs from actual Control Panel
+  applets. Handle Escape, focus loss, rice/screen transitions, async stale
+  callbacks and shell shutdown without losing XFCE's tray ownership.
+- [x] Provide a bounded, read-only XFDesktop inventory via ricePlate, with
+  explicit desktop-folder navigation; no icon placement, wallpaper, shortcut
+  file or MIME mutation is performed.
+- [x] Label the existing classic rice **Windows 98 SE** in the app catalog;
+  Windows 2000 remains a future, separate option.
+- [ ] CI native X11 smoke and current screenshots for this checkpoint.
+- [ ] Physical Mint/XFCE tests: real Wi-Fi/credentials, Bluetooth, audio
+  outputs, brightness, power profiles, keyboard-only navigation, offline and
+  denied permissions, 1024×768, suspend/resume and full rice switch/recovery.
+
+Remaining: full Win98 Control Panel tabs, desktop virtual folders and
+recycle-bin semantics, native RiceExplorer skin, notification-era details,
+advanced tray hosting and the other fidelity milestones below.
 
 ### Implementation checkpoint — functional shell phase A (4 November 2026)
 

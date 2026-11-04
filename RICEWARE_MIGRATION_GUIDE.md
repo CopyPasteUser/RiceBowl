@@ -113,6 +113,19 @@ device events. It does not replace XFCE Notifyd or replay third-party actions.
 Physical hardware and
 full seven-rice switch testing are not claimed.
 
+**Windows 98 SE checkpoint (4 November 2026):** Classic taskbar hardware
+status, volume and mute use a per-shell bounded riceSpice worker instead of
+private unbounded hardware threads. Classic square/beveled tray and native
+Control Panel applets expose verified Wi-Fi radio/scan/connect/disconnect,
+Bluetooth power and paired-device connections, sound output selection,
+brightness and supported power profiles. Failed writes never claim success;
+unavailable backends explain missing controls and advanced tools remain
+reachable. A read-only desktop icon inspector obtains real file metadata
+through ricePlate without taking XFDesktop ownership or changing user files.
+The rice is labeled Windows 98 SE; a different Windows 2000 preset is not yet
+provided. Physical hardware acceptance, deeper Control Panel tabs and classic
+desktop special folders are still open.
+
 **Windows 10 checkpoint (4 November 2026):** The flat Win10 taskbar now
 receives its device status from `riceSpice`, and Action Center volume/mute
 mutations use verified shared readback rather than new ad-hoc threads. The

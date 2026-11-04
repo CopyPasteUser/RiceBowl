@@ -46,7 +46,7 @@ FAMILIES: tuple[RiceFamily, ...] = (
         True, ("winxp",), ("Luna taskbar", "Live Start and window list", "XFWM4 window theme", "Recoverable switching"),
     ),
     RiceFamily(
-        "winclassic", "Windows 98 / 2000", "Classic · Teal",
+        "winclassic", "Windows 98 SE", "Classic · Teal",
         "Beveled taskbar, cascading Start menus and authentic square window frames.",
         True, ("winclassic",), ("Classic Start", "Live taskbar", "Original classic window chrome", "Recoverable switching"),
     ),
