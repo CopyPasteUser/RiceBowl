@@ -23,7 +23,7 @@ RiceBowl changes the actual Linux desktop: GTK and XFWM4 themes, icons, wallpape
 | **macOS · Aurora** | `night`, `day`, `aqua` | MacBar, MacMenu, Control Center; optional Plank dock |
 | **[Windows 7 · Aero](WIN7_AERO_ROADMAP.md)** | `aero-meadow`, `aero-cascade` | Glass Superbar, Start, Jump Lists, Aero device flyouts and deeper Control Panel |
 | **[Windows 10](WINDOWS10_ROADMAP.md)** | `ten-light`, `ten-dark` | Flat taskbar, pinned Start tiles and Action Center |
-| **[Windows XP · Luna](XP_LUNA_ROADMAP.md)** | `winxp` | XP Control Panel artwork, favorites/recent apps and audio/Wi-Fi/power/Bluetooth/calendar tray menus |
+| **[Windows XP · Luna](XP_LUNA_ROADMAP.md)** | `winxp` | XP Control Panel, Quick Launch, interactive device flyouts, safe optional desktop icons and live notifications |
 | **[Windows 98 SE (classic)](CLASSIC_98_ROADMAP.md)** | `winclassic` | Teal desktop, real Start descendants, Win98 Control Panel, Quick Launch/taskbar preferences and live tray menus |
 | **[ChromeOS](CHROMEOS_ROADMAP.md)** | `chromeos` | Material You shelf, searchable app launcher and Quick Settings |
 | **[Frutiger Aero](FRUTIGER_AERO_ROADMAP.md)** | `frutiger` | Aqua World launcher with working Back navigation, native Wi-Fi/audio/Bluetooth/brightness/power controls, live Places and device flyouts |
@@ -94,7 +94,21 @@ macrice rice plan aero-meadow  # Read-only check before applying
 macrice rice apply aero-meadow # Switch with recovery snapshot
 macrice rice apply frutiger    # Switch to another style
 macrice rice restore           # Restore previous desktop settings
+macrice winxp-desktop status    # See opt-in XP desktop shortcuts (read-only)
+macrice winxp-desktop install   # Add four shortcuts without overwriting existing files
+macrice winxp-desktop remove    # Remove only unchanged RiceBowl shortcuts
 ```
+
+On XP Luna, the Bluetooth menu prefers `bluetoothctl` and falls back to **BlueZ's
+system D-Bus API** when the CLI is missing or fails. It exposes paired-device
+connect/disconnect, verified adapter power, and kernel `rfkill` diagnostics.
+BlueZ remains the underlying Linux Bluetooth stack; rfkill alone cannot pair
+devices. Unsupported hardware and missing permissions are reported in the UI.
+The optional XP desktop icons use the existing XFDesktop/GVfs infrastructure,
+so their drag-and-drop, icon arrangement and context menu remain native XFCE.
+No existing desktop icon, login manager or file association is overwritten.
+For a graphical confirmation, right-click an empty area of the XP taskbar and
+choose **Add XP desktop icons…** or **Remove XP desktop icons…**.
 
 The active rice uses **Super** for its app menu and **Right Ctrl** for Control Panel/Quick Settings. RiceBowl backs up previous shortcut bindings and coordinates its taskbar with XFCE Panel and Plank.
 

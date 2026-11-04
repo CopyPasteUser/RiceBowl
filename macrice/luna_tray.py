@@ -13,7 +13,7 @@ import threading
 from .hardware_status import (
     connect_wifi, disconnect_wifi, read_bluetooth, read_brightness,
     read_power_profiles, read_sound_outputs, read_wifi_networks, read_wifi_radio,
-    set_bluetooth_power, set_brightness, set_power_profile, set_sound_output,
+    set_bluetooth_connection, set_bluetooth_power, set_brightness, set_power_profile, set_sound_output,
     set_wifi_radio,
 )
 
@@ -236,11 +236,12 @@ class LunaTray:
         self.bluetooth_switch.set_sensitive(False)
         self.bluetooth_switch.connect("clicked", self._toggle_bluetooth)
         body.pack_start(self.bluetooth_switch, False, False, 0)
-        body.pack_start(self._label("Connected devices", "luna-tray-section"),
+        body.pack_start(self._label("Known devices", "luna-tray-section"),
                         False, False, 0)
         self.bluetooth_devices = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
         body.pack_start(self.bluetooth_devices, False, False, 0)
-        body.pack_start(self._button("Bluetooth settings…", ("blueman-manager",)),
+        body.pack_start(self._button("Pair new device / Settings…",
+                                      ("blueman-manager", "gnome-control-center")),
                         False, False, 0)
 
     def _clock(self, body):
@@ -619,22 +620,75 @@ class LunaTray:
     def _bluetooth_ready(self, state):
         self._bluetooth_busy = False
         if state is None or state.powered is None:
-            self.bluetooth_label.set_text(self._bluetooth_error or
-                                          "Bluetooth adapter not available")
+            reason = "Bluetooth adapter not available (no BlueZ control service)"
+            if state is not None and state.hard_blocked:
+                reason = "Bluetooth is hardware-blocked (check the radio switch)"
+            elif state is not None and state.soft_blocked:
+                reason = "Bluetooth blocked by rfkill; use system settings"
+            self.bluetooth_label.set_text(self._bluetooth_error or reason)
             self.bluetooth_switch.set_label("Bluetooth unavailable")
             self.bluetooth_switch.set_sensitive(False)
-            self._set_list_message(self.bluetooth_devices, "No adapter or BlueZ service")
+            self._set_list_message(self.bluetooth_devices, "No accessible Bluetooth devices")
             return False
-        self.bluetooth_label.set_text(self._bluetooth_error or
-                                      ("Bluetooth is on" if state.powered else "Bluetooth is off"))
+        label = "Bluetooth is on" if state.powered else "Bluetooth is off"
+        if state.backend:
+            label += " · " + state.backend
+        if state.hard_blocked:
+            label += " · hardware blocked"
+        elif state.soft_blocked:
+            label += " · software blocked"
+        self.bluetooth_label.set_text(self._bluetooth_error or label)
         self.bluetooth_switch.set_label("Turn Bluetooth off" if state.powered else
                                         "Turn Bluetooth on")
-        self.bluetooth_switch.set_sensitive(True)
-        if not state.connected:
-            self._set_list_message(self.bluetooth_devices, "No connected devices")
+        self.bluetooth_switch.set_sensitive(not (state.hard_blocked or
+                                                  (state.soft_blocked and not state.powered)))
+        for child in self.bluetooth_devices.get_children():
+            self.bluetooth_devices.remove(child)
+        if not state.devices:
+            self.bluetooth_devices.pack_start(
+                self._label("No paired or connected devices. Pair via Settings…"),
+                False, False, 0)
         else:
-            self._set_list_message(self.bluetooth_devices, "\n".join(state.connected))
+            for device in state.devices:
+                row = self.Gtk.Box(orientation=self.Gtk.Orientation.HORIZONTAL, spacing=6)
+                status = ("Connected" if device.connected else
+                          "Paired" if device.paired else "Not paired")
+                description = self._label(device.name + " · " + status)
+                description.set_tooltip_text(device.address)
+                row.pack_start(description, True, True, 0)
+                if device.paired or device.connected:
+                    button = self.shell._class(
+                        self.Gtk.Button(label="Disconnect" if device.connected else "Connect"),
+                        "luna-tray-device")
+                    button.set_sensitive(state.powered and not state.hard_blocked)
+                    button.get_accessible().set_name(("Disconnect " if device.connected else
+                                                      "Connect ") + device.name)
+                    button.connect("clicked", self._set_bluetooth_device,
+                                   device.address, not device.connected)
+                    row.pack_start(button, False, False, 0)
+                self.bluetooth_devices.pack_start(row, False, False, 0)
+        self.bluetooth_devices.show_all()
         return False
+
+    def _set_bluetooth_device(self, _button, address, connected):
+        if self._bluetooth_busy:
+            return
+        self._bluetooth_busy = True
+        self._bluetooth_error = None
+        self.bluetooth_switch.set_sensitive(False)
+        self.bluetooth_label.set_text("Connecting device…" if connected else
+                                      "Disconnecting device…")
+
+        def worker():
+            try:
+                set_bluetooth_connection(address, connected)
+                error = None
+            except (OSError, ValueError, RuntimeError) as exc:
+                error = str(exc)
+            self.GLib.idle_add(self._bluetooth_changed, error)
+
+        threading.Thread(target=worker, daemon=True,
+                         name="ricebowl-xp-bluetooth-device").start()
 
     def _toggle_bluetooth(self, _button):
         if self._bluetooth_busy:

@@ -559,6 +559,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._status_widgets = {}
             self._last_status = None
             self.luna_tray = None
+            self.luna_balloon = None
             self._luna_start_state = None
             self._volume_programmatic = False
             self._volume_write_source = 0
@@ -809,7 +810,19 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     assert self.menu.get_visible()
                     for name in ("Settings", "Places", "Settings", "Apps"):
                         self._frutiger_tab_buttons[name].clicked()
-                        assert self.aqua_stack.get_visible_child_name() == name
+                        # GTK3 crossfade transitions can defer the visible-child
+                        # property until the next main-context iteration. A
+                        # synchronous artificial click sequence must give GTK
+                        # the same event-loop opportunity as real user clicks.
+                        for _step in range(20):
+                            while Gtk.events_pending():
+                                Gtk.main_iteration_do(False)
+                            if self.aqua_stack.get_visible_child_name() == name:
+                                break
+                            GLib.usleep(15000)
+                        assert self.aqua_stack.get_visible_child_name() == name, (
+                            "Frutiger tab " + name + " selected but stack shows " +
+                            str(self.aqua_stack.get_visible_child_name()))
                     self._frutiger_tab_buttons["Settings"].clicked()
                     self._frutiger_back_to_apps.clicked()
                     assert self.aqua_stack.get_visible_child_name() == "Apps"
@@ -1212,6 +1225,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             if self._tray is not None:
                 self._tray.close()
                 self._tray = None
+            if self.luna_balloon is not None:
+                self.luna_balloon.close()
             if profile == "winclassic" and hasattr(self, "classic98_tray_close"):
                 self.classic98_tray_close()
             if hasattr(self, "actions"):
@@ -1227,7 +1242,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             if self.bar.get_realized():
                 self._reserve_workarea(self.bar)
             self._task_capacity = task_capacity(rect.width, self._pin_count,
-                                                340 if tiles else 345 if profile == "aero" else 185,
+                                                340 if tiles else 345 if profile == "aero" else
+                                                230 if profile == "winxp" else 185,
                                                 compact=profile == "aero")
             if self._window_tracker is not None:
                 self._window_tracker.refresh()
@@ -1402,7 +1418,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self._render_ten_tiles()
             self._pin_count = len(candidate)
             self._task_capacity = task_capacity(self._desktop_rect().width, self._pin_count,
-                                                340 if tiles else 345 if profile == "aero" else 185,
+                                                340 if tiles else 345 if profile == "aero" else
+                                                230 if profile == "winxp" else 185,
                                                 compact=profile == "aero")
             if self._window_tracker is not None:
                 self._window_tracker.refresh()
@@ -1588,8 +1605,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
         def _install_status_widgets(self, row):
             if profile == "winxp":
                 from .luna_tray import LunaTray
+                from .luna_notifications import LunaBalloon
 
                 self.luna_tray = LunaTray(self, Gtk, GLib)
+                self.luna_balloon = LunaBalloon(self, Gtk, Gdk, GLib)
             elif profile == "aero":
                 from .win7_tray import Win7Tray
 
@@ -1662,7 +1681,13 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     button.set_sensitive(self.luna_tray is not None)
                     button.set_tooltip_text("Hardware status temporarily unavailable")
                 return False
+            previous_status = self._last_status
             self._last_status = status
+            if self.luna_balloon is not None:
+                from .luna_notifications import event_messages
+
+                for message in event_messages(previous_status, status):
+                    self.luna_balloon.show(message)
             if self.luna_tray is not None:
                 self.luna_tray.on_status(status)
             if hasattr(self, "_aqua_flyouts"):
@@ -1925,13 +1950,16 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.pinned_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
             if profile == "frutiger":
                 self.pinned_box.get_style_context().add_class("frutiger-pins")
-            if profile == "winclassic":
+            if profile in ("winclassic", "winxp"):
                 quick_launch = self._class(
                     Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2),
-                    "classic98-quicklaunch")
-                self.classic98_quick_launch = quick_launch
+                    "classic98-quicklaunch" if profile == "winclassic" else "luna-quicklaunch")
+                if profile == "winclassic":
+                    self.classic98_quick_launch = quick_launch
                 quick_launch.pack_start(self.pinned_box, False, False, 0)
-                desktop_quick = self._class(Gtk.Button(), "classic98-desktop-quick")
+                desktop_quick = self._class(Gtk.Button(),
+                                            "classic98-desktop-quick" if profile == "winclassic"
+                                            else "luna-desktop-quick")
                 desktop_quick.set_image(self._icon("user-desktop", Gtk.IconSize.MENU))
                 desktop_quick.set_tooltip_text("Show Desktop")
                 desktop_quick.get_accessible().set_name("Show Desktop")
@@ -1946,18 +1974,21 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._pin_count = len(self._pinned_ids)
             self.tasks = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=4)
             self._task_capacity = task_capacity(rect.width, self._pin_count,
-                                                340 if tiles else 345 if profile == "aero" else 185,
+                                                340 if tiles else 345 if profile == "aero" else
+                                                230 if profile == "winxp" else 185,
                                                 compact=profile == "aero")
             self.overflow_button = self._class(Gtk.Button(), "aero-task-overflow")
             self.overflow_button.get_accessible().set_name("Show other running windows")
             self.overflow_button.connect("clicked", self._show_overflow)
             shelf_box.pack_start(self.tasks, False, False, 4)
-            if profile == "winclassic":
+            if profile in ("winclassic", "winxp"):
                 # Only blank taskbar space owns this menu; right-clicks on
                 # tray controls and task buttons retain their own semantics.
                 taskbar_spacer = Gtk.EventBox()
                 taskbar_spacer.set_visible_window(False)
-                taskbar_spacer.connect("button-press-event", self._classic98_taskbar_context)
+                taskbar_spacer.connect("button-press-event",
+                                        self._classic98_taskbar_context if profile == "winclassic"
+                                        else self._luna_taskbar_context)
             else:
                 taskbar_spacer = Gtk.Box()
             row.pack_start(taskbar_spacer, True, True, 0)
@@ -1979,9 +2010,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 desktop.set_tooltip_text("Show desktop / restore windows")
             desktop.get_accessible().set_name("Show desktop or restore windows")
             desktop.connect("clicked", self._show_desktop)
-            if profile != "winclassic":
+            if profile not in ("winclassic", "winxp"):
                 right_area.pack_end(desktop, False, False, 0)
-            self.show_desktop_button = desktop_quick if profile == "winclassic" else desktop
+            self.show_desktop_button = desktop_quick if profile in ("winclassic", "winxp") else desktop
             clock = self._class(Gtk.Label(), "aero-time")
             clock.set_justify(Gtk.Justification.CENTER)
             if profile == "winclassic":
@@ -2083,6 +2114,65 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             menu.popup_at_pointer(event)
             return True
 
+        def _luna_taskbar_context(self, _widget, event):
+            """XP blank-taskbar menu; actions touch no XFCE state without consent."""
+            if profile != "winxp" or event.button != 3:
+                return False
+            menu = Gtk.Menu()
+            self._track_luna_popup(menu)
+            for title, action in (
+                ("Show Desktop", self._show_desktop),
+                ("Add XP desktop icons…", lambda: self._luna_manage_desktop("install")),
+                ("Remove XP desktop icons…", lambda: self._luna_manage_desktop("remove")),
+                ("Desktop Properties…", lambda: self._open_tool("xfdesktop-settings")),
+            ):
+                if title == "Desktop Properties…":
+                    menu.append(Gtk.SeparatorMenuItem())
+                item = Gtk.MenuItem(label=title)
+                if title == "Desktop Properties…":
+                    item.set_sensitive(shutil.which("xfdesktop-settings") is not None)
+                item.connect("activate", lambda _item, callback=action: callback())
+                menu.append(item)
+            menu.show_all()
+            menu.popup_at_pointer(event)
+            return True
+
+        def _luna_manage_desktop(self, action):
+            """Explicit opt-in with confirmation; untouched user icons remain safe."""
+            if profile != "winxp":
+                return
+            from .luna_desktop import manage
+
+            title = ("Add XP desktop icons?" if action == "install" else
+                     "Remove RiceBowl XP desktop icons?")
+            dialog = Gtk.MessageDialog(
+                transient_for=self.bar, flags=Gtk.DialogFlags.MODAL,
+                message_type=Gtk.MessageType.QUESTION,
+                buttons=Gtk.ButtonsType.YES_NO, text=title)
+            dialog.format_secondary_text(
+                "Only RiceBowl-owned shortcuts are changed. Existing files and edited shortcuts "
+                "are always preserved. XFDesktop manages icons and trash using real Linux backends.")
+            answer = dialog.run()
+            dialog.destroy()
+            if answer != Gtk.ResponseType.YES:
+                return
+            try:
+                changed, kept = manage(action)
+            except (OSError, RuntimeError, ValueError) as exc:
+                self._error(str(exc), title="XP desktop icons")
+                return
+            info = (str(len(changed)) + " shortcuts " +
+                    ("installed" if action == "install" else "removed") + ".")
+            if kept:
+                info += " Preserved: " + ", ".join(kept)
+            result = Gtk.MessageDialog(
+                transient_for=self.bar, flags=Gtk.DialogFlags.MODAL,
+                message_type=Gtk.MessageType.INFO,
+                buttons=Gtk.ButtonsType.CLOSE, text="XP desktop icons")
+            result.format_secondary_text(info)
+            result.run()
+            result.destroy()
+
         def _windows_changed(self, windows, active):
             """Render copied task data without retaining native WnckWindow objects."""
             if profile == "aero":
@@ -2121,6 +2211,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                         if profile == "winclassic":
                             button.connect("button-press-event", lambda widget, event, target=xid:
                                            self._classic_task_context(widget, event, target))
+                        elif profile == "winxp":
+                            button.connect("button-press-event", lambda widget, event, target=xid:
+                                           self._luna_task_context(widget, event, target))
                     self.window_buttons[xid] = (button, icon, label)
                     self.tasks.pack_start(button, False, False, 0)
                 self._visible_window_ids = visible_ids
@@ -2401,6 +2494,12 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             from .classic98_taskbar import show
 
             return show(self, widget, event, xid, Gtk, Gdk)
+
+        def _luna_task_context(self, widget, event, xid):
+            """Use verified live Wnck operations, with an XP-specific popup skin."""
+            from .classic98_taskbar import show
+
+            return show(self, widget, event, xid, Gtk, Gdk, style_class="luna-popup")
 
         def _activate_task(self, xid):
             if self._window_tracker:

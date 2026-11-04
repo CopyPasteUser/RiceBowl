@@ -9,7 +9,7 @@ from macrice.luna_tray import LunaTray, tray_flyout_position
 from macrice.hardware_status import (
     _nmcli_fields, connect_wifi, disconnect_wifi, read_bluetooth, read_brightness,
     read_power_profiles, read_sound_outputs, read_wifi_networks, read_wifi_radio,
-    set_bluetooth_power, set_brightness, set_power_profile, set_sound_output,
+    set_bluetooth_connection, set_bluetooth_power, set_brightness, set_power_profile, set_sound_output,
     set_wifi_radio,
 )
 
@@ -179,10 +179,14 @@ class ExtraDeviceTests(unittest.TestCase):
     @patch("macrice.hardware_status._run")
     @patch("macrice.hardware_status.shutil.which", return_value="/usr/bin/bluetoothctl")
     def test_bluetooth_power_and_connected_devices(self, _which, run):
-        run.side_effect = ["Controller XX\nPowered: yes", "Device 00:11:22:33:44:55 Headphones"]
+        run.side_effect = ["Controller XX\nPowered: yes",
+                           "Device 00:11:22:33:44:55 Headphones",
+                           "Device 00:11:22:33:44:55 Headphones"]
         state = read_bluetooth()
         self.assertTrue(state.powered)
         self.assertEqual(state.connected, ("Headphones",))
+        self.assertEqual(state.backend, "bluetoothctl")
+        self.assertTrue(state.devices[0].paired)
 
     @patch("macrice.hardware_status.read_bluetooth")
     @patch("macrice.hardware_status.subprocess.run")
@@ -195,6 +199,98 @@ class ExtraDeviceTests(unittest.TestCase):
         self.assertTrue(set_bluetooth_power(True).powered)
         with self.assertRaises(RuntimeError):
             set_bluetooth_power(False)
+
+    @patch("macrice.hardware_status._rfkill_bluetooth", return_value=(None, None))
+    @patch("macrice.hardware_status._bluetooth_via_cli", return_value=None)
+    @patch("macrice.bluetooth_dbus.snapshot", return_value=(
+        True, "/org/bluez/hci0", (("AA:BB:CC:DD:EE:FF", "Keyboard", True, True),)))
+    def test_direct_dbus_fallback_without_bluetoothctl(self, _snapshot, _cli, _rfkill):
+        state = read_bluetooth()
+        self.assertEqual(state.backend, "D-Bus")
+        self.assertTrue(state.powered)
+        self.assertEqual(state.connected, ("Keyboard",))
+        self.assertTrue(state.devices[0].paired)
+
+    @patch("macrice.hardware_status._rfkill_bluetooth", return_value=(None, None))
+    @patch("macrice.hardware_status.shutil.which", return_value=None)
+    @patch("macrice.bluetooth_dbus.set_power")
+    @patch("macrice.bluetooth_dbus.snapshot", side_effect=[
+        (False, "/org/bluez/hci0", ()),
+        (False, "/org/bluez/hci0", ()),
+        (True, "/org/bluez/hci0", ())])
+    def test_power_action_uses_dbus_without_cli(self, snapshot, setter, _which, _rfkill):
+        self.assertTrue(set_bluetooth_power(True).powered)
+        setter.assert_called_once_with("/org/bluez/hci0", True)
+        self.assertEqual(snapshot.call_count, 3)
+
+    @patch("macrice.hardware_status._rfkill_bluetooth", return_value=(None, True))
+    @patch("macrice.hardware_status._bluetooth_via_cli", return_value=None)
+    @patch("macrice.bluetooth_dbus.snapshot", side_effect=RuntimeError("no service"))
+    def test_hardware_block_is_not_misreported_as_a_working_adapter(self,
+                                                                     _snapshot, _cli, _rfkill):
+        state = read_bluetooth()
+        self.assertIsNone(state.powered)
+        self.assertTrue(state.hard_blocked)
+        with self.assertRaisesRegex(RuntimeError, "hardware-blocked"):
+            set_bluetooth_power(True)
+
+    @patch("macrice.hardware_status._rfkill_bluetooth", return_value=(None, None))
+    @patch("macrice.hardware_status.shutil.which", return_value=None)
+    @patch("macrice.bluetooth_dbus.set_connection")
+    @patch("macrice.bluetooth_dbus.snapshot", side_effect=[
+        (True, "/org/bluez/hci0", (("AA:BB:CC:DD:EE:FF", "Keyboard", True, False),)),
+        (True, "/org/bluez/hci0", (("AA:BB:CC:DD:EE:FF", "Keyboard", True, True),))])
+    def test_paired_device_connection_readback(self, _snapshot, setter, _which, _rfkill):
+        state = set_bluetooth_connection("AA:BB:CC:DD:EE:FF", True)
+        self.assertEqual(state.connected, ("Keyboard",))
+        setter.assert_called_once_with("AA:BB:CC:DD:EE:FF", True)
+
+    @patch("macrice.hardware_status.read_bluetooth")
+    def test_unknown_or_unpaired_device_never_gets_a_connection_command(self, read):
+        from macrice.hardware_status import BluetoothDevice, BluetoothState
+
+        read.return_value = BluetoothState(True, (),
+                                           (BluetoothDevice("11:22:33:44:55:66", "Unknown", False, False),))
+        with self.assertRaisesRegex(ValueError, "Pair"):
+            set_bluetooth_connection("11:22:33:44:55:66", True)
+        with self.assertRaisesRegex(ValueError, "not currently known"):
+            set_bluetooth_connection("AA:BB:CC:DD:EE:FF", True)
+
+    @patch("macrice.hardware_status._bluetooth_via_cli")
+    @patch("macrice.hardware_status._bluetooth_via_dbus")
+    @patch("macrice.hardware_status.shutil.which", return_value="/usr/bin/bluetoothctl")
+    @patch("macrice.hardware_status.subprocess.run")
+    @patch("macrice.bluetooth_dbus.snapshot", return_value=(False, "/org/bluez/hci0", ()))
+    @patch("macrice.bluetooth_dbus.set_power")
+    def test_power_fallback_verifies_direct_dbus_when_cli_is_stale(
+            self, setter, _snapshot, process, _which, dbus, cli):
+        from macrice.hardware_status import BluetoothState
+
+        cli.return_value = BluetoothState(False, (), backend="bluetoothctl")
+        dbus.return_value = BluetoothState(True, (), backend="D-Bus")
+        process.return_value.returncode = 1
+        state = set_bluetooth_power(True)
+        self.assertEqual(state.backend, "D-Bus")
+        setter.assert_called_once_with("/org/bluez/hci0", True)
+
+    @patch("macrice.hardware_status._bluetooth_via_cli")
+    @patch("macrice.hardware_status._bluetooth_via_dbus")
+    @patch("macrice.hardware_status.shutil.which", return_value="/usr/bin/bluetoothctl")
+    @patch("macrice.hardware_status.subprocess.run")
+    @patch("macrice.bluetooth_dbus.set_connection")
+    def test_device_fallback_verifies_direct_dbus_when_cli_is_stale(
+            self, setter, process, _which, dbus, cli):
+        from macrice.hardware_status import BluetoothDevice, BluetoothState
+
+        address = "AA:BB:CC:DD:EE:FF"
+        cli.return_value = BluetoothState(True, (),
+            (BluetoothDevice(address, "Keyboard", True, False),), "bluetoothctl")
+        dbus.return_value = BluetoothState(True, ("Keyboard",),
+            (BluetoothDevice(address, "Keyboard", True, True),), "D-Bus")
+        process.return_value.returncode = 1
+        state = set_bluetooth_connection(address, True)
+        self.assertEqual(state.backend, "D-Bus")
+        setter.assert_called_once_with(address, True)
 
 
 if __name__ == "__main__":
