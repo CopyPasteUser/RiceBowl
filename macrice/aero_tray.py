@@ -452,8 +452,6 @@ class StatusNotifierTray:
         scroll.set_min_content_height(170)
         scroll.set_max_content_height(360)
         grid = Gtk.Grid(column_spacing=18, row_spacing=8)
-        grid.set_margin_start(5)
-        grid.set_margin_end(5)
         editors = {}
         seen = set()
         row = 0
@@ -465,6 +463,7 @@ class StatusNotifierTray:
             if stable_id:
                 seen.add(stable_id)
             label = Gtk.Label(label=title, xalign=0)
+            label.set_margin_start(7)
             label.set_max_width_chars(28)
             label.set_line_wrap(True)
             grid.attach(label, 0, row, 1, 1)
@@ -473,6 +472,7 @@ class StatusNotifierTray:
                                ("hide", "Hide in overflow")):
                 choice.append(mode, name)
             choice.set_active_id(self.preferences.icons.get(stable_id, "auto"))
+            choice.set_margin_end(7)
             choice.set_sensitive(stable_id is not None)
             if stable_id is None:
                 choice.set_tooltip_text("This app has no persistent StatusNotifier ID")
