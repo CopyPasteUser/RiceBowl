@@ -159,6 +159,17 @@ secondary pages; prototypes and the release roadmap do not crowd the selector.
   taskbar has a thick pearlescent top light, a recognizable aqua Start orb,
   rounded glass-like running-window capsules and a separate green-blue status
   cluster; it must never inherit Windows 7's slate-blue Superbar visual code.
+  `macrice/frutiger_control_center.py` owns an independent Aqua Control Center
+  with a nine-category overview, task pages, detail leaves, search and Back
+  navigation. `heritage_shell.DETAIL_CSS["frutiger"]` extends the Pearl/Lagoon/
+  Lime grammar to its nested surfaces. The original verified sound volume/mute
+  backend and live network/battery readings remain intact. Launcher Settings,
+  its gear and the network/audio/power tray controls open relevant Aqua views;
+  installed allowlisted Linux utilities are available from their detail pages
+  with explicit feedback when missing. `Your World` Places uses Gio's real
+  mount monitor for hotplugged storage and network locations, plus XDG Trash.
+  The installed third-party app's windows are *not* misleadingly represented
+  as Aqua-native settings; advanced networking still uses real Linux tools.
   `_create_frutiger_menu()` renders a rounded `Your World` head with **real**
   Wi-Fi/Ethernet, audio and battery status; accessible search; four working
   system locations; and **Apps / Places / Settings** pages. The Apps view is an

@@ -574,6 +574,66 @@ menu menuitem:hover { background: #000080; color: #fff; }
 .aqua-control-root .rice-hardware-panel levelbar block.filled {
   background-image: linear-gradient(#f7ffbb, #8cdd47); border-radius: 7px;
 }
+.aqua-control-root .aqua-control-close, .aqua-control-root .aqua-control-back {
+  color: #075b70; border-radius: 12px; padding: 5px 12px;
+  border: 1px solid #87cad4; background-image: linear-gradient(#ffffff, #d9fff4 48%, #9bdde7);
+  box-shadow: inset 0 1px #ffffff;
+}
+.aqua-control-root .aqua-control-close { font-size: 19px; font-weight: bold; min-width: 32px; }
+.aqua-control-root .aqua-control-breadcrumb { color: #075c7c; font-size: 12px; font-weight: bold; }
+.aqua-control-root .aqua-control-search { color: #075371; background: #fbffff;
+  border: 1px solid #85ced9; border-radius: 16px; padding: 7px 11px; }
+.aqua-control-root scrolledwindow, .aqua-control-root viewport,
+.aqua-control-root stack, .aqua-control-root grid { background: transparent; }
+.aqua-control-root .aqua-control-grid { padding: 3px 1px 6px; }
+.aqua-control-root .aqua-control-category {
+  background-image: linear-gradient(to bottom, #ffffff, #f1fffa 36%, #caf7e4 75%, #a0dbdb);
+  color: #07576d; border: 1px solid #8acbd4; border-radius: 17px;
+  padding: 10px 6px; box-shadow: inset 0 2px #fff, 0 2px 4px rgba(12,90,119,.12);
+  min-height: 102px;
+}
+.aqua-control-root .aqua-control-category-name { color: #076480;
+  font-size: 12px; font-weight: bold; }
+.aqua-control-root .aqua-control-task {
+  background-image: linear-gradient(to bottom, #ffffff, #f4fffa 43%, #d4f8ed);
+  border: 1px solid #9dcfd4; border-radius: 13px; color: #065a75;
+  padding: 9px 11px; box-shadow: inset 0 1px #fff;
+}
+.aqua-control-root .aqua-control-task-title { color: #075b73; font-size: 12px; font-weight: bold; }
+.aqua-control-root .aqua-control-task-note { color: #376d75; font-size: 10px; }
+.aqua-control-root .aqua-control-intro { color: #236778; font-size: 12px; padding: 7px 4px; }
+.aqua-control-root .aqua-control-detail-title { color: #066889; font-size: 19px;
+  font-weight: bold; padding: 7px 4px 2px; }
+.aqua-control-root .aqua-control-chevron { color: #0b8fab; font-size: 22px; font-weight: bold; }
+.aqua-control-root .aqua-control-live { background-image: linear-gradient(to bottom, #faffff, #e8fff7 42%, #c8f1ed);
+  border: 1px solid #90cdd4; border-radius: 14px; padding: 8px 12px;
+  box-shadow: inset 0 1px #fff; }
+.aqua-control-root .aqua-control-live .rice-control-detail { color: #175b72;
+  font-weight: bold; font-size: 11px; }
+.aqua-control-root .aqua-control-live scale trough { background: #c7eff0;
+  border: 1px solid #8bcdd2; border-radius: 8px; min-height: 8px; }
+.aqua-control-root .aqua-control-live scale highlight,
+.aqua-control-root .aqua-control-live levelbar block.filled {
+  background-image: linear-gradient(#f6ffc2, #9bde47); border-radius: 8px;
+}
+.aqua-control-root .aqua-control-launch, .aqua-control-root .rice-mute {
+  color: #075371; background-image: linear-gradient(#ffffff, #c6fae6 57%, #83d9cc);
+  border: 1px solid #69bfd1; border-radius: 12px; padding: 8px;
+}
+.aqua-control-root .rice-mute:checked { background-image: linear-gradient(#e7ffc4, #8fd469);
+  border-color: #3f9e77; }
+.aqua-control-root .aqua-control-unavailable { color: #924f2f; font-weight: bold;
+  padding: 9px; border: 1px solid #eccdb3; border-radius: 10px; background: #fff6ea; }
+.aqua-control-root .aqua-control-live-label { color: #075c7a; font-weight: bold; }
+.aqua-control-root .aqua-control-close:hover, .aqua-control-root .aqua-control-back:hover,
+.aqua-control-root .aqua-control-category:hover, .aqua-control-root .aqua-control-task:hover,
+.aqua-control-root .aqua-control-launch:hover { border-color: #249cb8;
+  background-image: linear-gradient(#ffffff, #dfffdb 50%, #9be5be); }
+.aqua-control-root .aqua-control-close:focus, .aqua-control-root .aqua-control-back:focus,
+.aqua-control-root .aqua-control-search:focus, .aqua-control-root .aqua-control-category:focus,
+.aqua-control-root .aqua-control-task:focus, .aqua-control-root .aqua-control-launch:focus {
+  border: 2px solid #1588be; box-shadow: 0 0 0 2px rgba(255,255,255,.86);
+}
 """,
 }
 

@@ -1239,6 +1239,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _status_action(self, name):
             """Open usable controls for audio/power; network settings for Wi-Fi."""
+            if profile == "frutiger":
+                self._show_aqua_control({"audio": "sound", "network": "connections",
+                                         "battery": "power"}[name])
+                return
             if name in ("audio", "battery"):
                 self._toggle_actions()
                 return
@@ -1291,6 +1295,15 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             if status is None:
                 if hasattr(self, "frutiger_status_label"):
                     self.frutiger_status_label.set_text(frutiger_status_summary(None))
+                if profile == "frutiger" and hasattr(self, "control_network_label"):
+                    self.control_network_label.set_text("Network: unavailable — retrying")
+                    self.control_battery_label.set_text("Battery: unavailable — retrying")
+                    self.volume_status_label.set_text("Volume: unavailable — retrying")
+                    self.volume_scale.set_sensitive(False)
+                    self.mute_button.set_sensitive(False)
+                    detail = getattr(self, "aqua_control_detail_status", None)
+                    if detail is not None:
+                        detail.set_text("Device status temporarily unavailable")
                 for button, _image, _label in self._status_widgets.values():
                     button.set_sensitive(False)
                     button.set_tooltip_text("Hardware status temporarily unavailable")
@@ -1302,6 +1315,13 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self.control_network_label.set_text(
                     "Network: " + {"wifi": "Wi-Fi", "ethernet": "Ethernet",
                                    "offline": "No active route"}[status.network])
+                detail = getattr(self, "aqua_control_detail_status", None)
+                if detail is not None:
+                    detail.set_text(
+                        self.control_network_label.get_text() if
+                        getattr(self, "aqua_control_detail_kind", None) == "connections" else
+                        (f"Battery: {status.battery.percent}% — {status.battery.label}"
+                         if status.battery else "Battery: not detected"))
                 if hasattr(self, "chrome_network_detail"):
                     self.chrome_network_detail.set_text({
                         "wifi": "Wi-Fi · connected", "ethernet": "Ethernet · connected",
@@ -2669,9 +2689,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             gear = self._class(Gtk.Button(), "aqua-gear")
             gear.set_image(self._icon("preferences-system", Gtk.IconSize.MENU))
             gear.get_accessible().set_name("Open desktop settings")
-            gear.set_tooltip_text("Desktop settings")
+            gear.set_tooltip_text("Open Aqua Control Center")
             gear.connect("clicked", lambda _button:
-                         self._open_tool("xfce4-settings-manager"))
+                         self._show_aqua_control())
             heading.pack_end(gear, False, False, 0)
             root.pack_start(heading, False, False, 0)
             search = self._class(Gtk.SearchEntry(), "aero-menu-search")
@@ -2753,6 +2773,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
             places_page = Gtk.ScrolledWindow()
             places_page.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+            places_content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
             places_grid = Gtk.Grid(column_spacing=9, row_spacing=8)
             places_grid.set_margin_top(7)
             places_grid.set_margin_bottom(7)
@@ -2764,32 +2785,88 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 ("Music", "folder-music", music),
                 ("Pictures", "folder-pictures", xdg_path(GLib.UserDirectory.DIRECTORY_PICTURES, "Pictures")),
                 ("Videos", "folder-videos", xdg_path(GLib.UserDirectory.DIRECTORY_VIDEOS, "Videos")),
+                ("Desktop", "user-desktop", xdg_path(GLib.UserDirectory.DIRECTORY_DESKTOP, "Desktop")),
+                ("File system", "drive-harddisk", Path("/")),
             )
             for index, (title, icon_name, path) in enumerate(entries):
                 button = self._place_button(title, icon_name, path, "aqua-place", offer_create=True)
                 places_grid.attach(button, index % 2, index // 2, 1, 1)
-            places_page.add(places_grid)
+            places_content.pack_start(places_grid, False, False, 0)
+            trash = self._class(Gtk.Button(), "aqua-place")
+            trash_line = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=9)
+            trash_line.pack_start(self._icon("user-trash", Gtk.IconSize.MENU), False, False, 0)
+            trash_line.pack_start(Gtk.Label(label="Trash", xalign=0), True, True, 0)
+            trash.add(trash_line)
+            trash.get_accessible().set_name("Open Trash")
+            trash.set_tooltip_text("Open the real desktop Trash folder")
+            trash.connect("clicked", lambda _button: self._open_uri("trash:///"))
+            places_content.pack_start(trash, False, False, 0)
+            places_content.pack_start(self._class(Gtk.Label(label="CONNECTED LOCATIONS", xalign=0),
+                                                  "aqua-section-title"), False, False, 3)
+            mounts_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+            places_content.pack_start(mounts_box, False, False, 0)
+            monitor = Gio.VolumeMonitor.get()
+
+            def refresh_mounts(*_args):
+                for old in tuple(mounts_box.get_children()):
+                    mounts_box.remove(old)
+                visible = []
+                for mount in monitor.get_mounts():
+                    try:
+                        if mount.is_shadowed():
+                            continue
+                        uri = mount.get_default_location().get_uri()
+                        if uri in ("file:///", "file:///boot"):
+                            continue
+                        visible.append((mount.get_name(), uri))
+                    except (AttributeError, GLib.Error):
+                        continue
+                for title, uri in sorted(visible, key=lambda row: row[0].casefold()):
+                    button = self._class(Gtk.Button(), "aqua-place")
+                    line = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=9)
+                    line.pack_start(self._icon("drive-removable-media", Gtk.IconSize.MENU),
+                                    False, False, 0)
+                    line.pack_start(Gtk.Label(label=title, xalign=0), True, True, 0)
+                    button.add(line)
+                    button.get_accessible().set_name("Open mounted location " + title)
+                    button.set_tooltip_text(uri)
+                    button.connect("clicked", lambda _button, destination=uri:
+                                   self._open_uri(destination))
+                    mounts_box.pack_start(button, False, False, 0)
+                if not visible:
+                    mounts_box.pack_start(self._class(Gtk.Label(
+                        label="No mounted removable or network locations", xalign=0),
+                        "aqua-section-hint"), False, False, 0)
+                mounts_box.show_all()
+
+            refresh_mounts()
+            for signal in ("mount-added", "mount-removed", "mount-changed"):
+                monitor.connect(signal, refresh_mounts)
+            places_page.add(places_content)
             self.aqua_stack.add_named(places_page, "Places")
 
             settings_page = Gtk.ScrolledWindow()
             settings_page.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
             settings_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=7)
-            for title, icon_name, command in (
-                ("Network connections", "network-wireless", "nm-connection-editor"),
-                ("Sound & media", "audio-volume-high", "pavucontrol"),
-                ("Appearance & themes", "preferences-desktop-theme", "xfce4-appearance-settings"),
-                ("Display", "video-display", "xfce4-display-settings"),
-                ("System settings", "preferences-system", "xfce4-settings-manager"),
+            for title, icon_name, category in (
+                ("Connections", "network-wireless", "connections"),
+                ("Sound & media", "audio-volume-high", "sound"),
+                ("Personalize", "preferences-desktop-theme", "personalize"),
+                ("Display & windows", "video-display", "display"),
+                ("Power & battery", "battery", "power"),
+                ("Devices & input", "input-keyboard", "devices"),
+                ("Applications", "system-software-install", "applications"),
+                ("System & recovery", "computer", "system"),
+                ("Accessibility", "preferences-desktop-accessibility", "accessibility"),
             ):
                 btn = self._class(Gtk.Button(), "aqua-place")
                 content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=11)
                 content.pack_start(self._icon(icon_name, Gtk.IconSize.MENU), False, False, 0)
                 content.pack_start(Gtk.Label(label=title, xalign=0), True, True, 0)
                 btn.add(content)
-                btn.set_sensitive(shutil.which(command) is not None)
-                btn.set_tooltip_text("Open " + title if shutil.which(command) else
-                                    command + " is not installed")
-                btn.connect("clicked", lambda _button, app=command: self._open_tool(app))
+                btn.set_tooltip_text("Open Aqua Control Center · " + title)
+                btn.connect("clicked", lambda _button, page=category:
+                            self._show_aqua_control(page))
                 settings_box.pack_start(btn, False, False, 0)
             settings_page.add(settings_box)
             self.aqua_stack.add_named(settings_page, "Settings")
@@ -2805,9 +2882,12 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 btn.set_image(self._icon(icon_name, Gtk.IconSize.MENU))
                 btn.set_tooltip_text("Open " + name)
                 btn.get_accessible().set_name("Open " + name)
-                command = "xfce4-settings-manager" if name == "Settings" else "xfce4-session-logout"
-                btn.set_sensitive(shutil.which(command) is not None)
-                btn.connect("clicked", lambda _button, app=command: self._open_tool(app))
+                if name == "Settings":
+                    btn.connect("clicked", lambda _button: self._show_aqua_control())
+                else:
+                    command = "xfce4-session-logout"
+                    btn.set_sensitive(shutil.which(command) is not None)
+                    btn.connect("clicked", lambda _button, app=command: self._open_tool(app))
                 footer.pack_start(btn, False, False, 0)
             root.pack_start(footer, False, False, 0)
             buttons["Apps"].set_active(True)
@@ -3149,6 +3229,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _create_actions(self):
             """Profile-aware controls; never simulate state-changing toggles."""
+            if profile == "frutiger":
+                from .frutiger_control_center import build
+
+                self.actions = build(self, Gtk, Gdk)
+                return
             if profile == "aero":
                 from .win7_control_panel import build
 
@@ -3429,6 +3514,19 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._cancel_popup_hide("control")
             self.actions.hide()
 
+        def _show_aqua_control(self, category=None):
+            """Open a real Aqua detail page without toggling an open panel shut."""
+            if profile != "frutiger":
+                return
+            if not self.actions.get_visible():
+                self._toggle_actions()
+            if self.actions.get_visible():
+                if category:
+                    self.aqua_control_show_category(category)
+                else:
+                    self.aqua_control_show_home()
+                self.actions.present()
+
         def _toggle_actions(self):
             self._cancel_popup_hide("control")
             if self.actions.get_visible():
@@ -3464,6 +3562,24 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self.actions.move(rect.x + (rect.width - width) // 2,
                                   rect.y + (rect.height - panel_height - height) // 2)
                 self.actions.present()
+                return
+            if profile == "frutiger":
+                width = min(492, max(0, rect.width - 24))
+                height = min(620, max(0, rect.height - panel_height - 24))
+                if width < 290 or height < 275:
+                    self._error("The display is too small for Aqua Control Center.")
+                    return
+                self.aqua_control_show_home()
+                self.actions.show_all()
+                self.actions.resize(width, height)
+                self.actions.move(rect.x + rect.width - width - 10,
+                                  rect.y + rect.height - panel_height - height - 8)
+                self.actions.present()
+                self._refresh_status_async()
+                from .chrome_shell import apply_rounded_window_shape
+
+                GLib.idle_add(apply_rounded_window_shape, self.actions, 22)
+                GLib.timeout_add(150, apply_rounded_window_shape, self.actions, 22)
                 return
             width = min(396 if profile == "chromeos" else 362 if ten else 382 if profile == "winclassic" else 388 if profile == "frutiger" else 412 if profile == "aero" else 330,
                         max(0, rect.width - 16))

@@ -116,6 +116,32 @@ this visual change. Original art only; do not bundle third-party assets.
 > requirements**. They are not assumed implemented just because an earlier
 > screenshot or release was accepted.
 
+#### Implementation checkpoint · 4 November 2026
+
+The first deeper implementation slice is in the code, **without closing
+the full P0 requirements below**:
+
+- `macrice/frutiger_control_center.py` adds a real native GTK3 Aqua hierarchy:
+  nine categories, task detail leaves, search, Back navigation, keyboard-
+  accessible controls and explicit missing-utility explanations.
+- `Your World` Settings and hero gear open the Aqua Control Center. Tray
+  network, sound and battery actions open their corresponding Aqua categories
+  instead of immediately leaving Aqua for an XFCE utility.
+- The existing backend-verified output volume/mute and live network/battery
+  feedback remain; status now refreshes on opening and reports probe failure.
+- Places adds Desktop, File system, real Trash, mounted removable/network
+  volumes and event-driven Gio mount hotplug updates without background polls.
+- CSS scope: only the Frutiger rice receives the deeper Aqua material system.
+  Session ownership, apply/restore logic and all other rice profiles are intact.
+- Verification: the Python suite, new targeted contracts and native headless
+  GTK3 CSS parser. **Native X11 screenshot and actual Mint/XFCE acceptance
+  remain unverified in this runtime**.
+
+**Still open:** full NetworkManager and BlueZ control backends, device and
+display settings, personalization persistence, compact device flyouts,
+RiceExplorer Aqua renderer, icon family, screenshots and the 35 end-to-end
+acceptance scenarios.
+
 ### 0. Frozen art direction and reference board — P0
 
 - [ ] **Visual reference dossier:** Store annotated, legally sourced

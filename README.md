@@ -26,7 +26,7 @@ RiceBowl changes the actual Linux desktop: GTK and XFWM4 themes, icons, wallpape
 | **[Windows XP · Luna](XP_LUNA_ROADMAP.md)** | `winxp` | Blue/green taskbar, themed cascading Start menus and navigable Control Panel tasks |
 | **[Windows 98 / 2000](CLASSIC_98_ROADMAP.md)** | `winclassic` | Teal desktop, beveled taskbar and cascading Start menus |
 | **[ChromeOS](CHROMEOS_ROADMAP.md)** | `chromeos` | Material You shelf, searchable app launcher and Quick Settings |
-| **[Frutiger Aero](FRUTIGER_AERO_ROADMAP.md)** | `frutiger` | Aqua World wallpaper, pearl-glass bar and original Apps/Places/Settings |
+| **[Frutiger Aero](FRUTIGER_AERO_ROADMAP.md)** | `frutiger` | Aqua World wallpaper, pearl-glass bar, live mounted Places and three-level Aqua Control Center |
 
 ### Current screenshots
 
