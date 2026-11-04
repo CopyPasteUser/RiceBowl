@@ -47,6 +47,28 @@ class PerformanceTests(unittest.TestCase):
         self.assertEqual(_component(["/usr/bin/python3", "/tmp/macbar.py"]), "MacBar")
         self.assertEqual(_component(["/usr/bin/plank"]), "Plank")
         self.assertIsNone(_component(["/usr/bin/python3", "myservice.py", "macmenu"]))
+        self.assertEqual(_component(["/usr/bin/python3", "/opt/ricebowl/launcher.py",
+                                     "frutiger-shell"]), "RiceBowl Frutiger Aero")
+        self.assertEqual(_component(["/usr/bin/python3", "/opt/ricebowl/launcher.py",
+                                     "winxp-shell"]), "RiceBowl XP Luna")
+        self.assertEqual(_component(["/usr/bin/python3", "/opt/ricebowl/launcher.py",
+                                     "windows10-shell"]), "RiceBowl Windows 10")
+        self.assertIsNone(_component(["/usr/bin/python3", "/tmp/unrelated.py",
+                                            "frutiger-shell"]))
+
+    def test_proc_report_includes_threads_without_background_monitor(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            process = Path(tmp) / "23591"
+            process.mkdir()
+            (process / "cmdline").write_bytes(
+                b"/usr/bin/python3\0/opt/ricebowl/launcher.py\0chromeos-shell\0")
+            (process / "smaps_rollup").write_text("Pss: 16384 kB\n")
+            (process / "status").write_text("Name:\tpython3\nThreads:\t4\n")
+            report = measure_processes(proc_root=Path(tmp), sample_ms=50)
+        self.assertEqual(len(report), 1)
+        self.assertEqual(report[0]["name"], "RiceBowl ChromeOS")
+        self.assertEqual(report[0]["pss_kib"], 16384)
+        self.assertEqual(report[0]["threads"], 4)
 
     def test_empty_proc_report_is_safe(self):
         with tempfile.TemporaryDirectory() as tmp:

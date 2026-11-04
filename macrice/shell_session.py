@@ -320,6 +320,8 @@ def sync_theme(theme: str) -> tuple[str, ...]:
         if profile != desired:
             warnings.extend(_shell(profile, True))
     if warnings:
+        if not mac:
+            warnings.extend(_recover_xfce_panel())
         return tuple(warnings)
     if desired:
         # Plank may have been started by XFCE autostart, not by RiceHub.
@@ -328,10 +330,15 @@ def sync_theme(theme: str) -> tuple[str, ...]:
         warnings.extend(_stop_macbar())
         if not warnings:
             warnings.extend(_shell(desired, False))
-            if not warnings and not _wait_for_shell_ready(desired):
+            if warnings:
+                warnings.extend(_shell(desired, True))
+                warnings.extend(_recover_xfce_panel())
+            elif not _wait_for_shell_ready(desired):
                 warnings.append(f"{desired} taskbar not ready; XFCE panel recovery attempted")
                 warnings.extend(_shell(desired, True))
                 warnings.extend(_recover_xfce_panel())
+        else:
+            warnings.extend(_recover_xfce_panel())
     elif mac:
         for name in ("plank", "macbar"):
             executable = _component_executable(name)
@@ -339,8 +346,18 @@ def sync_theme(theme: str) -> tuple[str, ...]:
                 warnings.extend(_start(name, [executable]))
             else:
                 warnings.append(f"{name} executable not found")
+    else:
+        # Returning to the user's original XFCE theme must also restore the
+        # stock panel and saved keyboard shortcuts. Merely quitting RiceBowl
+        # shells can otherwise leave the desktop without any taskbar.
+        warnings.extend(_recover_xfce_panel())
     if not warnings and (desired or mac):
         warnings.extend(_activate_session_controls(theme))
+        if warnings and desired:
+            # A failed shortcut/panel handoff must not leave two taskbars or
+            # a half-activated session. Preserve the stock XFCE escape hatch.
+            warnings.extend(_shell(desired, True))
+            warnings.extend(_recover_xfce_panel())
     return tuple(warnings)
 
 

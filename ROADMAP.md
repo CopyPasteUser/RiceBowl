@@ -2,6 +2,27 @@
 
 > **Riceware ecosystem plan:** [riceExplorer, riceSpice, ricePop, ricePlate and riceWine](RICE_ECOSYSTEM_ROADMAP.md). Defines shared backends, distinct renderers, ownership, conditional independent programs and acceptance gates. Planning only; no new service is deployed.
 
+## 1.0 hardening pass — session, resource visibility and Aqua flyouts (4 November 2026)
+
+- [x] Restore the stock XFCE panel and saved shortcuts when switching away
+  from a RiceBowl theme; recover on shell startup, shutdown or session-control
+  handoff failures. Regression tests cover these failure paths.
+- [x] Extend the **on-demand** `/proc` performance report to all six non-macOS
+  RiceBowl shells, including proportional memory (PSS), sampled CPU and thread
+  counts. No new idle polling or background daemon.
+- [x] Add compact Frutiger Aqua flyouts with verified Wi-Fi radio and visible
+  networks, paired Bluetooth links, audio sink selection and available power
+  profiles; missing providers are reported honestly. A second click is needed
+  before disabling Wi-Fi or Bluetooth.
+- [x] Reuse Frutiger's existing bounded Riceware runner, discard stale popup
+  callbacks, and add deterministic unit tests plus native GTK smoke assertions.
+- [ ] Verify real settled PSS/CPU, device behavior, suspended-session recovery,
+  repeated rice switching and multi-monitor layouts on Linux Mint XFCE/X11.
+- [ ] Finish Frutiger's remaining feature/fidelity backlog (Wi-Fi credentials,
+  Bluetooth pairing, deep power/display configuration and Aqua riceExplorer).
+
+**Scope:** The macOS Aurora UI and its existing startup path remain unchanged.
+
 ## Post-0.9.1 — Cross-rice visual QA and real-window coverage (3 November 2026)
 
 **4 November screenshot refresh:** the current [32-image gallery](screenshots/current/README.md)

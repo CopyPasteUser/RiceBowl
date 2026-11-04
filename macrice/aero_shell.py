@@ -1071,6 +1071,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     # event environment, not only through mocked tab objects.
                     assert self.frutiger_controller is not None
                     assert self.aqua_notifications_button is not None
+                    assert self.aqua_bluetooth_button is not None
                     self._toggle_menu()
                     assert self.menu.get_visible()
                     for name in ("Settings", "Places", "Settings", "Apps"):
@@ -1106,6 +1107,14 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     self.aqua_notifications_button.clicked()
                     assert self._aqua_notifications.popover.get_visible()
                     self._aqua_notifications.popover.popdown()
+                    self._apply_status(None)
+                    assert self._status_widgets["network"][0].get_sensitive()
+                    assert self._status_widgets["battery"][0].get_sensitive()
+                    self.aqua_bluetooth_button.clicked()
+                    assert self._aqua_flyouts.popovers["bluetooth"].get_visible()
+                    self._status_widgets["network"][0].clicked()
+                    assert self._aqua_flyouts.popovers["network"].get_visible()
+                    self._aqua_flyouts.popovers["network"].popdown()
             except Exception:
                 import traceback
                 traceback.print_exc()
@@ -1652,6 +1661,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             if profile == "frutiger" and hasattr(self, "frutiger_controller"):
                 if hasattr(self, "aqua_control_suspend"):
                     self.aqua_control_suspend()
+                if hasattr(self, "_aqua_flyouts"):
+                    self._aqua_flyouts.close()
                 if hasattr(self, "_aqua_notifications"):
                     self._aqua_notifications.close()
                 self.frutiger_controller.close()
@@ -2169,6 +2180,13 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     row.pack_end(alert, False, False, 0)
                     self.luna_tray.install("alerts", alert)
             elif profile == "frutiger":
+                bluetooth = self._class(Gtk.Button(), "rice-status")
+                bluetooth.add(self._icon("bluetooth-active", Gtk.IconSize.MENU))
+                bluetooth.get_accessible().set_name("Open Aqua Bluetooth devices")
+                bluetooth.set_tooltip_text("Bluetooth devices · Aqua World")
+                bluetooth.connect("clicked", lambda _button: self._status_action("bluetooth"))
+                row.pack_end(bluetooth, False, False, 0)
+                self.aqua_bluetooth_button = bluetooth
                 notifications = self._class(Gtk.Button(), "rice-status")
                 notifications.add(self._icon("preferences-desktop-notification", Gtk.IconSize.MENU))
                 notifications.get_accessible().set_name("Open Aqua notifications")
@@ -2249,7 +2267,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     # Luna's tray popovers are also the recovery path when a
                     # transient probe fails; keep them openable for details.
                     button.set_sensitive(self.luna_tray is not None or
-                                         profile in ("windows10", "winclassic", "chromeos"))
+                                         profile in ("windows10", "winclassic", "chromeos", "frutiger"))
                     button.set_tooltip_text("Hardware status temporarily unavailable")
                 return False
             previous_status = self._last_status
@@ -2323,7 +2341,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             battery_button, battery_icon, battery_label = self._status_widgets["battery"]
             battery = status.battery
             if battery is None:
-                if self.luna_tray is None and profile != "winclassic":
+                if self.luna_tray is None and profile not in ("winclassic", "frutiger"):
                     battery_button.hide()
                 else:
                     battery_button.show_all()

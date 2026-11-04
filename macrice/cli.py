@@ -199,7 +199,8 @@ def main(argv: list[str] | None = None) -> int:
                 for item in processes:
                     pss = f"{item['pss_kib'] / 1024:.1f} MiB" if item["pss_kib"] is not None else "unavailable"
                     cpu = f"{item['cpu_percent']:.1f}%" if item["cpu_percent"] is not None else "unavailable"
-                    print(f"{item['name']} (PID {item['pid']}): PSS {pss} · CPU {cpu}")
+                    threads = str(item["threads"]) if item["threads"] is not None else "unavailable"
+                    print(f"{item['name']} (PID {item['pid']}): PSS {pss} · CPU {cpu} · Threads {threads}")
             else:
                 print(f"Performance profile {args.profile} applied; backup:", apply_profile(args.profile))
             return 0

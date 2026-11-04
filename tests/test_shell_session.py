@@ -71,10 +71,12 @@ class SessionTests(unittest.TestCase):
     @mock.patch.object(s, "_stop", return_value=[])
     @mock.patch.object(s, "_shell", return_value=[])
     @mock.patch.object(s, "_stop_macbar", return_value=["MacBar is still running"])
-    def test_macbar_failure_blocks_new_windows_shell(self, stop_macbar, shell, stop):
+    @mock.patch.object(s, "_recover_xfce_panel", return_value=[])
+    def test_macbar_failure_blocks_new_windows_shell(self, recover, stop_macbar, shell, stop):
         with mock.patch.dict("os.environ", {"DISPLAY": ":99"}):
             self.assertEqual(s.sync_theme("RiceHub-Aero"), ("MacBar is still running",))
         self.assertNotIn(mock.call("aero", False), shell.call_args_list)
+        recover.assert_called_once_with()
 
     @mock.patch.dict("os.environ", {"DISPLAY": ":99"})
     @mock.patch.object(s, "_start", return_value=[])
@@ -112,12 +114,60 @@ class SessionTests(unittest.TestCase):
         stop.assert_not_called()
 
     @mock.patch.dict("os.environ", {"DISPLAY": ":99"})
+    @mock.patch.object(s, "_recover_xfce_panel", return_value=[])
+    @mock.patch.object(s, "_shell", return_value=[])
+    def test_restoring_unmanaged_xfce_theme_recovers_panel_and_shortcuts(self, shell, recover):
+        self.assertEqual(s.sync_theme("Mint-Y"), ())
+        recover.assert_called_once_with()
+        self.assertEqual([call.args[1] for call in shell.call_args_list],
+                         [True] * len(s.SHELLS))
+        self.controls.assert_not_called()
+
+    @mock.patch.dict("os.environ", {"DISPLAY": ":99"})
+    @mock.patch.object(s, "_recover_xfce_panel", return_value=["XFCE panel cannot start"])
+    @mock.patch.object(s, "_shell", return_value=[])
+    def test_restore_reports_stock_panel_recovery_failure(self, shell, recover):
+        self.assertEqual(s.sync_theme("Mint-Y"), ("XFCE panel cannot start",))
+        self.controls.assert_not_called()
+
+    @mock.patch.dict("os.environ", {"DISPLAY": ":99"})
     @mock.patch.object(s, "_stop", return_value=["plank did not exit"])
     @mock.patch.object(s, "_shell", return_value=[])
     @mock.patch.object(s, "_stop_macbar", return_value=[])
-    def test_stop_failure_blocks_new_shell(self, stop_macbar, shell, stop):
+    @mock.patch.object(s, "_recover_xfce_panel", return_value=[])
+    def test_stop_failure_blocks_new_shell(self, recover, stop_macbar, shell, stop):
         self.assertEqual(s.sync_theme("RiceHub-Aero"), ("plank did not exit",))
         self.assertNotIn(mock.call("aero", False), shell.call_args_list)
+        recover.assert_called_once_with()
+
+    @mock.patch.dict("os.environ", {"DISPLAY": ":99"})
+    @mock.patch.object(s, "_shell", side_effect=lambda profile, quit:
+                       ["shell quit failed"] if quit else [])
+    @mock.patch.object(s, "_recover_xfce_panel", return_value=[])
+    def test_restore_recovers_panel_even_when_old_shell_wont_quit(self, recover, shell):
+        self.assertIn("shell quit failed", s.sync_theme("Mint-Y"))
+        recover.assert_called_once_with()
+
+    @mock.patch.dict("os.environ", {"DISPLAY": ":99"})
+    @mock.patch.object(s, "_stop_macbar", return_value=[])
+    @mock.patch.object(s, "_stop", return_value=[])
+    @mock.patch.object(s, "_shell", side_effect=lambda profile, quit:
+                       ["new shell could not launch"] if not quit else [])
+    @mock.patch.object(s, "_recover_xfce_panel", return_value=[])
+    def test_shell_spawn_failure_still_recovers_panel(self, recover, shell, stop, macbar):
+        self.assertIn("new shell could not launch", s.sync_theme("RiceHub-Aero"))
+        recover.assert_called_once_with()
+
+    @mock.patch.dict("os.environ", {"DISPLAY": ":99"})
+    @mock.patch.object(s, "_stop_macbar", return_value=[])
+    @mock.patch.object(s, "_stop", return_value=[])
+    @mock.patch.object(s, "_shell", return_value=[])
+    @mock.patch.object(s, "_recover_xfce_panel", return_value=[])
+    def test_stock_panel_retirement_failure_closes_replacement(self, recover, shell, stop, macbar):
+        self.controls.return_value = ["panel quit failed"]
+        self.assertIn("panel quit failed", s.sync_theme("RiceHub-Aero"))
+        self.assertIn(mock.call("aero", True), shell.call_args_list)
+        recover.assert_called_once_with()
 
     @mock.patch.dict("os.environ", {"DISPLAY": ":99"})
     @mock.patch.object(s, "_recover_xfce_panel", return_value=[])

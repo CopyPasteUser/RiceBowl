@@ -188,9 +188,24 @@ the full P0 requirements below**:
   and multi-monitor checks are **not claimed**.
 
 **Still open after this integration:** Full P0 Aqua interactions, native
-Bluetooth/USB/calendar/media one-click flyouts, advanced Wi-Fi credentials,
+USB/calendar/media one-click flyouts, advanced Wi-Fi credentials,
 notification actions and grouping, rich iconography, RiceExplorer Aqua theme,
 hardware/suspend acceptance and all end-to-end fidelity criteria below.
+
+#### Aqua tray flyout follow-up · 4 November 2026
+
+- [x] NetworkManager radio state and up to five real visible Wi-Fi networks;
+  join saved networks or disconnect a live connection through verified changes.
+- [x] Separate Bluetooth tray affordance with adapter state and up to five
+  paired-device connect/disconnect controls (no pretend pairing).
+- [x] Audio output selection and available power-profile switching in the
+  original Aqua popup styling, without creating extra background workers.
+- [x] Explicit Wi-Fi/Bluetooth off confirmation; unavailable hardware remains
+  inspectable; closing popovers drops stale responses and private network rows.
+- [x] Hermetic tests for true backends, missing-provider errors and stale UI
+  callbacks, plus an expanded native GTK smoke path.
+- [ ] Wi-Fi password entry, Bluetooth discovery/pairing, USB/media/calendar
+  popovers, physical-device and compact-screen acceptance are still open.
 
 **Still open:** Wi-Fi password entry and advanced connection editing, Bluetooth
 pairing/device management, complete monitor layout/scaling, persistence for
