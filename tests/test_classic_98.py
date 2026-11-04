@@ -55,6 +55,7 @@ class Win98FidelityTests(unittest.TestCase):
         classic = (ROOT / "macrice/classic98_menu.py").read_text(encoding="utf-8")
         control = (ROOT / "macrice/classic98_control_panel.py").read_text(encoding="utf-8")
         tray = (ROOT / "macrice/classic98_tray.py").read_text(encoding="utf-8")
+        taskbar_options = (ROOT / "macrice/classic98_taskbar_settings.py").read_text(encoding="utf-8")
         for name in ("Programs", "Favorites", "Documents", "Settings", "Find",
                      "Help", "Run…", "Shut Down…", "Gtk.MenuButton", "set_direction",
                      "show_run", "show_file_search", "gtk_bookmarks", "get_items",
@@ -77,13 +78,17 @@ class Win98FidelityTests(unittest.TestCase):
         self.assertIn("from .classic98_control_panel import build", shell)
         self.assertIn("classic98_tray_show", shell)
         self.assertIn("classic98-quicklaunch", shell)
+        self.assertIn("classic98_open_taskbar_properties", shell)
+        self.assertIn("classic98_open_taskbar_properties", classic)
+        self.assertIn("classic98_open_taskbar_properties", control)
+        self.assertIn("Gtk.ResponseType.APPLY", taskbar_options)
         self.assertEqual(PROFILES["winclassic"].wallpaper, "classic-teal.jpg")
 
     def test_gtk_and_live_shell_use_90s_widget_grammar(self):
         css = CSS["winclassic"]
         for token in (b".classic-chevron", b".classic-menu-list", b".classic-brand-label",
                       b".classic-control-caption", b".classic-control-close",
-                      b".classic-control-grid",
+                      b".classic-control-grid", b".classic98-taskbar-properties",
                       b".classic-menu-item:focus", b"min-height: 34px", b"#000080"):
             self.assertIn(token, css)
         self.assertNotIn(b".classic-chevron", CSS["winxp"])
@@ -107,3 +112,4 @@ class Win98FidelityTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+

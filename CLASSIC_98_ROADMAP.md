@@ -103,8 +103,9 @@ Current evidence: source files, existing roadmap, current repository screenshot 
 - [x] Add a separated pinned-app Quick Launch strip, Show Desktop and Wnck-backed context menus on individual running-window buttons (Restore, Move, Size, Minimize, Maximize, Close with real capability checks).
 - [x] Add compact audio/network/battery/calendar popups using existing live hardware state and verified volume/mute handlers.
 - [x] Add nine focused tests for persistence, URI safety, shell-free Run, applet discovery, live Wnck action dispatch and centered screenshot-crop regression.
+- [x] Add dedicated classic Taskbar Properties, reachable from Start, Control Panel and a taskbar context menu: persistent per-rice clock/Quick Launch toggles with working Apply/OK/Cancel, private atomic settings and four regression tests. Unsupported auto-hide/position settings remain disabled.
 
-**Still open:** complete original hover/cascade keyboard geometry; folders within Favorites; Programs context actions; complete Run history and .desktop targeting; Finder content/date/type search and computer discovery; dedicated Taskbar and Folder Options applets; full Display Properties tabs; independent Quick Launch configuration; comprehensive tray NetworkManager/XEmbed operation; window context menus; desktop virtual folders; structural riceExplorer skin; Win98/2000 preset split; era accessories; and physical Mint acceptance. Do not close a milestone until its full gate passes.
+**Still open:** complete original hover/cascade keyboard geometry; folders within Favorites; Programs context actions; complete Run history and .desktop targeting; Finder content/date/type search and computer discovery; advanced Taskbar options (auto-hide/position), dedicated Folder Options; full Display Properties tabs; independent Quick Launch configuration; comprehensive tray NetworkManager/XEmbed operation; window context menus; desktop virtual folders; structural riceExplorer skin; Win98/2000 preset split; era accessories; and physical Mint acceptance. Do not close a milestone until its full gate passes.
 
 ### Milestone 0 — Freeze references, safe state and test harness (P0)
 
