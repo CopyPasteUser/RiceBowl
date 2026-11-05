@@ -18,7 +18,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .environment import data_home
-from .installer import InstallOptions, InstallationError, install, project_root, MANAGED_MARKER
+from .installer import (InstallOptions, InstallationError, install, project_root,
+                        MANAGED_MARKER, REVISION_MARKER)
 
 
 ALLOWED_REMOTES = frozenset({
@@ -49,10 +50,13 @@ class UpdatePlan:
     commits: int
     source: Path
     changed: tuple[str, ...] = ()
+    installed: str | None = None
 
     @property
     def needed(self) -> bool:
-        return self.commits > 0
+        # None supports older callers constructing a plan without installation
+        # metadata; an empty string means a legacy install with unknown revision.
+        return self.commits > 0 if self.installed is None else self.installed != self.available
 
 
 def _git(source: Path, *args: str, timeout: int = 15, strip: bool = True) -> str:
@@ -117,7 +121,13 @@ def inspect(*, source: Path | None = None, refresh: bool = False,
     if ancestor.returncode:
         raise UpdateError("Local main and origin/main have diverged; never force-update")
     count = int(_git(source, "rev-list", "--count", current + ".." + available))
-    return UpdatePlan(current, available, count, source, changes)
+    marker = data_home() / "macrice" / REVISION_MARKER
+    installed = ""
+    if marker.is_file() and not marker.is_symlink():
+        value = marker.read_text(encoding="ascii", errors="replace").strip()
+        if len(value) == 40 and all(c in "0123456789abcdef" for c in value):
+            installed = value
+    return UpdatePlan(current, available, count, source, changes, installed)
 
 
 def _extract_commit(source: Path, revision: str, destination: Path) -> None:
@@ -182,10 +192,13 @@ def apply(*, source: Path | None = None, expected_revision: str | None = None,
         with tempfile.TemporaryDirectory(prefix="ricebowl-update-", dir=locks) as stage:
             staged = Path(stage)
             _extract_commit(plan.source, plan.available, staged)
+            (staged / REVISION_MARKER).write_text(plan.available + "\n", encoding="ascii")
             try:
                 install(InstallOptions(no_start=True), source=staged, output=lambda _: None)
                 # Verify installed bundle before advancing the user's source tree.
-                if not (target / MANAGED_MARKER).is_file() or not (target / "launcher.py").is_file():
+                if (not (target / MANAGED_MARKER).is_file() or
+                        not (target / "launcher.py").is_file() or
+                        (target / REVISION_MARKER).read_text(encoding="ascii").strip() != plan.available):
                     raise InstallationError("Installed bundle did not pass integrity checks")
                 if not plan.changed:
                     _git(plan.source, "merge", "--ff-only", plan.available, timeout=45)
