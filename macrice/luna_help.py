@@ -64,7 +64,12 @@ def show_system(shell, Gtk):
     dialog.get_style_context().add_class("luna-help-window")
     dialog.add_button("Refresh", Gtk.ResponseType.APPLY)
     dialog.add_button("Close", Gtk.ResponseType.CLOSE)
-    area = dialog.get_content_area()
+    from gi.repository import Gdk
+    from .luna_dialog import attach_luna_dialog_chrome
+
+    area = attach_luna_dialog_chrome(
+        dialog, Gtk, Gdk, role="ricebowl-xp-system-properties",
+        title="System Properties", close_response=Gtk.ResponseType.CLOSE)
     area.set_border_width(12)
     area.set_spacing(9)
     heading = Gtk.Label(label="RiceBowl XP · System Properties (Linux)", xalign=0)
@@ -116,7 +121,13 @@ def show_help(shell, Gtk):
     dialog.set_default_size(720, 496)
     dialog.get_style_context().add_class("luna-help-window")
     dialog.add_button("Close", Gtk.ResponseType.CLOSE)
-    area = dialog.get_content_area()
+    from gi.repository import Gdk
+    from .luna_dialog import attach_luna_dialog_chrome
+
+    area = attach_luna_dialog_chrome(
+        dialog, Gtk, Gdk, role="ricebowl-xp-help-center",
+        title="Help and Support Center", close_response=Gtk.ResponseType.CLOSE,
+        resizable=True)
     area.set_spacing(8)
     area.set_border_width(10)
     banner = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)

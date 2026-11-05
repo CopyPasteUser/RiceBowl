@@ -6,27 +6,14 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
-from types import SimpleNamespace
-from unittest import mock
 
 from macrice.luna_taskbar_settings import (
-    DEFAULT_OPTIONS, LunaSettingsError, center_on_workarea, configure_properties_window,
+    DEFAULT_OPTIONS, LunaSettingsError, center_on_workarea,
     load_options, save_options, validate_options,
 )
 
 
 class LunaTaskbarSettingsTests(unittest.TestCase):
-    def test_properties_have_a_managed_draggable_luna_caption(self):
-        dialog = mock.Mock()
-        gdk = SimpleNamespace(WindowTypeHint=SimpleNamespace(NORMAL=42))
-        configure_properties_window(dialog, gdk)
-        dialog.set_decorated.assert_called_once_with(False)
-        dialog.set_type_hint.assert_called_once_with(42)
-        dialog.set_skip_taskbar_hint.assert_called_once_with(False)
-        dialog.set_skip_pager_hint.assert_called_once_with(False)
-        dialog.set_keep_above.assert_called_once_with(False)
-        dialog.set_role.assert_called_once_with("ricebowl-xp-taskbar-properties")
-
     def test_dialog_centers_above_taskbar_on_any_monitor(self):
         from types import SimpleNamespace
 

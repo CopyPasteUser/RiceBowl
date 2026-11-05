@@ -8,13 +8,13 @@ grabbing buttons, managing X11 geometry by hand, or adding a resident daemon.
 from __future__ import annotations
 
 
-def configure_settings_window(window, Gdk, *, role: str) -> None:
+def configure_settings_window(window, Gdk, *, role: str, resizable: bool = True) -> None:
     """Make a rice-owned settings surface a normal desktop window."""
     window.set_type_hint(Gdk.WindowTypeHint.NORMAL)
     window.set_skip_taskbar_hint(False)
     window.set_skip_pager_hint(False)
     window.set_keep_above(False)
-    window.set_resizable(True)
+    window.set_resizable(resizable)
     window.set_role(role)
 
 

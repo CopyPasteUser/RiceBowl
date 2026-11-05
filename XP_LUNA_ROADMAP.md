@@ -32,6 +32,25 @@ Scope: the live `winxp` GTK/XFWM/X11 rice, not the read-only preview or other de
 - [ ] Verify device overview, actual GTK app compatibility and hardware behavior
   on the owner's XFCE laptop. Do not claim pixel-perfect equivalence or 1.0 yet.
 
+### Follow-up: consistent XP window chrome
+
+- [x] Introduce one shared, nonresident GTK3 Luna title strip for the owned
+  Taskbar Properties, Run, Help Center, System Properties and notification-icon
+  settings windows. Their close controls preserve modal responses and the Help
+  Center can still be resized; all captions use XFWM's real move operations.
+- [x] Scope the original cobalt border and red close treatment to XP-owned
+  dialogs. Win98 and Win7 dialogs retain their separate styles and backends.
+- [x] Cover caption roles, focus/keyboard handling and close semantics in tests.
+- [ ] Inspect native X11 1600×900 and 1024×768 captures of all five dialogs,
+  then publish Help/System screenshots alongside the current gallery.
+
+**Fidelity gate:** The requested >90% must be demonstrated across a defined
+desktop/menu/taskbar/flyout/dialog/window/interaction matrix, including actual
+Mint/XFCE testing. It cannot be inferred from code coverage, screenshots alone,
+or a subjective percentage. Current blockers include unthemed third-party
+Qt/Electron dialogs, unsupported XP desktop icon-grid actions, safe taskbar
+auto-hide and physical hardware validation; keep the release marked unfinished.
+
 ## Implementation stages
 
 ### P0 — Reference and safety
