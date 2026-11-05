@@ -72,6 +72,22 @@ dbus-run-session -- sh -eu -c '
     kill "$plate"
     wait "$plate" 2>/dev/null || :
     plate=
-    WAYLAND_DISPLAY=wayland-0 labwc --exit >/dev/null 2>&1 || :
-    wait "$compositor"
+    # We own this exact CI compositor PID. On labwc 0.7.1 the --exit client
+    # command is not a reliable external teardown mechanism in a headless job.
+    kill -TERM "$compositor"
+    count=0
+    while [ "$count" -lt 40 ]; do
+        state=$(ps -o stat= -p "$compositor" 2>/dev/null || :)
+        case "$state" in
+            ""|*Z*)
+                wait "$compositor" 2>/dev/null || :
+                echo "Native RicePlate and headless labwc shut down cleanly"
+                exit 0 ;;
+        esac
+        count=$((count + 1))
+        sleep 0.25
+    done
+    echo "CI labwc did not respond to SIGTERM" >&2
+    sed -n "1,70p" "$runtime/labwc.log" >&2
+    exit 1
 ' sh "$source_root" "$runtime" "$native"
