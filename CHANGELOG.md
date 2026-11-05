@@ -2,6 +2,10 @@
 
 ## Unreleased — internal ricePlate desktop preview (5 November 2026)
 
+- Preview Desktop icons now refresh automatically through Gio directory change
+  notifications (coalesced into a single short update). There is no idle poller,
+  timer-based scanning or extra background service. Filesystems without monitor
+  support retain an explicit Refresh fallback; monitors are cancelled on close.
 - Kept ricePlate within RiceBowl as a reusable, no-daemon backend plus optional
   GTK3 desktop canvas. `macrice riceware plate preview --style STYLE` displays
   the real current-user Desktop folder against the chosen rice's checked-in

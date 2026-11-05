@@ -196,7 +196,8 @@ def build_window(style: str, *, folder: Path | None = None,
     footer.pack_end(status, False, False, 0)
 
     runner = LatestRequestRunner(GLib.idle_add, workers=1)
-    state = {"snapshot": None, "closed": False}
+    state = {"snapshot": None, "closed": False, "monitor": None,
+             "monitor_path": None, "refresh_source": 0}
 
     def chosen_appearance():
         return plate.DesktopAppearance(style, family, int(size.get_active_id()),
@@ -244,6 +245,45 @@ def build_window(style: str, *, folder: Path | None = None,
         suffix = " · listing truncated at 256" if current.truncated else ""
         status.set_text(f"{len(visible)} of {len(current.items)} Desktop entries shown{suffix} · Preview only")
 
+    def stop_monitor():
+        if state["monitor"] is not None:
+            state["monitor"].cancel()
+            state["monitor"] = None
+        state["monitor_path"] = None
+
+    def monitor_changed(_monitor, _file, _other_file, _event_type):
+        if state["closed"]:
+            return
+        if state["refresh_source"]:
+            GLib.source_remove(state["refresh_source"])
+
+        def fire_refresh():
+            state["refresh_source"] = 0
+            if not state["closed"]:
+                refresh_files()
+            return False
+
+        # Native file notifications coalesce bursts; no periodic scanning.
+        state["refresh_source"] = GLib.timeout_add(180, fire_refresh)
+
+    def watch_directory(current):
+        if state["monitor_path"] == current.folder and state["monitor"] is not None:
+            return
+        stop_monitor()
+        directory = Path(current.folder)
+        if not current.exists or directory.is_symlink():
+            return
+        try:
+            monitor = Gio.File.new_for_path(current.folder).monitor_directory(
+                Gio.FileMonitorFlags.NONE, None)
+        except (OSError, GLib.Error):
+            # Network/virtual filesystems may not support notifications.
+            # The explicit Refresh action remains usable.
+            return
+        monitor.connect("changed", monitor_changed)
+        state["monitor"] = monitor
+        state["monitor_path"] = current.folder
+
     def refresh_files(_button=None):
         status.set_text("Reading Desktop…")
 
@@ -254,8 +294,10 @@ def build_window(style: str, *, folder: Path | None = None,
                 status.set_text("Could not read Desktop: " + response.error[:160])
                 hint.set_text("Desktop is unavailable. Check its permissions, then Refresh.")
                 hint.show()
+                stop_monitor()
                 return
             state["snapshot"] = response.value
+            watch_directory(response.value)
             render()
 
         runner.submit("desktop", lambda: plate.snapshot(folder=folder, limit=256), ready)
@@ -354,6 +396,10 @@ def build_window(style: str, *, folder: Path | None = None,
 
     def close(_window):
         state["closed"] = True
+        if state["refresh_source"]:
+            GLib.source_remove(state["refresh_source"])
+            state["refresh_source"] = 0
+        stop_monitor()
         runner.close()
 
     icons.connect("item-activated", open_item)
