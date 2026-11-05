@@ -177,6 +177,8 @@ def _copy_bundle(source: Path, stage: Path) -> None:
                  "RICEHUB.md", "RICEBOWL.md", "RICE_ECOSYSTEM_ROADMAP.md",
                  "RICE_WINDOWS_ROADMAP.md", "RICEWARE_FOUNDATIONS.md",
                  "RICEWARE_MIGRATION_GUIDE.md",
+        "XFCE_RESOURCE_BOUNDARIES.md",
+        "RICEPLATE_DESKTOP_ROADMAP.md",
                  "CONTRIBUTORS.md"):
         shutil.copy2(source / file, stage / file)
     (stage / MANAGED_MARKER).write_text("Managed by MacRice XFCE\n", encoding="ascii")

@@ -2,14 +2,62 @@
 
 import tempfile
 import json
+import io
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
-from macrice.doctor import diagnose, summary
+from macrice.doctor import Check, diagnose, summary
 from macrice.installer import MANAGED_MARKER
 
 
 class RiceCheckTests(unittest.TestCase):
+    def test_selected_rice_uses_existing_read_only_plan(self):
+        called = []
+
+        def planner(style):
+            called.append(style)
+            return ([{"before": "old", "after": "new"},
+                     {"before": "unchanged", "after": "unchanged"}], {}, None, None)
+
+        with tempfile.TemporaryDirectory() as directory:
+            checks = diagnose(environment={}, which=lambda _: None,
+                              data_root=Path(directory), bin_root=Path(directory),
+                              gi_available=False, style="aero-meadow", rice_planner=planner)
+        self.assertEqual(called, ["aero-meadow"])
+        result = next(c for c in checks if c.key == "rice-plan")
+        self.assertEqual(result.status, "ok")
+        self.assertIn("1 desktop changes planned", result.message)
+
+    def test_unavailable_rice_plan_preserves_private_diagnostics(self):
+        private_path = "/home/private-user/custom-gtk.css"
+
+        def planner(_style):
+            raise ValueError("Unsafe path: " + private_path)
+
+        with tempfile.TemporaryDirectory() as directory:
+            checks = diagnose(environment={}, which=lambda _: None,
+                              data_root=Path(directory), bin_root=Path(directory),
+                              gi_available=False, style="winxp", rice_planner=planner)
+        result = next(c for c in checks if c.key == "rice-plan")
+        self.assertEqual(result.status, "warning")
+        self.assertIn("macrice rice plan winxp", result.advice)
+        self.assertNotIn(private_path, repr(result))
+        with self.assertRaises(ValueError):
+            diagnose(style="unsupported", rice_planner=planner)
+
+    def test_rice_specific_cli_json_is_machine_readable(self):
+        from macrice.cli import main
+
+        checks = (Check("rice-plan", "ok", "winxp asset/settings plan passed (0 desktop changes planned)"),)
+        output = io.StringIO()
+        with patch("macrice.doctor.diagnose", return_value=checks) as doctor, \
+                patch("sys.stdout", output):
+            self.assertEqual(main(["doctor", "--style", "winxp", "--json"]), 0)
+        doctor.assert_called_once_with(style="winxp")
+        result = json.loads(output.getvalue())
+        self.assertEqual(result["checks"][0]["key"], "rice-plan")
+
     def test_healthy_xfce_session_without_extra_services(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

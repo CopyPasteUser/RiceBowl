@@ -77,6 +77,9 @@ def parser() -> argparse.ArgumentParser:
     commands.add_parser("inspect", help="Print a safe, read-only JSON appearance report")
     doctor = commands.add_parser("doctor", help="Run read-only RiceBowl/XFCE health checks")
     doctor.add_argument("--json", action="store_true", help="Print machine-readable health results")
+    from .riceware.profiles import PROFILE_FAMILIES
+    doctor.add_argument("--style", choices=tuple(PROFILE_FAMILIES),
+                        help="Also preflight the chosen rice's real assets and desktop settings")
     app_compat = commands.add_parser("app-compat", help="Inspect a window's theme compatibility without modifying apps")
     target = app_compat.add_mutually_exclusive_group(required=True)
     target.add_argument("--select", action="store_true", help="Select an X11 window with the pointer")
@@ -263,7 +266,7 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         if args.command == "doctor":
             from .doctor import diagnose, summary
-            checks = diagnose()
+            checks = diagnose(style=args.style)
             if args.json:
                 print(json.dumps({"checks": [item.as_dict() for item in checks],
                                   "summary": dict(zip(("ok", "warning", "info"), summary(checks)))},

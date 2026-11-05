@@ -787,8 +787,13 @@ def run() -> int:
 
         def _run_doctor(self):
             from .doctor import diagnose
-            self.doctor_summary.set_text("Checking the current session…")
-            self._work("Running read-only RiceBowl health checks…", diagnose, self._show_doctor)
+            selected = self.style_picker.get_active_id()
+            style = selected if selected in STYLES else None
+            self.doctor_summary.set_text(
+                "Checking session and " + STYLES[style].name + "…" if style else
+                "Checking the current session…")
+            self._work("Running read-only RiceBowl health checks…",
+                       lambda: diagnose(style=style), self._show_doctor)
 
         def _show_doctor(self, checks):
             from .doctor import summary

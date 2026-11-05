@@ -1,7 +1,8 @@
 """Read-only, on-demand environment checks for a recoverable XFCE desktop.
 
 Never enumerate nearby networks, private files, notification bodies or tokens.
-No process is started and no desktop setting is changed by these checks.
+Generic probes start no process. The optional rice-specific planner may query
+XFConf through its existing read-only interface; no desktop setting changes.
 """
 
 from __future__ import annotations
@@ -31,8 +32,9 @@ class Check:
 
 def diagnose(*, environment: Mapping[str, str] | None = None,
              which=None, data_root: Path | None = None,
-             bin_root: Path | None = None, gi_available: bool | None = None) -> tuple[Check, ...]:
-    """Inspect prerequisites without subprocess calls or hardware mutations."""
+             bin_root: Path | None = None, gi_available: bool | None = None,
+             style: str | None = None, rice_planner=None) -> tuple[Check, ...]:
+    """Inspect prerequisites and optionally a rice plan without any writes."""
     env = os.environ if environment is None else environment
     available = shutil.which if which is None else which
     root = data_home() if data_root is None else data_root
@@ -111,6 +113,31 @@ def diagnose(*, environment: Mapping[str, str] | None = None,
     ):
         add(key, any(available(command) for command in commands), label + " available",
             label + " unavailable", advice, optional=True)
+    if style is not None:
+        # Validate against the same family registry used by all rice renderers.
+        # A real plan also checks current settings, bundled assets and theme
+        # availability, so this adds no second, drifting dependency catalogue.
+        from .riceware.profiles import family
+
+        family(style)
+        if rice_planner is None:
+            from .rice import plan
+            rice_planner = plan
+        try:
+            changes, *_remaining = rice_planner(style)
+            count = sum(change["before"] != change["after"] for change in changes)
+        except (OSError, RuntimeError, ValueError, KeyError, TypeError):
+            # Do not leak private paths, XFConf values or user-owned CSS into
+            # the Hub's report or JSON output. Explicit `rice plan` remains
+            # available to the owner for the full diagnostic error.
+            add("rice-plan", False, f"{style} asset/settings plan passed",
+                f"{style} asset/settings plan needs attention",
+                f"Run 'macrice rice plan {style}' for the exact read-only error. "
+                "Review the reported assets, themes or settings before applying.")
+        else:
+            add("rice-plan", True,
+                f"{style} asset/settings plan passed ({count} desktop changes planned)",
+                f"{style} asset/settings preflight unavailable")
     return tuple(found)
 
 

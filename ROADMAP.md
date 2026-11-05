@@ -52,6 +52,9 @@ completion does **not** override contradictory on-device reports.
 
 - [x] `macrice doctor` / `--json`: read-only XFCE/X11, managed-install,
   launcher, optional hardware-backend and private shortcut-recovery checks.
+- [x] Selected-rice `macrice doctor --style STYLE`: reuse the real read-only
+  rice plan for bundled assets/settings and show concise readiness feedback in
+  the Hub without changing the running desktop. Hardware sign-off stays open.
 - [x] Opt-in official-origin fast-forward update: `macrice update check
   --refresh`, then `macrice update apply --yes`; stage a pinned Git revision,
   preserve user edits, save previous bundle and attempt reinstall on failure.
