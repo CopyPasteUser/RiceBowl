@@ -66,6 +66,8 @@ def _check_layout(source: Path) -> None:
         "macrice/hardware_status.py",
         "macrice/riceware_cli.py",
         "macrice/riceware/__init__.py",
+        "macrice/de/__init__.py",
+        "macrice/de/diagnostics.py",
         "macrice/riceware/spice.py",
         "macrice/riceware/pop.py",
         "macrice/riceware/plate.py",
@@ -83,6 +85,7 @@ def _check_layout(source: Path) -> None:
         "RICEWARE_MIGRATION_GUIDE.md",
         "RICEPLATE_DESKTOP_ROADMAP.md",
         "RICE_ECOSYSTEM_ROADMAP.md",
+        "RICEBOWL_DE_ROADMAP.md",
         "RICE_WINDOWS_ROADMAP.md",
         "macrice/preview.py",
         "macrice/thunar.py",
@@ -179,6 +182,7 @@ def _copy_bundle(source: Path, stage: Path) -> None:
         shutil.copytree(source / folder, stage / folder, ignore=ignore)
     for file in ("launcher.py", "README.md", "LICENSE", "ROADMAP.md", "RICE.md",
                  "RICEHUB.md", "RICEBOWL.md", "RICE_ECOSYSTEM_ROADMAP.md",
+                 "RICEBOWL_DE_ROADMAP.md",
                  "RICE_WINDOWS_ROADMAP.md", "RICEWARE_FOUNDATIONS.md",
                  "RICEPACK_SPEC.md",
                  "RICEWARE_MIGRATION_GUIDE.md",
@@ -270,6 +274,7 @@ def _write_entrypoints(installed: Path) -> None:
         + 'case "${1:-}" in\n'
         + '  update) shift; if [ "$#" -eq 0 ]; then set -- check --refresh --preserve-checkout; fi\n'
         + '    exec /usr/bin/python3 "' + str(installed / "launcher.py") + '" update "$@" ;;\n'
+        + '  de) exec /usr/bin/python3 "' + str(installed / "launcher.py") + '" "$@" ;;\n'
         + '  *) exec /usr/bin/python3 "' + str(installed / "launcher.py") + '" hub "$@" ;;\n'
         + 'esac\n'
     )

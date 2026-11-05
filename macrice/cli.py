@@ -68,6 +68,9 @@ def parser() -> argparse.ArgumentParser:
             trace.add_argument("--trace-stop", action="store_true", help="Stop Frutiger UI evidence recording")
             trace.add_argument("--trace-path", action="store_true", help="Print evidence file location without running the shell")
     commands.add_parser("session-sync", help="Reconcile active rice after XFCE autostart")
+    de = commands.add_parser("de", help="Inspect experimental RiceBowl Wayland desktop prerequisites")
+    de.add_argument("action", choices=("check",))
+    de.add_argument("--json", action="store_true", help="Read-only machine-readable preflight")
     commands.add_parser("session-menu", help="Toggle the active rice's application menu")
     commands.add_parser("session-control", help="Toggle the active rice's control panel")
     commands.add_parser("session-keys-restore", help="Restore the previous Super/Right Control shortcuts")
@@ -123,6 +126,17 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "riceware":
             from .riceware_cli import run as run_riceware
             return run_riceware(args)
+        if args.command == "de":
+            from .de.diagnostics import inspect
+            report = inspect()
+            if args.json:
+                print(json.dumps(report.as_dict(), indent=2))
+            else:
+                print(f"RiceBowl DE / labwc preflight (current session: {report.session_type})")
+                for check in report.checks:
+                    print(f"[{check.status.upper():8}] {check.label}: {check.detail}")
+                print("Standalone RiceBowl Wayland desktop: not implemented yet")
+            return 0 if report.compositor_available else 1
         if args.command in (None, "gui"):
             from .gui import run
             return run()

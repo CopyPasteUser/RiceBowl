@@ -1,5 +1,12 @@
 # RiceBowl riceware ecosystem roadmap
 
+> **Scope:** this document records the existing **XFCE/X11** riceware contracts
+> and their 4 November checkpoints. RiceBowl's new independent Wayland/labwc
+> direction is tracked in [RICEBOWL_DE_ROADMAP.md](RICEBOWL_DE_ROADMAP.md).
+> The repository formerly called riceExplorer is now **RiceField**, and the
+> proposed RiceTask has become **Taskotto** (repo created, app not yet built).
+> Historical checkpoints below are not DE completion claims.
+
 Status: **shared API 1.0 implemented; XP Luna and Windows 7 Aero device/tray integration wired, five other renderers and physical acceptance open** (4 November 2026). This remains the implementation contract for shared capabilities behind the seven structurally distinct rice families, not an announcement of completed standalone applications or a desktop release.
 
 **Goal:** one dependable Linux capability layer with seven deliberately different desktop experiences. A rice must be able to change component structure, navigation, controls and visual assets—not just colors—without duplicating filesystem safety logic, inventing system state or breaking a running session.
@@ -8,12 +15,12 @@ Status: **shared API 1.0 implemented; XP Luna and Windows 7 Aero device/tray int
 
 | Component | Ownership / deployment | Decision | Trigger for expansion |
 | --- | --- | --- | --- |
-| **riceExplorer** | Existing independent Rust repository | **Required shared file manager**; finish its safety/volume/network/recovery gates before replacing Thunar | Follow [riceExplorer ROADMAP](https://github.com/CopyPasteUser/riceExplorer/blob/main/ROADMAP.md) |
+| **RiceField** (formerly riceExplorer) | Existing independent Rust repository | **Optional shared file manager**; finish 1.0 device/network/recovery gates before voluntary Thunar handoff | Follow [RiceField ROADMAP](https://github.com/CopyPasteUser/Ricefield/blob/main/ROADMAP.md) |
 | **riceSpice** | Initially an internal RiceBowl capability module plus rice-owned renderers | **Build incrementally from existing backends**; no new daemon/repository now | Separate app/process only when independent lifecycle and multiple frontends materially require it |
 | **ricePop** | Initially adapters around existing native/XFCE notifications | **Conditional independent notification host** | Only when authentic cross-application history/actions cannot be provided safely through existing supported APIs |
-| **ricePlate** | Initially XFDesktop + existing rice-specific desktop adapters | **Conditional independent desktop surface** | Only when tested desktop requirements cannot be delivered through XFDesktop and scoped extensions |
+| **ricePlate** | Internal RiceBowl module | **XFDesktop-backed preview on X11; Wayland shell planned** | See the separate labwc [DE roadmap](RICEBOWL_DE_ROADMAP.md) |
 | **riceWine** | Opt-in internal prototype, future independent helper if justified | **Minimal isolated-prefix prototype; not required for RiceBowl 1.0** | Separate repository only after demonstrated need beyond Wine/Bottles/Lutris launch flows |
-| **RiceTask** | **Proposed independent Rust application; repository not yet authorized** | Proposed native Linux process manager with per-rice layouts; **deferred until explicit owner approval**. Existing XFCE/GNOME Task Manager launchers remain intact. | Owner explicitly authorizes creating the separate repository and defining safe process-control actions |
+| **Taskotto** | Independent Rust repository created | **Planning only**; existing task manager launchers remain intact | Implement and validate the app without making it a required RiceBowl runtime dependency |
 | RiceBowl shell/session | Existing RiceBowl repository | **Keep shared**: profile switching, backup/restore, launcher/taskbar/window tracking, tray ownership | Do not create a second shell manager |
 | Linux infrastructure | NetworkManager, BlueZ, PipeWire/PulseAudio, UPower, UDisks2/GVfs, XFWM4/XFCE | **Reuse platform services** | Never create a competing network, Bluetooth, audio or window-management daemon for aesthetic fidelity |
 
@@ -27,12 +34,12 @@ All helper names use the same **rice** family but keep an immediately understand
 
 | Name | User-facing purpose |
 | --- | --- |
-| **riceExplorer** | Customizable file manager (existing separate Rust project) |
+| **RiceField** | Customizable file manager (existing separate Rust project, 1.0 release candidate) |
 | **riceSpice** | Real Linux system settings and profile-specific Control Panels (start inside RiceBowl) |
 | **ricePop** | Notification delivery/history and profile-specific presentation (conditional) |
 | **ricePlate** | Desktop surface, icons and desktop context actions (conditional) |
 | **riceWine** | Opt-in Wine application setup, per-app prefixes and launch integration (future optional project) |
-| **RiceTask** | Proposed customizable native process manager (idea recorded, **not implemented or published**; explicit approval pending) |
+| **Taskotto** | Independent process-manager repository, **application not yet implemented** |
 
 The names are stable enough for planning; reserve public executable names, D-Bus IDs and separate repositories only when implementation boundaries have passed their decision gates. A new rice is **not** required to depend on all five helpers.
 

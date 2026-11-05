@@ -1,10 +1,16 @@
 # ricePlate — desktop ownership inside RiceBowl
 
+> This document describes the **existing XFCE/X11 path** and its guarded
+> preview. The separate **labwc/Wayland** RicePlate implementation is planned
+> in [RICEBOWL_DE_ROADMAP.md](RICEBOWL_DE_ROADMAP.md); it does not silently
+> replace the current XFDesktop session.
+
 **Decision (5 November 2026):** ricePlate remains an internal RiceBowl
 component. Building and maintaining a separate repository or permanently
 resident desktop process is **not** justified by the current functionality.
 XFWM4, XFConf/XSettings and XFCE session management are intentionally kept.
-Changing that decision requires an actual measured and tested benefit.
+Changing that decision **within the existing X11 session** requires an actual
+measured and tested benefit.
 
 ## Stage 1: safe desktop canvas preview (implemented)
 
