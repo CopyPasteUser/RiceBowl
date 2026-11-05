@@ -3115,7 +3115,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 return False
             menu = Gtk.Menu()
             self._track_start_popup(menu)
-            item = Gtk.MenuItem(label="Properties")
+            item = self._luna_menu_item("Properties", "preferences-system")
             item.connect("activate", lambda *_args: self.luna_open_taskbar_properties())
             menu.append(item)
             menu.show_all()
@@ -3182,7 +3182,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             ):
                 if title in ("Show Desktop", "Desktop Properties…"):
                     menu.append(Gtk.SeparatorMenuItem())
-                item = Gtk.MenuItem(label=title)
+                item = self._luna_menu_item(title)
                 if title == "Desktop Properties…":
                     item.set_sensitive(shutil.which("xfdesktop-settings") is not None)
                 elif title == "Customize notification icons…":
@@ -3502,14 +3502,14 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             menu = Gtk.Menu()
             self._track_start_popup(menu)
             for window in group.windows:
-                item = Gtk.MenuItem(label=window.title)
+                item = self._luna_menu_item(window.title)
                 item.connect("activate", lambda _item, xid=window.xid:
                              self._activate_task(xid))
                 menu.append(item)
             if show_close:
                 menu.append(Gtk.SeparatorMenuItem())
                 for window in group.windows:
-                    item = Gtk.MenuItem(label="Close " + window.title)
+                    item = self._luna_menu_item("Close " + window.title)
                     item.connect("activate", lambda _item, xid=window.xid:
                                  self._win7_close_window(xid))
                     menu.append(item)
@@ -4394,7 +4394,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 button.set_tooltip_text("Open " + str(folder) if folder.is_dir() else
                                         "Create and open " + str(folder) + " (with confirmation)")
                 places.pack_start(button, False, False, 0)
-            places.pack_start(self._luna_navigation("My Computer", "computer", path=Path("/")),
+            places.pack_start(self._luna_navigation("My Computer", "computer",
+                                                     callback=self._open_luna_computer),
                               False, False, 0)
             places.pack_start(self._luna_recent_documents(), False, False, 0)
             places.pack_start(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL), False, False, 5)
@@ -5598,7 +5599,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 return
             if profile == "winxp":
                 width = min(746, max(0, rect.width - 24))
-                height = min(536, max(0, rect.height - panel_height - 24))
+                height = min(592, max(0, rect.height - panel_height - 24))
                 if width < 410 or height < 320:
                     self._error("The display is too small for Control Panel.")
                     return
@@ -6172,6 +6173,21 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self._hide_menu()
             except GLib.Error as exc:
                 self._error(str(exc))
+
+        def _open_luna_computer(self):
+            """Use GIO's real devices/volumes view, with a filesystem fallback.
+
+            Thunar/GVfs commonly handles computer:/// but some minimal systems
+            do not install that URI backend. Neither path invents devices.
+            """
+            try:
+                Gio.AppInfo.launch_default_for_uri("computer:///", None)
+            except GLib.Error as exc:
+                logging.getLogger(__name__).info(
+                    "Device overview unavailable, opening filesystem root: %s", exc)
+                self._open_uri(Path("/").as_uri())
+                return
+            self._hide_menu()
 
         def _launch(self, app):
             try:

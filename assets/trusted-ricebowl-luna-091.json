@@ -1,8 +1,8 @@
 {
   "schema": 1,
-  "description": "Exact original RiceBowl v0.9.1 Luna Blue source blobs; whitelist only for backup-safe upgrades.",
+  "description": "Exact original RiceBowl v0.9.1 and pre-overhaul Luna Blue source blobs; whitelist only for backup-safe upgrades.",
   "files": {
-    "assets/themes/RiceHub-Luna/gtk-3.0/gtk.css": ["9594455009a6346fc74fa44a0e527bb107661932"],
+    "assets/themes/RiceHub-Luna/gtk-3.0/gtk.css": ["9594455009a6346fc74fa44a0e527bb107661932", "9d4c42577e22dc5847aa1315cc5d7c9f6c94c328"],
     "assets/themes/RiceHub-Luna/xfwm4/bottom-active.png": ["bbc963096966382fd56d40f539b06627b9dac842"],
     "assets/themes/RiceHub-Luna/xfwm4/bottom-inactive.png": ["41ee06e1fb9268ee8d7e1a32073b96e648783a2c"],
     "assets/themes/RiceHub-Luna/xfwm4/bottom-left-active.png": ["bbc963096966382fd56d40f539b06627b9dac842"],

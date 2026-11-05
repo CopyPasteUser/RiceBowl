@@ -27,6 +27,8 @@ Give XFCE a completely different personality—from Windows XP nostalgia to Frut
 
 Each style brings its own taskbar, launcher, menus, icons, wallpaper and system controls. RiceBowl uses native GTK and real Linux services—**no Electron or fake device toggles**.
 
+**XP Luna:** faithful two-column Start, cobalt taskbar, custom Linux icon art, Explorer-style Control Panel navigation and working taskbar/Start preferences. [Fidelity roadmap](XP_LUNA_ROADMAP.md). XFWM4 and Thunar remain available.
+
 ## Get started
 
 For **Linux Mint XFCE or another XFCE/X11 desktop**:

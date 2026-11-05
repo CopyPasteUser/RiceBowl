@@ -107,50 +107,114 @@ def show(shell, Gtk):
                         transient_for=shell.bar,
                         flags=Gtk.DialogFlags.DESTROY_WITH_PARENT)
     dialog.get_style_context().add_class("luna-taskbar-properties")
-    dialog.set_default_size(408, 366)
+    dialog.set_default_size(438, 456)
     dialog.set_resizable(False)
     dialog.add_button("Cancel", Gtk.ResponseType.CANCEL)
     dialog.add_button("Apply", Gtk.ResponseType.APPLY)
     dialog.add_button("OK", Gtk.ResponseType.OK)
     dialog.set_default_response(Gtk.ResponseType.OK)
     area = dialog.get_content_area()
-    area.set_border_width(13)
-    area.set_spacing(10)
+    area.set_border_width(11)
+    area.set_spacing(8)
     tabs = Gtk.Notebook()
     area.pack_start(tabs, True, True, 0)
 
-    task = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10)
-    task.set_border_width(13)
+    task = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
+    task.set_border_width(11)
     tabs.append_page(task, Gtk.Label(label="Taskbar"))
-    intro = Gtk.Label(label="Taskbar appearance", xalign=0)
-    intro.get_style_context().add_class("luna-properties-heading")
-    task.pack_start(intro, False, False, 0)
+    sample = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+    sample.get_style_context().add_class("luna-properties-preview")
+    sample.get_accessible().set_name("Live visual preview of the XP taskbar settings")
+    sample.pack_start(Gtk.Label(label="RiceBowl XP Luna · Desktop preview", xalign=.5),
+                      True, True, 7)
+    sample_bar = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
+    sample_bar.get_style_context().add_class("luna-properties-preview-bar")
+    sample_start = Gtk.Label(label="◉ start")
+    sample_start.get_style_context().add_class("luna-properties-preview-start")
+    sample_bar.pack_start(sample_start, False, False, 0)
+    sample_quick = Gtk.Label(label="◫  ◈")
+    sample_quick.set_no_show_all(True)
+    sample_quick.get_style_context().add_class("luna-properties-preview-quick")
+    sample_bar.pack_start(sample_quick, False, False, 0)
+    sample_tasks = Gtk.Label(label="▣  Files")
+    sample_tasks.get_style_context().add_class("luna-properties-preview-task")
+    sample_bar.pack_start(sample_tasks, True, True, 0)
+    sample_clock = Gtk.Label(label="09:41")
+    sample_clock.set_no_show_all(True)
+    sample_clock.get_style_context().add_class("luna-properties-preview-clock")
+    sample_bar.pack_end(sample_clock, False, False, 0)
+    sample.pack_end(sample_bar, False, False, 0)
+    task.pack_start(sample, False, False, 0)
+
+    appearance = Gtk.Frame(label="Taskbar appearance")
+    appearance_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+    appearance_box.set_border_width(9)
+    appearance.add(appearance_box)
+    task.pack_start(appearance, False, False, 0)
     fields = {}
     for key, label, hint in (
         ("show_quick_launch", "Show Quick Launch", "Show pinned shortcuts and Show Desktop"),
         ("group_similar_windows", "Group similar taskbar buttons", "Combine windows from the same application when the taskbar is crowded"),
-        ("show_clock", "Show the clock", "Keep date and calendar available from the notification area"),
     ):
         check = Gtk.CheckButton(label=label)
         check.set_active(shell._luna_taskbar_options[key])
         check.set_tooltip_text(hint)
         check.get_accessible().set_name(label)
-        task.pack_start(check, False, False, 0)
+        appearance_box.pack_start(check, False, False, 0)
         fields[key] = check
+
+    notification = Gtk.Frame(label="Notification area")
+    notification_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5)
+    notification_box.set_border_width(9)
+    notification.add(notification_box)
+    clock = Gtk.CheckButton(label="Show the clock")
+    clock.set_active(shell._luna_taskbar_options["show_clock"])
+    clock.set_tooltip_text("Open the calendar from the actual notification area")
+    clock.get_accessible().set_name("Show the clock")
+    fields["show_clock"] = clock
+    notification_box.pack_start(clock, True, True, 0)
+    customize = Gtk.Button(label="Customize…")
+    customize.set_sensitive(getattr(shell, "_tray", None) is not None)
+    customize.set_tooltip_text("Choose the real StatusNotifier icons shown in the tray")
+    customize.connect("clicked", lambda _button: shell._tray.open_preferences())
+    notification_box.pack_end(customize, False, False, 0)
+    task.pack_start(notification, False, False, 0)
+
+    def refresh_sample(_widget=None):
+        sample_quick.set_visible(fields["show_quick_launch"].get_active())
+        sample_clock.set_visible(fields["show_clock"].get_active())
+        sample_tasks.set_text("▣  Files × 2" if fields["group_similar_windows"].get_active()
+                              else "▣ Files   ▣ Files")
+
+    for check in fields.values():
+        check.connect("toggled", refresh_sample)
+    refresh_sample()
     unavailable = Gtk.Label(
-        label="Auto-hide and locking require monitor-safe X11 edge handling; "
-              "they are not enabled in this release.", xalign=0)
+        label="The XFWM window manager remains active. Taskbar auto-hide "
+              "is unavailable until edge handling is safe on multiple monitors.", xalign=0)
     unavailable.set_line_wrap(True)
-    unavailable.set_max_width_chars(38)
+    unavailable.set_max_width_chars(46)
     unavailable.get_style_context().add_class("luna-properties-note")
     task.pack_end(unavailable, False, False, 0)
 
-    start = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=11)
-    start.set_border_width(13)
+    start = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=9)
+    start.set_border_width(11)
     tabs.append_page(start, Gtk.Label(label="Start Menu"))
-    heading = Gtk.Label(label="Start menu appearance", xalign=0)
+    heading = Gtk.Label(label="Customize the Start menu", xalign=0)
     heading.get_style_context().add_class("luna-properties-heading")
     start.pack_start(heading, False, False, 0)
+    illustration = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0)
+    illustration.get_style_context().add_class("luna-properties-start-preview")
+    illustration.pack_start(Gtk.Label(label="◉  Linux desktop", xalign=0), False, False, 0)
+    columns = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
+    programs = Gtk.Label(label="Programs\nDocuments\nAll Programs  ▸", xalign=0)
+    programs.get_style_context().add_class("luna-properties-start-apps")
+    places = Gtk.Label(label="My Computer\nControl Panel\nHelp and Support", xalign=0)
+    places.get_style_context().add_class("luna-properties-start-places")
+    columns.pack_start(programs, True, True, 0)
+    columns.pack_start(places, True, True, 0)
+    illustration.pack_start(columns, True, True, 0)
+    start.pack_start(illustration, False, False, 0)
     row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
     label = Gtk.Label(label="Number of recent programs:", xalign=0)
     row.pack_start(label, True, True, 0)
@@ -166,11 +230,53 @@ def show(shell, Gtk):
     explanation.set_line_wrap(True)
     explanation.set_max_width_chars(38)
     start.pack_start(explanation, False, False, 0)
+    history_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+    history_text = Gtk.Label(label="Recently opened programs", xalign=0)
+    history_row.pack_start(history_text, True, True, 0)
+    clear = Gtk.Button(label="Clear List")
+    clear.get_accessible().set_name("Clear recent XP Start menu programs")
+    history_row.pack_end(clear, False, False, 0)
+    start.pack_start(history_row, False, False, 0)
 
     error = Gtk.Label(xalign=0)
     error.get_style_context().add_class("luna-properties-error")
     error.set_line_wrap(True)
     area.pack_end(error, False, False, 0)
+
+    def clear_history(_button):
+        """Clear only XP usage history after confirmation; preserve favorites."""
+        from .luna_start_state import clear_recent_programs, save_start_state
+
+        state = shell._luna_start_state
+        if state is None or not state.launches:
+            clear.set_sensitive(False)
+            return
+        confirm = Gtk.MessageDialog(
+            transient_for=dialog, modal=True, message_type=Gtk.MessageType.QUESTION,
+            buttons=Gtk.ButtonsType.YES_NO, text="Clear recently used programs?")
+        confirm.format_secondary_text(
+            "Only the XP Start menu history will be cleared. Pinned favorites stay in place.")
+        try:
+            if confirm.run() != Gtk.ResponseType.YES:
+                return
+        finally:
+            confirm.destroy()
+        previous = dict(state.launches)
+        clear_recent_programs(state)
+        try:
+            save_start_state(state)
+        except (OSError, ValueError) as exc:
+            state.launches = previous
+            error.set_text("Could not clear recent programs: " + str(exc))
+            error.show()
+            return
+        clear.set_sensitive(False)
+        error.hide()
+        if shell.menu is not None and shell.menu.get_visible():
+            shell._populate(shell.search.get_text())
+
+    clear.set_sensitive(bool(shell._luna_start_state and shell._luna_start_state.launches))
+    clear.connect("clicked", clear_history)
 
     def respond(_dialog, response):
         if response not in (Gtk.ResponseType.APPLY, Gtk.ResponseType.OK):
@@ -201,5 +307,6 @@ def show(shell, Gtk):
     dialog.connect("map-event", lambda *_args: GLib.idle_add(center_dialog))
     shell._luna_taskbar_dialog = dialog
     dialog.show_all()
+    refresh_sample()
     error.hide()
     return dialog

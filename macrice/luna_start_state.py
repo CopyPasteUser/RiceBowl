@@ -101,6 +101,14 @@ def record_launch(state: StartState, identifier: str, *, now: int | None = None)
         state.launches = dict(ranked[:80])
 
 
+def clear_recent_programs(state: StartState) -> bool:
+    """Forget recent-use history only; never erase the user's Start favorites."""
+    if not state.launches:
+        return False
+    state.launches.clear()
+    return True
+
+
 def change_favorite(state: StartState, identifier: str, action: str,
                     defaults: tuple[str, ...] = ()) -> bool:
     """Add/remove/reorder pinned Start entries without altering taskbar pins."""

@@ -141,6 +141,16 @@ secondary pages; prototypes and the release roadmap do not crowd the selector.
   colors and states are in `heritage_shell.DETAIL_CSS["winxp"]` and
   `CONTROL_DETAIL_CSS["winxp"]`. User folders resolve through XDG directory
   settings; missing folders offer an explicit create/open confirmation.
+  `scripts/build_heritage_assets.py --luna-only` also installs the checked-in
+  Luna GTK fidelity control layer (focus rings, selection, check/radio, scale,
+  scrollbar and tooltip states). The taskbar properties view mirrors the
+  native 2001-style grouped options and provides a noninteractive preview that
+  updates with each control; its Clear List action asks first and erases only
+  XP-specific recent-program history. The Control Panel adds a real Back/Home/
+  Search toolbar and breadcrumb above the original category/task layout.
+  My Computer opens Gio's `computer:///` view when supported, falling back to
+  the filesystem root on installations without the GVfs backend. Original
+  recent-document artwork replaces the default OS-specific action glyph.
   `scripts/build_heritage_assets.py --luna-only` refreshes the original drawn
   XFWM4 titlebar/button states and layered GTK/Thunar controls without touching
   other reviewed themes. `macrice/luna_control_panel.py` is a centered XP category

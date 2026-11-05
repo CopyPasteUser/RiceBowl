@@ -128,12 +128,12 @@ def build(shell, Gtk, Gdk):
     window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
     window.set_title("Control Panel")
     window.set_decorated(False)
-    from gi.repository import GLib
+    from gi.repository import GLib, Pango
     from .rice_windows import configure_settings_window, draggable_caption
     from .window_geometry import restore_and_track
 
     configure_settings_window(window, Gdk, role="ricebowl-xp-control-panel")
-    window.set_default_size(746, 536)
+    window.set_default_size(746, 592)
     shell._luna_settings_positioned = restore_and_track(
         window, "ricebowl-xp-control-panel", Gdk, GLib)
 
@@ -159,6 +159,36 @@ def build(shell, Gtk, Gdk):
     caption.pack_end(close, False, False, 0)
 
     frame.pack_start(caption, False, False, 0)
+
+    # XP's Explorer-era command/address chrome, with genuine GTK destinations.
+    # These controls operate on this Control Panel only, never XFCE settings.
+    toolbar = shell._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=5),
+                           "luna-control-toolbar")
+    back_tool = shell._class(Gtk.Button(label="◂ Back"), "luna-control-tool")
+    back_tool.set_sensitive(False)
+    back_tool.get_accessible().set_name("Back to Control Panel categories")
+    back_tool.connect("clicked", lambda _button: show_home())
+    toolbar.pack_start(back_tool, False, False, 0)
+    home_tool = shell._class(Gtk.Button(label="⌂ Home"), "luna-control-tool")
+    home_tool.get_accessible().set_name("Control Panel home")
+    home_tool.connect("clicked", lambda _button: show_home())
+    toolbar.pack_start(home_tool, False, False, 0)
+    toolbar.pack_start(Gtk.Separator(orientation=Gtk.Orientation.VERTICAL), False, False, 3)
+    search_tool = shell._class(Gtk.Button(label="⌕ Search"), "luna-control-tool")
+    search_tool.get_accessible().set_name("Search Control Panel settings")
+    search_tool.connect("clicked", lambda _button: search.grab_focus())
+    toolbar.pack_start(search_tool, False, False, 0)
+    toolbar.pack_start(Gtk.Box(), True, True, 0)
+    frame.pack_start(toolbar, False, False, 0)
+
+    address_bar = shell._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6),
+                               "luna-control-address")
+    address_bar.pack_start(Gtk.Label(label="Address", xalign=0), False, False, 0)
+    current_location = shell._class(Gtk.Label(label="Control Panel", xalign=0),
+                                    "luna-control-location")
+    current_location.set_ellipsize(Pango.EllipsizeMode.END)
+    address_bar.pack_start(current_location, True, True, 0)
+    frame.pack_start(address_bar, False, False, 0)
 
     body = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
     frame.pack_start(body, True, True, 0)
@@ -243,6 +273,9 @@ def build(shell, Gtk, Gdk):
         toggle.set_label("Switch to Category View" if home_view[0] == "classic"
                          else "Switch to Classic View")
         back.hide()
+        back_tool.set_sensitive(False)
+        current_location.set_text("Control Panel" if home_view[0] == "categories"
+                                  else "Control Panel / Classic View")
 
     def show_category(category):
         if search.get_text():
@@ -265,6 +298,8 @@ def build(shell, Gtk, Gdk):
         heading.set_text(category)
         description.set_text("Pick a task")
         back.show()
+        back_tool.set_sensitive(True)
+        current_location.set_text("Control Panel / " + category)
 
     for index, (name, icon, _commands, explanation) in enumerate(LUNA_CATEGORIES):
         button = shell._class(Gtk.Button(), "luna-control-category")
@@ -319,6 +354,8 @@ def build(shell, Gtk, Gdk):
         heading.set_text("Search results")
         description.set_text(str(len(found)) + " matching task" + ("" if len(found) == 1 else "s"))
         back.show()
+        back_tool.set_sensitive(True)
+        current_location.set_text("Control Panel / Search results")
 
     search.connect("search-changed", on_search)
 

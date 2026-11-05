@@ -10,6 +10,25 @@ Scope: the live `winxp` GTK/XFWM/X11 rice, not the read-only preview or other de
 - Compact molded cobalt taskbar with green Start button, darker active tasks and one brighter blue notification area; rounded blue title bar, individually colored minimize/maximize/close controls, readable classic file-manager controls.
 - Every enabled menu entry launches a real installed application, folder or XFCE utility; missing backends are disabled with an explanation. Preserve app search, keyboard access, pinning, Wnck tasks, volume/battery/network reporting, session restore and the verified 0.9.1 handoff.
 
+## Luna overhaul — 5 November 2026
+
+- [x] Add Linux-backed `My Computer` devices/volumes navigation with an
+  explicit filesystem fallback where GVfs is unavailable.
+- [x] Add an Explorer-era Control Panel Back/Home/Search toolbar and live
+  category/address breadcrumb without changing the working settings backend.
+- [x] Rebuild Taskbar and Start Menu Properties around XP-era grouped controls,
+  a responsive settings preview and actual notification-icon customization.
+- [x] Add an explicitly confirmed Clear List operation for recent programs;
+  preserve and separately persist user favorites.
+- [x] Finish Luna-only GTK checkbox/radio/scale/focus/menu/scrollbar styles,
+  polish Start/program interaction states and add original recent-file art.
+- [x] Run focused and repository-wide unit tests; parse both native and system
+  GTK3 CSS with the real GTK provider.
+- [ ] Validate the changed windows and flyouts in native CI screenshot captures
+  at 1600×900 and 1024×768, then refresh the committed XP screenshots.
+- [ ] Verify device overview, actual GTK app compatibility and hardware behavior
+  on the owner's XFCE laptop. Do not claim pixel-perfect equivalence or 1.0 yet.
+
 ## Implementation stages
 
 ### P0 — Reference and safety
