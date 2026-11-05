@@ -43,12 +43,29 @@ class SecureDeviceTests(unittest.TestCase):
         before = hw.BluetoothState(True, (), (hw.BluetoothDevice(address, "Headset", False, False),))
         after = hw.BluetoothState(True, (), (hw.BluetoothDevice(address, "Headset", True, False),))
         with mock.patch.object(hw, "read_bluetooth", side_effect=[before, after]), \
-                mock.patch.object(hw.shutil, "which", return_value="/usr/bin/bluetoothctl"), \
-                mock.patch.object(hw.subprocess, "run", return_value=subprocess.CompletedProcess([], 0)) as run:
+                mock.patch("macrice.bluetooth_dbus.pair_device") as pair:
             self.assertEqual(hw.pair_bluetooth_device(address), after)
-        self.assertEqual(run.call_args.args[0], ["bluetoothctl", "pair", address])
+        pair.assert_called_once_with(address)
+
+    def test_discovery_requires_a_real_bluez_readback(self):
+        with mock.patch("macrice.bluetooth_dbus.discover") as scan, \
+                mock.patch.object(hw, "_bluetooth_via_dbus", return_value=None):
+            with self.assertRaisesRegex(RuntimeError, "device list is unavailable"):
+                hw.scan_bluetooth_devices(duration=3)
+        scan.assert_called_once_with(duration=3, cancel=None)
 
     def test_bluetooth_pairing_rejects_unknown_device_before_mutation(self):
         with mock.patch.object(hw, "read_bluetooth", return_value=hw.BluetoothState(True, (), ())):
             with self.assertRaisesRegex(ValueError, "Discover"):
                 hw.pair_bluetooth_device("AA:BB:CC:DD:EE:FF")
+
+    def test_bluetoothctl_still_works_when_gi_dbus_transport_is_missing(self):
+        address = "AA:BB:CC:DD:EE:FF"
+        before = hw.BluetoothState(True, (), (hw.BluetoothDevice(address, "Headset", False, False),))
+        after = hw.BluetoothState(True, (), (hw.BluetoothDevice(address, "Headset", True, False),))
+        with mock.patch.object(hw, "read_bluetooth", side_effect=[before, after]), \
+                mock.patch("macrice.bluetooth_dbus.pair_device", side_effect=ImportError("GI unavailable")), \
+                mock.patch.object(hw.shutil, "which", return_value="/usr/bin/bluetoothctl"), \
+                mock.patch.object(hw.subprocess, "run", return_value=subprocess.CompletedProcess([], 0)) as run:
+            self.assertEqual(hw.pair_bluetooth_device(address), after)
+        self.assertEqual(run.call_args.args[0], ["bluetoothctl", "pair", address])

@@ -1,5 +1,19 @@
 # RiceBowl changelog
 
+## Unreleased — BlueZ discovery and native display topology (5 November 2026)
+
+- Added real, nine-second BlueZ D-Bus device discovery inside the Frutiger
+  Bluetooth flyout, with cancellation when closing, one owned discovery session
+  at a time, guaranteed stop and no new background daemon.
+- Pairing now uses BlueZ `Device1.Pair` and its system default agent for any
+  interactive PIN/confirmation; missing agents or rejected pairing are reported
+  as failures, not success. No auto-trust or automatic post-pair connection.
+- Aqua's Display Control Center lists actual RandR outputs, current mode,
+  screen position, primary flag and available modes. It performs no monitor
+  writes; safe resolution changes stay with XFCE Display Settings for now.
+- Extended deterministic DBus/scan-cancel/parser tests and README readiness
+  matrix. Mac Aurora remains unchanged; physical hardware acceptance pending.
+
 ## Unreleased — Frutiger media and mounted-location follow-up (4 November 2026)
 
 - Added native MPRIS player status and capability-gated Play/Pause/Next/Previous

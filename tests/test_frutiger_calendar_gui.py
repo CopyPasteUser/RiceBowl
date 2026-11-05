@@ -109,6 +109,48 @@ class FrutigerCalendarGtkTests(unittest.TestCase):
                 popup.close()
             window.destroy()
 
+    def test_bluetooth_scan_button_is_real_and_closing_cancels_discovery(self):
+        import gi
+
+        gi.require_version("Gtk", "3.0")
+        from gi.repository import Gtk
+        from macrice.frutiger_flyouts import AquaFlyouts
+        from macrice.hardware_status import BluetoothState
+
+        initialized = Gtk.init_check()
+        if not (initialized[0] if isinstance(initialized, tuple) else initialized):
+            self.skipTest("Native GTK display unavailable; Xvfb CI supplies one")
+        window = Gtk.Window()
+        anchor = Gtk.Button(label="Bluetooth")
+        window.add(anchor)
+        runner = mock.Mock()
+        shell = SimpleNamespace(
+            frutiger_controller=runner, aqua_bluetooth_button=anchor,
+            _status_widgets={}, _class=lambda widget, css: widget,
+            _icon=lambda name, size: Gtk.Image.new_from_icon_name(name, size),
+        )
+        window.show_all()
+        try:
+            panel = AquaFlyouts(shell, Gtk)
+            popup = panel._build("bluetooth")
+            panel.popovers["bluetooth"] = popup
+            popup.show_all()
+            popup.popup()
+            panel._render_details("bluetooth", BluetoothState(True, (), (), "D-Bus"))
+            scan = next(button for row in panel.details["bluetooth"].get_children()
+                        if isinstance(row, Gtk.Box)
+                        for button in row.get_children()
+                        if isinstance(button, Gtk.Button) and button.get_label() == "Scan…")
+            scan.clicked()
+            runner.submit.assert_called_once()
+            self.assertEqual(runner.submit.call_args.args[0], "aqua-scan-bluetooth")
+            event = panel._bluetooth_scan_event
+            popup.popdown()
+            panel._discard("bluetooth")
+            self.assertTrue(event.is_set())
+        finally:
+            window.destroy()
+
 
 if __name__ == "__main__":
     unittest.main()

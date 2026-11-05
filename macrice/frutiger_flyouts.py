@@ -6,6 +6,8 @@ refreshes the popover; its sound writes use the verified shared backend.
 
 from __future__ import annotations
 
+import threading
+
 
 class AquaFlyouts:
     def __init__(self, shell, Gtk):
@@ -20,6 +22,7 @@ class AquaFlyouts:
         self._confirming = set()
         self.audio_scale = None
         self.audio_mute = None
+        self._bluetooth_scan_event = None
 
     def show(self, kind: str):
         if kind not in ("network", "audio", "battery", "bluetooth"):
@@ -50,6 +53,11 @@ class AquaFlyouts:
         self.popovers.clear()
 
     def _discard(self, kind):
+        if kind == "bluetooth":
+            event = getattr(self, "_bluetooth_scan_event", None)
+            if event is not None:
+                event.set()
+                self._bluetooth_scan_event = None
         self._generations[kind] = self._generations.get(kind, 0) + 1
         self._busy.discard(kind)
         self._confirming.discard(kind)
@@ -202,6 +210,39 @@ class AquaFlyouts:
 
         self.controller.submit("aqua-write-" + kind, operation, complete)
 
+    def _start_bluetooth_scan(self):
+        """Use an existing worker for one cancellable, bounded BlueZ scan."""
+        kind = "bluetooth"
+        if (kind in self._busy or kind not in self.popovers
+                or not self.popovers[kind].get_visible()):
+            return
+        event = threading.Event()
+        self._bluetooth_scan_event = event
+        self._busy.add(kind)
+        self._generations[kind] = self._generations.get(kind, 0) + 1
+        generation = self._generations[kind]
+        self.details[kind].set_sensitive(False)
+        self.detail_status[kind].set_text("Discovering nearby devices for up to 9 seconds… Close to cancel.")
+
+        def complete(response):
+            if self._bluetooth_scan_event is event:
+                self._bluetooth_scan_event = None
+            if (generation != self._generations.get(kind)
+                    or kind not in self.popovers or not self.popovers[kind].get_visible()):
+                return
+            self._busy.discard(kind)
+            if response.error:
+                self.details[kind].set_sensitive(True)
+                self.detail_status[kind].set_text("Discovery unavailable: " + response.error[:165])
+                return
+            self._render_details(kind, response.value)
+            self.details[kind].set_sensitive(True)
+            self.detail_status[kind].set_text("Discovery finished · only devices visible to BlueZ are shown")
+
+        self.controller.submit("aqua-scan-bluetooth",
+                               lambda: self.controller.hardware.scan_bluetooth_devices(
+                                   duration=9, cancel=event), complete)
+
     def _row(self, parent, title, *, button=None, action=None,
              secondary_button=None, secondary_action=None):
         Gtk = self.Gtk
@@ -314,9 +355,17 @@ class AquaFlyouts:
                           action=(lambda: self._confirm_radio_off("bluetooth", lambda:
                                       hw.set_bluetooth_power(False))) if state.powered else
                                   lambda: self._change("bluetooth", lambda: hw.set_bluetooth_power(True)))
+            if state.powered is True:
+                self._row(box, "Search for nearby devices · 9s", button="Scan…",
+                          action=self._start_bluetooth_scan)
             if not state.devices:
-                self._row(box, "No known Bluetooth devices · discover in system settings")
-            for device in state.devices[:5]:
+                self._row(box, "No known Bluetooth devices · try Scan")
+            # Keep active connections visible while giving newly found,
+            # unpaired devices priority over old disconnected cache entries.
+            ranked = sorted(state.devices, key=lambda item:
+                            (0 if item.connected else 1 if not item.paired else 2,
+                             item.name.casefold()))
+            for device in ranked[:5]:
                 caption = device.name[:42] + (" · Connected" if device.connected else "")
                 if state.powered is True and device.paired:
                     self._row(box, caption,

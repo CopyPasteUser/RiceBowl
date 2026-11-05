@@ -618,20 +618,39 @@ def pair_bluetooth_device(address: str) -> BluetoothState:
         raise RuntimeError("Switch Bluetooth on before pairing")
     if device.paired:
         return state
-    if not shutil.which("bluetoothctl"):
-        raise RuntimeError("BlueZ bluetoothctl is not installed")
+    from . import bluetooth_dbus
     try:
-        result = subprocess.run(["bluetoothctl", "pair", device.address],
-                                capture_output=True, text=True, timeout=22, check=False)
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        raise RuntimeError("Bluetooth pairing timed out; use the system pairing dialog") from exc
-    if result.returncode:
-        raise RuntimeError("Pairing needs confirmation or a passkey; use the system Bluetooth dialog")
+        bluetooth_dbus.pair_device(device.address)
+    except (ImportError, OSError):
+        # Preserve legacy bluetoothctl support when GI is not available. It
+        # cannot replace an interactive BlueZ agent/PIN confirmation flow.
+        if not shutil.which("bluetoothctl"):
+            raise RuntimeError("BlueZ system D-Bus and bluetoothctl are unavailable") from None
+        try:
+            result = subprocess.run(["bluetoothctl", "pair", device.address],
+                                    capture_output=True, text=True, timeout=22, check=False)
+        except (OSError, subprocess.TimeoutExpired) as exc:
+            raise RuntimeError("Bluetooth pairing timed out; use system Bluetooth settings") from exc
+        if result.returncode:
+            raise RuntimeError("Pairing needs an agent or passkey; use system Bluetooth settings")
+    except Exception as exc:
+        raise RuntimeError("BlueZ pairing failed; approve any system passkey dialog or use Bluetooth settings") from exc
     verified = read_bluetooth()
     if not any(item.address.lower() == address.lower() and item.paired
                for item in verified.devices):
         raise RuntimeError("Bluetooth pairing was not verified")
     return verified
+
+
+def scan_bluetooth_devices(*, duration: int = 9, cancel=None) -> BluetoothState:
+    """Discover nearby BlueZ devices on demand, with mandatory cleanup."""
+    from . import bluetooth_dbus
+
+    bluetooth_dbus.discover(duration=duration, cancel=cancel)
+    state = _bluetooth_via_dbus()
+    if state is None:
+        raise RuntimeError("Bluetooth discovery finished but its device list is unavailable")
+    return state
 
 
 def read_microphone() -> SoundState:

@@ -1,7 +1,7 @@
 """Tests for BlueZ D-Bus parsing without a daemon or Bluetooth adapter."""
 
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from macrice import bluetooth_dbus
 
@@ -54,6 +54,55 @@ class BluetoothDbusTests(unittest.TestCase):
         objects.return_value["/org/bluez/hci0/dev_AA"]["org.bluez.Device1"]["Paired"] = False
         with self.assertRaisesRegex(ValueError, "Pair"):
             bluetooth_dbus.set_connection("AA:BB:CC:DD:EE:FF", True)
+
+    @patch("macrice.bluetooth_dbus._connection")
+    @patch("macrice.bluetooth_dbus.snapshot", return_value=(True, "/org/bluez/hci0", ()))
+    def test_scan_is_explicit_bounded_and_always_stopped(self, snapshot, connection):
+        from gi.repository import Gio
+
+        bus = Mock()
+        connection.return_value = (Gio, bus)
+        cancel = Mock()
+        cancel.is_set.return_value = False
+        self.assertEqual(bluetooth_dbus.discover(duration=3, cancel=cancel),
+                         (True, "/org/bluez/hci0", ()))
+        cancel.wait.assert_called_once_with(3)
+        self.assertEqual([call.args[3] for call in bus.call_sync.call_args_list],
+                         ["StartDiscovery", "StopDiscovery"])
+        self.assertEqual(snapshot.call_count, 2)
+
+        cancel.wait.side_effect = RuntimeError("interrupted")
+        with self.assertRaisesRegex(RuntimeError, "interrupted"):
+            bluetooth_dbus.discover(duration=3, cancel=cancel)
+        self.assertEqual(bus.call_sync.call_args_list[-1].args[3], "StopDiscovery")
+
+    @patch("macrice.bluetooth_dbus._connection")
+    @patch("macrice.bluetooth_dbus.snapshot", return_value=(False, "/org/bluez/hci0", ()))
+    def test_scan_never_starts_without_power(self, _snapshot, connection):
+        with self.assertRaisesRegex(RuntimeError, "Turn Bluetooth on"):
+            bluetooth_dbus.discover(duration=3)
+        connection.assert_not_called()
+
+    def test_only_one_discovery_session_per_process(self):
+        with bluetooth_dbus._DISCOVERY_LOCK:
+            with self.assertRaisesRegex(RuntimeError, "already running"):
+                bluetooth_dbus.discover(duration=3)
+
+    @patch("macrice.bluetooth_dbus._connection")
+    @patch("macrice.bluetooth_dbus._objects")
+    def test_pair_uses_known_bluez_object_and_default_agent(self, objects, connection):
+        from gi.repository import Gio
+
+        connection.return_value = (Gio, Mock())
+        objects.return_value = {
+            "/org/bluez/hci0/dev_AA": {"org.bluez.Device1": {
+                "Address": "AA:BB:CC:DD:EE:FF", "Paired": False}},
+        }
+        bluetooth_dbus.pair_device("AA:BB:CC:DD:EE:FF")
+        args = connection.return_value[1].call_sync.call_args.args
+        self.assertEqual(args[1:4], ("/org/bluez/hci0/dev_AA", "org.bluez.Device1", "Pair"))
+        with self.assertRaises(ValueError):
+            bluetooth_dbus.pair_device("not-a-device")
 
 
 if __name__ == "__main__":
