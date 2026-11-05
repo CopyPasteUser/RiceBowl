@@ -354,6 +354,7 @@ window.luna-tray-popup {
 .luna-balloon-dismiss { background: #fff2b5; color: #25415d; border: 1px solid #bfa76d;
   border-radius: 3px; font-size: 10px; padding: 2px 6px; }
 .luna-taskbar-properties { background: #ece9d8; color: #172b4b;
+  border: 3px solid #1953b7;
   font-family: "Tahoma", "DejaVu Sans", sans-serif; font-size: 11px; }
 .luna-taskbar-properties frame { color: #17498b; border-color: #a2b6d4; }
 .luna-taskbar-properties frame > label { color: #17498b; font-weight: bold; }
@@ -398,6 +399,14 @@ window.luna-tray-popup {
 .luna-taskbar-properties button:hover, .luna-taskbar-properties button:focus {
   border-color: #316ac5; background: #d4e6ff; }
 .luna-taskbar-properties button:active { background: #abcdf6; }
+.luna-taskbar-properties .luna-control-close {
+  background-image: linear-gradient(#ffb58c, #d7472b);
+  border: 1px solid #fff4d3; border-radius: 4px;
+  min-width: 24px; min-height: 22px; padding: 0;
+  color: white; box-shadow: inset 0 1px #ffefc8; }
+.luna-taskbar-properties .luna-control-close:hover,
+.luna-taskbar-properties .luna-control-close:focus {
+  background: #f15b38; border-color: white; }
 .luna-taskbar-properties checkbutton:focus, .luna-taskbar-properties spinbutton:focus {
   outline: 1px solid #316ac5; outline-offset: 2px; }
 .luna-taskbar-properties spinbutton { background: #fff; border: 1px solid #849bc0;

@@ -10,6 +10,8 @@
 - Prefer the genuine Gio device/volume browser for My Computer with a safe
   filesystem fallback. Add original recent-document artwork and cohesive
   Luna-only GTK controls, context menus, keyboard focus and hover states.
+- Ensure Taskbar and Start Menu Properties has a real, draggable Luna titlebar
+  instead of relying on decoration of a dialog transient for the XFWM dock.
 
 
 ## Unreleased — secure visual Rice packs v2 (5 November 2026)
