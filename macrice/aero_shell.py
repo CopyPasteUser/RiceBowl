@@ -1092,6 +1092,37 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     self._frutiger_tab_buttons["Settings"].clicked()
                     self._frutiger_back_to_apps.clicked()
                     assert self.aqua_stack.get_visible_child_name() == "Apps"
+                    if os.environ.get("RICEHUB_AQUA_NAV_NATIVE") == "1":
+                        # Programmatic .clicked() alone cannot detect a page
+                        # overlay intercepting real pointer input. Exercise
+                        # the X11 hit regions at 1024x768 as a user would.
+                        import subprocess
+
+                        for page in ("Settings", "Places", "Settings", "Apps", "Settings", "Apps"):
+                            button = self._frutiger_tab_buttons[page]
+                            while Gtk.events_pending():
+                                Gtk.main_iteration_do(False)
+                            offset = button.translate_coordinates(self.menu, 0, 0)
+                            origin = self.menu.get_window().get_root_origin()
+                            assert offset is not None
+                            point = (origin[0] + offset[0] + button.get_allocated_width() // 2,
+                                     origin[1] + offset[1] + button.get_allocated_height() // 2)
+                            print(f"Aqua pointer nav: click {page} at {point}, "
+                                  f"window={self.menu.get_position()} {self.menu.get_size()}",
+                                  flush=True)
+                            subprocess.run(("xdotool", "mousemove", "--sync", str(point[0]),
+                                            str(point[1]), "click", "1"),
+                                           check=True, timeout=4, capture_output=True)
+                            for _step in range(40):
+                                while Gtk.events_pending():
+                                    Gtk.main_iteration_do(False)
+                                if self.aqua_stack.get_visible_child_name() == page:
+                                    break
+                                GLib.usleep(15000)
+                            assert self.menu.get_visible() and self.aqua_stack.get_visible_child_name() == page, (
+                                f"Real X11 click on {page} did not navigate: "
+                                f"visible={self.menu.get_visible()}, "
+                                f"page={self.aqua_stack.get_visible_child_name()}")
                     self._show_aqua_control("sound", "Input & output devices")
                     assert self.actions.get_visible()
 
