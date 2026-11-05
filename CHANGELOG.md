@@ -1,5 +1,20 @@
 # RiceBowl changelog
 
+## Unreleased — Frutiger launcher escape and real tray menus (5 November 2026)
+
+- Fixed a focus-dependent Settings dead end: selecting an Aqua Control Center
+  category hides the keep-above launcher even when the Control Center was
+  already visible. Added a synchronous repeat-open assertion to native X11
+  tests and kept Apps/Places exit buttons above the Settings scroll area.
+- Reworked the Frutiger Wi-Fi, sound/media, Bluetooth and power taskbar
+  flyouts around **direct, scrollable hardware actions** rather than large
+  “More settings” buttons. Device rows, action buttons and accessible icon
+  controls use a consistent pearl-glass style. Backend verification and
+  confirmation before disabling radios are unchanged.
+- GTK regressions cover the new flyout layout and full Settings shortcut;
+  physical Mint/XFCE network, audio and Bluetooth acceptance remains open.
+  macOS Aurora and riceExplorer integration are unchanged.
+
 ## Unreleased — cross-rice persisted windows, limited file drops and display guard (5 November 2026)
 
 - Six non-macOS Settings windows now persist independently in bounded,

@@ -2,6 +2,18 @@
 
 ## Current engineering checkpoint (5 November 2026) · not a 1.0 release
 
+- [x] Aqua World launcher Settings no longer blocks later menu navigation:
+  opening a category dismisses the keep-above app menu even when the Control
+  Center is already open. Persistent Apps/Places exits sit **outside** the
+  Settings scroll area, with synchronized tab state and scroll reset.
+- [x] Frutiger taskbar Wi-Fi, audio/media, Bluetooth and power flyouts now
+  prioritize compact, scrollable **real device/action rows** with verified
+  backends. Refresh and the optional full Settings shortcut are small header
+  icons, not large “More settings” buttons. GTK/pointer regression tests cover
+  the experience in [PR #69](https://github.com/CopyPasteUser/RiceBowl/pull/69).
+- [ ] Owner to confirm on physical Mint/XFCE that repeated Settings → App
+  menu → Apps/Places works; test multiple Wi-Fi SSIDs, Bluetooth devices,
+  audio sinks/MPRIS players and small-screen flyout scrolling.
 - [x] RiceBowl Hub now surfaces the existing confirmed, pinned fast-forward
   updater in the persistent sidebar, so checking/installing no longer needs a
   terminal; a running Hub still needs restarting after successful installation.

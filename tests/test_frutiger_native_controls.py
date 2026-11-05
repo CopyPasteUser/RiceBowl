@@ -48,13 +48,15 @@ class LauncherRegressionTests(unittest.TestCase):
     def test_settings_is_not_a_navigation_dead_end(self):
         stack = DummyStack()
         buttons = {name: DummyButton() for name in ("Apps", "Places", "Settings")}
-        section, search = DummySection(), DummySearch()
+        section, search, settings_navigation = DummySection(), DummySearch(), DummySection()
         for chosen in ("Settings", "Places", "Settings", "Apps", "Settings", "Apps"):
-            frutiger_select_page(stack, buttons, section, search, chosen)
+            frutiger_select_page(stack, buttons, section, search, chosen,
+                                 settings_navigation)
             self.assertEqual(stack.visible, chosen)
             self.assertEqual([name for name, button in buttons.items() if button.active],
                              [chosen])
             self.assertEqual(section.visible, chosen == "Apps")
+            self.assertEqual(settings_navigation.visible, chosen == "Settings")
         self.assertTrue(search.focused)
 
     def test_page_selection_rejects_unknown_tabs(self):
@@ -91,6 +93,9 @@ class LauncherRegressionTests(unittest.TestCase):
             "def _create_ten_menu(self):", 1)[0]
         self.assertIn("self.aqua_stack.set_vhomogeneous(False)", launcher)
         self.assertIn('label="‹ All apps"', launcher)
+        self.assertIn('label="Places ›"', launcher)
+        self.assertIn('settings_navigation.set_no_show_all(True)', launcher)
+        self.assertIn('settings_page.set_max_content_height(325)', launcher)
         self.assertIn('switch_to("Apps")', launcher)
         self.assertIn('self._frutiger_tab_buttons = buttons', launcher)
 

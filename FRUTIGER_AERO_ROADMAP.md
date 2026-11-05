@@ -93,6 +93,24 @@ this visual change. Original art only; do not bundle third-party assets.
 
 ## Complete Aqua World / Frutiger Aero fidelity and functionality plan (2026-11-04)
 
+#### 5 November 2026 · Launcher and tray usability follow-up
+
+- [x] Fix reopening a Settings category while the Aqua Control Center is
+  already visible: close the always-on-top launcher **immediately** instead
+  of waiting for a window-manager focus-out timer. Actual pointer/XFWM4
+  navigation and an immediate repeat-open smoke regression cover this path.
+- [x] Keep dedicated Apps and Places exit buttons permanently visible above
+  the scrolling Settings list; synchronize them with the three launcher tabs
+  and reset the Settings scroll position when returning.
+- [x] Replace large tray “More settings” prompts with direct, constrained
+  scrollable device menus. The network menu exposes radio and SSID actions;
+  Bluetooth exposes scan/pair/connect; sound exposes volume, mute, outputs and
+  MPRIS playback; power exposes available performance profiles. An optional
+  settings gear and refresh action remain in each menu header.
+- [ ] Verify the entire interaction sequence on the owner's real XFCE/X11
+  machine, including high-DPI/1024px display, disconnected devices, Bluetooth
+  PIN dialogs and long device lists. CI cannot represent actual hardware.
+
 > **Target definition:** Frutiger Aero is an aesthetic family, **not a
 > historical operating system with one canonical screenshot**. Therefore
 > "1:1 fidelity" means 1:1 consistency against a **frozen RiceBowl Aqua World
