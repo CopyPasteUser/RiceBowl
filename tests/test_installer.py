@@ -109,6 +109,8 @@ class InstallerTests(unittest.TestCase):
             )
             self.assertEqual(updater_help.returncode, 0, updater_help.stderr)
             self.assertIn("--preserve-checkout", updater_help.stdout)
+            self.assertIn("check --refresh --preserve-checkout",
+                          (base / "bin/ricebowl").read_text())
 
     def test_fast_toggle_prefers_dbus_and_falls_back_for_cold_shell(self):
         with tempfile.TemporaryDirectory() as directory:
