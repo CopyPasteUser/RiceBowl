@@ -31,6 +31,45 @@ def _shell_app_id(profile: str) -> str:
     return f"io.github.copypasteuser.RiceHub.{profile.title()}Shell"
 
 
+def _dbus_name_owned(app_id: str, *, timeout_ms: int = 500) -> bool | None:
+    """Distinguish an absent application from an unavailable session bus."""
+    try:
+        import gi
+
+        gi.require_version("Gio", "2.0")
+        from gi.repository import Gio, GLib
+
+        connection = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+        response = connection.call_sync(
+            "org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus",
+            "NameHasOwner", GLib.Variant("(s)", (app_id,)), GLib.VariantType("(b)"),
+            Gio.DBusCallFlags.NONE, timeout_ms, None,
+        )
+        return bool(response.unpack()[0])
+    except Exception:
+        return None
+
+
+def _shell_bus_owned(profile: str) -> bool | None:
+    return _dbus_name_owned(_shell_app_id(profile))
+
+
+def _shell_process_active(profile: str, *, proc_root: Path = Path("/proc")) -> bool:
+    """Spot a shell still booting before its GTK D-Bus name is registered."""
+    for proc in proc_root.glob("[0-9]*"):
+        try:
+            if proc.stat().st_uid != os.getuid():
+                continue
+            argv = [item.decode("utf-8", "replace") for item in
+                    (proc / "cmdline").read_bytes()[:4096].split(b"\0") if item]
+            if (any(Path(arg).name == "launcher.py" for arg in argv[:3])
+                    and SHELLS[profile] in argv[2:5]):
+                return True
+        except (OSError, ValueError):
+            continue
+    return False
+
+
 def _shell_ready(profile: str) -> bool:
     """Read the native GApplication action published after GTK mapped the bar."""
     try:
@@ -104,8 +143,11 @@ def _macbar_running() -> bool:
 
 
 def _stop(name: str) -> list[str]:
+    targets = _processes(name)
+    if not targets:
+        return []
     errors = []
-    for pid in _processes(name):
+    for pid in targets:
         try:
             os.kill(pid, signal.SIGTERM)
         except ProcessLookupError:
@@ -150,23 +192,7 @@ def _macbar_bus_owned() -> bool | None:
 
     None means the session bus could not be queried; it does not mean absent.
     """
-    try:
-        import gi
-
-        gi.require_version("Gio", "2.0")
-        from gi.repository import Gio, GLib
-
-        connection = Gio.bus_get_sync(Gio.BusType.SESSION, None)
-        response = connection.call_sync(
-            "org.freedesktop.DBus", "/org/freedesktop/DBus", "org.freedesktop.DBus",
-            "NameHasOwner", GLib.Variant("(s)", (MACBAR_APP_ID,)), GLib.VariantType("(b)"),
-            Gio.DBusCallFlags.NONE, 1500, None,
-        )
-        return bool(response.unpack()[0])
-    except Exception:
-        # PyGObject raises GLib.Error for an unavailable or closing session bus.
-        # Treat this as unknown rather than incorrectly declaring MacBar absent.
-        return None
+    return _dbus_name_owned(MACBAR_APP_ID, timeout_ms=1500)
 
 
 def _macbar_owner_pid() -> int | None:
@@ -279,6 +305,11 @@ def _activate_session_controls(theme: str) -> list[str]:
 def _shell(profile: str, quit: bool) -> list[str]:
     argv = [sys.executable, str(project_root() / "launcher.py"), SHELLS[profile]]
     if quit:
+        # Avoid six cold Python/GTK startups merely to send --quit to absent
+        # shells. A booting process or an unavailable session bus must still
+        # take the legacy quit path, preserving safe switching and recovery.
+        if _shell_bus_owned(profile) is False and not _shell_process_active(profile):
+            return []
         argv.append("--quit")
         try:
             result = subprocess.run(argv, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,

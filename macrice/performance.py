@@ -24,6 +24,17 @@ RICEBOWL_NAMES = {
     "chromeos": "RiceBowl ChromeOS", "frutiger": "RiceBowl Frutiger Aero",
 }
 
+# These are resource/ownership classifications, not permission to stop a
+# service. All listed processes remain under the user's existing session.
+XFCE_ROLES = {
+    "xfwm4": "core", "xfce4-session": "core", "xfconfd": "core",
+    "xfsettingsd": "core", "xfdesktop": "core",
+    "xfce4-power-manager": "shared", "xfce4-notifyd": "shared",
+    "xfce4-screensaver": "shared", "xfce4-clipman": "shared",
+    "tumblerd": "shared", "xfce4-appfinder": "shared",
+    "xfce4-panel": "replaceable",
+}
+
 
 PROFILES = {
     "light": {
@@ -58,6 +69,15 @@ def _component(argv: list[str]) -> str | None:
     return None
 
 
+def _desktop_component(argv: list[str]) -> tuple[str, str] | None:
+    """Match only executable names, never user arguments or window titles."""
+    if not argv:
+        return None
+    name = Path(argv[0]).name
+    role = XFCE_ROLES.get(name)
+    return (name, role) if role else None
+
+
 def _process_ticks(process: Path) -> int | None:
     try:
         # The command name in stat may contain spaces or parentheses.
@@ -77,7 +97,8 @@ def _process_threads(process: Path) -> int | None:
     return None
 
 
-def measure_processes(*, proc_root: Path = Path("/proc"), sample_ms: int = 200) -> list[dict]:
+def measure_processes(*, proc_root: Path = Path("/proc"), sample_ms: int = 200,
+                      include_desktop: bool = False) -> list[dict]:
     """On-demand PSS/CPU report. Never runs as a resident background monitor."""
     processes = []
     uid = os.getuid()
@@ -89,6 +110,11 @@ def measure_processes(*, proc_root: Path = Path("/proc"), sample_ms: int = 200) 
                 continue
             argv = (process / "cmdline").read_bytes()[:8192].decode("utf-8", "replace").rstrip("\0").split("\0")
             name = _component(argv)
+            role = "ricebowl" if name in RICEBOWL_NAMES.values() else "dock" if name == "Plank" else "shared"
+            if not name and include_desktop:
+                xfce = _desktop_component(argv)
+                if xfce:
+                    name, role = xfce
             if not name:
                 continue
             pss = None
@@ -101,7 +127,7 @@ def measure_processes(*, proc_root: Path = Path("/proc"), sample_ms: int = 200) 
                 pass
             processes.append({"name": name, "pid": int(process.name), "pss_kib": pss,
                               "ticks": _process_ticks(process), "threads": _process_threads(process),
-                              "path": process})
+                              "path": process, "role": role})
         except (OSError, ValueError):
             continue
     if not processes:
@@ -114,9 +140,12 @@ def measure_processes(*, proc_root: Path = Path("/proc"), sample_ms: int = 200) 
     for item in processes:
         latest = _process_ticks(item["path"])
         delta = max(0, latest - item["ticks"]) if latest is not None and item["ticks"] is not None else None
-        result.append({"name": item["name"], "pid": item["pid"], "pss_kib": item["pss_kib"],
-                       "threads": item["threads"],
-                       "cpu_percent": round(100 * delta / (elapsed * ticks_per_second), 1) if delta is not None else None})
+        reading = {"name": item["name"], "pid": item["pid"], "pss_kib": item["pss_kib"],
+                   "threads": item["threads"],
+                   "cpu_percent": round(100 * delta / (elapsed * ticks_per_second), 1) if delta is not None else None}
+        if include_desktop:
+            reading["role"] = item["role"]
+        result.append(reading)
     return result
 
 
@@ -159,6 +188,40 @@ def summarize_samples(samples: list[list[dict]]) -> dict:
         if totals["cpu_percent"] else None,
         "partial": partial,
     }
+
+
+def desktop_session_report(samples: list[list[dict]]) -> dict:
+    """Read-only XFCE + RiceBowl footprint with conservative overlap hints."""
+    report = summarize_samples(samples)
+    roles = {(item["name"], item["pid"]): item["role"]
+             for sample in samples for item in sample if "role" in item}
+    for item in report["components"]:
+        item["role"] = roles.get((item["name"], item["pid"]), "unknown")
+
+    xfce_totals = []
+    for sample in samples:
+        xfce = [item for item in sample if item["name"] in XFCE_ROLES]
+        if xfce and all(item["pss_kib"] is not None for item in xfce):
+            xfce_totals.append(sum(item["pss_kib"] for item in xfce))
+        elif xfce:
+            xfce_totals.clear()
+            break
+    report["xfce_pss_kib"] = round(statistics.median(xfce_totals), 1) if xfce_totals else None
+
+    names = {item["name"] for item in report["components"]}
+    active_rices = names.intersection(RICEBOWL_NAMES.values())
+    running_rices = [item for item in report["components"] if item["name"] in active_rices]
+    warnings = []
+    if len(running_rices) > 1:
+        warnings.append("Multiple RiceBowl taskbars are running; only the selected rice should remain.")
+    if "xfce4-panel" in names and (active_rices or "MacBar" in names):
+        warnings.append("xfce4-panel overlaps a RiceBowl/MacBar panel; check session handoff.")
+    if active_rices and "Plank" in names:
+        warnings.append("Plank is still running alongside a non-macOS RiceBowl taskbar.")
+    if active_rices and "MacBar" in names:
+        warnings.append("MacBar is still running alongside a non-macOS RiceBowl taskbar.")
+    report["warnings"] = warnings
+    return report
 
 
 def apply_profile(name: str, *, config_root: Path | None = None,

@@ -116,6 +116,7 @@ macrice rice restore           # Restore the previous desktop settings
 macrice session-sync           # Reconcile the current session after login
 macrice session-keys-restore   # Restore prior keyboard shortcuts
 macrice performance report --samples 5 --json  # On-demand PSS/CPU/threads
+macrice performance desktop --samples 5         # XFCE + RiceBowl footprint and duplicate panels
 macrice app-compat --select                     # Inspect a real app's window theme boundaries
 ```
 
@@ -124,7 +125,7 @@ For apps whose title bars ignore XFWM (PhotoCraft, Thunderbird) see the
 [read-only compatibility inspector and supported app settings](APP_COMPATIBILITY.md).
 Windows 98, XP, Windows 7 and Windows 10 also offer a real Task Manager from
 the blank taskbar's right-click menu when an XFCE/GNOME system monitor is installed.
-The resource report includes the six non-macOS RiceBowl shells when running and does not install an always-on monitor. A failed shell startup or panel handoff attempts to recover the original XFCE panel and shortcuts. Check recovery on your real XFCE machine before relying on it unattended.
+The on-demand resource reports do not install an always-on monitor. **`performance desktop`** shows which XFCE services are still required, which panel RiceBowl replaces and whether duplicate panels/docks remain. [XFCE resource boundaries and measurement guide](XFCE_RESOURCE_BOUNDARIES.md). A failed shell startup or panel handoff attempts to recover the original XFCE panel and shortcuts. Check recovery on your real XFCE machine before relying on it unattended.
 
 ## Scope
 

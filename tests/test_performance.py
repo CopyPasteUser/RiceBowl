@@ -1,11 +1,16 @@
 """Resource profiles and on-demand measurements do not touch a real desktop."""
 
 import json
+import io
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
+from unittest import mock
 
-from macrice.performance import PROFILES, _component, apply_profile, measure_processes, summarize_samples
+from macrice.cli import main
+from macrice.performance import (PROFILES, _component, _desktop_component, apply_profile,
+                                desktop_session_report, measure_processes, summarize_samples)
 
 
 class PerformanceTests(unittest.TestCase):
@@ -73,6 +78,75 @@ class PerformanceTests(unittest.TestCase):
     def test_empty_proc_report_is_safe(self):
         with tempfile.TemporaryDirectory() as tmp:
             self.assertEqual(measure_processes(proc_root=Path(tmp)), [])
+
+    def test_xfce_role_classifier_never_matches_arbitrary_arguments(self):
+        self.assertEqual(_desktop_component(["/usr/bin/xfwm4"]), ("xfwm4", "core"))
+        self.assertEqual(_desktop_component(["/usr/lib/xfce4/xfce4-power-manager"]),
+                         ("xfce4-power-manager", "shared"))
+        self.assertEqual(_desktop_component(["/usr/bin/xfce4-panel"]),
+                         ("xfce4-panel", "replaceable"))
+        self.assertIsNone(_desktop_component(["/usr/bin/python3", "/tmp/xfce4-panel.py"]))
+
+    def test_desktop_inventory_requires_explicit_opt_in(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            proc = root / "23591"
+            proc.mkdir()
+            (proc / "cmdline").write_bytes(b"/usr/bin/xfce4-panel\0")
+            (proc / "smaps_rollup").write_text("Pss: 8192 kB\n")
+            (proc / "status").write_text("Threads:\t2\n")
+            self.assertEqual(measure_processes(proc_root=root), [])
+            result = measure_processes(proc_root=root, sample_ms=50, include_desktop=True)
+        self.assertEqual([(row["name"], row["role"]) for row in result],
+                         [("xfce4-panel", "replaceable")])
+        self.assertEqual(result[0]["pss_kib"], 8192)
+        self.assertNotIn("argv", result[0])
+
+    def test_desktop_report_identifies_duplicate_panels_without_stopping_anything(self):
+        def proc(name, pid, role, pss=1024):
+            return {"name": name, "pid": pid, "role": role,
+                    "pss_kib": pss, "cpu_percent": 0, "threads": 2}
+
+        report = desktop_session_report([[proc("RiceBowl XP Luna", 1, "ricebowl"),
+                                          proc("xfce4-panel", 2, "replaceable"),
+                                          proc("xfwm4", 3, "core"),
+                                          proc("Plank", 4, "dock")]])
+        self.assertEqual(len(report["warnings"]), 2)
+        self.assertTrue(any("xfce4-panel" in w for w in report["warnings"]))
+        self.assertTrue(any("Plank" in w for w in report["warnings"]))
+        self.assertEqual(report["xfce_pss_kib"], 2048)
+        self.assertEqual(next(item["role"] for item in report["components"]
+                              if item["name"] == "Plank"), "dock")
+
+    def test_desktop_report_marks_partial_xfce_measurements_unknown(self):
+        report = desktop_session_report([[{"name": "xfsettingsd", "pid": 8,
+                                          "role": "core", "pss_kib": None,
+                                          "cpu_percent": None, "threads": None}]])
+        self.assertIsNone(report["xfce_pss_kib"])
+        self.assertEqual(report["warnings"], [])
+
+    def test_duplicate_instances_of_one_rice_are_reported(self):
+        row = {"name": "RiceBowl Windows 7", "role": "ricebowl",
+               "pss_kib": 100, "cpu_percent": 0, "threads": 1}
+        report = desktop_session_report([[dict(row, pid=5), dict(row, pid=6)]])
+        self.assertTrue(any("Multiple RiceBowl" in warning for warning in report["warnings"]))
+
+    def test_cli_desktop_json_is_read_only_and_keeps_plain_report_separate(self):
+        empty = []
+        with mock.patch("macrice.performance.measure_processes", return_value=empty) as measure:
+            output = io.StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(main(["performance", "desktop", "--samples", "2", "--json"]), 0)
+            report = json.loads(output.getvalue())
+            self.assertEqual(report["warnings"], [])
+            self.assertIsNone(report["xfce_pss_kib"])
+            self.assertEqual(measure.call_count, 2)
+            measure.assert_has_calls([mock.call(include_desktop=True)] * 2)
+            output = io.StringIO()
+            with redirect_stdout(output):
+                self.assertEqual(main(["performance", "report", "--samples", "1", "--json"]), 0)
+            self.assertNotIn("warnings", json.loads(output.getvalue()))
+            measure.assert_called_with()
 
     def test_on_demand_medians_do_not_double_count_duplicate_process_observations(self):
         samples = [
