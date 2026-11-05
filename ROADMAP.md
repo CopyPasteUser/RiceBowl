@@ -1,5 +1,10 @@
 # RiceBowl roadmap to 1.0
 
+**New owner feedback (5 November 2026):** [11 open Mint/XFCE QA reports](OWNER_QA_2026-11-05.md),
+including the Windows 98 menu autoclose, inert ChromeOS/Frutiger tray icons,
+blank Windows 7 pages and safe-updater dirty-tree blocker. Prior automated
+completion does **not** override contradictory on-device reports.
+
 ## Current engineering checkpoint (5 November 2026) · not a 1.0 release
 
 - [x] Aqua World launcher Settings no longer blocks later menu navigation:
