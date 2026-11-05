@@ -17,7 +17,11 @@
   claimed complete. No root process or persistent daemon was added.
 - New hermetic unit tests cover rollback failures/timeouts, off-screen
   window recovery, file collision/cancellation/undo and GTK drop registration.
-  Native GTK CI and real Mint hardware checks are still required.
+  [PR #68](https://github.com/CopyPasteUser/RiceBowl/pull/68) passed native
+  GTK/XFWM4 CI (628 headless tests plus native smoke/captures); an initial
+  1024px screenshot failure exposed partially off-screen restored Settings,
+  which was fixed with full-monitor clamping and a regression test. Physical
+  Mint/XFCE hardware checks remain required.
 
 ## Unreleased — native settings windows and Hub update entry (5 November 2026)
 

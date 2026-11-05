@@ -21,8 +21,11 @@
   no overwrite, background copy and unchanged-file undo.
 - [x] Frutiger Aqua X11 mode/position **trial** using a detached, unprivileged
   18-second guard which reverts unconfirmed changes after the GUI closes.
-- [ ] Native Xvfb/GTK CI and real XFWM4/HDMI acceptance for the new geometry,
-  file-drop and temporary display editor changes.
+- [x] [PR #68](https://github.com/CopyPasteUser/RiceBowl/pull/68): native
+  virtual-X11/GTK CI passed for geometry, restricted file-drop bindings and
+  temporary display editor. A 1024px screen-switch regression was fixed by
+  clamping the **entire** restored Settings window inside its monitor.
+- [ ] Real XFWM4/HDMI hardware acceptance for these changes on Linux Mint.
 - [ ] Owner Mint/XFCE tests for actual moving, focus, task switching,
   multi-monitor handling and USB file drops.
 - [ ] File-manager-grade folder transfers/moves and riceExplorer renderers

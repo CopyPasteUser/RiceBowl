@@ -56,15 +56,18 @@ must behave like applications integrated into the actual Linux desktop:
   pinned, confirmed and recoverable updater; no automatic installation.
 - [x] [PR #67](https://github.com/CopyPasteUser/RiceBowl/pull/67) passed
   native GTK/X11 CI for these window changes and existing screenshot regressions.
-- [x] Per-role XDG user window geometry saved atomically and clamped to
-  a reachable display after unplug/reconfiguration; no new resident service.
+- [x] Per-role XDG user window geometry saved atomically and clamped **fully
+  within** a reachable display after unplug/reconfiguration; no new resident service.
 - [x] Shared limited URI targets for XP/Win7/Aqua folder shortcuts and the
   Win98 Desktop inspector: confirmed regular-file copies, no overwrites,
   background transfer, per-operation undo of *unchanged* copied files.
 - [x] Aqua single-active-monitor mode/position trial implementation with a
   detached per-session guard and automatic 18-second unconfirmed rollback.
-- [ ] Verify the new DnD bindings, guard and geometry lifecycle on native GTK
-  CI and physical multi-monitor XFCE/X11, including display-server failure.
+- [x] [PR #68](https://github.com/CopyPasteUser/RiceBowl/pull/68): native
+  GTK/XFWM4 CI passed for DnD bindings, guard contracts and window lifecycle;
+  the 1024px saved-window clipping regression was fixed and retested.
+- [ ] Verify on physical multi-monitor XFCE/X11, including display-server
+  failure, hardware DnD sources and HDMI rollback.
 - [ ] Validate focus switching, move, resize, maximize, taskbar, Escape,
   1024×768 and multi-monitor unplug using real XFWM4 on Linux Mint.
 - [ ] Full folder/move/cross-volume DnD, clipboard integration and themed
