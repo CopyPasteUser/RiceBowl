@@ -37,6 +37,13 @@ class SessionTests(unittest.TestCase):
         self.assertEqual(s._stop_macbar(), [])
         run.assert_not_called()
 
+    @mock.patch.object(s, "_processes", return_value=[])
+    @mock.patch.object(s.os, "kill")
+    def test_absent_plank_does_not_poll_or_send_signals(self, kill, processes):
+        self.assertEqual(s._stop("plank"), [])
+        processes.assert_called_once_with("plank")
+        kill.assert_not_called()
+
     @mock.patch.object(s, "_macbar_bus_owned", side_effect=[True, False])
     @mock.patch.object(s, "_macbar_running", side_effect=[True, False])
     @mock.patch.object(s, "_macbar_owner_pid", return_value=371)
@@ -196,6 +203,63 @@ class SessionTests(unittest.TestCase):
         for profile in ("winxp", "winclassic", "chromeos", "frutiger"):
             self.assertEqual(s._shell_app_id(profile),
                              f"io.github.copypasteuser.RiceHub.{profile.title()}Shell")
+
+    @mock.patch.object(s, "_shell_process_active", return_value=False)
+    @mock.patch.object(s, "_shell_bus_owned", return_value=False)
+    @mock.patch.object(s.subprocess, "run")
+    def test_absent_shell_quit_does_not_spawn_python(self, run, bus, active):
+        self.assertEqual(s._shell("frutiger", True), [])
+        bus.assert_called_once_with("frutiger")
+        active.assert_called_once_with("frutiger")
+        run.assert_not_called()
+
+    @mock.patch.object(s, "_shell_process_active", return_value=True)
+    @mock.patch.object(s, "_shell_bus_owned", return_value=False)
+    @mock.patch.object(s.subprocess, "run", return_value=mock.Mock(returncode=0))
+    def test_starting_shell_is_still_asked_to_quit(self, run, bus, active):
+        self.assertEqual(s._shell("winxp", True), [])
+        run.assert_called_once()
+        self.assertEqual(run.call_args.args[0][-2:], ["winxp-shell", "--quit"])
+
+    @mock.patch.object(s, "_shell_process_active")
+    @mock.patch.object(s, "_shell_bus_owned", return_value=None)
+    @mock.patch.object(s.subprocess, "run", return_value=mock.Mock(returncode=0))
+    def test_unavailable_bus_keeps_conservative_quit(self, run, bus, active):
+        self.assertEqual(s._shell("chromeos", True), [])
+        run.assert_called_once()
+        active.assert_not_called()
+
+    def test_inflight_shell_process_is_detected_before_dbus_registration(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            proc = Path(tmp) / "23791"
+            proc.mkdir()
+            (proc / "cmdline").write_bytes(
+                b"/usr/bin/python3\0/opt/ricebowl/launcher.py\0frutiger-shell\0")
+            self.assertTrue(s._shell_process_active("frutiger", proc_root=Path(tmp)))
+            self.assertFalse(s._shell_process_active("winxp", proc_root=Path(tmp)))
+
+    def test_bus_owner_check_uses_exact_shell_application_name(self):
+        connection = mock.Mock()
+        connection.call_sync.return_value.unpack.return_value = (False,)
+        gio = types.SimpleNamespace(BusType=types.SimpleNamespace(SESSION=0),
+                                    DBusCallFlags=types.SimpleNamespace(NONE=0),
+                                    bus_get_sync=mock.Mock(return_value=connection))
+        gi = types.ModuleType("gi")
+        gi.require_version = mock.Mock()
+        gi.repository = types.ModuleType("gi.repository")
+        gi.repository.Gio = gio
+        gi.repository.GLib = types.SimpleNamespace(Variant=lambda sig, value: (sig, value),
+                                                   VariantType=lambda signature: signature)
+        with mock.patch.dict(sys.modules, {"gi": gi, "gi.repository": gi.repository}):
+            self.assertIs(s._shell_bus_owned("chromeos"), False)
+            self.assertEqual(connection.call_sync.call_args.args[:4],
+                             ("org.freedesktop.DBus", "/org/freedesktop/DBus",
+                              "org.freedesktop.DBus", "NameHasOwner"))
+            self.assertEqual(connection.call_sync.call_args.args[4],
+                             ("(s)", ("io.github.copypasteuser.RiceHub.ChromeosShell",)))
+            self.assertEqual(connection.call_sync.call_args.args[7], 500)
+            connection.call_sync.side_effect = OSError("bus disconnected")
+            self.assertIsNone(s._shell_bus_owned("chromeos"))
 
     def test_readiness_requires_gtk_action_on_the_correct_dbus_path(self):
         connection = mock.Mock()

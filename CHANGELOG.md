@@ -1,5 +1,18 @@
 # RiceBowl changelog
 
+## Unreleased — lean XFCE session and measured resource ownership (5 November 2026)
+
+- Avoid launching Python/GTK `--quit` helpers for inactive RiceBowl shells
+  whose session D-Bus name and actual user-owned process are both absent.
+  Keep the conservative fallback when a shell is starting or D-Bus fails.
+- Add on-demand `macrice performance desktop [--samples N] [--json]` alongside
+  the original RiceBowl-only `report`. Inventory recognized XFCE processes,
+  show their role and real sampled PSS/CPU, and identify duplicated
+  panels/docks. The Hub's existing Measure button includes these processes.
+- Document which XFCE services cannot yet be replaced safely. No resident
+  monitor, background-service shutdown, autostart rewrite or simulated memory
+  saving was introduced. Actual Mint/XFCE idle savings need owner measurement.
+
 ## Unreleased — Frutiger taskbar pointer evidence (5 November 2026)
 
 - Added an explicitly enabled Frutiger interaction trace for Start, pinned

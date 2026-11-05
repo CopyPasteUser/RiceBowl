@@ -92,6 +92,15 @@ macOS Aurora visuals remain unchanged.
 
 ## 1.0 hardening pass — session, resource visibility and Aqua flyouts (4 November 2026)
 
+- [x] Skip unnecessary Python/GTK `--quit` launches for absent RiceBowl
+  taskbars using exact session-D-Bus ownership and an in-flight `/proc`
+  fallback; preserve conservative shutdown if the bus is unavailable.
+- [x] Add a read-only XFCE + RiceBowl process inventory in CLI and Hub,
+  with measured PSS/CPU/threads and duplicate-panel/dock warnings. Document
+  essential XFCE service boundaries in [XFCE_RESOURCE_BOUNDARIES.md](XFCE_RESOURCE_BOUNDARIES.md).
+- [ ] Measure the **real** idle/settled XFCE resource savings and verify
+  logout/login and standby recovery on the owner's Mint XFCE laptop; only then
+  consider additional optional session-service changes.
 - [x] Restore the stock XFCE panel and saved shortcuts when switching away
   from a RiceBowl theme; recover on shell startup, shutdown or session-control
   handoff failures. Regression tests cover these failure paths.

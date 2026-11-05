@@ -105,10 +105,10 @@ def parser() -> argparse.ArgumentParser:
     from .rice import STYLES
     rice.add_argument("style", nargs="?", choices=tuple(STYLES))
     profile = commands.add_parser("performance", help="Apply a Control Center resource profile")
-    profile.add_argument("profile", choices=("light", "balanced", "visual", "report"))
+    profile.add_argument("profile", choices=("light", "balanced", "visual", "report", "desktop"))
     profile.add_argument("--json", action="store_true", help="Machine-readable on-demand report")
     profile.add_argument("--samples", type=int, default=3, metavar="N",
-                         help="Read 1–9 short CPU/PSS samples for the report (default: 3)")
+                         help="Read 1–9 short CPU/PSS samples for report/desktop (default: 3)")
     from .riceware_cli import add_commands
     add_commands(commands)
     return p
@@ -222,27 +222,40 @@ def main(argv: list[str] | None = None) -> int:
                     print("Taskbar warning:", warning, file=sys.stderr)
             return 0
         if args.command == "performance":
-            from .performance import apply_profile, measure_processes, summarize_samples
-            if args.profile == "report":
+            from .performance import (apply_profile, desktop_session_report,
+                                      measure_processes, summarize_samples)
+            if args.profile in ("report", "desktop"):
                 if not 1 <= args.samples <= 9:
                     raise ValueError("--samples must be between 1 and 9")
-                result = summarize_samples([measure_processes() for _ in range(args.samples)])
+                desktop = args.profile == "desktop"
+                samples = [measure_processes(include_desktop=True) if desktop else measure_processes()
+                           for _ in range(args.samples)]
+                result = desktop_session_report(samples) if desktop else summarize_samples(samples)
                 if args.json:
                     print(json.dumps(result, indent=2))
                     return 0
                 if not result["components"]:
-                    print("No RiceBowl components or Plank processes found for this user.")
+                    print("No recognized XFCE/RiceBowl processes found for this user." if desktop else
+                          "No RiceBowl components or Plank processes found for this user.")
                 for item in result["components"]:
                     pss = f"{item['pss_kib'] / 1024:.1f} MiB" if item["pss_kib"] is not None else "unavailable"
                     cpu = f"{item['cpu_percent']:.1f}%" if item["cpu_percent"] is not None else "unavailable"
                     threads = str(item["threads"]) if item["threads"] is not None else "unavailable"
-                    print(f"{item['name']} (PID {item['pid']}): PSS {pss} · CPU {cpu} · Threads {threads}")
+                    role = f" [{item['role']}]" if desktop else ""
+                    print(f"{item['name']}{role} (PID {item['pid']}): PSS {pss} · CPU {cpu} · Threads {threads}")
                 if result["total_pss_kib"] is not None:
                     print(f"Sampled total PSS: {result['total_pss_kib'] / 1024:.1f} MiB"
                           + (" (partial)" if result["partial"] else ""))
+                if desktop:
+                    total = result["xfce_pss_kib"]
+                    print("XFCE sampled PSS: " + (f"{total / 1024:.1f} MiB" if total is not None
+                                                   else "unavailable"))
+                    for warning in result["warnings"]:
+                        print("Overlap warning:", warning)
+                    print("Read-only inventory: core/shared services were not stopped.")
             else:
                 if args.json or args.samples != 3:
-                    raise ValueError("--json and --samples apply only to 'performance report'")
+                    raise ValueError("--json and --samples apply only to performance report/desktop")
                 print(f"Performance profile {args.profile} applied; backup:", apply_profile(args.profile))
             return 0
         if args.command == "inspect":

@@ -138,7 +138,8 @@ def run() -> int:
     from .cli import open_component
     from .environment import detect, installed_components
     from .installer import InstallOptions, install, project_root
-    from .performance import PROFILES as PERFORMANCE_PROFILES, apply_profile, measure_processes
+    from .performance import (PROFILES as PERFORMANCE_PROFILES, RICEBOWL_NAMES,
+                              apply_profile, measure_processes)
     from .rice import STYLES, apply, plan, restore
 
     def cls(widget, name):
@@ -465,7 +466,7 @@ def run() -> int:
             measure = cls(vertical(12), "hub-card")
             body.pack_start(measure, False, False, 0)
             measure.pack_start(label("Resource snapshot", "hub-section"), False, False, 0)
-            measure.pack_start(label("On-demand process PSS and CPU reading. This is a sample, not a performance promise.",
+            measure.pack_start(label("On-demand RiceBowl and XFCE PSS/CPU reading. This is a sample, not a performance promise.",
                                      "hub-body", True), False, False, 0)
             self.measure_label = label("Run a check while the desktop components are open.", "hub-metric", True)
             measure.pack_start(self.measure_label, False, False, 0)
@@ -979,16 +980,21 @@ def run() -> int:
         def _measure(self):
             def finished(processes):
                 if not processes:
-                    self.measure_label.set_text("No running RiceBowl components or Plank were detected.")
+                    self.measure_label.set_text("No recognized RiceBowl or XFCE services detected.")
                 else:
+                    names = {item["name"] for item in processes}
+                    rices = names.intersection(RICEBOWL_NAMES.values())
+                    overlapping = ("xfce4-panel" in names and (rices or "MacBar" in names))
                     self.measure_label.set_text("\n".join(
-                        f"{item['name']}: "
+                        f"{item['name']} [{item['role']}]: "
                         + (f"{item['pss_kib'] / 1024:.1f} MiB PSS" if item["pss_kib"] is not None
                            else "PSS unavailable")
                         + (f" · {item['cpu_percent']:.1f}% CPU" if item["cpu_percent"] is not None
-                           else " · CPU unavailable") for item in processes))
+                           else " · CPU unavailable") for item in processes)
+                        + ("\n⚠ XFCE panel overlaps the active RiceBowl panel."
+                           if overlapping else ""))
                 self._notify("Resource snapshot complete.")
-            self._work("Measuring running processes…", measure_processes, finished)
+            self._work("Measuring running processes…", lambda: measure_processes(include_desktop=True), finished)
 
     provider = Gtk.CssProvider()
     try:
