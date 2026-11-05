@@ -25,6 +25,10 @@ Changing that decision requires an actual measured and tested benefit.
 - The canvas reads Desktop asynchronously through the existing riceware worker,
   drops stale callbacks, has explicit empty/error/hidden states and creates no
   daemon, startup task or private file copy engine.
+- When supported, a Gio directory monitor updates the preview after file
+  creation, rename, deletion and writes, with a short debounced callback;
+  unsupported mounts retain the Refresh button. The monitor and pending source
+  are cancelled on window close. No periodic scans are used.
 - Default placement: 98/XP/7/10/Frutiger left, macOS right, ChromeOS icons off.
   User overrides survive switching styles; **no XFDesktop setting is touched**.
 
@@ -45,8 +49,8 @@ The original `macrice riceware plate status|install|remove` behavior is preserve
 
 - [ ] Compare per-rice native icon arrangements, launch behavior, selection,
   file rename/trash and desktop context menus with XFDesktop on Mint/X11.
-- [ ] Use live directory change notifications rather than a timer; avoid
-  blocking GTK on network or removable file queries.
+- [x] Use live Gio directory change notifications rather than a periodic
+  timer; keep asynchronous GTK reads and a manual fallback on unsupported mounts.
 - [ ] Implement keyboard-accessible non-drag item repositioning and persistent
   monitor/workspace-aware geometry with bounds on 1024×768 and mixed DPI.
 - [ ] Add actual desktop focus/selection semantics, contrast/high-contrast

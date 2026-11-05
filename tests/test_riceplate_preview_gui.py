@@ -50,6 +50,24 @@ class RicePlatePreviewGuiTests(unittest.TestCase):
                 self.assertEqual(len(icon_view.get_model()), 1)
                 self.assertEqual(icon_view.get_model()[0][1], "Visible.txt")
 
+                # Gio directory events must refresh without pressing the button
+                # or running a periodic polling timer.
+                created = desktop / "Just-added.txt"
+                created.write_text("new", encoding="utf-8")
+                deadline = time.monotonic() + 5
+                while len(icon_view.get_model()) != 2 and time.monotonic() < deadline:
+                    while GLib.MainContext.default().pending():
+                        GLib.MainContext.default().iteration(False)
+                    time.sleep(0.01)
+                self.assertEqual(len(icon_view.get_model()), 2)
+                created.unlink()
+                deadline = time.monotonic() + 5
+                while len(icon_view.get_model()) != 1 and time.monotonic() < deadline:
+                    while GLib.MainContext.default().pending():
+                        GLib.MainContext.default().iteration(False)
+                    time.sleep(0.01)
+                self.assertEqual(len(icon_view.get_model()), 1)
+
                 choices = [widget for widget in widget_list if isinstance(widget, Gtk.ComboBoxText)]
                 self.assertEqual(len(choices), 2)
                 choices[0].set_active_id("64")
