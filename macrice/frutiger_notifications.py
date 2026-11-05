@@ -7,6 +7,7 @@ history database or continuous polling is introduced by this popover.
 from __future__ import annotations
 
 from .riceware import pop
+from .frutiger_tray_window import create_tray_window
 
 
 def notification_preview(entries, *, limit=6):
@@ -24,10 +25,8 @@ class AquaNotifications:
         self._syncing = False
         self._quiet = None
         self._history_available = False
-        self.popover = Gtk.Popover.new(shell.aqua_notifications_button)
-        self.popover.set_position(Gtk.PositionType.TOP)
-        self.popover.set_modal(True)
-        self.popover.get_style_context().add_class("aqua-flyout")
+        self.popover = create_tray_window(shell.aqua_notifications_button, Gtk,
+                                         title="Aqua World · Notifications")
 
         root = shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=9),
                             "aqua-flyout-root")
@@ -53,7 +52,7 @@ class AquaNotifications:
         self.mark_read.connect("clicked", lambda _button: self._action(pop.mark_read))
         root.pack_start(self.mark_read, False, False, 0)
         self.popover.add(root)
-        self.popover.connect("closed", self._closed)
+        self.popover.connect("hide", self._closed)
 
     def show(self):
         self.popover.show_all()

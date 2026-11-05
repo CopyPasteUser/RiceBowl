@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from unittest.mock import Mock
 
 from macrice.frutiger_flyouts import AquaFlyouts
+from macrice.frutiger_tray_window import flyout_geometry
 from macrice.hardware_status import BluetoothDevice, BluetoothState, SoundOutput, WifiNetwork
 from macrice.riceware.worker import Response
 from macrice.riceware.media import MediaPlayer
@@ -42,6 +43,12 @@ def flyout(backend=None):
 
 
 class AquaFlyoutTests(unittest.TestCase):
+    def test_tray_flyout_stays_above_dock_and_inside_monitor(self):
+        self.assertEqual(flyout_geometry(980, 24, 300, 320, 0, 0, 1024, 768),
+                         (704, 400))
+        self.assertEqual(flyout_geometry(1030, 24, 300, 320, 1024, 20, 1024, 768),
+                         (1029, 420))
+
     def test_all_device_probes_use_injected_shared_facade(self):
         backend = Mock()
         backend.read_wifi_radio.return_value = True

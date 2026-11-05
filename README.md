@@ -19,7 +19,7 @@ Give XFCE a completely different personality—from Windows XP nostalgia to Frut
   <a href="screenshots/current/windows10-start.webp"><img src="screenshots/current/windows10-start.webp" alt="Windows 10 desktop with Start menu, alphabetical applications and live tiles" width="48%"></a>
 </p>
 
-<div align="center"><sub>Actual GTK/X11 captures from the <a href="https://github.com/CopyPasteUser/RiceBowl/actions/runs/42035681537">5 November 2026 CI run</a> · <a href="screenshots/current/README.md">See all 36 screenshots</a></sub></div>
+<div align="center"><sub>Actual GTK/X11 captures from the <a href="https://github.com/CopyPasteUser/RiceBowl/actions/runs/42045518423">latest verified CI run</a> · <a href="screenshots/current/README.md">See all 42 screenshots</a></sub></div>
 
 ## Desktop styles
 
@@ -29,7 +29,7 @@ Each style brings its own taskbar, launcher, menus, icons, wallpaper and system 
 
 **XP Luna:** faithful two-column Start, cobalt taskbar, custom Linux icon art, Explorer-style Control Panel navigation and working taskbar/Start preferences. [Fidelity roadmap](XP_LUNA_ROADMAP.md). XFWM4 and Thunar remain available.
 
-**Windows 10:** native Start with A–Z navigation, pinned tiles, separate Settings, expandable Action Center and per-rice taskbar preferences. [See the current screenshots](screenshots/current/README.md) and [remaining fidelity work](WINDOWS10_ROADMAP.md). All art is independently created.
+**Windows 10:** A–Z Start, resizable/draggable tiles, independent Settings, real device flyouts, Task View and configurable search/taskbar. [Screenshots](screenshots/current/README.md) · [Fidelity roadmap](WINDOWS10_ROADMAP.md) · [Mint test checklist](WINDOWS10_MANUAL_ACCEPTANCE.md). Original Linux artwork only.
 
 ## Get started
 
@@ -53,6 +53,10 @@ Pick a style in the Hub. **Nothing is applied automatically**: RiceBowl checks r
 **Rice packs:** `macrice riceware packs list` discovers built-in styles, named presets and securely imported visual packs (wallpaper, GTK, XFWM and icons). [Create or import a pack](RICEPACK_SPEC.md)—no daemon or auto-apply.
 
 ## Project status
+
+Recent QA work keeps Frutiger tray flyouts outside the dock's clipping area
+and the Windows 98 Start menu open during pointer navigation; hardware
+validation remains open.
 
 <strong>Development preview</strong> · Latest tagged build: [v0.9.1](https://github.com/CopyPasteUser/RiceBowl/releases/tag/v0.9.1). Newer changes are on `main`; 1.0 hardware acceptance on real XFCE systems is still pending.
 

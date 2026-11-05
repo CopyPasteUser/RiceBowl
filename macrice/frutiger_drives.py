@@ -8,6 +8,8 @@ from __future__ import annotations
 
 from urllib.parse import unquote, urlsplit
 
+from .frutiger_tray_window import create_tray_window
+
 
 _SYSTEM_MOUNT_ROOTS = ("/", "/boot", "/proc", "/sys", "/dev", "/run", "/var", "/usr", "/etc", "/tmp", "/home")
 
@@ -44,10 +46,8 @@ class AquaDrives:
         self.handlers = []
         self.pending = False
         self._closed = False
-        self.popover = Gtk.Popover.new(shell.aqua_drives_button)
-        self.popover.set_position(Gtk.PositionType.TOP)
-        self.popover.set_modal(True)
-        self.popover.get_style_context().add_class("aqua-flyout")
+        self.popover = create_tray_window(shell.aqua_drives_button, Gtk,
+                                         title="Aqua World · Connected locations")
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         root.get_style_context().add_class("aqua-flyout-root")
         root.pack_start(Gtk.Label(label="Connected locations", xalign=0), False, False, 0)
@@ -67,7 +67,7 @@ class AquaDrives:
         refresh.connect("clicked", lambda _button: self.refresh())
         root.pack_start(refresh, False, False, 0)
         self.popover.add(root)
-        self.popover.connect("closed", lambda *_args: self._on_closed())
+        self.popover.connect("hide", lambda *_args: self._on_closed())
 
     def _clear(self):
         for child in tuple(self.rows.get_children()):

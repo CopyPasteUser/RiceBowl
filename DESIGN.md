@@ -110,13 +110,17 @@ secondary pages; prototypes and the release roadmap do not crowd the selector.
   larger pinned and running-app icons; Wnck supplies original
   large icons where available. XP, Classic, Frutiger and Ten stay untouched.
 - **Windows 10:** native 22H2-era flat charcoal (#101014) 40px taskbar,
-  compact four-pane/penguin Start mark, icon-only taskbar search opening the
-  functional Start search field (not two simultaneous search boxes), icon-first
+  compact four-pane/penguin Start mark, optional taskbar search box/icon/hidden
+  opening the functional Start search field (not two simultaneous search boxes), icon-first
   running-app buttons with active bottom underline, real network/audio/battery
   status and a two-line clock. The ten-shell GTK CSS in macrice/ten_shell.py
   owns the runtime #0078d7 accent and rectangular hover/focus treatments.
   aero_shell._create_ten_menu() owns a three-zone nav rail / alphabetical Gio
   application list / genuine-app pinned tile groups (saved pins/context menus).
+  `ten_tiles.py` owns a separately persisted schema-validated four-column
+  Start mosaic: square 68×68 base cells, 5px gutters, Small 1×1, Medium 2×2,
+  Wide 4×2, Large 4×4; drag/drop order, group names and absent-app retention
+  never alter taskbar pins. A 331px independent scroll lane holds the groups.
   The dark 362px Action Center is built by macrice/ten_action_center.py: a
   truthful RiceBowl notifications area, real Linux settings launchers and
   shared verified output volume, mute, network and battery readers, not fake
@@ -135,7 +139,19 @@ secondary pages; prototypes and the release roadmap do not crowd the selector.
   hierarchy and search behavior; `.ten-settings-*` rules in `ten_shell.CSS`
   remain the sole runtime visual owner. No shared hub, XP or Aero tokens change.
   Start has a native A–Z picker for real Gio apps; the taskbar's context-menu
-  Search/Task View visibility is saved atomically in a Windows-10-only file.
+  Search mode/Task View visibility is saved atomically in a Windows-10-only file.
+  Wide desktops display the characteristic square light search field; narrow
+  desktops fall back to a search icon. Legacy boolean preferences migrate
+  to schema 2 without touching XFCE global panel settings. Taskbar pins also
+  support native intra-panel drag/drop and real-app recent-file Jump Lists.
+  `ten_tray.py` owns four Win10-flat flyout surfaces over the already verified
+  on-demand audio/BlueZ/power/date Linux adapters; NetworkManager retains its
+  separate Win10 WLAN flyout. `ten_task_view.py` renders real Wnck windows in
+  two-column cards with desktop switching, safe window close and move; no
+  synthetic thumbnails are fabricated. Native Settings now includes truthful
+  Storage, Power & sleep and an installed Gio-app browser. Start search also
+  finds native Settings destinations and actual user-folder shortcuts; it is
+  not represented as an index of every file on disk.
   Action Center groups the XFCE notification log by app with real timestamps
   and icons, confirms permanent history clearing and can collapse the optional
   second row of Linux shortcuts. The look stays square and charcoal/cobalt.
@@ -280,6 +296,9 @@ secondary pages; prototypes and the release roadmap do not crowd the selector.
   a newer settings page. `macrice/frutiger_flyouts.py` owns small anchored
   network, sound and power bubbles with actual sound volume/mute controls and
   deep links into the native Aqua pages, reusing the shared status poller.
+  Aqua tray bubbles use lazy, separate XFWM-managed utility windows to escape
+  the shallow DOCK's clipping boundary; their original colors and shared
+  Linux hardware backends remain unchanged.
   The installed third-party app's windows are *not* misleadingly represented
   as Aqua-native settings; advanced networking still uses real Linux tools.
   `_create_frutiger_menu()` renders a rounded `Your World` head with **real**

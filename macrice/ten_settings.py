@@ -7,8 +7,10 @@ unsupported Windows-only options are never displayed as fake switches.
 from __future__ import annotations
 
 import getpass
+import os
 import platform
 import shutil
+from pathlib import Path
 
 from .riceware import pop, spice
 from .rice_windows import configure_settings_window, draggable_caption
@@ -47,7 +49,19 @@ SUBPAGES = {
     "display": ("system", "Display"),
     "notifications": ("system", "Notifications & actions"),
     "about": ("system", "About"),
+    "storage": ("system", "Storage"),
+    "power": ("system", "Power & sleep"),
+    "apps_installed": ("apps", "Apps & features"),
 }
+
+
+def storage_description(used: int, total: int) -> tuple[str, float]:
+    """Describe measured filesystem usage without assuming a disk type."""
+    if total <= 0 or used < 0 or used > total:
+        raise ValueError("Invalid filesystem capacity")
+    gib = 1024 ** 3
+    return (f"{used / gib:.1f} GiB used of {total / gib:.1f} GiB · "
+            f"{(total - used) / gib:.1f} GiB available", used / total)
 
 
 def page_parent(page):
@@ -76,6 +90,9 @@ def search_destinations(query):
         "display": "brightness resolution scaling monitors screen",
         "notifications": "quiet focus assist do not disturb dnd",
         "about": "linux os version computer system information",
+        "storage": "disk capacity space free used filesystem",
+        "power": "battery saver sleep suspend brightness power management",
+        "apps_installed": "installed programs applications list features launch",
     }
     entries = [(key, title, desc) for key, title, desc in CATEGORIES]
     entries.extend((key, title, next(desc for name, _title, desc in CATEGORIES
@@ -100,6 +117,7 @@ class TenSettings:
         self._sliders = {}
         self._switches = {}
         self._status_labels = {}
+        self._apps_limit = 35
         self._category_buttons = {}
         self._control_feedback = {}
         self._last_errors = {}
@@ -360,12 +378,14 @@ class TenSettings:
         page, body = self._page(title, description)
         if key == "system":
             self._section(body, "System settings")
-            for name in ("display", "sound", "notifications", "about"):
+            for name in ("display", "sound", "notifications", "storage", "power", "about"):
                 self._action(body, SUBPAGES[name][1], callback=lambda target=name:
                              self.navigate(target), description={
                                  "display": "Brightness, monitors and resolution",
                                  "sound": "Output volume, mute and audio devices",
                                  "notifications": "Focus assist and notification preferences",
+                                 "storage": "Current free and used filesystem space",
+                                 "power": "Battery and Linux sleep settings",
                                  "about": "Linux version and device architecture"}[name])
             self._action(body, "Power management", "xfce4-power-manager-settings")
         elif key == "network":
@@ -389,6 +409,9 @@ class TenSettings:
             self._action(body, "Window manager", "xfwm4-settings")
         elif key == "apps":
             self._section(body, "App settings")
+            self._action(body, "Apps & features", callback=lambda:
+                         self.navigate("apps_installed"),
+                         description="Browse and open installed Linux desktop apps")
             self._action(body, "Default applications", "xfce4-mime-settings")
             self._action(body, "Session and startup", "xfce4-session-settings")
         elif key == "accounts":
@@ -451,7 +474,75 @@ class TenSettings:
             body.pack_start(self.shell._class(self.Gtk.Label(
                 label=f"{platform.system()} · {platform.release()} · {platform.machine()}",
                 xalign=0), "ten-action-detail"), False, False, 0)
+            body.pack_start(self.shell._class(self.Gtk.Label(
+                label=f"Local user: {getpass.getuser()} · Processors: {os.cpu_count() or 'Unknown'}",
+                xalign=0), "ten-action-detail"), False, False, 0)
+        elif key == "storage":
+            self._section(body, "Local storage")
+            self.storage_meter = self.Gtk.ProgressBar()
+            self.storage_meter.set_show_text(False)
+            self.storage_meter.get_accessible().set_name("Home filesystem used space")
+            body.pack_start(self.storage_meter, False, False, 0)
+            self._status(body, "storage")
+            self._action(body, "Browse files", callback=lambda:
+                         self.shell._open_uri(Path.home().as_uri()),
+                         description="Open your home folder in the Linux file manager")
+        elif key == "power":
+            self._section(body, "Battery and power")
+            self._status(body, "power")
+            self._action(body, "Power and sleep options", "xfce4-power-manager-settings")
+            self._action(body, "Session and startup", "xfce4-session-settings")
+        elif key == "apps_installed":
+            self._section(body, "Installed desktop applications")
+            self.apps_search = self.Gtk.SearchEntry()
+            self.apps_search.set_placeholder_text("Search installed apps")
+            self.apps_search.get_accessible().set_name("Filter installed applications")
+            body.pack_start(self.apps_search, False, False, 0)
+            self.apps_count = self.shell._class(self.Gtk.Label(xalign=0), "ten-muted")
+            body.pack_start(self.apps_count, False, False, 0)
+            self.apps_results = self.Gtk.Box(orientation=self.Gtk.Orientation.VERTICAL,
+                                              spacing=1)
+            body.pack_start(self.apps_results, False, False, 0)
+            self.apps_search.connect("changed", lambda _entry: self._populate_apps())
+            self._populate_apps()
         return page
+
+    def _populate_apps(self):
+        """Use the shell's real Gio app catalog, not package-manager guesses."""
+        for child in self.apps_results.get_children():
+            self.apps_results.remove(child)
+        query = self.apps_search.get_text().casefold().strip()
+        apps = sorted((app for app in getattr(self.shell, "apps", ()) if app.get_id()),
+                      key=lambda app: (app.get_display_name() or app.get_name() or "").casefold())
+        matches = [app for app in apps if query in
+                   (app.get_display_name() or app.get_name() or "").casefold()]
+        self.apps_count.set_text(f"{len(matches)} desktop applications")
+        for app in matches[:self._apps_limit]:
+            title = app.get_display_name() or app.get_name() or "Application"
+            button = self.shell._class(self.Gtk.Button(), "ten-settings-row")
+            row = self.Gtk.Box(orientation=self.Gtk.Orientation.HORIZONTAL, spacing=12)
+            icon = app.get_icon()
+            row.pack_start(self.Gtk.Image.new_from_gicon(icon, self.Gtk.IconSize.BUTTON)
+                           if icon else self._icon("application-x-executable",
+                                                   self.Gtk.IconSize.BUTTON), False, False, 0)
+            row.pack_start(self.shell._class(self.Gtk.Label(label=title, xalign=0),
+                                             "ten-settings-row-title"), True, True, 0)
+            row.pack_end(self.Gtk.Label(label="›"), False, False, 0)
+            button.add(row)
+            button.get_accessible().set_name("Open " + title)
+            button.connect("clicked", lambda _button, selected=app:
+                           self.shell._launch(selected))
+            self.apps_results.pack_start(button, False, False, 0)
+        if len(matches) > self._apps_limit:
+            more = self.shell._class(self.Gtk.Button(label="Show more apps"),
+                                     "ten-settings-action")
+            more.connect("clicked", lambda _button: self._expand_apps())
+            self.apps_results.pack_start(more, False, False, 0)
+        self.apps_results.show_all()
+
+    def _expand_apps(self):
+        self._apps_limit += 35
+        self._populate_apps()
 
     def _status(self, body, name):
         label = self.shell._class(self.Gtk.Label(label="Reading status…", xalign=0),
@@ -566,6 +657,20 @@ class TenSettings:
     def refresh(self):
         if self.closed or not self.window.get_visible():
             return
+        if self.current == "storage":
+            try:
+                usage = shutil.disk_usage(Path.home())
+                description, fraction = storage_description(usage.used, usage.total)
+            except (OSError, ValueError) as exc:
+                self._status_labels["storage"].set_text(
+                    "Filesystem space unavailable: " + str(exc))
+                self.storage_meter.set_fraction(0)
+            else:
+                self._status_labels["storage"].set_text(description)
+                self.storage_meter.set_fraction(fraction)
+        if self.current == "power":
+            self._request("power", lambda: spice.read("desktop_status"),
+                          self._render_power)
         capabilities = {
             "network": ("wifi", "network"),
             "devices": ("bluetooth",),
@@ -577,6 +682,19 @@ class TenSettings:
             self._request(capability, lambda name=capability: (
                 pop.quiet_mode() if name == "quiet" else spice.read(name)),
                 lambda response, name=capability: self._render_capability(name, response))
+
+    def _render_power(self, response):
+        result = response.value if response.error is None else None
+        status = result.value if getattr(result, "status", None) == "ok" else None
+        battery = getattr(status, "battery", None)
+        if status is None:
+            text = "Power status unavailable · " + (
+                response.error or getattr(result, "reason", "backend unavailable"))
+        elif battery is None:
+            text = "No laptop battery reported · power is managed by Linux"
+        else:
+            text = f"Battery: {battery.percent}% · {battery.label}"
+        self._status_labels["power"].set_text(text)
 
     def _render_capability(self, name, response):
         if name == "quiet":

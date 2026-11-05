@@ -7,6 +7,13 @@ from .aero_windows import is_task_window
 MAX_VISIBLE_WINDOWS = 60
 
 
+def card_position(index: int) -> tuple[int, int]:
+    """Use two readable desktop-preview columns with bounded vertical scroll."""
+    if not isinstance(index, int) or index < 0:
+        raise ValueError("Invalid Task View window index")
+    return index % 2, index // 2
+
+
 def manageable_workspace_count(count: int, *, maximum: int = 12) -> bool:
     return isinstance(count, int) and 1 <= count < maximum
 
@@ -54,7 +61,8 @@ class TenTaskView:
                                     "ten-section-heading"), False, False, 0)
         scroller = Gtk.ScrolledWindow()
         scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
-        self.windows = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        self.windows = Gtk.Grid(row_spacing=9, column_spacing=9)
+        self.windows.set_column_homogeneous(True)
         scroller.add(self.windows)
         root.pack_start(scroller, True, True, 0)
         self.window.add(root)
@@ -152,24 +160,40 @@ class TenTaskView:
         if len(live_windows) > MAX_VISIBLE_WINDOWS:
             self.message.set_text(
                 f"Showing first {MAX_VISIBLE_WINDOWS} of {len(live_windows)} windows")
-        for window in live_windows[:MAX_VISIBLE_WINDOWS]:
+        for card_index, window in enumerate(live_windows[:MAX_VISIBLE_WINDOWS]):
             xid = int(window.get_xid())
             workspace = window.get_workspace()
             index = workspace.get_number() if workspace else active_index
-            row = self.shell._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8),
+            row = self.shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6),
                                     "ten-taskview-window")
-            title = self.shell._class(Gtk.Label(label=window.get_name() or "Application",
-                                                 xalign=0), "ten-network-name")
+            if window.is_active():
+                row.get_style_context().add_class("ten-taskview-window-active")
+            title_row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
+            icon = window.get_icon()
+            if icon is not None:
+                image = Gtk.Image.new_from_pixbuf(icon.scale_simple(32, 32, 2))
+            else:
+                image = self.shell._icon("application-x-executable", Gtk.IconSize.DIALOG)
+            title_row.pack_start(image, False, False, 0)
+            name = window.get_name() or "Application"
+            title = self.shell._class(Gtk.Label(label=name, xalign=0), "ten-network-name")
             title.set_ellipsize(3)
-            title.set_max_width_chars(38)
-            row.pack_start(title, True, True, 0)
-            row.pack_start(self.shell._class(Gtk.Label(label=f"Desktop {index+1}"),
-                                             "ten-muted"), False, False, 0)
-            activate = self.shell._class(Gtk.Button(label="Switch to"),
+            title.set_max_width_chars(28)
+            title_row.pack_start(title, True, True, 0)
+            close = self.shell._class(Gtk.Button(label="×"), "ten-taskview-close")
+            close.set_tooltip_text("Close this window")
+            close.get_accessible().set_name("Close window " + name)
+            close.connect("clicked", lambda _button, target=xid: self._close_window(target))
+            title_row.pack_end(close, False, False, 0)
+            row.pack_start(title_row, False, False, 0)
+            actions = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
+            actions.pack_start(self.shell._class(
+                Gtk.Label(label=f"Desktop {index+1}"), "ten-muted"), True, True, 0)
+            activate = self.shell._class(Gtk.Button(label="Open window"),
                                          "ten-settings-action")
-            activate.get_accessible().set_name("Activate " + (window.get_name() or "window"))
+            activate.get_accessible().set_name("Activate " + name)
             activate.connect("clicked", lambda _button, target=xid: self._activate(target))
-            row.pack_end(activate, False, False, 0)
+            actions.pack_end(activate, False, False, 0)
             if len(workspaces) > 1:
                 move = Gtk.ComboBoxText()
                 move.append("-", "Move to…")
@@ -179,12 +203,14 @@ class TenTaskView:
                 move.get_accessible().set_name("Move window to another desktop")
                 move.connect("changed", lambda combo, target=xid:
                              self._move(target, combo.get_active_id()))
-                row.pack_end(move, False, False, 0)
-            self.windows.pack_start(row, False, False, 0)
+                actions.pack_end(move, False, False, 0)
+            row.pack_end(actions, False, False, 0)
+            column, grid_row = card_position(card_index)
+            self.windows.attach(row, column, grid_row, 1, 1)
         if not live_windows:
-            self.windows.pack_start(self.shell._class(
+            self.windows.attach(self.shell._class(
                 Gtk.Label(label="No open application windows", xalign=0), "ten-muted"),
-                False, False, 0)
+                0, 0, 2, 1)
         self.desktops.show_all()
         self.windows.show_all()
 
@@ -225,6 +251,21 @@ class TenTaskView:
             return
         window.move_to_workspace(workspace)
         self.refresh()
+
+    def _close_window(self, xid):
+        """Only close a still-live, tasklist-visible Wnck window on click."""
+        tracker = getattr(self.shell, "_window_tracker", None)
+        window = tracker.wnck.Window.get(xid) if tracker else None
+        if window is None or not is_task_window(window, tracker.wnck):
+            self.message.set_text("This window is no longer available")
+            self.refresh()
+            return
+        window.close(self.Gtk.get_current_event_time())
+        self.GLib.timeout_add(250, self._refresh_after_close)
+
+    def _refresh_after_close(self):
+        self.refresh()
+        return False
 
     def _new_desktop(self):
         screen = self._screen()

@@ -100,6 +100,16 @@ CSS = b"""
   font-family: "Segoe UI", "Noto Sans", sans-serif; font-size: 12px;
 }
 .ten-search:hover, .ten-search:focus { background: #333338; }
+.ten-search.ten-search-box { background: #eeeeee; color: #242424;
+  border: 1px solid #b7b7b7; min-height: 31px; padding: 4px 12px;
+  margin: 2px 3px; }
+.ten-search.ten-search-box label, .ten-search.ten-search-box image {
+  color: #303030; }
+.ten-search.ten-search-box:hover, .ten-search.ten-search-box:focus {
+  background: white; border-color: #4d96c7; }
+.ten-jumplist, .ten-jumplist menuitem { background: #282828; color: white;
+  border-radius: 0; }
+.ten-jumplist menuitem:hover { background: #414141; }
 
 .aero-menu-root, .ten-action-root {
   background: @ten-surface; color: @ten-text; border: 1px solid #424242;
@@ -141,16 +151,25 @@ CSS = b"""
 }
 .aero-menu-app:hover, .aero-menu-app:focus { background: #414141; }
 .ten-app-label { color: #f5f5f5; font-size: 12px; }
-.ten-tiles-panel { border-left: 1px solid #3e3e3e; padding-left: 14px; }
+.ten-tiles-panel { border-left: 1px solid #3e3e3e; padding-left: 12px;
+  padding-right: 5px; }
 .ten-tile { background: @ten-blue; color: white; border: 1px solid transparent;
-  border-radius: 0; box-shadow: none; padding: 9px; min-width: 130px; }
+  border-radius: 0; box-shadow: none; padding: 7px; min-width: 0;
+  min-height: 0; }
 .ten-tile:hover, .ten-tile:focus { background: #168ce2; border-color: #a8ddff; }
 .ten-tile:active { background: #005a9e; }
+.ten-tile-small { padding: 4px; }
+.ten-tile-large { background: #0764aa; }
 .ten-tile-alt { background: #145a96; }
 .ten-tile-alt:hover { background: #216fae; }
 .ten-tile-wide { background: #005a9e; }
 .ten-tile-wide:hover { background: #137abf; }
 .ten-tile-label { color: white; font-size: 11px; }
+.ten-group-edit { background: transparent; border: 0; border-radius: 0;
+  box-shadow: none; padding: 3px; min-width: 22px; min-height: 22px; }
+.ten-group-edit:hover, .ten-group-edit:focus { background: #454545; }
+.ten-group-entry { background: #292929; color: white; border-radius: 0;
+  border: 1px solid @ten-blue; padding: 4px; }
 .ten-muted { color: @ten-muted; font-size: 11px; }
 .ten-separator { background: #4d4d4d; min-height: 1px; }
 
@@ -288,13 +307,52 @@ CSS = b"""
   padding: 9px 7px; }
 .ten-network-item:hover { background: #333333; border-left-color: @ten-blue; }
 .ten-network-name { color: white; font-size: 12px; }
+/* Compact Windows 10 notification-area flyouts, using the established Linux
+   device adapters; no XP glass, icon sheets or separate resident service. */
+.ten-tray-popup { background: #232323; color: #f5f5f5;
+  border: 1px solid #494949; border-radius: 0;
+  font-family: "Segoe UI", "Noto Sans", sans-serif; }
+.ten-tray-popup .luna-tray-card { background: #232323; color: #f2f2f2;
+  padding: 17px 18px 19px; min-width: 292px; }
+.ten-tray-title { color: #ffffff; font-size: 16px; font-weight: 600; }
+.ten-tray-section { color: #eaeaea; font-size: 12px; font-weight: 600;
+  padding-top: 7px; }
+.ten-tray-caption { color: #d6d6d6; font-size: 12px; }
+.ten-tray-link, .ten-tray-popup .luna-tray-switch,
+.ten-tray-popup .luna-tray-mute { color: #f6f6f6; background: #363636;
+  border: 1px solid #696969; border-radius: 0; box-shadow: none;
+  padding: 8px 11px; min-height: 25px; }
+.ten-tray-link:hover, .ten-tray-popup .luna-tray-switch:hover,
+.ten-tray-popup .luna-tray-mute:hover { background: #484848; border-color: #9bd5ff; }
+.ten-tray-link:focus, .ten-tray-popup .luna-tray-switch:focus,
+.ten-tray-popup .luna-tray-mute:focus { border-color: #9bd5ff; outline: 1px solid #9bd5ff; }
+.ten-tray-link:disabled, .ten-tray-popup .luna-tray-switch:disabled,
+.ten-tray-popup .luna-tray-mute:disabled { color: #969696; background: #2a2a2a;
+  border-color: #454545; }
+.ten-tray-popup .luna-tray-mute:checked { background: @ten-blue; border-color: #68beff; }
+.ten-tray-popup scale trough { background: #515151; min-height: 4px; }
+.ten-tray-popup scale highlight { background: @ten-blue; }
+.ten-tray-popup scale slider { background: white; border: 0; box-shadow: none;
+  min-width: 15px; min-height: 15px; }
+.ten-tray-popup levelbar block.filled { background: @ten-blue; }
+.ten-tray-popup calendar { background: #232323; color: #f1f1f1;
+  border: 1px solid #494949; }
+.ten-tray-popup calendar:selected { background: @ten-blue; color: white; }
+.ten-clock-button { background: transparent; color: white; border: 0;
+  border-radius: 0; box-shadow: none; padding: 2px 6px; }
+.ten-clock-button:hover, .ten-clock-button:focus { background: #343434; }
 .ten-taskview-root { padding: 16px 18px; }
 .ten-taskview-desktop { color: #f8f8f8; background: #333333;
   border: 1px solid #535353; border-radius: 0; padding: 11px 18px; }
 .ten-taskview-desktop:hover { background: #434343; }
 .ten-taskview-active { background: #145b92; border-color: #79c7ff; }
 .ten-taskview-window { background: #303030; color: white;
-  border: 1px solid #474747; padding: 9px 11px; }
+  border: 1px solid #474747; padding: 12px 13px; min-height: 86px; }
+.ten-taskview-window-active { border-color: #65b5f6; background: #243b4e; }
+.ten-taskview-close { background: transparent; color: #eee;
+  border: 0; border-radius: 0; box-shadow: none; min-width: 28px;
+  min-height: 28px; padding: 2px; }
+.ten-taskview-close:hover { background: #b52d2d; color: white; }
 .rice-status { background: transparent; border: 0; border-radius: 0;
   color: white; box-shadow: none; padding: 5px 3px; }
 .rice-status:hover, .rice-status:focus { background: #333338; }

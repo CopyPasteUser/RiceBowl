@@ -18,6 +18,10 @@ class GalleryImportTests(unittest.TestCase):
         self.assertIn("chromeos-settings", VERSIONS)
         self.assertIn("windows10-settings-home", VERSIONS)
         self.assertIn("windows10-settings-sound", VERSIONS)
+        for view in ("windows10-settings-storage", "windows10-settings-apps",
+                     "windows10-audio", "windows10-calendar", "windows10-network",
+                     "windows10-task-view"):
+            self.assertIn(view, VERSIONS)
         self.assertIn("macmenu-dark", VERSIONS)
         self.assertEqual(len(VERSIONS), len(set(VERSIONS.values())))
 

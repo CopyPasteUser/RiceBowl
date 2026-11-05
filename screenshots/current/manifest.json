@@ -1,10 +1,10 @@
 {
   "format": 1,
   "capture_origin": "RiceBowl GitHub Actions, native GTK3/XFWM4 virtual X11",
-  "run_id": 42035681537,
-  "source_commit": "f02efdfc804034523132ef38290061152f147543",
-  "source_archive_sha256": "94713788915f7ff2a5ae81e80bdde1d7381caea82dbc34f7c6374c5d761e0623",
-  "imported_at_utc": "2026-11-05T13:29:49Z",
+  "run_id": 42045518423,
+  "source_commit": "cdf458a899051d26f563ce0c7eddfea7e2c61ab7",
+  "source_archive_sha256": "a744de9a1ba70bd5dbdfb219b10b6cf657748c0ec796b29652cf5e43df7139a5",
+  "imported_at_utc": "2026-11-05T14:33:43Z",
   "desktop_resolution": [
     1600,
     900
@@ -17,8 +17,8 @@
         1600,
         900
       ],
-      "png_sha256": "16bb00ea3b438733ef3296fd14063258a0b8b90d4efe49a19090bfa26318be19",
-      "webp_sha256": "acb7f2ecd9ece511124acfaac6e66a1cfceee2a6a75052584b656f37f55f2c97"
+      "png_sha256": "dbac190d2fe323d9808b743c71b5682f364c5b2bd145141054b9301d6298a583",
+      "webp_sha256": "61514752dcea16a278665789213061313ebbd745a28bd4f24f3bc2e6d84e48f5"
     },
     {
       "file": "aero-controls.webp",
@@ -27,8 +27,8 @@
         1600,
         900
       ],
-      "png_sha256": "01389e1e2824766ee32be48cad285fe0d1cd506fa2dbe3b3b4f9c22acdeb1fe9",
-      "webp_sha256": "00ede45366d028427e7e0de6c5bb7ae5c50ea51b82b5824966ea9e65c0402e43"
+      "png_sha256": "a5b0b1a1108782277bf121a5ac40ef47f9baacdb0b114daaf64d2492b94b0e8a",
+      "webp_sha256": "4acfb7b5513f070059ff0de68c9a5090ab7ba9df3faac0a2d79c9ce689234404"
     },
     {
       "file": "aero-workspace.webp",
@@ -37,8 +37,8 @@
         1600,
         900
       ],
-      "png_sha256": "c8a2f8ed446d8f8141aeeee7fb433159571c27227f238d1dd31cd57e153363e0",
-      "webp_sha256": "9df9d0bab772f2b444e8f3bd128c9c0c79842f2ae746644a83314fe27f37ebd9"
+      "png_sha256": "aebfaad4ac21606edddfd662664bfb1de235bb51f9953848a9da31c9274d740a",
+      "webp_sha256": "4d3c93b1f805c91c04574159ee71b4c9a9b451252accefc53149da5464b720e3"
     },
     {
       "file": "windows10-start.webp",
@@ -47,8 +47,8 @@
         1600,
         900
       ],
-      "png_sha256": "501ea2b7cab41e843d7ffb975390f389fb3d4829d234addccdda4c2ec9170da3",
-      "webp_sha256": "e5807811162283cca890a576a0992fc5a69568460fbd3d269995eaea244e3fae"
+      "png_sha256": "ac164298c2a853fcee8f2053a9c4a220f6f1e36f5fd847c9294b117eb94cacde",
+      "webp_sha256": "0ae66b30dac2f3830f88164d50a204f031bd60640e5bb1f7ee2437588ed08248"
     },
     {
       "file": "windows10-controls.webp",
@@ -57,8 +57,8 @@
         1600,
         900
       ],
-      "png_sha256": "296c2ac89865ff62f6b81afa05447fd38e41c9126607d53ac568e84336a0a58a",
-      "webp_sha256": "06ddc18bce072cd46c242e20f664b2fd7d1837300432cefb267f4239406f66a0"
+      "png_sha256": "d9e9f390041d9d9b5a3f6e3aa8b9b9e93cced7b69994df72b41f80fb403835eb",
+      "webp_sha256": "c383452eae29c2ad2c22e9a812cfc8fba2904b4013bbf88aec353441e73afeab"
     },
     {
       "file": "windows10-workspace.webp",
@@ -67,8 +67,8 @@
         1600,
         900
       ],
-      "png_sha256": "b16e0ddbc960dac7a0bf6116abea8091005be915e59087cae0207b286579c1d3",
-      "webp_sha256": "1fa8f31d8a467764185a703ed854bbf898f8b320c615bb9c09b3b37c84af2056"
+      "png_sha256": "8478b17f688e68a12e2eb8aa36f9ca4f601b1b046c50224c6ec7628d2aeb0e9d",
+      "webp_sha256": "d6c0353075eec19e53b37fe2efad8fa9feef6965ab7d553fd6dff894a9ca6740"
     },
     {
       "file": "winxp-start.webp",
@@ -77,8 +77,8 @@
         1600,
         900
       ],
-      "png_sha256": "1e7d0218beb54384ece4222d5629e153a929d44fa738f49bb48f218d092cf2a8",
-      "webp_sha256": "cdaa34e9d51f4198f8a72e3fc2e37cebdfc3ccfcad5c2bc418ad4c0803c8a263"
+      "png_sha256": "eaaead21b6b47579de43efa4e5588a890cc99a09ec641c97ad0169800869a74e",
+      "webp_sha256": "6116da25da84262a8f651f7cde16f78bcdd4e4f627ed5ffe5f2316937a8bd46b"
     },
     {
       "file": "winxp-controls.webp",
@@ -87,8 +87,8 @@
         1600,
         900
       ],
-      "png_sha256": "74c4a521f6b3789546699b9d75d131a41c1665dadab0b5538656c5e980af04aa",
-      "webp_sha256": "12c6a02eafa86f04c4067f98fa8aeff1f67e1c2213c61bb78863b7a3f71dc137"
+      "png_sha256": "7b30b1f04306fe2035ed301d656dc6e9b3f585c5e661cc714009772bf28eb816",
+      "webp_sha256": "b2decb34b043dcec0cb416ecd17150ba71d1061d8e6316afe684e5f40b08bb38"
     },
     {
       "file": "winxp-workspace.webp",
@@ -97,8 +97,8 @@
         1600,
         900
       ],
-      "png_sha256": "0378dc3a7c65b092ccd7d0159cefa71f912761fd74b4e602da10245fbb538b96",
-      "webp_sha256": "e9ec66ff4b6a051cdc1990cc82549c92913214f9a058b417bb022ccd2ba6b9aa"
+      "png_sha256": "f1acbc175bccbb13164c82d78186b18947fc0bb8ea8381d18092bae03dd52de2",
+      "webp_sha256": "adac4bd63cfb376ecdbb2f67a5807be5c4ac620a93a3e88ea64ffff41083e298"
     },
     {
       "file": "winclassic-start.webp",
@@ -107,8 +107,8 @@
         1600,
         900
       ],
-      "png_sha256": "3bbb544838a630fb9859d74d006b0df78fed919b025dfc9657e8e9ccc761562d",
-      "webp_sha256": "afc452e2c78a72cd23aa454e8898c145c07a6c354f09ca7492e6c0a9def361d5"
+      "png_sha256": "207dde9dd042245be5c4a7c8b26238a40883e7dcdd9767c2bac9e6360e7096a1",
+      "webp_sha256": "94072d096ea2e68df460d90392ca4eed7bc603371ea037437beb505abeec867c"
     },
     {
       "file": "winclassic-controls.webp",
@@ -117,8 +117,8 @@
         1600,
         900
       ],
-      "png_sha256": "32c4248a559fbd03a8a0529d19bb9cb9142778e6b5826a97542391e5d084452d",
-      "webp_sha256": "b7f5279d9b592c98a73c69d82ddcfe7311f732e2b75be19945ac23e0ae4d6411"
+      "png_sha256": "57214d154e73f0ccf60e63d0ea3247b723988c12d66d5c3dd6107facc02776d9",
+      "webp_sha256": "201b5465d64fe5bac0f59602bd6b8d6a645d4d4fe89b098c6ff6a6898f639793"
     },
     {
       "file": "winclassic-workspace.webp",
@@ -127,8 +127,8 @@
         1600,
         900
       ],
-      "png_sha256": "1aa570c98c3511db805c565ee5c2e56118ffa268025d644ba82c771adcc8196c",
-      "webp_sha256": "113d2a72fdeeb38b95bb153d2d997db2f95e0bca9ca27a1d17a198bacabd579c"
+      "png_sha256": "e87f8d6393d0f9fe4c8dd427d9f847ff27cda6d783e1c0c38d2d703e32e75cb2",
+      "webp_sha256": "85ded04802e545c24dcbb75bf8fc8c74e0125eefb5d928c4a1383355542c3e74"
     },
     {
       "file": "chromeos-start.webp",
@@ -137,8 +137,8 @@
         1600,
         900
       ],
-      "png_sha256": "c29ccf563df692e7d08b49759f6825e51df55d05f0f04a7364776c6ae1373ad9",
-      "webp_sha256": "69e7c1e62df521fcef970a89f9d6a69f18617d4d355e9aa90e83addc28dfc7af"
+      "png_sha256": "8bdbf73339e7de29e8738a97e55c034832cfdef7cb18f668341e841870883ff6",
+      "webp_sha256": "72afe0534068dd307a26d041f4729dd13452ed7f95bda99556ec2ce153a60ffc"
     },
     {
       "file": "chromeos-controls.webp",
@@ -147,8 +147,8 @@
         1600,
         900
       ],
-      "png_sha256": "5c570df5dbf2f1854a5adad4fb5f7374a565e261ed6568d947ee040d127f3aa5",
-      "webp_sha256": "2fea7be2878a3647c552df436c053735bba6f97ae76b401b6db5c5639cd1abf7"
+      "png_sha256": "12985e24ddf1e54a4ea9fa61c71b46374748e945bd90cd2ef539abf1f35123a5",
+      "webp_sha256": "523fe10d1c9ae03b38527e4f4bc247041c58176f16e77498c0d179e0e70db752"
     },
     {
       "file": "chromeos-workspace.webp",
@@ -157,8 +157,8 @@
         1600,
         900
       ],
-      "png_sha256": "bf3f1dd9055e2c86179fe0b0aac5810273d316476fc48079633d9442d018f75f",
-      "webp_sha256": "ceb323310c15fe2ca3e072804aa0211b20954ded57bd069855f1cd490b6606d5"
+      "png_sha256": "b8b1a894a9542e7e48fc59890732a68fc2a65ab9175dbf159e773912cf3f8217",
+      "webp_sha256": "b6620e00fc57d48351ad9b8d1d4340c4eb1b6e5a3a913957a7bb563b6e8981e1"
     },
     {
       "file": "frutiger-start.webp",
@@ -167,8 +167,8 @@
         1600,
         900
       ],
-      "png_sha256": "9c6ed664227730d7978256c1e62c5a153b5ed82f6b227fd483cf4114f18484e1",
-      "webp_sha256": "8de54da63b738c7e476267f9ebf00c5e7469ab137b5a3240bb462d2b1b4783bf"
+      "png_sha256": "460a246a8a5d1dc72daf27e03a6761c9e7e9fc56d72d1304b3f53dcb5096741e",
+      "webp_sha256": "645c1a57f510c54fcace2a90fbc9f559ab3ddf63fb6b89ef0e286d44e20a833b"
     },
     {
       "file": "frutiger-controls.webp",
@@ -177,8 +177,8 @@
         1600,
         900
       ],
-      "png_sha256": "02837bb43d57db4bf8088c92a1dc4de91f869b37a525e55e41f81b5a0fe4765e",
-      "webp_sha256": "dcae4ce3acc8612cadd347c69686b8a8261e6d2aed4d2a16168f244d65ab80ed"
+      "png_sha256": "abdf9fb7738693b931987b422a02404bba798c5704f50a00e84bb4430d6fef91",
+      "webp_sha256": "e5eee70246cfb8b299457d0859fcd735d8848aaac1c7d84e58863cd574b2d79c"
     },
     {
       "file": "frutiger-workspace.webp",
@@ -187,8 +187,8 @@
         1600,
         900
       ],
-      "png_sha256": "91e526114b3b65d8c6a765cd440be6f747b5ffc208e42c6a7b8a105c5a7fc1d3",
-      "webp_sha256": "1e81903944ee74863ae6d31d8aa04198561962b1e3256cbba335a45b69ee1ae7"
+      "png_sha256": "c376285f275f1ab436093d1685a8cfaba99653ca37d341f4facc4dbb638fdf33",
+      "webp_sha256": "e2074bb50944b4710ed3cf8239e7f266b2f261cf2f0d22c3b4e4fb4aa66b057d"
     },
     {
       "file": "winxp-programs.webp",
@@ -197,8 +197,8 @@
         1600,
         900
       ],
-      "png_sha256": "f81cc2fb4c904a2c70ab74dd1496966cd364504b1859bf6dddec22c99657ebd5",
-      "webp_sha256": "16b366d9595dd6b6fc19777f334769566baa0629a3fe95a592edd4a499495096"
+      "png_sha256": "cb1f0fe106ff9a8c900f75e70389859bd0569bcc6a3a73e4ab25ddfe7ea88d72",
+      "webp_sha256": "23bc41eb555abcedb435e5ee829f1c1607cd90f74eed75afbcb7066507a15625"
     },
     {
       "file": "winxp-detail.webp",
@@ -207,8 +207,8 @@
         1600,
         900
       ],
-      "png_sha256": "b6be70c3bdc73c4deb3c3c4361416f9c43d769dfa69f000575514952908bb262",
-      "webp_sha256": "e815f6f538039716eb40e24bbc28eac7fabb88478a9ee06a84cec854cac758d1"
+      "png_sha256": "f2ef9fc98299a104d5e72a319dd733462263d2a004a8700cd465ad64cfd2d796",
+      "webp_sha256": "dccb2b741fb0b24d18ad16f18d14720a6ef99dc7b78885ac5d140bb75ae0cbcf"
     },
     {
       "file": "winxp-classic.webp",
@@ -217,8 +217,8 @@
         1600,
         900
       ],
-      "png_sha256": "ae22fae689acbc57d416b00a34df7c0c8c2da410d0473567b1e104b72124b060",
-      "webp_sha256": "160d76d7f676742aba440d70016e63c40e9e9fc08c1ea4f3e1a7242285af5d71"
+      "png_sha256": "167c28a9d2ba3342b9c7a3f75fc4acdf2d83ff3000e781de8c92ec0b801c01f2",
+      "webp_sha256": "95c67e405300a53199a8921eb1ac0cae4154e9881c9c5fbf6d51667a8c7b9d91"
     },
     {
       "file": "winxp-tray-audio.webp",
@@ -227,8 +227,8 @@
         1600,
         900
       ],
-      "png_sha256": "e0c1dfbeaf51d5145a6410f83132d8bc55a37a4662a4c174f300789e002ab152",
-      "webp_sha256": "b8619c11a797f1b78e233d6a91c15778afc4378d0faea6f9a59bfcd11615e628"
+      "png_sha256": "54a4b842a2a38bc912b9ca61ab6d4851919aa770e3d856c051085ea7a6e5b99f",
+      "webp_sha256": "3fb204f7c08caf5f2bcc3fc90ee18f7d13524a0b33c29e4d75c72f7755eae9d4"
     },
     {
       "file": "winxp-tray-network.webp",
@@ -237,8 +237,8 @@
         1600,
         900
       ],
-      "png_sha256": "7b92028002fbe25f8d09b8286ca351ddd33ffc2fdb314a7be642403fd3e7e368",
-      "webp_sha256": "267d9e6855067fbfa93088779ee9f601924521023a38be12d1b69244334d56a5"
+      "png_sha256": "e468f0c50cb04e0d9cab45ac3fb9a615a9b8beca90f6eb38715fdabb00b9c27b",
+      "webp_sha256": "3ca1ffd40e4c539c892318ff8eab5a7e978e927ed87b1f896afe390770534ee4"
     },
     {
       "file": "winxp-tray-battery.webp",
@@ -247,8 +247,8 @@
         1600,
         900
       ],
-      "png_sha256": "98cbaf58dd45dc8cec0b0c0cea00c7e0c816fc7e8721813153db57727514df8f",
-      "webp_sha256": "3f71f14ed0a9b4765e5a88e37762e108e4ca9a4727c3f09308e2f09d423b0e5c"
+      "png_sha256": "d51ef94d435cb4f123366ba832acb07fee0859d3457c19d49aee47197c44d499",
+      "webp_sha256": "b6e5259cd4190e579b8a83b0ec1f6fa141846a553235e5b6eb04e88875845576"
     },
     {
       "file": "winxp-tray-bluetooth.webp",
@@ -257,8 +257,8 @@
         1600,
         900
       ],
-      "png_sha256": "9ce0c71f2072059c7835bc28e4cdf2b5a2c5645468005eff2194ecdeeb9d6730",
-      "webp_sha256": "23b8357176a03834c780e752798b9ad9a3fd4ca99952daa3d852ed8e9d25144c"
+      "png_sha256": "039c9c5549f9d663e3fece747c55eda03df2cba5aeb9fe3430d421a04c173575",
+      "webp_sha256": "24d52ddc8ebd89e096737d5c23bb03997849276a93d673c5d9be775b80551747"
     },
     {
       "file": "winxp-tray-clock.webp",
@@ -267,8 +267,8 @@
         1600,
         900
       ],
-      "png_sha256": "7d4152139413691515c9e78fecb6a0d6398ecaebfe861bbd9012d74c29354434",
-      "webp_sha256": "1389af75f0e85a2e5fd28d1490951e68052cb7414fb6c226e3f70046f72463ad"
+      "png_sha256": "6898afc9bcf78513646446398a0d02cb9ba2c50569d78fe4952e82344113798b",
+      "webp_sha256": "988a8ca7c6481eec7baffb98a6231a121577e618cea50fe850a9f89af75338e3"
     },
     {
       "file": "winxp-properties.webp",
@@ -277,8 +277,8 @@
         1600,
         900
       ],
-      "png_sha256": "62932c7344cac1a9f34c5e9a69cfd6ef71d3e90a0160aca525b649eec8f26e58",
-      "webp_sha256": "b043b149a1fc6953f50a0feafa21b98541a66dcf646a22102b1fb63c9895b002"
+      "png_sha256": "d0907930e36fe6e17fa0bcff1b29cd478e49a2200f87ede9a80b2ed3ec970a32",
+      "webp_sha256": "62b959930e020dd23f27de12beb7340385a2f3101dd7fdfe3d628647bee81822"
     },
     {
       "file": "winxp-notification-icons.webp",
@@ -287,8 +287,8 @@
         1600,
         900
       ],
-      "png_sha256": "9d23d253388395cde2530d30f41284ee4ec415b9c5b316473c5d5077a269a989",
-      "webp_sha256": "135730d6cb48e544d859ec0ca06b9545bf092b6c84a20e6abfbe2615c35104e4"
+      "png_sha256": "090fa7c4e59bc1c986ed3e474056eaee140a751f99876748a49101855b2952a3",
+      "webp_sha256": "0aa206822cb35c16d056fc912e99c922d8d5019d2fc07f701b4c72f2f5c1ff5c"
     },
     {
       "file": "winxp-run.webp",
@@ -297,8 +297,8 @@
         1600,
         900
       ],
-      "png_sha256": "a73bf52eacefb484f0ef7ae7bab5164be97fedb313fb0206f168c726736c1d62",
-      "webp_sha256": "0c71334cd39449397aad2bb9d8b40426d37f12904e05ee887588e372626ac6d6"
+      "png_sha256": "c89093bd5a8be9041e21299d415719948945e06824c28d128d8fb93c2fb3a97c",
+      "webp_sha256": "57c0b8e5cffa99f5cab1247059d44016a9843f1f587efcb7b1849b85cb6ad66a"
     },
     {
       "file": "chromeos-notifications.webp",
@@ -307,8 +307,8 @@
         1600,
         900
       ],
-      "png_sha256": "332b08ea05bebe3fdb2379911e3c9c0fd558abe1f6d5c156e67c78c9f0dedabf",
-      "webp_sha256": "cc3351a9601504fdb41abd1b8fe152254f1a27c0f5712ed69cddffeedf9d752a"
+      "png_sha256": "a0b9100301ee33d529b728b5852dd7238edc1a3d9380efa6566a9f3ccdc852f4",
+      "webp_sha256": "a24b9565250a96b21d1e3593d27e23c938a2d61789001e628dae60179ffa079c"
     },
     {
       "file": "chromeos-settings.webp",
@@ -317,8 +317,8 @@
         1600,
         900
       ],
-      "png_sha256": "c2174933c36cd44de729dd19e2701310347117008050438a914159629e63384e",
-      "webp_sha256": "093cb422328da0607253d90a0300c113445d670c9b6f3d7b8e6090fb97459382"
+      "png_sha256": "0da3c8d5b15dd901b2c2e030bb65bd7b982f58383d5bdc53926005856cbf0fca",
+      "webp_sha256": "ae43b9f789a9a52bc3eaa184afc54e24e7887cbc5963a1f0150807b37086b3fc"
     },
     {
       "file": "windows10-settings-home.webp",
@@ -327,8 +327,8 @@
         1600,
         900
       ],
-      "png_sha256": "5efadd0e7f86a9f979d14ca5a07fe42403300c817e026ba676413dc5c181b236",
-      "webp_sha256": "3350f7023a1cb7feba481d5d359d1ce4aeb5332b43c1aa43e0799e97c807246d"
+      "png_sha256": "6010e82c1fdf03aa80d66125f0984dd1860e7aa76bce0b74764085d21987bac7",
+      "webp_sha256": "5b6ba4b854f736aad91ece54f56d7f2e9485fe5b555af7de280fe8703f1a6e62"
     },
     {
       "file": "windows10-settings-sound.webp",
@@ -337,8 +337,28 @@
         1600,
         900
       ],
-      "png_sha256": "a512a86827353d2cddca6875baaebf70da36779c9612366e8c11533bdb699896",
-      "webp_sha256": "e0c2b65e81b25f671434238aa23381dd8245904a1b147f2b4ff1310a120ab07d"
+      "png_sha256": "25877fdacdd7f878d496a0c410fc52ddaa091e9c7858681ef37845095a9db5e0",
+      "webp_sha256": "db9afe00744e8f1e9c621290dcee54d1b4d507f3497b2a933de57af756574003"
+    },
+    {
+      "file": "windows10-settings-storage.webp",
+      "capture": "ricebowl-windows10-settings-storage-0.9.1-extra.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "96695258a17e243e2c7b2305e1330629f520503f31e8773d7b94dd312e6bbb94",
+      "webp_sha256": "c5f7022ddc385f8cc7b3386e5f7ed71d72b2163c582a852db3d3a625b8c18f3d"
+    },
+    {
+      "file": "windows10-settings-apps.webp",
+      "capture": "ricebowl-windows10-settings-apps-0.9.1-extra.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "2381a33a90e14f75b03b74c826efdf85d25fa432ac4de471531fcc11b1a33774",
+      "webp_sha256": "57d1fa894b67830266534230acc47741a7739ba3ee5dbc1bb8d61686d92d96e6"
     },
     {
       "file": "windows10-letters.webp",
@@ -347,8 +367,8 @@
         1600,
         900
       ],
-      "png_sha256": "d67c876409f94c797d3a0160dce9581dfdfb2d35c8f03d12d006783a3fef67d3",
-      "webp_sha256": "dd50e1e37810fff550811e949581690466234a8a1993a55d82a27e3cb613311c"
+      "png_sha256": "805f1b12f14ab120f3d1cecb5cf883920806bdb2e7ac0b04af476f1b2be821a0",
+      "webp_sha256": "6c347f9a027368629e71fc8493e85cc52f7e0bc899a771a12ad845e273bc6e12"
     },
     {
       "file": "windows10-actions-expanded.webp",
@@ -357,8 +377,48 @@
         1600,
         900
       ],
-      "png_sha256": "b7cbe83416aea2a264af70facf90cbd53c0257cf83105374141705d7005525d8",
-      "webp_sha256": "8efe54c6c07c6e65b52a12fa87812616cb6aa5d4ba02c289b1df596c0899458e"
+      "png_sha256": "df73cf048f7fe7fa1b38c6129705f46fa8e99fbf288452d648f59c29ab541bc5",
+      "webp_sha256": "337c50cf39591733fdf426ae0e4fc2351ac0a13ffda5346457718f8f8718e840"
+    },
+    {
+      "file": "windows10-audio.webp",
+      "capture": "ricebowl-windows10-audio-0.9.1-extra.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "e0071551d35ea3914760d58dc1574da8cafc84deb35aa0f552fa63dd43032ac6",
+      "webp_sha256": "8ca2a5f7fe9b7356dbfbb5219802a373b4fe58b9044fdd7e5cddd65876c14a12"
+    },
+    {
+      "file": "windows10-calendar.webp",
+      "capture": "ricebowl-windows10-calendar-0.9.1-extra.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "59fdf1356ab65dc12fc69d905c01a2ad166f97001b58508040cb4c39a63a1f7f",
+      "webp_sha256": "e39e64241f4adb7133bb32fed04a5118ab4ec6b3810698655441a401e7011b3f"
+    },
+    {
+      "file": "windows10-network.webp",
+      "capture": "ricebowl-windows10-network-0.9.1-extra.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "957401a095ce9324bb36de522979a2fa7d369ee67b44a3b54a216eb7a6177d1b",
+      "webp_sha256": "9dadeb8b35608573f7ccec43dedba183232adbd32b6c51a2ecf7c5153cc0dd8b"
+    },
+    {
+      "file": "windows10-task-view.webp",
+      "capture": "ricebowl-windows10-task-view-0.9.1-extra.png",
+      "pixels": [
+        1600,
+        900
+      ],
+      "png_sha256": "16a0c95c0fa9966ff1be3c5e0d25f6f1964c94f1cd6729eb9166864afd6cf420",
+      "webp_sha256": "4664c3ba156c370c0ead807e88aaf02aa36cd5f3b91caa40766d9d8e2f08e5fc"
     },
     {
       "file": "macmenu-dark.webp",
