@@ -91,7 +91,12 @@ def save(role: str, geometry: WindowGeometry, *, path: Path | None = None) -> No
 
 
 def visible_geometry(geometry: WindowGeometry, monitors) -> WindowGeometry:
-    """Constrain saved size and ensure a reachable title strip on some monitor."""
+    """Keep the whole restored window visible when monitor dimensions change.
+
+    A reachable title strip alone is insufficient for borderless Settings:
+    after switching from a large monitor to 1024x768 the controls may lie
+    beyond the right edge even though the window can technically be dragged.
+    """
     _validate(geometry)
     monitors = tuple(rect for rect in monitors if rect.width >= 240 and rect.height >= 200)
     if not monitors:
@@ -109,8 +114,8 @@ def visible_geometry(geometry: WindowGeometry, monitors) -> WindowGeometry:
     if overlap(rect) == 0:
         return WindowGeometry(rect.x + (rect.width - width) // 2,
                               rect.y + (rect.height - height) // 2, width, height)
-    x = min(max(geometry.x, rect.x), rect.x + rect.width - min(width, 90))
-    y = min(max(geometry.y, rect.y), rect.y + rect.height - min(height, 64))
+    x = min(max(geometry.x, rect.x), rect.x + rect.width - width)
+    y = min(max(geometry.y, rect.y), rect.y + rect.height - height)
     return WindowGeometry(x, y, width, height)
 
 

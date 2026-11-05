@@ -54,6 +54,19 @@ class WindowGeometryTests(unittest.TestCase):
         saved = geometry.WindowGeometry(-1600, 40, 700, 500)
         self.assertEqual(geometry.visible_geometry(saved, (monitor_left, monitor)), saved)
 
+    def test_partial_overlap_is_clamped_to_full_monitor_bounds(self):
+        compact = SimpleNamespace(x=0, y=0, width=1024, height=768)
+        # Reused position from a 1600px wide screenshot session. The previous
+        # title-strip-only rule restored the window at x=427, beyond x=1024.
+        saved = geometry.WindowGeometry(427, 162, 746, 536)
+        self.assertEqual(geometry.visible_geometry(saved, (compact,)),
+                         geometry.WindowGeometry(278, 162, 746, 536))
+        # Both bottom/right clipping and a changed monitor origin are covered.
+        shifted = SimpleNamespace(x=1920, y=50, width=800, height=600)
+        self.assertEqual(
+            geometry.visible_geometry(geometry.WindowGeometry(2550, 420, 700, 500), (shifted,)),
+            geometry.WindowGeometry(2020, 150, 700, 500))
+
     def test_restore_track_waits_for_nonmaximized_configuration_and_flushes_on_hide(self):
         window = mock.Mock()
         window.get_screen.return_value = SimpleNamespace(
