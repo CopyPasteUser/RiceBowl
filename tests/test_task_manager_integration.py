@@ -33,6 +33,7 @@ class TaskManagerIntegrationTests(unittest.TestCase):
         self.assertIn('menu.append(self._task_manager_item())', shell)
         self.assertIn('menu.append(self._task_manager_item(label="Start Task Manager"))', shell)
         self.assertIn('item.set_sensitive(name is not None)', shell)
+        self.assertIn('desktop.set_sensitive(self._window_tracker is not None)', shell)
         self.assertIn('self._open_tool(selected)', shell)
         self.assertIn('context_menu.destroy()', shell)
 

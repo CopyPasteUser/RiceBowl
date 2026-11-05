@@ -3178,6 +3178,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             menu = Gtk.Menu()
             menu.get_style_context().add_class("aero-menu-root")
             desktop = Gtk.MenuItem(label="Show the desktop")
+            desktop.set_sensitive(self._window_tracker is not None)
             desktop.connect("activate", lambda _item: self._show_desktop())
             menu.append(desktop)
             menu.append(Gtk.SeparatorMenuItem())
