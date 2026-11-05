@@ -21,9 +21,12 @@ def add_commands(commands) -> None:
     pop.add_argument("value", nargs="?")
     pop.add_argument("body", nargs="?")
     pop.add_argument("--yes", action="store_true", help="Confirm irreversible history clearing")
-    plate = backends.add_parser("plate", help="Inspect desktop or manage owned XFDesktop shortcuts")
-    plate.add_argument("action", choices=("status", "install", "remove"))
+    plate = backends.add_parser("plate", help="Inspect desktop, preview ricePlate or manage owned shortcuts")
+    plate.add_argument("action", choices=("status", "install", "remove", "preview"))
     plate.add_argument("--profile", choices=("xp", "win7"))
+    from .riceware.profiles import PROFILE_FAMILIES
+    plate.add_argument("--style", choices=tuple(PROFILE_FAMILIES), default=None,
+                       help="Rice-specific desktop preview style (default: winxp)")
     wine = backends.add_parser("wine", help="Manage private Wine prefixes without system changes")
     wine_actions = wine.add_subparsers(dest="action", required=True)
     for action in ("status", "list", "apps"):
@@ -134,6 +137,13 @@ def run(args) -> int:
     if args.riceware_backend == "plate":
         from .riceware import plate
 
+        if args.action == "preview":
+            if args.profile is not None:
+                raise ValueError("ricePlate preview uses --style, not --profile")
+            from .riceware.plate_preview import run
+            return run(args.style or "winxp")
+        if args.style is not None:
+            raise ValueError("--style applies only to ricePlate preview")
         if args.action == "status":
             _dump(plate.snapshot())
         else:

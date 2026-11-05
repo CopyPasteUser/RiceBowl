@@ -79,3 +79,7 @@ milestone—not a safe background-service toggle. Integrations with ricePlate,
 ricePop and riceExplorer should reduce these dependencies only when those
 programs pass real hardware acceptance. No new background service is proposed
 for the resource report.
+
+An opt-in ricePlate desktop **preview window** now exists within RiceBowl; it
+does not replace XFDesktop or reduce its idle memory yet. The separately gated
+takeover milestones are in [RICEPLATE_DESKTOP_ROADMAP.md](RICEPLATE_DESKTOP_ROADMAP.md).

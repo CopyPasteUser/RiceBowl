@@ -1,5 +1,20 @@
 # RiceBowl changelog
 
+## Unreleased — internal ricePlate desktop preview (5 November 2026)
+
+- Kept ricePlate within RiceBowl as a reusable, no-daemon backend plus optional
+  GTK3 desktop canvas. `macrice riceware plate preview --style STYLE` displays
+  the real current-user Desktop folder against the chosen rice's checked-in
+  wallpaper. Desktop ownership, window management, wallpaper preferences,
+  autostart, default file manager and all desktop files stay unchanged.
+- Added separate, atomically saved per-rice icon size, alignment, visibility
+  and hidden-file preferences in a private user-local config. ChromeOS defaults
+  to an icon-free canvas; Mac icons default right, classical Windows icons left.
+- Added keyboard/selection/context Open and Refresh interactions, bounded
+  asynchronous inventory, safe symlink handling, error/empty states and
+  native-X11 tests. Future XFDesktop retirement is explicitly gated on real
+  compatibility, recovery, multi-monitor and resource acceptance.
+
 ## Unreleased — lean XFCE session and measured resource ownership (5 November 2026)
 
 - Avoid launching Python/GTK `--quit` helpers for inactive RiceBowl shells

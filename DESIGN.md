@@ -32,6 +32,7 @@ secondary pages; prototypes and the release roadmap do not crowd the selector.
 | Per-rice taskbar / launcher skin | `macrice/heritage_shell.py`, `macrice/chrome_shell.py` or `macrice/ten_shell.py` |
 | Desktop GTK/XFWM/icons/wallpaper assets | `scripts/build_heritage_assets.py` and targeted `scripts/build_chrome_assets.py` → checked-in `assets/` |
 | Exclusive active shell, Plank, MacBar and XFCE panel | `macrice/shell_session.py` |
+| Optional read-only desktop preview, per-rice icon preferences and inventory | `macrice/riceware/plate.py`, `macrice/riceware/plate_preview.py` |
 | Recoverable Super_L and Control_R shortcuts | `macrice/session_shortcuts.py` |
 | Backups and partial restore | `macrice/rice.py`, schema 5 |
 
@@ -302,6 +303,10 @@ GTK/XFWM assets. Change both together when a theme identity changes.
   Plank and MacBar before starting the selected taskbar; XFCE's stock panel
   exits only after a successful replacement handoff.
 - A preview remains read-only sample data, even when its rice is installable.
+- ricePlate's optional canvas may preview **real** current-user desktop icons,
+  but it must remain a normal window until a separately reviewed ownership
+  handoff exists. Its icon size, alignment and visibility preferences are
+  per-rice, never written through XFConf; `xfdesktop` stays authoritative.
 - Applying a rice journals a backup *before* writing XFCE preferences.
   Restoration preserves subsequent user edits and never overwrites custom art.
 - Desktop workarea and search/menu geometry adapt to the current monitor.

@@ -10,7 +10,7 @@ has passed full physical 1.0 acceptance.
 | --- | --- | --- |
 | `macrice.riceware.spice` | `snapshot()`, `read(name)`, `change(action, value)`, typed `action_specs()` and verified `Result` | Real-hardware sign-off and actual renderer migration |
 | `macrice.riceware.pop` | XFCE status/history/actions, native `send()`, event-driven `watch()` with `close()` | Separate notification host, third-party action replay |
-| `macrice.riceware.plate` | Bounded snapshot with display labels/icons and safe XP/Win7 managed shortcuts | Separate desktop compositor, multi-monitor icon DnD |
+| `macrice.riceware.plate` | Bounded snapshot, safe XP/Win7 shortcuts, per-rice appearance and optional native-GTK desktop preview | Real desktop takeover, multi-monitor icon DnD |
 | `macrice.riceware.wine` | Private prefix create/resume/status/launch and log inspection | Downloads, arbitrary existing-prefix adoption, compatibility promises |
 | `macrice.riceware.wine_apps` | Safe per-prefix Windows-app catalog (`register`, `list_apps`, `launch_app`, `unregister`) | Automatic Windows program scanning and installer execution |
 | `macrice.riceware.worker` | `LatestRequestRunner(GLib.idle_add)` to keep GUI reads/writes off GTK thread and drop stale responses | One global resident polling daemon |
@@ -30,6 +30,7 @@ python3 -m macrice riceware spice status             # On-demand real hardware s
 python3 -m macrice riceware spice get wifi          # Read without changing it
 python3 -m macrice riceware pop list                # Existing XFCE log, if exposed
 python3 -m macrice riceware plate status            # Inventory; no file edits
+python3 -m macrice riceware plate preview --style winxp  # Normal GTK window; no XFDesktop takeover
 python3 -m macrice riceware wine status             # Wine version and managed prefixes
 python3 -m macrice riceware wine apps               # Registered Windows app starters
 ```
@@ -102,6 +103,11 @@ hardware (audio, Wi-Fi, Bluetooth, brightness, power, real notifyd, XFDesktop,
 optional Wine), then migrate one renderer at a time with fallbacks. See
 [S0–S6 roadmap](RICE_ECOSYSTEM_ROADMAP.md). No new repository is required for
 these initial foundations.
+
+The [ricePlate desktop plan](RICEPLATE_DESKTOP_ROADMAP.md) tracks its preview
+canvas and the separately gated real-desktop owner transition. Preview layout
+preferences live in the user's XDG configuration, never inside the source
+checkout, and do not alter any XFCE system setting.
 
 ### Acceptance gates still open
 
