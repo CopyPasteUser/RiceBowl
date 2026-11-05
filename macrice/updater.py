@@ -48,6 +48,7 @@ class UpdatePlan:
     available: str
     commits: int
     source: Path
+    changed: tuple[str, ...] = ()
 
     @property
     def needed(self) -> bool:
@@ -81,7 +82,8 @@ def checkout_changes(source: Path) -> tuple[str, ...]:
     return tuple(paths)
 
 
-def inspect(*, source: Path | None = None, refresh: bool = False) -> UpdatePlan:
+def inspect(*, source: Path | None = None, refresh: bool = False,
+            allow_dirty: bool = False) -> UpdatePlan:
     """Read-only by default; explicit refresh fetches only the trusted main ref."""
     source = _default_source() if source is None else source
     if os.geteuid() == 0:
@@ -93,7 +95,7 @@ def inspect(*, source: Path | None = None, refresh: bool = False) -> UpdatePlan:
     if _git(source, "symbolic-ref", "--short", "HEAD") != "main":
         raise UpdateError("Switch to your clean main branch before updating")
     changes = checkout_changes(source)
-    if changes:
+    if changes and not allow_dirty:
         sample = ", ".join(repr(path) for path in changes[:6])
         extra = f" (+{len(changes) - 6} more)" if len(changes) > 6 else ""
         raise UpdateError(
@@ -115,7 +117,7 @@ def inspect(*, source: Path | None = None, refresh: bool = False) -> UpdatePlan:
     if ancestor.returncode:
         raise UpdateError("Local main and origin/main have diverged; never force-update")
     count = int(_git(source, "rev-list", "--count", current + ".." + available))
-    return UpdatePlan(current, available, count, source)
+    return UpdatePlan(current, available, count, source, changes)
 
 
 def _extract_commit(source: Path, revision: str, destination: Path) -> None:
@@ -136,8 +138,15 @@ def _extract_commit(source: Path, revision: str, destination: Path) -> None:
         archive.extractall(destination, filter="data")
 
 
-def apply(*, source: Path | None = None, expected_revision: str | None = None) -> UpdatePlan:
-    """Install a pinned FF revision, recover the previous bundle on failure."""
+def apply(*, source: Path | None = None, expected_revision: str | None = None,
+          expected_current: str | None = None,
+          preserve_checkout: bool = False) -> UpdatePlan:
+    """Install a pinned FF revision; optionally leave dirty source untouched.
+
+    In preserve mode we stage the official Git commit and update only the
+    managed installation. No stash, merge, reset or write to a dirty source
+    checkout takes place. The owner must reconcile their source tree later.
+    """
     if os.geteuid() == 0:
         raise UpdateError("Never run the updater as root")
     base = data_home()
@@ -158,9 +167,11 @@ def apply(*, source: Path | None = None, expected_revision: str | None = None) -
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
         except BlockingIOError as exc:
             raise UpdateError("Another RiceBowl update is already running") from exc
-        plan = inspect(source=source, refresh=True)
+        plan = inspect(source=source, refresh=True, allow_dirty=preserve_checkout)
         if expected_revision is not None and plan.available != expected_revision:
             raise UpdateError("Available revision changed since preview; check updates again")
+        if expected_current is not None and plan.current != expected_current:
+            raise UpdateError("Local revision changed since preview; check updates again")
         if not plan.needed:
             return plan
         archive = base / "macrice-versions"
@@ -176,7 +187,8 @@ def apply(*, source: Path | None = None, expected_revision: str | None = None) -
                 # Verify installed bundle before advancing the user's source tree.
                 if not (target / MANAGED_MARKER).is_file() or not (target / "launcher.py").is_file():
                     raise InstallationError("Installed bundle did not pass integrity checks")
-                _git(plan.source, "merge", "--ff-only", plan.available, timeout=45)
+                if not plan.changed:
+                    _git(plan.source, "merge", "--ff-only", plan.available, timeout=45)
             except (InstallationError, UpdateError, OSError, RuntimeError) as exc:
                 previous = sorted(set(archive.iterdir()) - before) if archive.is_dir() else []
                 if not previous:

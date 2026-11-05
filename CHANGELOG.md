@@ -1,5 +1,22 @@
 # RiceBowl changelog
 
+## Unreleased — safe update of dirty checkouts (5 November 2026)
+
+- Added a dedicated, explicitly confirmed Hub recovery path for an existing
+  official Git `main` checkout with local tracked or untracked edits. RiceBowl
+  can stage and install a pinned official revision into the managed application
+  while leaving the *entire source checkout* unchanged; no stash, reset, merge
+  or automatic reapplication of personal edits is attempted.
+- The new `macrice update check --refresh --preserve-checkout` and
+  `macrice update apply --yes --preserve-checkout` CLI options expose the same
+  opt-in path. Normal clean-checkout updates still fast-forward as before.
+- The Hub displays affected path names and warns that the checkout will stay
+  at its old SHA; future source checks may continue to show the installed
+  revision as available until the user reconciles the tree manually.
+- Isolated local-Git tests cover dirty files, conflicting upstream edits,
+  unchanged stash lists, stale review, rollback on failed installation and
+  clean-checkout compatibility. Physical-device acceptance is pending.
+
 ## Unreleased — owner QA interaction follow-up (5 November 2026)
 
 - ChromeOS WLAN shelf button opens the native Network page of its Quick
