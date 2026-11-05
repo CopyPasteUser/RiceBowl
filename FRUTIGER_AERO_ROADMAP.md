@@ -218,11 +218,20 @@ hardware/suspend acceptance and all end-to-end fidelity criteria below.
   requires a confirmation and uses Gio's asynchronous completion callback.
   It does not forcibly eject drives, reveal private mount data after closing
   or take over XFDesktop/Thunar.
-- [ ] Full BlueZ discovery/passkey agent, richer USB eject/power-off control,
-  physical-device and compact-screen acceptance remain open.
+- [x] Frutiger's Bluetooth popup can now start a **nine-second active BlueZ
+  discovery session**. The worker releases only its own session in a `finally`
+  block; closing the popover cancels it early. The known-device Pair action
+  uses BlueZ `Device1.Pair` and an already-registered default system agent to
+  handle PIN/confirmation instead of inventing insecure pairing dialogs.
+- [x] The native Display page now lists connected X11 outputs, primary flag,
+  actual geometry and available resolution modes. RandR is queried read-only,
+  bounded and outside GTK's main loop. XFCE still owns resolution/position
+  mutation and its screen-revert confirmation.
+- [ ] Own PIN-agent wizard, richer USB eject/power-off control, transactional
+  display layout editing, physical-device and compact-screen acceptance remain open.
 
 **Still open:** Advanced enterprise Wi-Fi connection editing, complete
-Bluetooth discovery/PIN workflows, monitor layout/scaling, persistence for
+Bluetooth PIN-agent workflows, writable monitor layout/scaling, persistence for
 visual personalization, advanced USB and richer notification/media flyouts,
 RiceExplorer Aqua renderer, icon family, screenshots and the 35 end-to-end
 acceptance scenarios.

@@ -6,6 +6,13 @@ control interfaces to that stack. All calls are bounded and run off the UI threa
 
 from __future__ import annotations
 
+import re
+import threading
+
+
+_ADDRESS = re.compile(r"[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5}\Z")
+_DISCOVERY_LOCK = threading.Lock()
+
 
 def _connection():
     from gi.repository import Gio
@@ -89,3 +96,71 @@ def set_connection(address: str, connected: bool) -> None:
         )
         return
     raise ValueError("Bluetooth device is no longer available")
+
+
+def discover(duration: int = 9, *, cancel: threading.Event | None = None):
+    """Own one short BlueZ discovery session and always release that session.
+
+    This runs in the existing Riceware worker, never on GTK's main thread.
+    Closing the flyout sets ``cancel`` and releases discovery promptly.
+    Other applications' independent BlueZ discovery sessions are unaffected.
+    """
+    if not isinstance(duration, int) or not 2 <= duration <= 15:
+        raise ValueError("Discovery duration must be 2–15 seconds")
+    if cancel is None:
+        cancel = threading.Event()
+    if not _DISCOVERY_LOCK.acquire(blocking=False):
+        raise RuntimeError("A Bluetooth discovery session is already running")
+    try:
+        return _discover_owned(duration, cancel)
+    finally:
+        _DISCOVERY_LOCK.release()
+
+
+def _discover_owned(duration, cancel):
+    if cancel.is_set():
+        return snapshot()
+    powered, adapter_path, _devices = snapshot()
+    if powered is not True:
+        raise RuntimeError("Turn Bluetooth on before scanning")
+    if cancel.is_set():
+        return snapshot()
+    Gio, bus = _connection()
+    acquired = False
+    failure = None
+    try:
+        bus.call_sync("org.bluez", adapter_path, "org.bluez.Adapter1",
+                      "StartDiscovery", None, None, Gio.DBusCallFlags.NONE, 5000, None)
+        acquired = True
+        cancel.wait(duration)
+    finally:
+        if acquired:
+            try:
+                bus.call_sync("org.bluez", adapter_path, "org.bluez.Adapter1",
+                              "StopDiscovery", None, None, Gio.DBusCallFlags.NONE, 5000, None)
+            except Exception as exc:
+                failure = exc
+    if failure is not None:
+        raise RuntimeError("Could not stop this Bluetooth discovery session") from failure
+    return snapshot()
+
+
+def pair_device(address: str) -> None:
+    """Ask BlueZ to pair using its registered default agent, if available.
+
+    A system agent owns PIN/confirmation dialogs. We deliberately do not
+    register a competing agent, mark devices trusted or connect automatically.
+    """
+    if not isinstance(address, str) or not _ADDRESS.fullmatch(address):
+        raise ValueError("Select a valid Bluetooth address")
+    for path, interfaces in _objects().items():
+        props = interfaces.get("org.bluez.Device1", {})
+        if str(_value(props.get("Address", ""))).upper() != address.upper():
+            continue
+        if bool(_value(props.get("Paired"))):
+            return
+        Gio, bus = _connection()
+        bus.call_sync("org.bluez", path, "org.bluez.Device1",
+                      "Pair", None, None, Gio.DBusCallFlags.NONE, 25000, None)
+        return
+    raise ValueError("Bluetooth device disappeared; scan again")

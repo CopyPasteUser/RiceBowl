@@ -33,6 +33,7 @@ def flyout(backend=None):
     instance._busy = set()
     instance._confirming = set()
     instance._generations = {}
+    instance._bluetooth_scan_event = None
     instance.popovers = {"network": SimpleNamespace(get_visible=lambda: True)}
     instance.details = {"network": Mock()}
     instance.details["network"].get_children.return_value = ()
@@ -121,13 +122,41 @@ class AquaFlyoutTests(unittest.TestCase):
         devices = (BluetoothDevice("AA:BB:CC:DD:EE:FF", "Headset", True, False),
                    BluetoothDevice("11:22:33:44:55:66", "Nearby", False, False))
         panel._render_details("bluetooth", BluetoothState(True, (), devices, "dbus"))
-        self.assertEqual(panel._row.call_count, 3)
-        self.assertEqual(panel._row.call_args_list[1].kwargs["button"], "Connect")
+        self.assertEqual(panel._row.call_count, 4)
+        self.assertEqual(panel._row.call_args_list[1].kwargs["button"], "Scan…")
         self.assertEqual(panel._row.call_args_list[2].kwargs["button"], "Pair")
+        self.assertEqual(panel._row.call_args_list[3].kwargs["button"], "Connect")
         panel._change = Mock()
         panel._row.call_args_list[2].kwargs["action"]()
         panel._change.call_args.args[1]()
         backend.pair_bluetooth_device.assert_called_once_with("11:22:33:44:55:66")
+
+    def test_bluetooth_scan_uses_bounded_worker_and_can_be_cancelled_on_close(self):
+        runner = FakeRunner()
+        backend = Mock()
+        backend.scan_bluetooth_devices.return_value = BluetoothState(True, (), ())
+        panel = flyout(backend)
+        panel.controller.submit = runner.submit
+        panel.popovers["bluetooth"] = SimpleNamespace(get_visible=lambda: True)
+        panel.details["bluetooth"] = Mock()
+        panel.details["bluetooth"].get_children.return_value = ()
+        panel.detail_status["bluetooth"] = Mock()
+        panel._render_details = Mock()
+        panel._start_bluetooth_scan()
+        event = panel._bluetooth_scan_event
+        panel._start_bluetooth_scan()  # Single discovery session, never double-start.
+        self.assertEqual(len(runner.requests), 1)
+        runner.complete()
+        backend.scan_bluetooth_devices.assert_called_once_with(duration=9, cancel=event)
+        panel._render_details.assert_called_once()
+        self.assertIsNone(panel._bluetooth_scan_event)
+
+        panel._start_bluetooth_scan()
+        canceled_event = panel._bluetooth_scan_event
+        panel._discard("bluetooth")
+        self.assertTrue(canceled_event.is_set())
+        runner.complete()
+        self.assertEqual(panel._render_details.call_count, 1)
 
     def test_secured_wifi_offers_explicit_password_entry_without_enterprise_guessing(self):
         panel = flyout()

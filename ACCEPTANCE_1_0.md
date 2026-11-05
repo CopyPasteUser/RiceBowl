@@ -58,9 +58,9 @@ to manufacture the failure.
 | Probe | Acceptance condition |
 | --- | --- |
 | Wi-Fi | Visible SSIDs and signal are real; saved connect/disconnect works, password entry uses a masked single-use field, a wrong password yields an error, enterprise Wi-Fi defers to the system editor, and radio-off requires confirmation. |
-| Bluetooth | Real adapter and known device state; pairing of a previously discovered unpaired device succeeds where no PIN agent is needed; passkey pairing routes to native system tools; connect/disconnect and radio-off confirmation are accurate. |
+| Bluetooth | The nine-second on-demand BlueZ scan discovers real nearby devices, releases its session on finish or popover close and does not interfere with other discovery clients. Pairing uses the registered BlueZ default agent for PIN/confirmation (or fails honestly); verify actual paired/connected state, radio-off confirmation, and missing-agent behavior on the laptop. |
 | Sound | Output volume, mute and device switching are verified after write; missing audio backend explains itself. |
-| Power/display | Real battery and charging, brightness and supported profiles; external display connect/disconnect, monitor ordering, scaling and suspend/resume. No fictitious control success. |
+| Power/display | Real battery and charging, brightness and supported profiles; Aqua reads the X11 output geometry, primary screen and offered modes without writes. Test real HDMI connect/disconnect, monitor ordering/scaling and suspend/resume. Writable display layout must have confirmed rollback before being implemented; no fictitious control success. |
 | Notifications | XFCE remains the daemon; native history and Do Not Disturb update honestly; no duplicate notification process. |
 | Calendar | Aqua clock opens a real local GTK calendar; selecting today works, without network/calendar-sync claims. |
 | USB/files/media | The Aqua mounted-locations popup lists genuine Gio mounts and asks before asynchronous unmount; the audio flyout reads the session's MPRIS player and sends supported playback actions. Test busy-device errors, disappearing media players, hotplug, actual file operations and correct cleanup. **Physical-device acceptance and an Aqua riceExplorer renderer are still open.** |

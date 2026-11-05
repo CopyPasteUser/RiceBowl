@@ -418,16 +418,54 @@ class NativeAquaControls:
         self._label("Backlight access requires a supported device and permission to use brightnessctl.",
                     self._style("hint"))
 
-        def render(value):
+        self._label("CONNECTED X11 DISPLAYS", self._style("section"))
+        screens = self.Gtk.Box(orientation=self.Gtk.Orientation.VERTICAL, spacing=5)
+        self._add(screens)
+        self._label("Monitor positions and modes are read from X11. Use XFCE Display Settings "
+                    "for changes with its own revert confirmation.", self._style("hint"))
+
+        def read():
+            brightness = self.backend.read_brightness()
+            try:
+                monitors = self.backend.read_monitor_layout()
+                monitor_error = None
+            except (OSError, RuntimeError, ValueError) as exc:
+                monitors, monitor_error = (), str(exc)[:140]
+            return brightness, monitors, monitor_error
+
+        def render(snapshot):
+            value, monitors, error = snapshot
             slider.set_value(value or 1)
             slider.set_sensitive(value is not None and bool(shutil.which("brightnessctl")))
+            for child in tuple(screens.get_children()):
+                child.destroy()
+            if error:
+                self._display_line(screens, "Display information unavailable: " + error)
+            elif not monitors:
+                self._display_line(screens, "No connected outputs reported")
+            for monitor in monitors:
+                caption = monitor.name + (" · Primary" if monitor.primary else "")
+                location = (f" at {monitor.position[0]}, {monitor.position[1]}"
+                            if monitor.position else "")
+                self._display_line(screens, caption + " · " +
+                                   (monitor.current_mode or "inactive") + location)
+                if monitor.modes:
+                    self._display_line(screens, "Modes: " + ", ".join(monitor.modes[:5]))
+            screens.show_all()
             if value is None:
                 return "No writable laptop backlight reported"
             if not shutil.which("brightnessctl"):
                 return f"Brightness {value}% · install brightnessctl to change it"
             return f"Brightness {value}%"
 
-        self.bind(self.backend.read_brightness, render)
+        self.bind(read, render)
+
+    def _display_line(self, container, text):
+        label = self.shell._class(self.Gtk.Label(label=text[:180], xalign=0),
+                                  self._style("hint"))
+        label.set_line_wrap(True)
+        label.set_max_width_chars(37)
+        container.pack_start(label, False, False, 0)
 
     def battery(self):
         summary = self._label("Battery: checking…", self._style("section"))

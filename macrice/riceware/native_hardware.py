@@ -79,3 +79,13 @@ class RicewareHardware:
 
     def media_action(self, player, command):
         return media.media_action(player, command)
+
+    def scan_bluetooth_devices(self, *, duration=9, cancel=None):
+        from .. import hardware_status
+
+        return hardware_status.scan_bluetooth_devices(duration=duration, cancel=cancel)
+
+    def read_monitor_layout(self):
+        from .. import display_layout
+
+        return display_layout.read_monitor_layout()

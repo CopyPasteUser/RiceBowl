@@ -1,6 +1,6 @@
 # RiceBowl roadmap to 1.0
 
-## Current engineering checkpoint (4 November 2026) · not a 1.0 release
+## Current engineering checkpoint (5 November 2026) · not a 1.0 release
 
 - [x] `macrice doctor` / `--json`: read-only XFCE/X11, managed-install,
   launcher, optional hardware-backend and private shortcut-recovery checks.
@@ -17,15 +17,22 @@
   no player daemon or persistent listening loop. Gio VolumeMonitor powers
   a second native mounted-location popup with open and user-confirmed,
   asynchronous unmount; pending/failed requests are visible.
+- [x] Native Frutiger Bluetooth discovery via BlueZ `StartDiscovery` with
+  bounded wait and guaranteed `StopDiscovery` on cancel/close; Pair uses the
+  default BlueZ system agent for passkey workflows (when available).
+- [x] Display Control Center reads connected RandR output geometry, primary
+  screen and modes without changing modes or risking a lost screen.
 - [x] Sequential seven-profile recovery simulations across non-macOS shells,
   including a failed mid-transition handoff; regression coverage in CI.
 - [x] On-demand repeated CPU/PSS/thread measurement with per-PID medians and
   machine-readable JSON. No new resident monitor or unmeasured RAM claims.
-- [ ] Xvfb native smoke of **new** calendar and secret-entry popovers on CI;
+- [x] PR #65's Xvfb/native GTK smoke passed on GitHub, including calendar,
+  secret-entry and mounted-location popup constructors.
+- [ ] Re-run virtual X11 CI for the new Bluetooth/displays readout changes;
   physical hardware acceptance and 1.0 security/fidelity gates still pending.
 - [ ] Validate the new USB/media/date/credentials GTK surfaces in virtual X11
-  and on the physical laptop; complete advanced Frutiger monitor layout,
-  full Bluetooth discovery and separate riceExplorer Aqua renderer integration.
+  and on the physical laptop; complete safe writable Frutiger monitor layout,
+  local BlueZ PIN-agent wizard and separate riceExplorer Aqua renderer integration.
 
 Owner-facing [1.0 acceptance sheet](ACCEPTANCE_1_0.md) defines the exact
 session-switch, Wi-Fi/Bluetooth, external HDMI, suspend and PSS measurements.
