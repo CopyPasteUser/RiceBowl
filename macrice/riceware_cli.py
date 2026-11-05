@@ -11,6 +11,10 @@ def add_commands(commands) -> None:
     riceware = commands.add_parser("riceware", help="Inspect and use opt-in riceware backends")
     backends = riceware.add_subparsers(dest="riceware_backend", required=True)
     backends.add_parser("manifest", help="Inspect the versioned renderer API without probing hardware")
+    packs = backends.add_parser("packs", help="Discover safe data-only Rice presets and dependencies")
+    packs.add_argument("action", choices=("list", "show", "check", "template", "apply"))
+    packs.add_argument("id", nargs="?", help="Built-in style or installed user pack ID")
+    packs.add_argument("--yes", action="store_true", help="Confirm applying a pack to the XFCE desktop")
     spice = backends.add_parser("spice", help="Read real hardware state or request an explicit change")
     spice.add_argument("action", choices=("status", "get", "set"))
     spice.add_argument("name", nargs="?")
@@ -85,6 +89,52 @@ def run(args) -> int:
 
         _dump(manifest())
         return 0
+    if args.riceware_backend == "packs":
+        from .riceware import packs
+
+        found, warnings = packs.discover()
+        if args.action == "list":
+            if args.id or args.yes:
+                raise ValueError("packs list accepts no ID or --yes")
+            _dump({"schema_version": packs.SCHEMA_VERSION,
+                   "packs": [{"id": p.id, "name": p.name, "base_style": p.base_style,
+                              "source": p.source} for p in found], "warnings": warnings})
+            return 0
+        if not args.id:
+            raise ValueError(f"packs {args.action} requires a pack ID")
+        pack = packs.resolve(args.id)
+        if args.action != "apply" and args.yes:
+            raise ValueError("--yes applies only to packs apply")
+        if args.action == "show":
+            _dump(pack.manifest())
+            return 0
+        if args.action == "template":
+            _dump({"schema_version": packs.SCHEMA_VERSION,
+                   "id": f"my-{pack.base_style}", "name": f"My {pack.name}",
+                   "base_style": pack.base_style,
+                   "description": "A named preset based on a supported RiceBowl style"})
+            return 0
+        if args.action == "check":
+            result = packs.capabilities(pack)
+            _dump(result)
+            return 0 if result["ready"] else 1
+        if not args.yes:
+            raise ValueError("Applying a pack changes desktop settings; review packs show/check, then use --yes")
+        # No arbitrary commands, assets or scripts can be supplied by JSON.
+        # All changes still use the existing journaled, reversible rice engine.
+        from .rice import STYLES, apply
+        from .shell_session import install_login_reconciler, sync_theme
+
+        backup = apply(pack.base_style)
+        notices = []
+        try:
+            install_login_reconciler()
+        except OSError:
+            notices.append("Login reconciler could not be installed")
+        notices.extend(sync_theme(STYLES[pack.base_style].gtk))
+        _dump({"applied": pack.id, "base_style": pack.base_style,
+               "backup": str(backup), "session_warnings": notices})
+        return 1 if notices else 0
     if args.riceware_backend == "spice":
         from .riceware import spice
 

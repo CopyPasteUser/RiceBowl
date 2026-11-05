@@ -66,6 +66,29 @@ FAMILY_BY_KEY = {family.key: family for family in FAMILIES}
 AVAILABLE_STYLE_KEYS = frozenset(style for family in FAMILIES if family.available for style in family.styles)
 
 
+def style_options(family_key: str, user_packs=()) -> tuple[tuple[str, str], ...]:
+    """Show validated user presets beside their original rice family."""
+    from .rice import STYLES
+
+    family = FAMILY_BY_KEY[family_key]
+    built_in = tuple((key, STYLES[key].name) for key in family.styles)
+    custom = tuple((pack.id, f"{pack.name} · preset") for pack in user_packs
+                   if pack.source == "user" and pack.base_style in family.styles)
+    return built_in + custom
+
+
+def selected_style(choice: str | None, user_packs=()) -> tuple[str | None, str | None]:
+    """Resolve a dropdown choice to the canonical, reversible rice target."""
+    from .rice import STYLES
+
+    if choice in STYLES:
+        return choice, STYLES[choice].name
+    for pack in user_packs:
+        if pack.source == "user" and pack.id == choice and pack.base_style in STYLES:
+            return pack.base_style, pack.name
+    return None, None
+
+
 @dataclass(frozen=True)
 class BackupRecord:
     folder: Path

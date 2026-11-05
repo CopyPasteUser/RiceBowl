@@ -12,11 +12,24 @@ from macrice.hub import CSS, _activate_hub_window, dirty_update_summary, quick_u
 from macrice.hub_art import FAMILY_ICONS, PREVIEW_FILES
 from macrice.hub_catalog import (
     AVAILABLE_STYLE_KEYS, FAMILIES, FAMILY_BY_KEY, recent_backups, search_families,
+    selected_style, style_options,
 )
 from macrice.rice import STYLES
 
 
 class HubCatalogTests(unittest.TestCase):
+    def test_user_pack_is_listed_under_its_real_family_without_new_renderer(self):
+        from macrice.riceware.packs import RicePack
+
+        custom = RicePack("custom-aero", "My glass", "aero-meadow", source="user")
+        win7 = style_options("windows7", (custom,))
+        self.assertEqual(win7[:2], (("aero-meadow", STYLES["aero-meadow"].name),
+                                     ("aero-cascade", STYLES["aero-cascade"].name)))
+        self.assertIn(("custom-aero", "My glass · preset"), win7)
+        self.assertNotIn(("custom-aero", "My glass · preset"), style_options("winxp", (custom,)))
+        self.assertEqual(selected_style("custom-aero", (custom,)), ("aero-meadow", "My glass"))
+        self.assertEqual(selected_style("unknown", (custom,)), (None, None))
+
     def test_macos_and_verified_aero_families_are_enabled(self):
         self.assertEqual([family.key for family in FAMILIES if family.available],
                          ["macos", "windows10", "windows7", "winxp", "winclassic", "chromeos", "frutiger"])

@@ -12,7 +12,8 @@ import traceback
 from pathlib import Path
 
 from .hub_art import FAMILY_ICONS, PREVIEW_FILES, aspect_contain, aspect_fill
-from .hub_catalog import FAMILIES, FAMILY_BY_KEY, recent_backups, search_families
+from .hub_catalog import (FAMILIES, FAMILY_BY_KEY, recent_backups, search_families,
+                          selected_style, style_options)
 
 
 # The hub has no independent release number: the package tag can lag main.
@@ -141,6 +142,7 @@ def run() -> int:
     from .performance import (PROFILES as PERFORMANCE_PROFILES, RICEBOWL_NAMES,
                               apply_profile, measure_processes)
     from .rice import STYLES, apply, plan, restore
+    from .riceware.packs import discover as discover_rice_packs
 
     def cls(widget, name):
         widget.get_style_context().add_class(name)
@@ -179,6 +181,7 @@ def run() -> int:
             self._component_buttons = {}
             self._image_cache = {}
             self._preview_style = "night"
+            self._user_packs = ()
             self._preview_rendered = None
             self._update_plan = None
             self._update_activity = None
@@ -541,6 +544,8 @@ def run() -> int:
 
         def _select_family(self, key):
             family = FAMILY_BY_KEY[key]
+            packs, _warnings = discover_rice_packs()
+            self._user_packs = tuple(p for p in packs if p.source == "user")
             self._selected = key
             for current, button in self._family_buttons.items():
                 context = button.get_style_context()
@@ -553,8 +558,8 @@ def run() -> int:
             if family.available:
                 self._rebuilding_picker = True
                 self.style_picker.remove_all()
-                for style_id in family.styles:
-                    self.style_picker.append(style_id, STYLES[style_id].name)
+                for style_id, display_name in style_options(key, self._user_packs):
+                    self.style_picker.append(style_id, display_name)
                 self.style_picker.set_active_id(family.styles[0])
                 self._rebuilding_picker = False
                 self._on_style_changed()
@@ -562,7 +567,7 @@ def run() -> int:
         def _on_style_changed(self, *_args):
             if self._rebuilding_picker:
                 return
-            style_id = self.style_picker.get_active_id() or "night"
+            style_id, _label = selected_style(self.style_picker.get_active_id(), self._user_packs)
             if style_id not in STYLES:
                 return
             self._preview_style = style_id
@@ -707,11 +712,11 @@ def run() -> int:
 
         def _repair_selected(self):
             from .rice import repair_assets
-            selected = self.style_picker.get_active_id()
+            selected, name = selected_style(self.style_picker.get_active_id(), self._user_packs)
             if selected not in STYLES or self._selected == "macos":
                 return
             self._confirm(
-                f"Repair local assets for {STYLES[selected].name}?",
+                f"Repair local assets for {name}?",
                 "Only this Rice's local theme and icon bundle will be replaced. "
                 "Existing files are archived in a dated, private backup directory "
                 "before replacement. The desktop theme is not switched.",
@@ -729,18 +734,18 @@ def run() -> int:
         def _plan_selected(self, apply_after=False):
             if not FAMILY_BY_KEY[self._selected].available:
                 return
-            selected = self.style_picker.get_active_id()
+            selected, name = selected_style(self.style_picker.get_active_id(), self._user_packs)
             if selected not in STYLES:
                 return
 
             def ready(outcome):
                 changes, _apps, _source, _target = outcome
                 count = sum(change["before"] != change["after"] for change in changes)
-                message = f"{STYLES[selected].name} is ready. {count} desktop fields would change."
+                message = f"{name} is ready. {count} desktop fields would change."
                 self._notify(message)
                 if apply_after:
                     self._confirm(
-                        f"Apply {STYLES[selected].name}?",
+                        f"Apply {name}?",
                         "This changes GTK, windows, Thunar, Plank, MacBar, menu, Control Center and wallpaper. "
                         "A private backup will be saved. No system packages are removed.",
                         lambda: self._work("Applying the complete desktop rice…",
@@ -787,7 +792,7 @@ def run() -> int:
 
         def _run_doctor(self):
             from .doctor import diagnose
-            selected = self.style_picker.get_active_id()
+            selected, _name = selected_style(self.style_picker.get_active_id(), self._user_packs)
             style = selected if selected in STYLES else None
             self.doctor_summary.set_text(
                 "Checking session and " + STYLES[style].name + "…" if style else

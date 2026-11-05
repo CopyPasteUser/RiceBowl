@@ -46,6 +46,8 @@ Pick a style in the Hub. **Nothing is applied automatically**: RiceBowl checks r
 
 **Before switching:** Use **Check requirements** in the Hub, or `macrice doctor --style aero-meadow`, to check the selected rice without applying changes.
 
+**Reusable presets:** `macrice riceware packs list` discovers built-in and user-installed data-only Rice packs. [Create your own named preset](RICEPACK_SPEC.md) without installing a daemon.
+
 ## Project status
 
 <strong>Development preview</strong> · Latest tagged build: [v0.9.1](https://github.com/CopyPasteUser/RiceBowl/releases/tag/v0.9.1). Newer changes are on `main`; 1.0 hardware acceptance on real XFCE systems is still pending.

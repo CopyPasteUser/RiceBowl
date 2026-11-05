@@ -1,5 +1,21 @@
 # RiceBowl changelog
 
+## Unreleased — data-only Rice pack discovery (5 November 2026)
+
+- Add a versioned, inspectable Rice pack catalog for all built-in styles and
+  validated user-owned JSON presets. On-demand capability reports identify
+  essential XFCE/X11 commands and optional riceExplorer/device helpers.
+- Expose `macrice riceware packs list|show|check|template|apply`; the only
+  mutation is explicit `apply ID --yes`, which reuses the real RiceBowl
+  preflight, journal, rollback and session handoff. Custom packs currently
+  alias a supported built-in appearance; arbitrary scripts/assets are rejected.
+- Show validated user presets within the correct family in the existing GTK
+  Hub Appearance picker; preview, preflight and apply use the actual supported
+  base style, with the user's preset name visible during confirmation.
+- Resolve session shell ownership from the same canonical style/family mapping
+  used by manifests, removing a separate hand-maintained GTK-theme router.
+  No new resident monitor, background service or forced XFCE component removal.
+
 ## Unreleased — rice-specific plug-and-play checks (5 November 2026)
 
 - Extend the existing read-only `macrice doctor` with `--style STYLE` and
