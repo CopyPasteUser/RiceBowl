@@ -70,6 +70,13 @@ scrolledwindow, viewport {{ background: transparent; border: none; }}
 """.format(**TOKENS).encode("utf-8")
 
 
+def quick_update_label(plan) -> str:
+    """Use one truthful action for both the preview and confirmed update."""
+    if plan is not None and plan.needed:
+        return "Install update…"
+    return "Check for updates"
+
+
 def _activate_hub_window(application, windows, factory) -> bool:
     """Never leave a registered but invisible Gtk.ApplicationWindow behind.
 
@@ -161,6 +168,7 @@ def run() -> int:
             self._preview_style = "night"
             self._preview_rendered = None
             self._update_plan = None
+            self._update_activity = None
             try:
                 self.set_icon_from_file(str(project_root() / "assets/ricebowl-symbolic.svg"))
             except (OSError, GLib.Error):
@@ -236,6 +244,14 @@ def run() -> int:
                 self._nav_buttons[key] = button
 
             side.pack_start(Gtk.Box(), True, True, 0)
+            side.pack_start(label("RICEBOWL UPDATES", "hub-overline"), False, False, 0)
+            self.quick_update_button = action(quick_update_label(None),
+                                              lambda _: self._quick_update(), True)
+            self.quick_update_button.set_tooltip_text(
+                "Check the official repository, review changes, then confirm before installing")
+            side.pack_start(self.quick_update_button, False, False, 0)
+            self.quick_update_status = label("Manual · No auto-install", "hub-hint", True)
+            side.pack_start(self.quick_update_status, False, False, 0)
             side.pack_start(label("7 styles · XFCE/X11", "hub-hint"), False, False, 0)
             side.pack_start(label("Local · Reversible", "hub-hint"), False, False, 0)
 
@@ -615,7 +631,7 @@ def run() -> int:
             self._busy = busy
             for name in ("apply_button", "plan_button", "repair_button", "install_button", "restore_button",
                          "performance_button", "measure_button", "doctor_button",
-                         "update_check_button", "update_apply_button"):
+                         "update_check_button", "update_apply_button", "quick_update_button"):
                 button = getattr(self, name, None)
                 if button:
                     button.set_sensitive(not busy)
@@ -644,6 +660,12 @@ def run() -> int:
 
         def _finished(self, result, error, completed):
             self._set_busy(False)
+            if error and self._update_activity:
+                self._update_plan = None
+                self.quick_update_button.set_label(quick_update_label(None))
+                self.quick_update_status.set_text("Update failed · See details below")
+                self.update_label.set_text("Update failed: " + error[:180])
+            self._update_activity = None
             if error:
                 self._notify(error, error=True)
             elif completed:
@@ -766,11 +788,20 @@ def run() -> int:
                          f"Health check found {warnings} issue(s); review Recovery.",
                          error=bool(warnings))
 
+        def _quick_update(self):
+            if self._update_plan is not None and self._update_plan.needed:
+                self._confirm_update()
+            else:
+                self._check_update()
+
         def _check_update(self):
             from .updater import inspect
             self._update_plan = None
+            self._update_activity = "check"
             self.update_apply_button.set_sensitive(False)
             self.update_label.set_text("Checking the official repository…")
+            self.quick_update_button.set_label(quick_update_label(None))
+            self.quick_update_status.set_text("Checking trusted origin/main…")
             self._work("Checking available RiceBowl revision…",
                        lambda: inspect(refresh=True), self._show_update)
 
@@ -781,6 +812,10 @@ def run() -> int:
                 f"{plan.commits} new commit(s)" if plan.needed else
                 f"Source already up to date at {plan.current[:12]}")
             self.update_apply_button.set_sensitive(plan.needed)
+            self.quick_update_button.set_label(quick_update_label(plan))
+            self.quick_update_status.set_text(
+                f"{plan.commits} new commit(s) · Confirm to install" if plan.needed else
+                "Already up to date")
             self._notify("A checked fast-forward update is available." if plan.needed else
                          "RiceBowl source is up to date.")
 
@@ -794,18 +829,25 @@ def run() -> int:
                 "Update from " + plan.current[:12] + " to " + plan.available[:12] +
                 ". Current installed files are archived. The manager may need restarting; "
                 "existing desktop theme settings will not be switched.",
-                lambda: self._work("Installing checked update with recovery…",
-                                   lambda: apply_update(source=plan.source,
-                                                        expected_revision=plan.available),
-                                   self._update_finished),
+                lambda: self._install_checked_update(apply_update, plan),
                 "Install update",
             )
+
+        def _install_checked_update(self, apply_update, plan):
+            self._update_activity = "install"
+            self.quick_update_status.set_text("Installing verified revision…")
+            self._work("Installing checked update with recovery…",
+                       lambda: apply_update(source=plan.source,
+                                            expected_revision=plan.available),
+                       self._update_finished)
 
         def _update_finished(self, plan):
             self._update_plan = None
             self.update_apply_button.set_sensitive(False)
             self.update_label.set_text("Installed " + plan.available[:12] +
                                        ". Restart RiceBowl to load updated code.")
+            self.quick_update_button.set_label(quick_update_label(None))
+            self.quick_update_status.set_text("Installed · Restart RiceBowl")
             self._notify("Update installed. Restart RiceBowl; active rice was not switched.")
 
         def _after_restore(self, backup):

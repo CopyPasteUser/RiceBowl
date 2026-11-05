@@ -2,6 +2,22 @@
 
 ## Current engineering checkpoint (5 November 2026) · not a 1.0 release
 
+- [x] RiceBowl Hub now surfaces the existing confirmed, pinned fast-forward
+  updater in the persistent sidebar, so checking/installing no longer needs a
+  terminal; a running Hub still needs restarting after successful installation.
+- [x] Shared normal GTK settings-window semantics for XP Luna, Windows 10 and
+  Frutiger Aero: draggable themed title strips, taskbar/Alt-Tab integration,
+  no always-on-top/auto-hide, and retained user placement. The other
+  non-macOS rices already use decorated normal GTK Settings/Control Panels.
+  [Cross-rice window and file DnD contract](RICE_WINDOWS_ROADMAP.md).
+- [x] Aqua Control Center native Bluetooth detail now offers on-demand
+  nine-second discovery and Pair via the registered **system** PIN agent.
+- [ ] Run the new titlebar/WM smoke and other native-X11 CI scenarios, then
+  owner Mint/XFCE tests for actual moving, focus, task switching and USB drops.
+- [ ] File/URI drag-and-drop remains unimplemented; local secure BlueZ PIN
+  agent, writable monitor editor with crash-safe revert and riceExplorer Aqua
+  renderer remain open.
+
 - [x] `macrice doctor` / `--json`: read-only XFCE/X11, managed-install,
   launcher, optional hardware-backend and private shortcut-recovery checks.
 - [x] Opt-in official-origin fast-forward update: `macrice update check

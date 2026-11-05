@@ -107,6 +107,14 @@ class NativeDeviceTests(unittest.TestCase):
         self.assertIn(("power", "Power management"), NATIVE_TASKS)
         self.assertIn(("power", "Battery status"), NATIVE_TASKS)
 
+    def test_aqua_bluetooth_page_includes_bounded_scan_and_system_agent_pair(self):
+        source = (Path(__file__).resolve().parents[1] /
+                  "macrice/frutiger_native_controls.py").read_text(encoding="utf-8")
+        self.assertIn("scan_bluetooth_devices(duration=9", source)
+        self.assertIn("pair_bluetooth_device(", source)
+        self.assertIn("self._scan_cancel.set()", source)
+        self.assertIn("registered Linux Bluetooth PIN confirmation agent", source)
+
     def test_microphone_read_wpctl_and_mute(self):
         with mock.patch.object(hw.shutil, "which", side_effect=lambda name: "/bin/wpctl" if name == "wpctl" else None), \
              mock.patch.object(hw, "_run", return_value="Volume: 0.68 [MUTED]"):

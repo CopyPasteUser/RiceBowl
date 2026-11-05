@@ -227,6 +227,13 @@ hardware/suspend acceptance and all end-to-end fidelity criteria below.
   actual geometry and available resolution modes. RandR is queried read-only,
   bounded and outside GTK's main loop. XFCE still owns resolution/position
   mutation and its screen-revert confirmation.
+- [x] Aqua Control Center now behaves as a normal standalone XFWM4 window:
+  movable custom titlebar, Alt-Tab/taskbar presence, user-chosen position,
+  no always-on-top and no dismissal when another application gains focus.
+- [x] Its Bluetooth **detail** page now also offers a cancellable nine-second
+  nearby scan and pairing through the registered BlueZ system PIN agent,
+  with actual read-back and no automatic trust.
+- [ ] Verify title drag/resize/focus and BlueZ scan/pair on physical Mint.
 - [ ] Own PIN-agent wizard, richer USB eject/power-off control, transactional
   display layout editing, physical-device and compact-screen acceptance remain open.
 
