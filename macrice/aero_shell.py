@@ -100,7 +100,8 @@ def frutiger_apps(apps, pins: tuple[str, ...], query: str):
     return tuple(sorted(matches, key=rank))
 
 
-def frutiger_select_page(stack, buttons, section, search, page: str):
+def frutiger_select_page(stack, buttons, section, search, page: str,
+                         settings_navigation=None):
     """Keep Aqua launcher pages and tab states synchronized in both directions.
 
     Used for clicks, searching, reopening the launcher and the explicit Back
@@ -114,11 +115,13 @@ def frutiger_select_page(stack, buttons, section, search, page: str):
         if button.get_active() != active:
             button.set_active(active)
     section.set_visible(page == "Apps")
+    if settings_navigation is not None:
+        settings_navigation.set_visible(page == "Settings")
     if page == "Apps":
         search.grab_focus()
 
 
-def frutiger_tab_switcher(stack, buttons, section, search):
+def frutiger_tab_switcher(stack, buttons, section, search, settings_navigation=None):
     """Prevent GTK3 toggle-button state signals from re-entering tab changes."""
     switching = [False]
 
@@ -127,7 +130,8 @@ def frutiger_tab_switcher(stack, buttons, section, search):
             return
         switching[0] = True
         try:
-            frutiger_select_page(stack, buttons, section, search, page)
+            frutiger_select_page(stack, buttons, section, search, page,
+                                 settings_navigation)
         finally:
             switching[0] = False
 
@@ -1092,6 +1096,80 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     self._frutiger_tab_buttons["Settings"].clicked()
                     self._frutiger_back_to_apps.clicked()
                     assert self.aqua_stack.get_visible_child_name() == "Apps"
+                    if os.environ.get("RICEHUB_AQUA_NAV_NATIVE") == "1":
+                        # Programmatic .clicked() alone cannot detect a page
+                        # overlay intercepting real pointer input. Exercise
+                        # the X11 hit regions at 1024x768 as a user would.
+                        import subprocess
+
+                        def pointer_click(widget):
+                            while Gtk.events_pending():
+                                Gtk.main_iteration_do(False)
+                            offset = widget.translate_coordinates(self.menu, 0, 0)
+                            origin = self.menu.get_window().get_root_origin()
+                            assert offset is not None
+                            point = (origin[0] + offset[0] + widget.get_allocated_width() // 2,
+                                     origin[1] + offset[1] + widget.get_allocated_height() // 2)
+                            subprocess.run(("xdotool", "mousemove", "--sync", str(point[0]),
+                                            str(point[1]), "click", "1"),
+                                           check=True, timeout=4, capture_output=True)
+                            for _step in range(40):
+                                while Gtk.events_pending():
+                                    Gtk.main_iteration_do(False)
+                                GLib.usleep(10000)
+                            return point
+
+                        for page in ("Settings", "Places", "Settings", "Apps", "Settings", "Apps"):
+                            button = self._frutiger_tab_buttons[page]
+                            point = pointer_click(button)
+                            print(f"Aqua pointer nav: click {page} at {point}, "
+                                  f"window={self.menu.get_position()} {self.menu.get_size()}",
+                                  flush=True)
+                            assert self.menu.get_visible() and self.aqua_stack.get_visible_child_name() == page, (
+                                f"Real X11 click on {page} did not navigate: "
+                                f"visible={self.menu.get_visible()}, "
+                                f"page={self.aqua_stack.get_visible_child_name()}")
+                        pointer_click(self._frutiger_tab_buttons["Settings"])
+                        pointer_click(self._frutiger_back_to_apps)
+                        assert self.aqua_stack.get_visible_child_name() == "Apps", (
+                            "Pinned Settings exit to Apps does not receive pointer input")
+                        pointer_click(self._frutiger_tab_buttons["Settings"])
+                        pointer_click(self._frutiger_back_to_places)
+                        assert self.aqua_stack.get_visible_child_name() == "Places", (
+                            "Pinned Settings exit to Places does not receive pointer input")
+                        # Selecting Settings is not enough: a real row must
+                        # launch a WM-managed Control Center, close, then let
+                        # the reopened launcher navigate to Places and Apps.
+                        pointer_click(self._frutiger_tab_buttons["Settings"])
+                        settings_content = self.aqua_stack.get_child_by_name("Settings")
+                        settings_content = settings_content.get_child().get_child()
+                        connection_row = settings_content.get_children()[0]
+                        pointer_click(connection_row)
+                        assert self.actions.get_visible() and not self.menu.get_visible(), (
+                            "Aqua Settings selection must open the Control Center, not trap the launcher")
+                        # The same Settings entry must behave when the
+                        # independent Control Center is already open. The
+                        # launcher has keep-above enabled and must not cover
+                        # the window on a subsequent invocation.
+                        self._toggle_menu()
+                        pointer_click(self._frutiger_tab_buttons["Settings"])
+                        pointer_click(connection_row)
+                        assert self.actions.get_visible() and not self.menu.get_visible(), (
+                            "Existing Aqua Control Center remains behind a stuck launcher")
+                        # Do not depend on XFWM's deferred focus-out timer:
+                        # the explicit open-Settings action must synchronously
+                        # dismiss an already-visible Aqua launcher.
+                        self._toggle_menu()
+                        assert self.menu.get_visible()
+                        self._show_aqua_control("connections")
+                        assert not self.menu.get_visible(), (
+                            "Aqua Settings reopened while already visible must dismiss the launcher")
+                        self._hide_actions()
+                        self._toggle_menu()
+                        for page in ("Places", "Apps"):
+                            pointer_click(self._frutiger_tab_buttons[page])
+                            assert self.aqua_stack.get_visible_child_name() == page, (
+                                f"Aqua {page} unresponsive after closing Settings")
                     self._show_aqua_control("sound", "Input & output devices")
                     assert self.actions.get_visible()
 
@@ -4291,9 +4369,35 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             section.pack_end(section_hint, False, False, 0)
             section.set_no_show_all(True)
             root.pack_start(section, False, False, 0)
+            # Keep exits from the taller Settings page *outside* its scroll
+            # container. Long lists and a remembered scroll offset must never
+            # hide the only back navigation.
+            settings_navigation = self._class(
+                Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8),
+                "aqua-settings-navigation")
+            return_to_apps = self._class(Gtk.Button(label="‹ All apps"), "aqua-settings-back")
+            self._frutiger_back_to_apps = return_to_apps
+            return_to_apps.set_tooltip_text("Return to applications")
+            return_to_apps.get_accessible().set_name("Back to all applications")
+            return_to_apps.connect("clicked", lambda _button: switch_to("Apps"))
+            settings_navigation.pack_start(return_to_apps, True, True, 0)
+            back_to_places = self._class(Gtk.Button(label="Places ›"), "aqua-settings-back")
+            self._frutiger_back_to_places = back_to_places
+            back_to_places.set_tooltip_text("Browse your places and mounted drives")
+            back_to_places.get_accessible().set_name("Open places")
+            back_to_places.connect("clicked", lambda _button: switch_to("Places"))
+            settings_navigation.pack_end(back_to_places, True, True, 0)
+            # The navigation container is excluded from the launcher's later
+            # show_all() pass (no_show_all keeps it hidden outside Settings).
+            # Realize its two children now so showing the container later
+            # exposes clickable buttons, not an empty/childless GTK region.
+            settings_navigation.show_all()
+            settings_navigation.set_no_show_all(True)
+            root.pack_start(settings_navigation, False, False, 0)
             # Gtk.ToggleButton.set_active() can emit "clicked" in GTK3.
             # The guarded switcher prevents cross-tab recursive re-entry.
-            switch_to = frutiger_tab_switcher(self.aqua_stack, buttons, section, search)
+            switch_to = frutiger_tab_switcher(
+                self.aqua_stack, buttons, section, search, settings_navigation)
             self._frutiger_switch_to = switch_to
             self._frutiger_tab_buttons = buttons
             for name, button in buttons.items():
@@ -4389,13 +4493,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             settings_page = Gtk.ScrolledWindow()
             settings_page.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
             settings_page.set_min_content_height(135)
+            settings_page.set_max_content_height(325)
             settings_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=7)
-            return_to_apps = self._class(Gtk.Button(label="‹ All apps"), "aqua-settings-back")
-            self._frutiger_back_to_apps = return_to_apps
-            return_to_apps.set_tooltip_text("Return to applications and places")
-            return_to_apps.get_accessible().set_name("Back to all applications")
-            return_to_apps.connect("clicked", lambda _button: switch_to("Apps"))
-            settings_box.pack_start(return_to_apps, False, False, 0)
             for title, icon_name, category in (
                 ("Connections", "network-wireless", "connections"),
                 ("Sound & media", "audio-volume-high", "sound"),
@@ -4418,6 +4517,12 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 settings_box.pack_start(btn, False, False, 0)
             settings_page.add(settings_box)
             self.aqua_stack.add_named(settings_page, "Settings")
+
+            def reset_settings_scroll(_stack, _param):
+                if self.aqua_stack.get_visible_child_name() == "Settings":
+                    settings_page.get_vadjustment().set_value(0)
+
+            self.aqua_stack.connect("notify::visible-child-name", reset_settings_scroll)
 
             root.pack_start(self.aqua_stack, True, True, 0)
             footer = self._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=9),
@@ -5189,6 +5294,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             """Open a real Aqua detail page without toggling an open panel shut."""
             if profile != "frutiger":
                 return
+            # The launcher is a keep-above utility window. When Control Center
+            # is already open, _toggle_actions() is skipped below; without an
+            # unconditional hide the launcher can remain in front and block
+            # further application/menu actions until XFWM's focus timer fires.
+            self._hide_menu()
             if hasattr(self, "_aqua_notifications"):
                 self._aqua_notifications.popover.popdown()
             if hasattr(self, "_aqua_flyouts"):

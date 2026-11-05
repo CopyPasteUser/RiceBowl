@@ -683,6 +683,9 @@ menu menuitem:hover { background: #000080; color: #fff; }
   min-height: 39px; padding: 9px; box-shadow: inset 0 1px #fff; }
 .aqua-place:hover, .aqua-place:focus { background-image: linear-gradient(#fff,
   #d0ffdc 45%, #92e9bf); border-color: #32abc5; color: #075479; }
+.aqua-settings-navigation { background: rgba(223,251,244,.74);
+  border: 1px solid rgba(111,201,210,.74); border-radius: 12px;
+  padding: 4px; }
 .aqua-settings-back { color: #075a7b; font-weight: bold;
   background-image: linear-gradient(#fff, #ddfff5 55%, #b4eae5);
   border: 1px solid #82cfd5; border-radius: 11px; padding: 7px 12px; }
@@ -845,6 +848,24 @@ popover.aqua-flyout > contents {
 }
 .aqua-flyout .aqua-flyout-title { color: #076682; font-weight: bold; font-size: 15px; }
 .aqua-flyout .aqua-flyout-status { color: #175e6d; font-size: 12px; padding: 4px 6px; }
+.aqua-flyout scrolledwindow, .aqua-flyout viewport {
+  background: transparent; border: none; }
+.aqua-flyout .aqua-flyout-row {
+  background-image: linear-gradient(to bottom, rgba(255,255,255,.76), rgba(216,249,244,.74));
+  border: 1px solid rgba(137,205,211,.7); border-radius: 10px;
+  padding: 5px 7px;
+}
+.aqua-flyout .aqua-flyout-row-label { color: #07566d; font-size: 12px; }
+.aqua-flyout .aqua-flyout-action, .aqua-flyout .aqua-flyout-icon {
+  color: #075874; background-image: linear-gradient(#ffffff, #e0fff8 48%, #9bdfdb);
+  border: 1px solid #7dc7d2; border-radius: 10px;
+  padding: 4px 7px; box-shadow: inset 0 1px #fff;
+}
+.aqua-flyout .aqua-flyout-icon { padding: 4px; min-width: 28px; min-height: 28px; }
+.aqua-flyout .aqua-flyout-action:hover, .aqua-flyout .aqua-flyout-icon:hover,
+.aqua-flyout .aqua-flyout-action:focus, .aqua-flyout .aqua-flyout-icon:focus {
+  border-color: #168db4; background-image: linear-gradient(#ffffff, #dcffdb, #8bdcc2);
+}
 .aqua-flyout .aqua-flyout-more, .aqua-flyout .aqua-flyout-mute {
   color: #075874; background-image: linear-gradient(#ffffff, #e2fff7 42%, #9ce3dc);
   border-radius: 12px; border: 1px solid #7dc7d2; padding: 8px;

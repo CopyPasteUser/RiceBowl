@@ -109,6 +109,55 @@ class FrutigerCalendarGtkTests(unittest.TestCase):
                 popup.close()
             window.destroy()
 
+    def test_tray_network_opens_a_scrolled_action_menu_not_a_settings_prompt(self):
+        import gi
+
+        gi.require_version("Gtk", "3.0")
+        from gi.repository import Gtk
+        from macrice.frutiger_flyouts import AquaFlyouts
+
+        initialized = Gtk.init_check()
+        if not (initialized[0] if isinstance(initialized, tuple) else initialized):
+            self.skipTest("Native GTK display unavailable; Xvfb CI supplies one")
+        window = Gtk.Window()
+        anchor = Gtk.Button(label="Network")
+        window.add(anchor)
+        shell = SimpleNamespace(
+            frutiger_controller=mock.Mock(), aqua_bluetooth_button=anchor,
+            _status_widgets={"network": (anchor, None, None)},
+            _class=lambda widget, css: widget,
+            _icon=lambda name, size: Gtk.Image.new_from_icon_name(name, size),
+            _show_aqua_control=mock.Mock(),
+        )
+        window.show_all()
+        try:
+            flyout = AquaFlyouts(shell, Gtk)
+            popup = flyout._build("network")
+
+            def descend(widget):
+                yield widget
+                if isinstance(widget, Gtk.Container):
+                    for child in widget.get_children():
+                        yield from descend(child)
+
+            widgets = tuple(descend(popup))
+            self.assertTrue(any(isinstance(item, Gtk.ScrolledWindow)
+                                and item.get_max_content_height() <= 300 for item in widgets))
+            self.assertFalse(any(isinstance(item, Gtk.Button)
+                                 and (item.get_label() or "").startswith("More ")
+                                 for item in widgets))
+            self.assertTrue(any(isinstance(item, Gtk.Button)
+                                and (item.get_accessible().get_name() or "").startswith(
+                                    "Open full Aqua settings") for item in widgets))
+            settings_button = next(item for item in widgets
+                                   if isinstance(item, Gtk.Button)
+                                   and (item.get_accessible().get_name() or "").startswith(
+                                       "Open full Aqua settings"))
+            settings_button.clicked()
+            shell._show_aqua_control.assert_called_once_with("connections", None)
+        finally:
+            window.destroy()
+
     def test_bluetooth_scan_button_is_real_and_closing_cancels_discovery(self):
         import gi
 

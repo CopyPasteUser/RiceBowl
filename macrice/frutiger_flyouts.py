@@ -80,10 +80,10 @@ class AquaFlyouts:
         popover.set_modal(True)
         popover.get_style_context().add_class("aqua-flyout")
 
-        root = shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=9),
+        root = shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=7),
                             "aqua-flyout-root")
-        root.set_size_request(272, -1)
-        hero = shell._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=9),
+        root.set_size_request(300, -1)
+        hero = shell._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7),
                             "aqua-flyout-heading")
         title, icon = {
             "network": ("Connections", "network-wireless"),
@@ -94,6 +94,25 @@ class AquaFlyouts:
         hero.pack_start(shell._icon(icon, Gtk.IconSize.LARGE_TOOLBAR), False, False, 0)
         hero.pack_start(shell._class(Gtk.Label(label=title, xalign=0),
                                      "aqua-flyout-title"), True, True, 0)
+        refresh = shell._class(Gtk.Button(), "aqua-flyout-icon")
+        refresh.set_image(shell._icon("view-refresh", Gtk.IconSize.MENU))
+        refresh.set_tooltip_text("Refresh " + title.lower())
+        refresh.get_accessible().set_name("Refresh actual " + title.lower() + " devices")
+        refresh.connect("clicked", lambda _button: self._refresh_details(kind))
+        hero.pack_end(refresh, False, False, 0)
+        settings = shell._class(Gtk.Button(), "aqua-flyout-icon")
+        settings.set_image(shell._icon("preferences-system", Gtk.IconSize.MENU))
+        settings.set_tooltip_text("Open full Aqua settings · " + title)
+        settings.get_accessible().set_name("Open full Aqua settings · " + title)
+
+        def open_detail(_button):
+            popover.popdown()
+            shell._show_aqua_control({"network": "connections", "audio": "sound",
+                                      "battery": "power", "bluetooth": "connections"}[kind],
+                                     "Bluetooth devices" if kind == "bluetooth" else None)
+
+        settings.connect("clicked", open_detail)
+        hero.pack_end(settings, False, False, 0)
         root.pack_start(hero, False, False, 0)
 
         label = shell._class(Gtk.Label(label="Checking actual device status…", xalign=0),
@@ -117,30 +136,20 @@ class AquaFlyouts:
             root.pack_start(mute, False, False, 0)
             self.audio_mute = mute
 
-        details = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        details = shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5),
+                               "aqua-flyout-list")
         self.details[kind] = details
-        root.pack_start(details, False, False, 0)
+        scroll = Gtk.ScrolledWindow()
+        scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+        scroll.set_min_content_height(105)
+        scroll.set_max_content_height(260)
+        scroll.set_propagate_natural_height(True)
+        scroll.add(details)
+        root.pack_start(scroll, True, True, 0)
         detail_status = shell._class(Gtk.Label(label="", xalign=0), "aqua-flyout-status")
         detail_status.set_line_wrap(True)
         self.detail_status[kind] = detail_status
         root.pack_start(detail_status, False, False, 0)
-        refresh = shell._class(Gtk.Button(label="↻  Refresh devices"), "aqua-flyout-more")
-        refresh.get_accessible().set_name("Refresh actual " + title.lower() + " devices")
-        refresh.connect("clicked", lambda _button: self._refresh_details(kind))
-        root.pack_start(refresh, False, False, 0)
-
-        open_button = shell._class(Gtk.Button(label="More " + title.lower() + " settings  ›"),
-                                   "aqua-flyout-more")
-        open_button.get_accessible().set_name("Open Aqua Control Center " + title)
-
-        def open_detail(_button):
-            popover.popdown()
-            shell._show_aqua_control({"network": "connections", "audio": "sound",
-                                      "battery": "power", "bluetooth": "connections"}[kind],
-                                     "Bluetooth devices" if kind == "bluetooth" else None)
-
-        open_button.connect("clicked", open_detail)
-        root.pack_start(open_button, False, False, 0)
         popover.add(root)
         popover.connect("closed", lambda *_args: self._discard(kind))
         return popover
@@ -246,21 +255,27 @@ class AquaFlyouts:
     def _row(self, parent, title, *, button=None, action=None,
              secondary_button=None, secondary_action=None):
         Gtk = self.Gtk
-        row = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-        label = Gtk.Label(label=title, xalign=0)
+        row = self.shell._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7),
+                                "aqua-flyout-row")
+        label = self.shell._class(Gtk.Label(label=title, xalign=0),
+                                  "aqua-flyout-row-label")
         label.set_line_wrap(True)
         label.set_max_width_chars(27)
         row.pack_start(label, True, True, 0)
+        controls = (Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+                    if secondary_button is not None else row)
         if button is not None:
-            control = self.shell._class(Gtk.Button(label=button), "aqua-flyout-more")
+            control = self.shell._class(Gtk.Button(label=button), "aqua-flyout-action")
             control.get_accessible().set_name(button + ": " + title)
             control.connect("clicked", lambda _button: action())
-            row.pack_end(control, False, False, 0)
+            controls.pack_start(control, False, False, 0)
         if secondary_button is not None:
-            control = self.shell._class(Gtk.Button(label=secondary_button), "aqua-flyout-more")
+            control = self.shell._class(Gtk.Button(label=secondary_button), "aqua-flyout-action")
             control.get_accessible().set_name(secondary_button + ": " + title)
             control.connect("clicked", lambda _button: secondary_action())
-            row.pack_end(control, False, False, 0)
+            controls.pack_start(control, False, False, 0)
+        if secondary_button is not None:
+            row.pack_end(controls, False, False, 0)
         parent.pack_start(row, False, False, 0)
 
     def _password_prompt(self, ssid):
@@ -404,7 +419,7 @@ class AquaFlyouts:
                      "PlayPause", item.can_play_pause),
                     ("Next ▶", "Next", item.can_next),
                 ):
-                    button = self.shell._class(self.Gtk.Button(label=caption), "aqua-flyout-more")
+                    button = self.shell._class(self.Gtk.Button(label=caption), "aqua-flyout-action")
                     button.set_sensitive(enabled)
                     button.get_accessible().set_name(caption + " · " + item.label)
                     button.connect("clicked", lambda _button, player=item.bus_name, cmd=command:
