@@ -14,12 +14,12 @@ A lightweight, native Python/GTK3 desktop customization hub for **Linux Mint XFC
 
 RiceBowl changes real Linux desktop elements—taskbar, Start/launcher, menus, system controls, wallpaper, GTK/XFWM4 themes, icons and Thunar styling. Applications and device controls use real Linux backends. No Electron, telemetry or proprietary OS assets.
 
-> **Release status: 0.9.1+ development — not yet stable 1.0.** The [v0.9.1 pre-release](https://github.com/CopyPasteUser/RiceBowl/releases/tag/v0.9.1) remains the last tagged build. Recovery, diagnostics, Aqua media/drives and Bluetooth/display readout passed native-X11 CI in [PR #65](https://github.com/CopyPasteUser/RiceBowl/pull/65) and [PR #66](https://github.com/CopyPasteUser/RiceBowl/pull/66). The new cross-rice settings-window and Hub update shortcuts are being validated. **Physical Mint/XFCE acceptance, safe writable display layout and the Aqua riceExplorer renderer remain open.**
+> **Release status: 0.9.1+ development — not yet stable 1.0.** The [v0.9.1 pre-release](https://github.com/CopyPasteUser/RiceBowl/releases/tag/v0.9.1) remains the last tagged build. Recovery, diagnostics and Aqua hardware improvements passed native-X11 CI in [PR #65](https://github.com/CopyPasteUser/RiceBowl/pull/65) and [PR #66](https://github.com/CopyPasteUser/RiceBowl/pull/66). The cross-rice Settings windows, Aqua Bluetooth discovery/pairing and Hub update shortcut passed GTK/X11 CI in the [merged PR #67](https://github.com/CopyPasteUser/RiceBowl/pull/67). **Physical Mint/XFCE acceptance, actual file drag-and-drop, safe writable display layout and the Aqua riceExplorer renderer remain open.**
 
 | 1.0 workstream | Engineering status | Remaining gate |
 | --- | --- | --- |
 | Six non-macOS shells and stock XFCE recovery | ✅ Automated switching/rollback tests | Real login, HDMI and suspend tests |
-| Health, opt-in update and performance report | ✅ Confirmed-update engine; Hub sidebar shortcut in validation | Native GUI CI, owner update/rollback drill |
+| Health, opt-in update and performance report | ✅ Confirmed-update engine and Hub sidebar shortcut passed native GUI CI | Owner update/rollback drill on Mint |
 | Rice-owned settings windows and drag-and-drop | ◐ Movable WM-integrated Settings for XP/Win10/Aqua; others use normal GTK windows | Hardware focus/multi-monitor tests, real file/URI drag-and-drop |
 | Frutiger Wi-Fi, sound, power, Bluetooth | ✅ Verified actions + on-demand BlueZ scan | Physical pairing/PIN confirmation, enterprise Wi-Fi |
 | Frutiger calendar, USB mounts and media | ✅ GTK calendar, user-confirmed unmount, MPRIS controls | Physical-device checks and deeper polish |

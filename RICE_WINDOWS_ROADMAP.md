@@ -54,6 +54,8 @@ must behave like applications integrated into the actual Linux desktop:
   discovery and verified pairing via the current BlueZ **system default** agent.
 - [x] Add a visible RiceBowl sidebar update button backed by the existing
   pinned, confirmed and recoverable updater; no automatic installation.
+- [x] [PR #67](https://github.com/CopyPasteUser/RiceBowl/pull/67) passed
+  native GTK/X11 CI for these window changes and existing screenshot regressions.
 - [ ] Validate focus switching, move, resize, maximize, taskbar, Escape,
   1024×768 and multi-monitor unplug using real XFWM4 on Linux Mint.
 - [ ] Add per-rice `Gtk.Dest`/GIO and riceExplorer drag source/target actions

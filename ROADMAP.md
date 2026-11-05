@@ -12,8 +12,10 @@
   [Cross-rice window and file DnD contract](RICE_WINDOWS_ROADMAP.md).
 - [x] Aqua Control Center native Bluetooth detail now offers on-demand
   nine-second discovery and Pair via the registered **system** PIN agent.
-- [ ] Run the new titlebar/WM smoke and other native-X11 CI scenarios, then
-  owner Mint/XFCE tests for actual moving, focus, task switching and USB drops.
+- [x] PR #67 native GTK/X11 CI passed for settings window behavior, Aqua
+  Bluetooth scan/pair flow and existing screenshot regression captures.
+- [ ] Owner Mint/XFCE tests for actual moving, focus, task switching,
+  multi-monitor handling and USB file drops.
 - [ ] File/URI drag-and-drop remains unimplemented; local secure BlueZ PIN
   agent, writable monitor editor with crash-safe revert and riceExplorer Aqua
   renderer remain open.
