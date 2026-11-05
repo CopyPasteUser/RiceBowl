@@ -103,6 +103,9 @@ affecting XFCE, including a failed-session recovery. **Not yet signed off.**
   temporary Waybar adapter with two distinct compositional layouts; validate
   custom manifests and clean up generated session files. This is a stepping
   stone, **not** the native RicePlate renderer.
+- [x] Introduce an **opt-in native Rust layer-shell surface prototype** with
+  software rendering, a visible fixed-action launcher and event-driven idle.
+  It is independently testable and does not replace Waybar until parity.
 - [ ] Build a Wayland-native panel through `wlr-layer-shell`.
 - [ ] Populate tasks/windows through a supported foreign-toplevel protocol.
 - [ ] Implement launchers, task groups, tray, calendar, menus and keyboard

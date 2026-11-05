@@ -81,6 +81,25 @@ This demonstrates structural composition through a shared recipe contract;
 it does **not** mean RicePlate's Rust layer-shell renderer, arbitrary mockup
 conversion or all seven native profiles are implemented yet.
 
+### Native RicePlate layer-shell experiment (developers only)
+
+The repository additionally includes `components/riceplate-wayland`, an
+event-driven Rust/Smithay Client Toolkit layer-shell prototype. It paints a
+simple labelled surface with a fixed `Apps` button that launches the installed
+Fuzzel command without passing any recipe data to a shell. It is **not** a
+replacement taskbar: it has no window list, clock, tray, notification handling
+or multi-output ownership yet. Do not start it automatically alongside Waybar.
+
+In a *disposable/nested* labwc session, developers with Rust 1.86+ can try:
+
+```bash
+cargo run --manifest-path components/riceplate-wayland/Cargo.toml
+```
+
+The dedicated CI workflow compiles it and checks that the native layer surface
+stays alive on a real headless labwc compositor. Nothing changes the XFCE path,
+Waybar default or the optional session package.
+
 ## First-session controls
 
 | Key | Action |

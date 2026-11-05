@@ -1,0 +1,35 @@
+name: Native RicePlate prototype
+
+on:
+  push:
+    paths:
+      - '.github/workflows/riceplate-native.yml'
+      - 'components/riceplate-wayland/**'
+      - 'scripts/smoke_riceplate_native.sh'
+  pull_request:
+    paths:
+      - '.github/workflows/riceplate-native.yml'
+      - 'components/riceplate-wayland/**'
+      - 'scripts/smoke_riceplate_native.sh'
+
+permissions:
+  contents: read
+
+jobs:
+  native-layer-shell:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build and test native RicePlate
+        run: |
+          cargo test --manifest-path components/riceplate-wayland/Cargo.toml
+          cargo build --release --manifest-path components/riceplate-wayland/Cargo.toml
+          sh -n scripts/smoke_riceplate_native.sh
+      - name: Install headless labwc
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y labwc dbus-user-session dbus-x11
+      - name: Boot native Wayland layer surface
+        run: timeout -k 5s 50s sh scripts/smoke_riceplate_native.sh
