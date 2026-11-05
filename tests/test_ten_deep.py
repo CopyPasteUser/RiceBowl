@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import unittest
+from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 from macrice.hardware_status import BluetoothState, SoundState, WifiNetwork
@@ -66,6 +67,18 @@ def settings_fixture():
 
 
 class Win10DeepTests(unittest.TestCase):
+    def test_installed_app_page_allows_minimal_shell_without_app_catalog(self):
+        view = TenSettings.__new__(TenSettings)
+        view.shell = SimpleNamespace()
+        view.apps_results = Mock()
+        view.apps_results.get_children.return_value = []
+        view.apps_search = Mock()
+        view.apps_search.get_text.return_value = ""
+        view.apps_count = Mock()
+        view._apps_limit = 35
+        view._populate_apps()
+        view.apps_count.set_text.assert_called_once_with("0 desktop applications")
+
     def test_settings_categories_and_real_navigation_hierarchy(self):
         self.assertEqual(len(CATEGORIES), 12)
         self.assertEqual(len({key for key, _title, _desc in CATEGORIES}), 12)

@@ -512,7 +512,7 @@ class TenSettings:
         for child in self.apps_results.get_children():
             self.apps_results.remove(child)
         query = self.apps_search.get_text().casefold().strip()
-        apps = sorted((app for app in self.shell.apps if app.get_id()),
+        apps = sorted((app for app in getattr(self.shell, "apps", ()) if app.get_id()),
                       key=lambda app: (app.get_display_name() or app.get_name() or "").casefold())
         matches = [app for app in apps if query in
                    (app.get_display_name() or app.get_name() or "").casefold()]
