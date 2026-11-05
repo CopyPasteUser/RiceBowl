@@ -31,6 +31,12 @@ not a signed release verifier and cannot guarantee atomic rollback of every
 external component. If it reports a failed automatic reinstall, stop; inspect
 `~/.local/share/macrice-versions` before touching anything else.
 
+**Hub update path:** Click the sidebar **Check for updates** button, inspect the
+reported official revision and commit count, confirm **Install update…**, then
+restart the Hub. Canceling must not apply changes. Repeat with no update,
+unreachable GitHub, a dirty checkout and a simulated failing install; all
+errors must preserve the current working desktop and report failure.
+
 ## 2. Seven-rice session matrix
 
 Test every transition in order: **XP Luna → Windows 7 → Windows 10 → ChromeOS
@@ -45,6 +51,11 @@ For each rice, record pass/fail for:
   controls. App launch, window focus, pin/unpin and close all still work.
 - Mouse clicks, keyboard navigation, popup edges, date/status and deep settings
   stay visible at **1024×768** and the laptop's native resolution.
+- Open the rice-owned Settings/Control Panel, drag its caption or native frame,
+  Alt-Tab to another app, return via taskbar, resize and close it. Nothing
+  should auto-hide on focus change, obscure other apps as always-on-top, or
+  reset its position on ordinary reopening. Do not claim generic file drops
+  work yet; follow the [cross-rice DnD contract](RICE_WINDOWS_ROADMAP.md).
 - Switching back to stock XFCE restores its panel, original shortcuts and
   editable personal settings; user-owned Plank autostart is intact.
 
@@ -58,7 +69,7 @@ to manufacture the failure.
 | Probe | Acceptance condition |
 | --- | --- |
 | Wi-Fi | Visible SSIDs and signal are real; saved connect/disconnect works, password entry uses a masked single-use field, a wrong password yields an error, enterprise Wi-Fi defers to the system editor, and radio-off requires confirmation. |
-| Bluetooth | The nine-second on-demand BlueZ scan discovers real nearby devices, releases its session on finish or popover close and does not interfere with other discovery clients. Pairing uses the registered BlueZ default agent for PIN/confirmation (or fails honestly); verify actual paired/connected state, radio-off confirmation, and missing-agent behavior on the laptop. |
+| Bluetooth | The nine-second on-demand BlueZ scan in the flyout **and full Aqua Settings window** discovers real nearby devices, releases its session on finish or window close and does not interfere with other discovery clients. Pairing uses the registered BlueZ default agent for PIN/confirmation (or fails honestly); verify actual paired/connected state, radio-off confirmation, and missing-agent behavior on the laptop. |
 | Sound | Output volume, mute and device switching are verified after write; missing audio backend explains itself. |
 | Power/display | Real battery and charging, brightness and supported profiles; Aqua reads the X11 output geometry, primary screen and offered modes without writes. Test real HDMI connect/disconnect, monitor ordering/scaling and suspend/resume. Writable display layout must have confirmed rollback before being implemented; no fictitious control success. |
 | Notifications | XFCE remains the daemon; native history and Do Not Disturb update honestly; no duplicate notification process. |

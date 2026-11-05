@@ -42,6 +42,7 @@ class NativeAquaControls:
         self._reader = None
         self._renderer = None
         self._debounce = 0
+        self._scan_cancel = None
 
         self.surface = shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=9),
                                     self._style("panel"))
@@ -224,6 +225,9 @@ class NativeAquaControls:
         """Invalidate hidden-page responses and pending debounced writes."""
         self._generation += 1
         self._busy = False
+        if getattr(self, "_scan_cancel", None) is not None:
+            self._scan_cancel.set()
+            self._scan_cancel = None
         if self._debounce:
             self.GLib.source_remove(self._debounce)
             self._debounce = 0
@@ -249,7 +253,7 @@ class NativeAquaControls:
             if not enabled:
                 # Turning off Wi-Fi can terminate SSH/Tailscale and other
                 # connections. An inline second action avoids stealing focus
-                # from the parent Control Center's auto-hide window.
+                # while browsing the independent Control Center window.
                 self._set_values(lambda: toggle.set_active(True))
                 confirmation.set_visible(True)
                 return
@@ -327,6 +331,17 @@ class NativeAquaControls:
     def bluetooth(self):
         toggle = self._switch("Bluetooth adapter", lambda state:
                               self.change(lambda: self.backend.set_bluetooth_power(state)))
+        self._label("Nearby discovery runs for at most nine seconds. Pairing uses "
+                    "the registered Linux Bluetooth PIN confirmation agent.", self._style("hint"))
+
+        def scan():
+            event = threading.Event()
+            self._scan_cancel = event
+            self.change(lambda: self.backend.scan_bluetooth_devices(duration=9,
+                                                                    cancel=event))
+
+        scan_button = self._button("Scan for nearby devices (9 s)", scan)
+        scan_button.get_accessible().set_name("Scan for nearby Bluetooth devices")
         devices = self._label("Connected devices: checking…", self._style("hint"))
         device_rows = self.Gtk.Box(orientation=self.Gtk.Orientation.VERTICAL, spacing=5)
         if self.runner is not None:
@@ -335,6 +350,7 @@ class NativeAquaControls:
         def render(state):
             toggle.set_active(bool(state.powered))
             toggle.set_sensitive(state.powered is not None)
+            scan_button.set_sensitive(state.powered is True)
             devices.set_text("Connected devices: " +
                              (", ".join(state.connected) if state.connected else "none reported"))
             for child in tuple(device_rows.get_children()):
@@ -344,20 +360,25 @@ class NativeAquaControls:
                     row = self.Gtk.Box(orientation=self.Gtk.Orientation.HORIZONTAL, spacing=6)
                     row.pack_start(self.Gtk.Label(label=device.name[:45], xalign=0),
                                    True, True, 0)
-                    button = self.shell._class(
-                        self.Gtk.Button(label="Disconnect" if device.connected else "Connect"),
-                        self._style("mini"))
-                    button.set_sensitive(state.powered is True and
-                                         (device.paired or device.connected) and not self._busy)
+                    operation = ("Disconnect" if device.connected else
+                                 "Connect" if device.paired else "Pair…")
+                    button = self.shell._class(self.Gtk.Button(label=operation), self._style("mini"))
+                    button.set_sensitive(state.powered is True and not self._busy)
                     button.get_accessible().set_name(
-                        ("Disconnect " if device.connected else "Connect ") + device.name)
-                    button.connect("clicked", lambda _button, item=device:
-                                   self.change(lambda: self.backend.set_bluetooth_connection(
-                                       item.address, not item.connected)))
+                        operation + " " + device.name)
+                    if not device.paired and not device.connected:
+                        button.set_tooltip_text("Confirm the PIN in your Linux Bluetooth agent")
+                        button.connect("clicked", lambda _button, item=device:
+                                       self.change(lambda: self.backend.pair_bluetooth_device(
+                                           item.address)))
+                    else:
+                        button.connect("clicked", lambda _button, item=device:
+                                       self.change(lambda: self.backend.set_bluetooth_connection(
+                                           item.address, not item.connected)))
                     row.pack_end(button, False, False, 0)
                     device_rows.pack_start(row, False, False, 0)
                 if not state.devices:
-                    device_rows.pack_start(self.Gtk.Label(label="No paired devices reported", xalign=0),
+                    device_rows.pack_start(self.Gtk.Label(label="No devices found — start a scan", xalign=0),
                                            False, False, 0)
                 device_rows.show_all()
             if state.powered is None:

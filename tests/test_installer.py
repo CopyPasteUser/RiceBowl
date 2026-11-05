@@ -96,6 +96,8 @@ class InstallerTests(unittest.TestCase):
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertIn("hub", result.stdout)
             self.assertTrue((installed / "macrice/hub_catalog.py").is_file())
+            self.assertTrue((installed / "macrice/rice_windows.py").is_file())
+            self.assertTrue((installed / "RICE_WINDOWS_ROADMAP.md").is_file())
 
     def test_fast_toggle_prefers_dbus_and_falls_back_for_cold_shell(self):
         with tempfile.TemporaryDirectory() as directory:

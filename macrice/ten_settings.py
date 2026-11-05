@@ -11,6 +11,7 @@ import platform
 import shutil
 
 from .riceware import pop, spice
+from .rice_windows import configure_settings_window, draggable_caption
 
 
 CATEGORIES = (
@@ -43,6 +44,7 @@ class TenSettings:
         self.closed = False
         self.epoch = 0
         self.current = "home"
+        self._positioned = False
         self._pending = set()
         self._volume_source = 0
         self._brightness_source = 0
@@ -53,11 +55,8 @@ class TenSettings:
         self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
         self.window.set_title("Settings · Windows 10")
         self.window.set_decorated(False)
-        self.window.set_resizable(True)
         self.window.set_default_size(880, 600)
-        self.window.set_type_hint(Gdk.WindowTypeHint.NORMAL)
-        self.window.set_transient_for(shell.bar)
-        self.window.set_skip_pager_hint(True)
+        configure_settings_window(self.window, Gdk, role="ricebowl-windows10-settings")
         root = shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0),
                             "ten-settings-root")
         toolbar = shell._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10),
@@ -68,7 +67,8 @@ class TenSettings:
         toolbar.pack_start(self.back, False, False, 0)
         self.breadcrumb = shell._class(Gtk.Label(label="Settings", xalign=0),
                                        "ten-action-title")
-        toolbar.pack_start(self.breadcrumb, True, True, 0)
+        toolbar.pack_start(draggable_caption(self.window, self.breadcrumb, Gtk, Gdk),
+                           True, True, 0)
         refresh = shell._class(Gtk.Button(label="Refresh"), "ten-settings-action")
         refresh.get_accessible().set_name("Refresh current settings and hardware state")
         refresh.connect("clicked", lambda _button: self.refresh())
@@ -285,9 +285,11 @@ class TenSettings:
             return
         self.window.show_all()
         self._filter(self.search)
-        self.window.resize(width, height)
-        self.window.move(rect.x + (rect.width - width) // 2,
-                         rect.y + (rect.height - height - 40) // 2)
+        if not self._positioned:
+            self.window.resize(width, height)
+            self.window.move(rect.x + (rect.width - width) // 2,
+                             rect.y + (rect.height - height - 40) // 2)
+            self._positioned = True
         self.navigate(page)
         self.window.present()
 

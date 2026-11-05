@@ -6,6 +6,7 @@ import shutil
 
 from .frutiger_device_details import ProbeResult, probe
 from .frutiger_native_controls import NATIVE_TASKS, build_native_controls
+from .rice_windows import configure_settings_window, draggable_caption
 
 
 # id, label, icon, short explanation, (label, icon, utility candidates, purpose)
@@ -116,12 +117,7 @@ def build(shell, Gtk, Gdk):
     window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
     window.set_title("Aqua World · Control Center")
     window.set_decorated(False)
-    window.set_resizable(True)
-    window.set_skip_taskbar_hint(True)
-    window.set_skip_pager_hint(True)
-    window.set_type_hint(Gdk.WindowTypeHint.UTILITY)
-    window.set_transient_for(shell.bar)
-    window.set_keep_above(True)
+    configure_settings_window(window, Gdk, role="ricebowl-aqua-settings")
     window.set_default_size(492, 620)
 
     root = shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=9),
@@ -131,14 +127,16 @@ def build(shell, Gtk, Gdk):
 
     header = shell._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=9),
                           "aqua-control-hero")
-    header.pack_start(shell._icon("preferences-system", Gtk.IconSize.LARGE_TOOLBAR),
-                      False, False, 0)
+    caption = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=9)
+    caption.pack_start(shell._icon("preferences-system", Gtk.IconSize.LARGE_TOOLBAR),
+                       False, False, 0)
     heading_box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1)
     heading_box.pack_start(shell._class(Gtk.Label(label="Aqua Control Center", xalign=0),
                                         "aero-menu-heading"), False, False, 0)
     heading_box.pack_start(shell._class(Gtk.Label(label="Your connected desktop", xalign=0),
                                         "aero-menu-sub"), False, False, 0)
-    header.pack_start(heading_box, True, True, 0)
+    caption.pack_start(heading_box, True, True, 0)
+    header.pack_start(draggable_caption(window, caption, Gtk, Gdk), True, True, 0)
     close = shell._class(Gtk.Button(label="×"), "aqua-control-close")
     close.get_accessible().set_name("Close Aqua Control Center")
     close.connect("clicked", lambda _button: shell._hide_actions())
@@ -403,8 +401,34 @@ def build(shell, Gtk, Gdk):
     status.pack_start(shell.mute_button, False, False, 0)
     root.pack_end(status, False, False, 0)
 
-    window.connect("focus-out-event", lambda *_args: shell._schedule_popup_hide("control"))
+    # A settings window persists when users focus another app. Only the close
+    # control, Escape or explicit tray toggle dismisses it.
+    window.connect("delete-event", lambda *_args: shell._hide_actions() or True)
     window.connect("key-press-event", lambda _widget, event: shell._action_key(event))
+    # The old tray popup mask only applied once. A real resizable window must
+    # reshape after every user resize, or new content remains clipped.
+    shape_timer = [0]
+
+    def update_shape():
+        shape_timer[0] = 0
+        from .chrome_shell import apply_rounded_window_shape
+
+        apply_rounded_window_shape(window, 22)
+        return False
+
+    def shape_after_resize(_window, _event):
+        if shape_timer[0]:
+            GLib.source_remove(shape_timer[0])
+        shape_timer[0] = GLib.timeout_add(70, update_shape)
+        return False
+
+    def stop_shape_timer(_window):
+        if shape_timer[0]:
+            GLib.source_remove(shape_timer[0])
+            shape_timer[0] = 0
+
+    window.connect("configure-event", shape_after_resize)
+    window.connect("destroy", stop_shape_timer)
     shell.aqua_control_show_home = show_home
     def show_named_category(name):
         for category in AQUA_CATEGORIES:

@@ -1994,7 +1994,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 subprocess.Popen([executable], stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                                  stderr=subprocess.DEVNULL, close_fds=True, start_new_session=True)
                 self._hide_menu()
-                if ten or profile in ("chromeos", "frutiger"):
+                if ten or profile == "chromeos":
                     self._hide_actions()
             except OSError as exc:
                 self._error(str(exc))
@@ -5133,6 +5133,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
         def _hide_if_unfocused(self, name):
             self._popup_hide_sources[name] = 0
             window = self.menu if name == "menu" else self.actions
+            if name == "control" and profile in ("frutiger", "winxp"):
+                # Standalone settings windows persist across app focus changes.
+                return False
             if name == "menu" and self._luna_popup_depth:
                 return False
             if window.get_visible() and not window.is_active():
@@ -5262,9 +5265,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     return
                 self.luna_control_show_home()
                 self.actions.show_all()
-                self.actions.resize(width, height)
-                self.actions.move(rect.x + (rect.width - width) // 2,
-                                  rect.y + (rect.height - panel_height - height) // 2)
+                if not getattr(self, "_luna_settings_positioned", False):
+                    self.actions.resize(width, height)
+                    self.actions.move(rect.x + (rect.width - width) // 2,
+                                      rect.y + (rect.height - panel_height - height) // 2)
+                    self._luna_settings_positioned = True
                 self.actions.present()
                 return
             if profile == "aero":
@@ -5291,15 +5296,13 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     return
                 self.aqua_control_show_home()
                 self.actions.show_all()
-                self.actions.resize(width, height)
-                self.actions.move(rect.x + rect.width - width - 10,
-                                  rect.y + rect.height - panel_height - height - 8)
+                if not getattr(self, "_aqua_settings_positioned", False):
+                    self.actions.resize(width, height)
+                    self.actions.move(rect.x + rect.width - width - 10,
+                                      rect.y + rect.height - panel_height - height - 8)
+                    self._aqua_settings_positioned = True
                 self.actions.present()
                 self._refresh_status_async()
-                from .chrome_shell import apply_rounded_window_shape
-
-                GLib.idle_add(apply_rounded_window_shape, self.actions, 22)
-                GLib.timeout_add(150, apply_rounded_window_shape, self.actions, 22)
                 return
             width = min(396 if profile == "chromeos" else 362 if ten else 382 if profile == "winclassic" else 388 if profile == "frutiger" else 412 if profile == "aero" else 330,
                         max(0, rect.width - 16))
@@ -5742,7 +5745,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             if self.menu.get_visible():
                 self._hide_menu()
                 return
-            self._hide_actions()
+            if profile not in ("frutiger", "winxp"):
+                self._hide_actions()
             rect = self._desktop_rect()
             self._menu_focused = False
             self._menu_opened_at = GLib.get_monotonic_time()

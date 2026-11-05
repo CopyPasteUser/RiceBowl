@@ -8,7 +8,7 @@ from pathlib import Path
 from unittest import mock
 
 from macrice.cli import main
-from macrice.hub import CSS, _activate_hub_window, run
+from macrice.hub import CSS, _activate_hub_window, quick_update_label, run
 from macrice.hub_art import FAMILY_ICONS, PREVIEW_FILES
 from macrice.hub_catalog import (
     AVAILABLE_STYLE_KEYS, FAMILIES, FAMILY_BY_KEY, recent_backups, search_families,
@@ -78,6 +78,15 @@ class HubCatalogTests(unittest.TestCase):
 
 
 class HubStylingTests(unittest.TestCase):
+    def test_quick_update_has_a_single_explicit_check_then_install_action(self):
+        from macrice.updater import UpdatePlan
+
+        self.assertEqual(quick_update_label(None), "Check for updates")
+        self.assertEqual(quick_update_label(UpdatePlan("a", "a", 0, Path("/repo"))),
+                         "Check for updates")
+        self.assertEqual(quick_update_label(UpdatePlan("a", "b", 2, Path("/repo"))),
+                         "Install update…")
+
     def test_existing_cli_launches_the_new_hub(self):
         with mock.patch("macrice.hub.run", return_value=0) as fake:
             self.assertEqual(main(["hub"]), 0)

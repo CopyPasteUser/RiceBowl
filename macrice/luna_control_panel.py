@@ -128,12 +128,9 @@ def build(shell, Gtk, Gdk):
     window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
     window.set_title("Control Panel")
     window.set_decorated(False)
-    window.set_resizable(True)
-    window.set_skip_taskbar_hint(True)
-    window.set_skip_pager_hint(True)
-    window.set_type_hint(Gdk.WindowTypeHint.UTILITY)
-    window.set_transient_for(shell.bar)
-    window.set_keep_above(True)
+    from .rice_windows import configure_settings_window
+
+    configure_settings_window(window, Gdk, role="ricebowl-xp-control-panel")
     window.set_default_size(746, 536)
 
     frame = shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0),
@@ -386,7 +383,7 @@ def build(shell, Gtk, Gdk):
     shell.status_summary.set_line_wrap(True)
     sidebar.pack_end(shell.status_summary, False, False, 0)
 
-    window.connect("focus-out-event", lambda *_args: shell._schedule_popup_hide("control"))
+    window.connect("delete-event", lambda *_args: shell._hide_actions() or True)
     def on_key(_widget, event):
         if event.keyval == Gdk.KEY_Left and event.state & Gdk.ModifierType.MOD1_MASK:
             show_home()

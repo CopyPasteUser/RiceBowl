@@ -1,5 +1,19 @@
 # RiceBowl changelog
 
+## Unreleased — native settings windows and Hub update entry (5 November 2026)
+
+- Added a visible two-stage **Check for updates → Install update…** action to
+  the Hub sidebar, reusing the verified official-origin pinned updater,
+  confirmation, archived recovery and failure messages already in Recovery.
+- Added shared WM-integrated settings-window behavior: custom mouse/keyboard
+  draggable captions, normal taskbar/Alt-Tab identity and focus persistence
+  in Aqua/XP Control Centers and Windows 10 Settings. No macOS UI changes.
+- Extended Aqua's own Bluetooth settings page with short, cancellable scans
+  and pairing through the *existing Linux BlueZ agent*. Local PIN-agent,
+  file drag-and-drop and writable display layout are still open workstreams.
+- Added headless WM contracts and native GTK/X11 smoke coverage; tracked
+  the explicit cross-rice window and DnD acceptance gates separately.
+
 ## Unreleased — BlueZ discovery and native display topology (5 November 2026)
 
 - Added real, nine-second BlueZ D-Bus device discovery inside the Frutiger
