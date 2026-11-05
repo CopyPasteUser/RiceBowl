@@ -129,9 +129,60 @@ class UpdateTests(unittest.TestCase):
         self.assertTrue((self.checkout / "personal notes.txt").exists())
         self.assertEqual(git(self.checkout, "status", "--porcelain").count("\n"), 1)
 
+    def test_opt_in_preview_and_install_preserve_dirty_checkout_without_stash(self):
+        revision = self.new_revision()
+        (self.checkout / "revision.txt").write_text("personal tracked change\n")
+        (self.checkout / "personal notes.txt").write_text("private untracked data\n")
+        before = git(self.checkout, "status", "--porcelain")
+        plan = updater.inspect(source=self.checkout, refresh=True, allow_dirty=True)
+        self.assertEqual(plan.changed, ("revision.txt", "personal notes.txt"))
+        self.assertEqual(plan.available, revision)
+        with mock.patch.object(updater, "install", side_effect=self.fake_installer()):
+            result = updater.apply(source=self.checkout, expected_revision=revision,
+                                   expected_current=plan.current, preserve_checkout=True)
+        self.assertEqual(result.changed, plan.changed)
+        self.assertEqual((self.installed / "launcher.py").read_text(), "v2")
+        self.assertEqual(git(self.checkout, "rev-parse", "HEAD"), self.old)
+        self.assertEqual(git(self.checkout, "status", "--porcelain"), before)
+        self.assertEqual((self.checkout / "revision.txt").read_text(), "personal tracked change\n")
+        self.assertEqual((self.checkout / "personal notes.txt").read_text(),
+                         "private untracked data\n")
+        self.assertEqual(git(self.checkout, "stash", "list"), "")
+
+    def test_dirty_install_failure_restores_bundle_and_preserves_every_edit(self):
+        self.new_revision()
+        (self.checkout / "revision.txt").write_text("modified locally\n")
+        with mock.patch.object(updater, "install", side_effect=self.fake_installer(fail_new=True)):
+            with self.assertRaisesRegex(updater.UpdateError, "previous installed bundle reinstalled"):
+                updater.apply(source=self.checkout, preserve_checkout=True)
+        self.assertEqual(git(self.checkout, "rev-parse", "HEAD"), self.old)
+        self.assertEqual((self.checkout / "revision.txt").read_text(), "modified locally\n")
+        self.assertEqual((self.installed / "launcher.py").read_text(), "v1")
+
+    def test_dirty_mode_requires_explicit_opt_in_and_stable_preview(self):
+        revision = self.new_revision()
+        (self.checkout / "local.txt").write_text("do not touch")
+        with mock.patch.object(updater, "install") as installer:
+            with self.assertRaisesRegex(updater.UpdateError, "local.txt"):
+                updater.apply(source=self.checkout, expected_revision=revision)
+            with self.assertRaisesRegex(updater.UpdateError, "changed since preview"):
+                updater.apply(source=self.checkout, preserve_checkout=True,
+                              expected_revision=revision, expected_current="0" * 40)
+            installer.assert_not_called()
+
+    def test_clean_opt_in_update_still_fast_forwards_checkout(self):
+        revision = self.new_revision()
+        with mock.patch.object(updater, "install", side_effect=self.fake_installer()):
+            plan = updater.apply(source=self.checkout, expected_revision=revision,
+                                 preserve_checkout=True)
+        self.assertFalse(plan.changed)
+        self.assertEqual(git(self.checkout, "rev-parse", "HEAD"), revision)
+
     def test_cli_accepts_explicit_pinned_revision_and_requires_user_confirmation(self):
-        args = parser().parse_args(["update", "apply", "--yes", "--revision", "a" * 40])
+        args = parser().parse_args(["update", "apply", "--yes", "--preserve-checkout",
+                                    "--revision", "a" * 40])
         self.assertTrue(args.yes)
+        self.assertTrue(args.preserve_checkout)
         self.assertEqual(args.revision, "a" * 40)
         self.assertEqual(parser().parse_args(["update", "check", "--refresh"]).action,
                          "check")

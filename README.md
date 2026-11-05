@@ -27,11 +27,11 @@ RiceBowl changes real Linux desktop elements—taskbar, Start/launcher, menus, s
 
 Track every remaining item in the [1.0 roadmap](ROADMAP.md) and [owner acceptance sheet](ACCEPTANCE_1_0.md). The **macOS Aurora UI is intentionally unchanged**.
 The [11 owner-reported interaction and styling issues](OWNER_QA_2026-11-05.md)
-are tracked separately. The current local QA batch addresses ChromeOS Wi-Fi,
-Windows 7 blank category pages, XP caption dragging, Windows 98 tray anchors
-and dirty-checkout diagnostics; Frutiger pointer-hit validation is pending.
-These changes are **not yet released or device-approved**. Automated fixes
-do not replace Mint/XFCE acceptance.
+are tracked separately. [PR #72](https://github.com/CopyPasteUser/RiceBowl/pull/72)
+merged Win98/Win7/XP/ChromeOS interaction fixes and extended Frutiger native
+pointer checks with passing virtual-X11 CI. Physical Mint/XFCE signoff is
+still pending. A new, opt-in dirty-checkout update flow is in development;
+automated fixes do not replace owner acceptance.
 
 ## Styles
 
@@ -91,8 +91,14 @@ The updater accepts a clean official Git `main`, stages a pinned
 revision and attempts archived recovery on install failure. It does **not**
 verify signed releases or guarantee atomic multi-component rollback. For a
 dirty checkout, the updater reports changed paths and leaves everything
-untouched. Review the listed files and explicitly commit or preserve your
-changes before updating; RiceBowl never auto-stashes personal edits. For a
+untouched by default. The Hub now offers a separately confirmed **Install;
+keep local files** action: it installs the official version while leaving the
+Git source checkout at its previous revision. No stash or merge is attempted;
+you must reconcile your source checkout yourself later. The equivalent CLI is
+`macrice update check --refresh --preserve-checkout`, followed after reviewing
+the changes by `macrice update apply --yes --preserve-checkout`. A source
+checkout intentionally kept at its old revision may continue to report an
+already-installed update as available. For a
 manual source update, `cd "$HOME/RiceBowl" && git pull --ff-only && bash install.sh`
 still works. Never run any installer/updater with `sudo`.
 

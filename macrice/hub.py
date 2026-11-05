@@ -73,8 +73,20 @@ scrolledwindow, viewport {{ background: transparent; border: none; }}
 def quick_update_label(plan) -> str:
     """Use one truthful action for both the preview and confirmed update."""
     if plan is not None and plan.needed:
+        if plan.changed:
+            return "Install; keep local files…"
         return "Install update…"
     return "Check for updates"
+
+
+def dirty_update_summary(plan) -> str:
+    """Bound a read-only list of local paths without hiding that edits exist."""
+    if not plan.changed:
+        return ""
+    examples = ", ".join(repr(name[:100]) for name in plan.changed[:4])
+    remaining = f" (+{len(plan.changed) - 4} more)" if len(plan.changed) > 4 else ""
+    return (f"{len(plan.changed)} local checkout change(s) will be kept in place: "
+            f"{examples}{remaining}. Git main will not be advanced.")
 
 
 def _activate_hub_window(application, windows, factory) -> bool:
@@ -808,18 +820,25 @@ def run() -> int:
             self.quick_update_button.set_label(quick_update_label(None))
             self.quick_update_status.set_text("Checking trusted origin/main…")
             self._work("Checking available RiceBowl revision…",
-                       lambda: inspect(refresh=True), self._show_update)
+                       lambda: inspect(refresh=True, allow_dirty=True), self._show_update)
 
         def _show_update(self, plan):
             self._update_plan = plan
             self.update_label.set_text(
                 f"Installed source {plan.current[:12]} · origin/main {plan.available[:12]} · "
-                f"{plan.commits} new commit(s)" if plan.needed else
-                f"Source already up to date at {plan.current[:12]}")
+                f"{plan.commits} new commit(s)" +
+                ("\n" + dirty_update_summary(plan) if plan.changed else "")
+                if plan.needed else
+                f"Source already up to date at {plan.current[:12]}" +
+                ("\n" + dirty_update_summary(plan) if plan.changed else ""))
             self.update_apply_button.set_sensitive(plan.needed)
+            self.update_apply_button.set_label(
+                "Install; preserve checkout…" if plan.changed else "Install checked revision…")
             self.quick_update_button.set_label(quick_update_label(plan))
             self.quick_update_status.set_text(
-                f"{plan.commits} new commit(s) · Confirm to install" if plan.needed else
+                f"{plan.commits} new commit(s) · " +
+                ("Local edits stay untouched" if plan.changed else "Confirm to install")
+                if plan.needed else
                 "Already up to date")
             self._notify("A checked fast-forward update is available." if plan.needed else
                          "RiceBowl source is up to date.")
@@ -831,11 +850,14 @@ def run() -> int:
                 return
             self._confirm(
                 "Install this checked RiceBowl revision?",
-                "Update from " + plan.current[:12] + " to " + plan.available[:12] +
-                ". Current installed files are archived. The manager may need restarting; "
-                "existing desktop theme settings will not be switched.",
+                "Install official " + plan.available[:12] + ". " +
+                (f"Your {len(plan.changed)} local source edits will stay exactly as they are. "
+                 "The Git checkout will NOT be advanced; reconcile it manually later. "
+                 if plan.changed else "The clean Git checkout will fast-forward. ") +
+                "The previous installed version is archived for recovery. "
+                "Existing desktop theme settings will not be switched.",
                 lambda: self._install_checked_update(apply_update, plan),
-                "Install update",
+                "Install; keep local edits" if plan.changed else "Install update",
             )
 
         def _install_checked_update(self, apply_update, plan):
@@ -843,16 +865,22 @@ def run() -> int:
             self.quick_update_status.set_text("Installing verified revision…")
             self._work("Installing checked update with recovery…",
                        lambda: apply_update(source=plan.source,
-                                            expected_revision=plan.available),
+                                            expected_revision=plan.available,
+                                            expected_current=plan.current,
+                                            preserve_checkout=bool(plan.changed)),
                        self._update_finished)
 
         def _update_finished(self, plan):
             self._update_plan = None
             self.update_apply_button.set_sensitive(False)
-            self.update_label.set_text("Installed " + plan.available[:12] +
-                                       ". Restart RiceBowl to load updated code.")
+            self.update_label.set_text(
+                "Installed " + plan.available[:12] + ". Restart RiceBowl to load updated code." +
+                (f" Your {len(plan.changed)} local changes and the older source checkout "
+                 "were left untouched." if plan.changed else ""))
             self.quick_update_button.set_label(quick_update_label(None))
-            self.quick_update_status.set_text("Installed · Restart RiceBowl")
+            self.quick_update_status.set_text(
+                "Installed · Local checkout preserved" if plan.changed else
+                "Installed · Restart RiceBowl")
             self._notify("Update installed. Restart RiceBowl; active rice was not switched.")
 
         def _after_restore(self, backup):

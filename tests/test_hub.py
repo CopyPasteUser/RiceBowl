@@ -8,7 +8,7 @@ from pathlib import Path
 from unittest import mock
 
 from macrice.cli import main
-from macrice.hub import CSS, _activate_hub_window, quick_update_label, run
+from macrice.hub import CSS, _activate_hub_window, dirty_update_summary, quick_update_label, run
 from macrice.hub_art import FAMILY_ICONS, PREVIEW_FILES
 from macrice.hub_catalog import (
     AVAILABLE_STYLE_KEYS, FAMILIES, FAMILY_BY_KEY, recent_backups, search_families,
@@ -86,6 +86,12 @@ class HubStylingTests(unittest.TestCase):
                          "Check for updates")
         self.assertEqual(quick_update_label(UpdatePlan("a", "b", 2, Path("/repo"))),
                          "Install update…")
+        dirty = UpdatePlan("a", "b", 2, Path("/repo"), ("notes with spaces.txt", "modified.py"))
+        self.assertEqual(quick_update_label(dirty), "Install; keep local files…")
+        note = dirty_update_summary(dirty)
+        self.assertIn("2 local checkout change(s)", note)
+        self.assertIn("'notes with spaces.txt'", note)
+        self.assertIn("Git main will not be advanced", note)
 
     def test_existing_cli_launches_the_new_hub(self):
         with mock.patch("macrice.hub.run", return_value=0) as fake:

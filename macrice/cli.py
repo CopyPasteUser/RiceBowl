@@ -77,6 +77,8 @@ def parser() -> argparse.ArgumentParser:
     updater.add_argument("--refresh", action="store_true", help="Fetch origin/main before checking")
     updater.add_argument("--yes", action="store_true", help="Confirm a staged update with recovery")
     updater.add_argument("--revision", help="Optional exact 40-digit revision from update check")
+    updater.add_argument("--preserve-checkout", action="store_true",
+                         help="Opt in to installing from official Git while leaving a dirty source tree unchanged")
     installer = commands.add_parser("install", help="Install or repair the three bundled apps; preserve Plank")
     installer.add_argument("--dry-run", action="store_true", help="Do not write or start anything")
     installer.add_argument("--no-start", action="store_true", help="Install without launching GTK")
@@ -251,14 +253,20 @@ def main(argv: list[str] | None = None) -> int:
                 if args.revision and (len(args.revision) != 40 or any(
                         character not in "0123456789abcdefABCDEF" for character in args.revision)):
                     raise UpdateError("--revision must be a full Git commit SHA (40 hex digits)")
-                plan = apply_update(source=args.source, expected_revision=args.revision)
+                plan = apply_update(source=args.source, expected_revision=args.revision,
+                                    preserve_checkout=args.preserve_checkout)
                 print("RiceBowl updated to " + plan.available[:12] if plan.needed else
                       "RiceBowl already up to date")
+                if plan.changed:
+                    print(f"Source checkout not advanced: {len(plan.changed)} local change(s) preserved in place.")
                 print("Restart the manager to load the new code; your desktop rice was not switched.")
             else:
-                plan = inspect_update(source=args.source, refresh=args.refresh)
+                plan = inspect_update(source=args.source, refresh=args.refresh,
+                                      allow_dirty=args.preserve_checkout)
                 print("Local revision: " + plan.current[:12])
                 print("Available:      " + plan.available)
+                if plan.changed:
+                    print(f"Local files:    {len(plan.changed)} changed; a preserve-mode install will not advance the checkout")
                 print(f"New commits:    {plan.commits}" +
                       (" — run update apply --yes (optionally --revision SHA) after review" if plan.needed else
                        " — up to date (cached; use --refresh to check GitHub)"))
