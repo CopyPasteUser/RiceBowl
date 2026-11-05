@@ -131,6 +131,7 @@ jobs:
             screenshots/ricebowl-frutiger-workspace-0.9.1-1024.png
             screenshots/ricebowl-winclassic-*-0.9.1-1024.png
             screenshots/ricebowl-windows10-*-0.9.1-1024.png
+            screenshots/ricebowl-windows10-settings-*-0.9.1*-extra.png
             screenshots/ricebowl-chromeos-*-0.9.1-1024.png
             screenshots/ricebowl-chromeos-*-0.9.1-extra.png
             screenshots/ricebowl-macmenu-dark-current.png
