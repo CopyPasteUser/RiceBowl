@@ -6,8 +6,8 @@
   Settings panel and toggles it on repeat clicks instead of spawning an
   external settings tool. Added GTK smoke and source contract regressions.
 - Windows 7 Control Panel category, task and Large/Small icon pages explicitly
-  reveal their respective `no-show-all` GTK containers; native smoke now
-  verifies visible page contents rather than just the navigation history.
+  reveal both their `no-show-all` GTK containers **and their child widgets**;
+  native smoke verifies visible page contents rather than just navigation.
 - Windows 98 tray popups calculate root coordinates from the clicked status
   button rather than the shared taskbar's window; 1024px/offset-monitor
   placement has deterministic geometry regressions.
