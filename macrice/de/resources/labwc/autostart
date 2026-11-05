@@ -1,0 +1,13 @@
+#!/bin/sh
+# labwc 0.7.1 on Mint 22 does not yet manage the activation environment.
+# Import the actual display socket after compositor startup. Newer labwc
+# versions already do this, so the second import is harmless.
+if [ "${RICEBOWL_DE_NESTED:-0}" != 1 ]; then
+    if command -v dbus-update-activation-environment >/dev/null 2>&1; then
+        dbus-update-activation-environment --systemd WAYLAND_DISPLAY DISPLAY \
+            XDG_CURRENT_DESKTOP XDG_SESSION_TYPE XDG_SESSION_DESKTOP >/dev/null 2>&1 || :
+    fi
+    if command -v systemctl >/dev/null 2>&1; then
+        systemctl --user --no-block start ricebowl-session.target >/dev/null 2>&1 || :
+    fi
+fi

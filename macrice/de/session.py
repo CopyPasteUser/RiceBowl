@@ -1,0 +1,198 @@
+"""Opt-in labwc session runtime; never modifies the user's XFCE installation."""
+
+from __future__ import annotations
+
+import os
+import shlex
+import shutil
+import signal
+import stat
+import subprocess
+import sys
+from collections.abc import Callable, Mapping
+from pathlib import Path
+from typing import NoReturn
+
+
+REQUIRED_TOOLS = ("labwc", "waybar", "foot", "fuzzel", "swaylock")
+DESKTOP_NAME = "RiceBowl:labwc:wlroots"
+
+
+class SessionError(RuntimeError):
+    """The preview session cannot start without a safe, usable baseline."""
+
+
+def project_root() -> Path:
+    return Path(__file__).resolve().parents[2]
+
+
+def resources() -> Path:
+    return Path(__file__).resolve().parent / "resources"
+
+
+def _check_runtime_dir(environment: Mapping[str, str]) -> None:
+    directory = environment.get("XDG_RUNTIME_DIR")
+    if not directory or not os.path.isabs(directory):
+        raise SessionError("XDG_RUNTIME_DIR is missing; log in through a proper user session.")
+    try:
+        mode = os.stat(directory)
+    except OSError as exc:
+        raise SessionError("XDG_RUNTIME_DIR is not accessible.") from exc
+    if (not stat.S_ISDIR(mode.st_mode) or mode.st_uid != os.geteuid()
+            or mode.st_mode & 0o077):
+        raise SessionError("XDG_RUNTIME_DIR must be an owner-only directory.")
+
+
+def start(
+    *,
+    nested: bool = False,
+    environment: Mapping[str, str] | None = None,
+    which: Callable[[str], str | None] = shutil.which,
+    execute: Callable[[str, list[str], dict[str, str]], NoReturn] = os.execvpe,
+) -> NoReturn:
+    """Replace the current session launcher with labwc; no files are changed."""
+    if os.geteuid() == 0:
+        raise SessionError("RiceBowl Wayland sessions must run as an unprivileged user.")
+    env = dict(os.environ if environment is None else environment)
+    if not nested and not env.get("RICEBOWL_DM_SESSION") and (
+        env.get("WAYLAND_DISPLAY") or env.get("DISPLAY")
+    ):
+        raise SessionError("A desktop is already active. Use --nested to test without replacing it.")
+    _check_runtime_dir(env)
+    if not nested:
+        # A display manager may inherit its greeter's display variables.
+        # Do not accidentally make the primary login session a nested client.
+        env.pop("WAYLAND_DISPLAY", None)
+        env.pop("DISPLAY", None)
+
+    binaries = {name: which(name) for name in REQUIRED_TOOLS}
+    missing = [name for name, path in binaries.items() if not path]
+    if missing:
+        raise SessionError("Missing Wayland preview dependencies: " + ", ".join(missing))
+
+    source = project_root()
+    launcher = source / "launcher.py"
+    config = resources() / "labwc"
+    if not launcher.is_file() or not (config / "rc.xml").is_file():
+        raise SessionError("Incomplete RiceBowl installation; reinstall the current checkout.")
+
+    env.update({
+        "XDG_CURRENT_DESKTOP": DESKTOP_NAME,
+        "XDG_SESSION_DESKTOP": "ricebowl",
+        "XDG_SESSION_TYPE": "wayland",
+        "RICEBOWL_DE_SHELL_CHILD": "1",
+        "RICEBOWL_DE_NESTED": "1" if nested else "0",
+    })
+    if nested:
+        # A nested compositor must never replace the active session's D-Bus/
+        # systemd Wayland activation environment.
+        env["LABWC_UPDATE_ACTIVATION_ENV"] = "0"
+    else:
+        env.pop("LABWC_UPDATE_ACTIVATION_ENV", None)
+
+    if not env.get("DBUS_SESSION_BUS_ADDRESS"):
+        bus = which("dbus-run-session")
+        if not bus:
+            raise SessionError("No D-Bus user session and dbus-run-session is unavailable.")
+        if env.get("RICEBOWL_DE_BUS_REEXEC") == "1":
+            raise SessionError("D-Bus session setup failed; refusing an unbounded restart.")
+        env["RICEBOWL_DE_BUS_REEXEC"] = "1"
+        args = [bus, "--", sys.executable, str(launcher), "de", "start"]
+        if nested:
+            args.append("--nested")
+        execute(bus, args, env)
+        raise AssertionError("execvpe unexpectedly returned")
+
+    labwc = binaries["labwc"]
+    assert labwc is not None
+    shell_command = shlex.join([sys.executable, str(launcher), "de", "shell"])
+    # Mint 22's labwc 0.7.1 only supports --startup, not --session. Keep a
+    # tiny POSIX shell as the parent of our panel supervisor: it requests a
+    # compositor exit even if Python crashes or is killed, not only on an
+    # ordinary return from the supervisor.
+    session_command = shlex.join([
+        "sh", "-c", f'{shell_command}; status=$?; {shlex.quote(labwc)} --exit '
+                    '>/dev/null 2>&1; exit "$status"',
+    ])
+    execute(labwc, [labwc, "--config-dir", str(config), "--startup", session_command], env)
+    raise AssertionError("execvpe unexpectedly returned")
+
+
+def _stop_process(process: subprocess.Popen[bytes]) -> None:
+    if process.poll() is not None:
+        return
+    try:
+        process.terminate()
+        process.wait(timeout=3)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait(timeout=2)
+    except ProcessLookupError:
+        pass
+
+
+def shell(
+    *,
+    environment: Mapping[str, str] | None = None,
+    which: Callable[[str], str | None] = shutil.which,
+    spawn: Callable[..., subprocess.Popen[bytes]] = subprocess.Popen,
+) -> int:
+    """Supervise the temporary native Wayland shell until its panel exits."""
+    env = dict(os.environ if environment is None else environment)
+    if env.get("RICEBOWL_DE_SHELL_CHILD") != "1" or not env.get("WAYLAND_DISPLAY"):
+        raise SessionError("RiceBowl's Wayland shell may only run inside its labwc session.")
+    waybar = which("waybar")
+    if not waybar:
+        raise SessionError("Waybar is required until RicePlate's native panel is ready.")
+
+    base = resources()
+    background: list[subprocess.Popen[bytes]] = []
+    panel: subprocess.Popen[bytes] | None = None
+    try:
+        swaybg = which("swaybg")
+        wallpaper = project_root() / "assets/wallpapers/aero-seven-blue.jpg"
+        if swaybg and wallpaper.is_file():
+            background.append(spawn(
+                [swaybg, "--image", str(wallpaper), "--mode", "fill"],
+                env=env, stdin=subprocess.DEVNULL,
+            ))
+
+        # This is a temporary notification host, not a replacement for RicePop.
+        mako = which("mako")
+        if mako:
+            background.append(spawn([mako], env=env, stdin=subprocess.DEVNULL))
+
+        # User-session polkit agents perform authorization; RiceBowl itself
+        # never becomes privileged or bypasses PolicyKit.
+        for name in ("lxpolkit", "mate-polkit", "polkit-gnome-authentication-agent-1"):
+            agent = which(name)
+            if agent:
+                background.append(spawn([agent], env=env, stdin=subprocess.DEVNULL))
+                break
+
+        idle = which("swayidle")
+        locker = which("swaylock")
+        if idle and locker and env.get("RICEBOWL_DE_NESTED") != "1":
+            lock_command = shlex.join([locker, "-f"])
+            background.append(spawn(
+                [idle, "-w", "timeout", "600", lock_command,
+                 "before-sleep", lock_command],
+                env=env, stdin=subprocess.DEVNULL,
+            ))
+
+        panel = spawn(
+            [waybar, "--config", str(base / "waybar/config.jsonc"),
+             "--style", str(base / "waybar/style.css")],
+            env=env, stdin=subprocess.DEVNULL,
+        )
+
+        def terminate(_signal: int, _frame: object) -> None:
+            if panel is not None:
+                _stop_process(panel)
+
+        signal.signal(signal.SIGTERM, terminate)
+        signal.signal(signal.SIGINT, terminate)
+        return panel.wait()
+    finally:
+        for process in reversed(background):
+            _stop_process(process)

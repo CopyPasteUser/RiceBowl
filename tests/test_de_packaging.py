@@ -1,0 +1,48 @@
+"""The optional login package must be self-contained and reversible."""
+
+import configparser
+import shutil
+import subprocess
+import tempfile
+import unittest
+from pathlib import Path
+
+from macrice.de.session import project_root
+
+
+class SessionPackageTests(unittest.TestCase):
+    def test_desktop_entry_and_portal_routing(self):
+        source = project_root() / "packaging/wayland"
+        desktop = configparser.ConfigParser(interpolation=None)
+        desktop.read(source / "ricebowl.desktop")
+        self.assertEqual(desktop["Desktop Entry"]["Type"], "Application")
+        self.assertEqual(desktop["Desktop Entry"]["Exec"], "/usr/bin/ricebowl-wayland-session")
+        self.assertIn("RiceBowl;", desktop["Desktop Entry"]["DesktopNames"])
+        portal = configparser.ConfigParser(interpolation=None)
+        portal.read(source / "ricebowl-portals.conf")
+        self.assertEqual(portal["preferred"]["org.freedesktop.impl.portal.ScreenCast"], "wlr")
+        self.assertEqual(portal["preferred"]["default"], "gtk")
+
+    @unittest.skipUnless(shutil.which("dpkg-deb"), "Debian package tools not installed")
+    def test_package_build_does_not_install_and_refuses_overwrite(self):
+        with tempfile.TemporaryDirectory() as temp:
+            package = Path(temp) / "session.deb"
+            script = project_root() / "scripts/build_wayland_session_deb.sh"
+            result = subprocess.run(["sh", str(script), str(package)], text=True,
+                                    capture_output=True, timeout=30, check=False)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            contents = subprocess.check_output(
+                ["dpkg-deb", "--contents", str(package)], text=True, timeout=10)
+            for name in ("usr/bin/ricebowl-wayland-session",
+                         "usr/share/wayland-sessions/ricebowl.desktop",
+                         "usr/share/xdg-desktop-portal/ricebowl-portals.conf",
+                         "usr/lib/systemd/user/ricebowl-session.target"):
+                self.assertIn(name, contents)
+            result = subprocess.run(["sh", str(script), str(package)], text=True,
+                                    capture_output=True, timeout=30, check=False)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn("Refusing to overwrite", result.stderr)
+
+
+if __name__ == "__main__":
+    unittest.main()

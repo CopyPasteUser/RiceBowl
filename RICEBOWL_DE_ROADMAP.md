@@ -1,8 +1,9 @@
 # RiceBowl DE — Wayland/labwc transition
 
-**Status (November 2026): architecture and read-only preflight in progress.**
-RiceBowl 0.9.x is still an XFCE/X11 rice manager; the Wayland desktop is not
-shipped, installed or enabled by default.
+**Status (November 2026): opt-in labwc session preview implemented;
+physical acceptance outstanding.** RiceBowl 0.9.x is still an XFCE/X11
+rice manager. The separate Wayland login-session package requires explicit
+installation and is not yet a finished desktop environment.
 
 ## The product
 
@@ -77,18 +78,24 @@ installing, replacing or disabling anything; unit and installer tests pass.
 
 ### 1 — Optional labwc login session
 
-- [ ] Add a versioned RiceSession lifecycle contract with explicit startup,
-  crash/exit behavior and logs bounded to user-owned paths.
-- [ ] Install a Wayland session entry **only by explicit opt-in** after checks.
-- [ ] Launch labwc with isolated XDG configuration; do not overwrite the user's
-  existing `~/.config/labwc` or global login-manager settings.
-- [ ] Integrate D-Bus activation environment and systemd user-session lifecycle.
-- [ ] Validate XWayland, portals (screencast/file picker), policy agent,
-  input methods, clipboard and legacy applications.
-- [ ] Preserve separate selectable XFCE/X11 session and a safe logout path.
+- [x] Add a versioned RiceSession lifecycle with a supervised temporary native
+  Waybar shell, explicit exit, crash termination and ordinary session logs.
+- [x] Provide a separately built **opt-in** Debian session entry package.
+- [x] Launch labwc through bundled `--config-dir`, preserving the user's
+  own labwc files and XFCE preferences.
+- [x] Add Mint 22 / labwc 0.7.1-compatible D-Bus activation import and a
+  RiceBowl-specific systemd user target; nested sessions do neither.
+- [x] Package RiceBowl-specific wlroots/GTK portal selection, XWayland
+  dependency recommendation, lock/launcher keybindings and optional agents.
+- [x] Keep the XFCE/X11 login path independently available and provide
+  explicit package removal and failure recovery instructions.
+- [ ] Validate actual login-manager discovery, compositor boot, XWayland,
+  portal screencast/file picker, polkit, input methods, clipboard, lock and
+  multi-monitor behavior on physical Mint hardware.
 
-**Done when:** a user can log into and out of an opt-in RiceBowl labwc session
-without affecting the existing XFCE desktop, including failed-session recovery.
+**Done when:** the [device acceptance checklist](WAYLAND_SESSION.md) proves
+that users can enter and leave the opt-in RiceBowl labwc session without
+affecting XFCE, including a failed-session recovery. **Not yet signed off.**
 
 ### 2 — RicePlate Wayland shell
 
@@ -171,17 +178,17 @@ component, and incompatible clients degrade gracefully.
 **Done when:** RiceBowl is independently installable, fully usable and
 recoverable as a desktop environment. RAM targets are measured, not promised.
 
-## Phase 0 interface contract
+## Phase 0–1 interface contract
 
 - `macrice de check [--json]` probes installed tools and the current session
   without starting processes, reading private network data or changing files.
 - The existing `ricebowl` launcher will forward `de` directly to this CLI
   without changing its default Hub action.
 - A successful **tool** preflight does **not** certify a working RiceBowl
-  Wayland desktop. The result explicitly reports that the new shell/session
-  implementation is still pending.
-- The first Wayland session installer must be opt-in, preserve user config,
-  and have a reversible uninstall and independent XFCE fallback.
+  Wayland desktop. The result distinguishes the optional preview login session
+  from the unfinished RicePlate/RiceSpice/RicePop environment.
+- The Wayland session installer is opt-in, preserves user configuration,
+  and has a reversible uninstall and independent XFCE fallback.
 
 ## References
 

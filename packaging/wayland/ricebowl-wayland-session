@@ -1,0 +1,10 @@
+#!/bin/sh
+# System-wide login entrypoint; all RiceBowl application code stays user-local.
+set -eu
+if [ -z "${HOME:-}" ] || [ ! -x "$HOME/.local/bin/ricebowl" ]; then
+    echo "RiceBowl: install the user-local RiceBowl application before selecting this session." >&2
+    exit 1
+fi
+RICEBOWL_DM_SESSION=1
+export RICEBOWL_DM_SESSION
+exec "$HOME/.local/bin/ricebowl" de start

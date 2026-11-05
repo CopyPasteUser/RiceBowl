@@ -1,0 +1,6 @@
+#!/bin/sh
+# Stop only the labwc-specific target; never stop the shared graphical target
+# that another concurrently logged-in desktop could still be using.
+if [ "${RICEBOWL_DE_NESTED:-0}" != 1 ] && command -v systemctl >/dev/null 2>&1; then
+    systemctl --user --no-block stop ricebowl-session.target >/dev/null 2>&1 || :
+fi

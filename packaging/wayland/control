@@ -1,0 +1,12 @@
+Package: ricebowl-wayland-session
+Version: 0.1.0~preview1
+Section: x11
+Priority: optional
+Architecture: all
+Maintainer: CopyPasteUser
+Depends: labwc, waybar, foot, fuzzel, swaylock, dbus-user-session, xdg-desktop-portal, xdg-desktop-portal-gtk, xdg-desktop-portal-wlr
+Recommends: xwayland, swaybg, swayidle, wl-clipboard
+Description: Optional preview login session for RiceBowl on labwc
+ Installs a separate Wayland session chooser entry, a small launcher which
+ delegates to the user's RiceBowl installation, and desktop-specific portal
+ selection. It does not replace XFCE or change the default login session.

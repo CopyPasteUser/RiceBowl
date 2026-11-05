@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=RiceBowl (Wayland Preview)
+Comment=Experimental lightweight labwc desktop session
+Exec=/usr/bin/ricebowl-wayland-session
+TryExec=/usr/bin/ricebowl-wayland-session
+Type=Application
+DesktopNames=RiceBowl;labwc;wlroots;
