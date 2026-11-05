@@ -1,5 +1,18 @@
 # RiceBowl changelog
 
+## Unreleased — reliable in-app updates (5 November 2026)
+
+- The Hub now compares GitHub to the **installed** RiceBowl revision, not only
+  to the local Git checkout. Manually pulling Git without reinstalling no
+  longer produces a false "up to date" message.
+- Clean direct installations and pinned GUI updates record their source commit.
+  Existing installations without a recorded revision offer a one-time refresh.
+  When a dirty checkout is preserved, its installed update is no longer
+  offered repeatedly.
+- The `ricebowl update` command checks for updates; `ricebowl update check`
+  and `ricebowl update apply --yes` now also work through the installed launcher.
+  The GUI shows installed, GitHub and local source revisions separately.
+
 ## Unreleased — Windows 10 native interaction expansion (5 November 2026)
 
 - Build native 22H2-inspired sound, Bluetooth, battery and calendar flyouts
@@ -189,8 +202,8 @@
   `macrice update apply --yes --preserve-checkout` CLI options expose the same
   opt-in path. Normal clean-checkout updates still fast-forward as before.
 - The Hub displays affected path names and warns that the checkout will stay
-  at its old SHA; future source checks may continue to show the installed
-  revision as available until the user reconciles the tree manually.
+  at its old SHA. A later in-app fix records the installed commit separately,
+  so unchanged local files do not trigger the same update again.
 - Isolated local-Git tests cover dirty files, conflicting upstream edits,
   unchanged stash lists, stale review, rollback on failed installation and
   clean-checkout compatibility. Physical-device acceptance is pending.

@@ -46,7 +46,7 @@ bash install.sh
 
 Pick a style in the Hub. **Nothing is applied automatically**: RiceBowl checks requirements, asks for confirmation and saves a recovery snapshot before switching.
 
-**Updating:** Use **Check for updates** in the Hub. To return to your previous desktop settings, run `macrice rice restore`.
+**Updating:** Use **Check for updates → Install update** in the Hub (your local edits stay untouched), or check from the terminal with `ricebowl update`. Restart RiceBowl after installation. To revert desktop settings, run `macrice rice restore`.
 
 **Before switching:** Use **Check requirements** in the Hub, or `macrice doctor --style aero-meadow`, to check the selected rice without applying changes.
 

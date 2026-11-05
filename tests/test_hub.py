@@ -8,7 +8,8 @@ from pathlib import Path
 from unittest import mock
 
 from macrice.cli import main
-from macrice.hub import CSS, _activate_hub_window, dirty_update_summary, quick_update_label, run
+from macrice.hub import (CSS, _activate_hub_window, dirty_update_summary,
+                         quick_update_label, update_revision_summary, run)
 from macrice.hub_art import FAMILY_ICONS, PREVIEW_FILES
 from macrice.hub_catalog import (
     AVAILABLE_STYLE_KEYS, FAMILIES, FAMILY_BY_KEY, recent_backups, search_families,
@@ -105,6 +106,17 @@ class HubStylingTests(unittest.TestCase):
         self.assertIn("2 local checkout change(s)", note)
         self.assertIn("'notes with spaces.txt'", note)
         self.assertIn("Git main will not be advanced", note)
+
+    def test_gui_shows_installed_revision_separately_from_pulled_checkout(self):
+        from macrice.updater import UpdatePlan
+
+        plan = UpdatePlan("b" * 40, "b" * 40, 0, Path("/repo"), (), "a" * 40)
+        self.assertEqual(quick_update_label(plan), "Install update…")
+        self.assertIn("Installed aaaaaaaaaaaa", update_revision_summary(plan))
+        self.assertIn("Local Git bbbbbbbbbbbb (0 new source commit(s))",
+                      update_revision_summary(plan))
+        self.assertIn("unknown (older installation)", update_revision_summary(
+            UpdatePlan("b" * 40, "b" * 40, 0, Path("/repo"), (), "")))
 
     def test_existing_cli_launches_the_new_hub(self):
         with mock.patch("macrice.hub.run", return_value=0) as fake:
