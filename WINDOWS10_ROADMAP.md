@@ -71,8 +71,10 @@ are independently drawn, Linux-specific, and do not imply Microsoft branding.
 - [x] Stale notification callbacks are discarded on close and all workers/
   XFCE notification observers are released on shell shutdown.
 - [x] Hermetic adapter tests and existing seven-rice Python regression suite.
-- [ ] Native-X11 CI smoke/screenshots and physical Mint audio/network/Bluetooth
-  + notification acceptance; these are not implied by Python unit tests.
+- [x] Native-X11 CI smoke and real screenshot coverage (including new A–Z and
+  expanded Action Center views); see the 5 November interaction checkpoint.
+- [ ] Physical Mint audio/network/Bluetooth + notification acceptance;
+  headless X11 smoke and Python tests cannot establish hardware behavior.
 - [ ] Full 22H2 fidelity gates below, including separate Win10 network flyout,
   richer Settings, app grouping/clear-all with confirmation, projection,
   battery saver, VPN, Airplane mode, Task View and riceExplorer integration.
@@ -141,8 +143,10 @@ entry points do **not** mean every Windows 10 feature is implemented.
   Extra quick actions expand/collapse without inventing providers.
 - [x] Isolated Python regression coverage for A–Z selection, notifications,
   async clear errors and safe taskbar preference storage.
-- [ ] CI-native X11 rendering review and updated 1600×900 + 1024×768 captures;
-  physical Mint XFCE and multi-monitor acceptance remain separate.
+- [x] CI-native X11 rendering review at 1600×900, including the A–Z letter
+  grid and expanded Action Center. Both were corrected after screenshot
+  inspection; native 1024×768 smoke also remains part of CI.
+- [ ] Physical Mint XFCE and multi-monitor acceptance remain separate.
 
 This is a **partial** implementation of the open P0 criteria below, not a
 declaration that Windows 10 fidelity or riceExplorer integration is complete.
