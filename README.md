@@ -48,6 +48,14 @@ Pick a style in the Hub. **Nothing is applied automatically**: RiceBowl checks r
 
 <strong>Development preview</strong> · Latest tagged build: [v0.9.1](https://github.com/CopyPasteUser/RiceBowl/releases/tag/v0.9.1). Newer changes are on `main`; 1.0 hardware acceptance on real XFCE systems is still pending.
 
+**ricePlate stays inside RiceBowl.** The optional GTK desktop canvas previews the selected rice's wallpaper and real Desktop icons, with per-rice icon size, alignment and visibility settings:
+
+```bash
+macrice riceware plate preview --style winxp
+```
+
+This normal window does **not** disable XFDesktop, install a background service or modify your Desktop files. XFWM4 and the XFCE session stay in charge. See the [ricePlate desktop plan](RICEPLATE_DESKTOP_ROADMAP.md) and [XFCE resource boundaries](XFCE_RESOURCE_BOUNDARIES.md).
+
 [Roadmap](ROADMAP.md) · [Known issues & hardware checks](ACCEPTANCE_1_0.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [License](LICENSE)
 
 <sub>RiceBowl uses original artwork and is not affiliated with Apple, Google or Microsoft. Thunar remains available; [riceExplorer](https://github.com/CopyPasteUser/riceExplorer) is a separate work in progress.</sub>

@@ -174,6 +174,10 @@ See [Riceware foundation API and manual checks](RICEWARE_FOUNDATIONS.md).
 
 ### S4 — ricePlate decision and optional implementation (P1; conditional)
 
+- [x] Deliver a **repo-internal**, explicitly launched desktop preview using
+  the existing ricePlate inventory, the selected rice wallpaper and original
+  icons. Persist per-rice appearance without a daemon, takeover or new repo.
+  See [RICEPLATE_DESKTOP_ROADMAP.md](RICEPLATE_DESKTOP_ROADMAP.md).
 - [ ] Compare XFDesktop's native icon grid, drag/drop, context menus, trash, wallpaper, file launch and multi-monitor behavior against Win98/XP/Win7/macOS/ChromeOS/Aqua requirements; log specific unachievable interactions.
 - [ ] First extend existing `luna_desktop`, `win7_desktop` and XFDesktop integration with reversible scoped configuration; respect user-created desktop files, symlinks and launcher placement.
 - [ ] If genuine blocking requirements remain, prototype an isolated desktop surface on a disposable XFCE/X11 session; avoid fighting XFDesktop for wallpaper, input, workarea, selection or file-icon ownership.

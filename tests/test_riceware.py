@@ -127,6 +127,88 @@ class PopTests(unittest.TestCase):
 
 
 class PlateTests(unittest.TestCase):
+    def test_riceplate_stylesheet_is_valid_gtk_css_without_display(self):
+        from macrice.riceware.plate_preview import canvas_stylesheet
+
+        try:
+            import gi
+        except ImportError:
+            self.skipTest("GTK introspection unavailable")
+        gi.require_version("Gtk", "3.0")
+        from gi.repository import Gtk
+
+        provider = Gtk.CssProvider()
+        provider.load_from_data(canvas_stylesheet("#194da1", "#ffffff", "#316ac5", 5))
+
+    def test_each_rice_has_a_distinct_desktop_policy(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            self.assertEqual(plate.appearance("winclassic", config_root=root).family, "win98")
+            self.assertEqual(plate.appearance("winclassic", config_root=root).icon_size, 32)
+            self.assertEqual(plate.appearance("night", config_root=root).placement, "right")
+            self.assertFalse(plate.appearance("chromeos", config_root=root).show_icons)
+            self.assertTrue(plate.appearance("winxp", config_root=root).show_icons)
+            with self.assertRaises(ValueError):
+                plate.appearance("unrecognized", config_root=root)
+
+    def test_desktop_preferences_are_explicit_per_style_and_atomic(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            previous = plate.appearance("winxp", config_root=root)
+            self.assertEqual(previous.icon_size, 48)
+            saved = plate.save_appearance("winxp", config_root=root,
+                                          icon_size=64, show_hidden=True,
+                                          placement="right", show_icons=True)
+            self.assertEqual(saved.icon_size, 64)
+            self.assertEqual(saved.placement, "right")
+            self.assertTrue(saved.show_hidden)
+            self.assertEqual(plate.appearance("winxp", config_root=root), saved)
+            self.assertEqual(plate.appearance("frutiger", config_root=root).placement, "left")
+            target = root / "ricebowl/plate.json"
+            self.assertEqual(target.stat().st_mode & 0o777, 0o600)
+            raw = target.read_bytes()
+            with self.assertRaises(ValueError):
+                plate.save_appearance("winxp", config_root=root, icon_size=999)
+            with self.assertRaises(ValueError):
+                plate.save_appearance("winxp", config_root=root, show_hidden="no")
+            self.assertEqual(target.read_bytes(), raw)
+
+    def test_desktop_preferences_refuse_symlinked_locations(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            target = root / "personal.json"
+            target.write_text('{"important":true}', encoding="utf-8")
+            folder = root / "ricebowl"
+            folder.mkdir()
+            (folder / "plate.json").symlink_to(target)
+            with self.assertRaises(ValueError):
+                plate.appearance("winxp", config_root=root)
+            with self.assertRaises(ValueError):
+                plate.save_appearance("winxp", config_root=root, icon_size=64)
+            self.assertEqual(target.read_text(), '{"important":true}')
+
+    def test_riceplate_preview_filters_hidden_rows_without_mutations(self):
+        from macrice.riceware.plate_preview import visible_items
+
+        view = plate.DesktopSnapshot("/tmp/Desktop", True, (
+            plate.DesktopItem("notes.txt", "/tmp/Desktop/notes.txt", "file"),
+            plate.DesktopItem(".private", "/tmp/Desktop/.private", "file"),
+            plate.DesktopItem("hidden.desktop", "/tmp/Desktop/hidden.desktop", "launcher",
+                              hidden=True),
+        ))
+        with tempfile.TemporaryDirectory() as tmp:
+            prefs = plate.appearance("winxp", config_root=Path(tmp))
+        self.assertEqual([row.filename for row in visible_items(view, prefs)], ["notes.txt"])
+        self.assertEqual(len(visible_items(view, plate.DesktopAppearance(
+            "winxp", "winxp", 48, "left", True, True))), 3)
+        self.assertEqual(visible_items(view, plate.DesktopAppearance(
+            "chromeos", "chromeos", 48, "left", False, True)), ())
+
+    def test_plate_preview_cli_is_opt_in_and_does_not_apply_a_rice(self):
+        with patch("macrice.riceware.plate_preview.run", return_value=0) as preview:
+            self.assertEqual(cli.main(["riceware", "plate", "preview", "--style", "frutiger"]), 0)
+        preview.assert_called_once_with("frutiger")
+
     def test_read_only_snapshot_never_follows_link(self):
         with tempfile.TemporaryDirectory() as tmp:
             folder = Path(tmp)
