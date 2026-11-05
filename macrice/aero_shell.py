@@ -1850,8 +1850,12 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _capture_luna_run_start(self):
             try:
+                # Gtk.Dialog.run() enters a nested modal loop and does not
+                # return until the screenshot callback closes the dialog.
                 GLib.timeout_add(400, self._capture_luna_run_snapshot)
                 self._luna_open_run()
+                if not self._smoke_failed:
+                    return False
             except Exception:
                 import traceback
                 traceback.print_exc()
@@ -1863,7 +1867,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             try:
                 dialog = self._luna_run_dialog
                 assert dialog is not None and dialog.get_mapped()
+                assert dialog._luna_caption.get_mapped(), "XP Run caption not mapped"
                 assert dialog.get_style_context().has_class("luna-run-dialog")
+                assert not (getattr(self, "_luna_help_dialog", None) and
+                            self._luna_help_dialog.get_mapped()), (
+                    "XP Help Center obscures the Run screenshot")
                 rect = self._desktop_rect()
                 x, y = dialog.get_window().get_root_origin()
                 width, height = dialog.get_size()
@@ -1873,18 +1881,21 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     f"XP Run dialog offscreen: {x},{y} {width}x{height}")
                 self._capture_screen(f"ricebowl-winxp-run-0.9.1{self._capture_variant}-extra.png")
                 dialog.response(Gtk.ResponseType.CANCEL)
+                GLib.timeout_add(350, self._capture_luna_help_start)
             except Exception:
                 import traceback
                 traceback.print_exc()
                 self._smoke_failed = True
                 if getattr(self, "_luna_run_dialog", None) is not None:
                     self._luna_run_dialog.response(Gtk.ResponseType.CANCEL)
+                self.quit()
             return False
 
         def _capture_luna_tray_preferences(self):
             try:
                 dialog = self._tray._preferences_dialog
                 assert dialog is not None and dialog.get_mapped()
+                assert dialog._luna_caption.get_mapped(), "XP tray preferences caption not mapped"
                 rect = self._desktop_rect()
                 x, y = dialog.get_window().get_root_origin()
                 width, height = dialog.get_size()
@@ -1901,6 +1912,59 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self._smoke_failed = True
                 if self._tray is not None and self._tray._preferences_dialog is not None:
                     self._tray._preferences_dialog.response(Gtk.ResponseType.CANCEL)
+            return False
+
+        def _capture_luna_help_start(self):
+            try:
+                self._luna_open_help()
+                GLib.timeout_add(430, self._capture_luna_help_snapshot)
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._smoke_failed = True
+                self.quit()
+            return False
+
+        def _capture_luna_help_snapshot(self):
+            try:
+                dialog = self._luna_help_dialog
+                self._assert_luna_dialog_on_screen(dialog, "Help Center")
+                self._capture_screen(
+                    f"ricebowl-winxp-help-0.9.1{self._capture_variant}-extra.png")
+                from .luna_help import show_system
+                show_system(self, Gtk)
+                GLib.timeout_add(450, self._capture_luna_system_snapshot)
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._smoke_failed = True
+                self.quit()
+            return False
+
+        def _assert_luna_dialog_on_screen(self, dialog, name):
+            assert dialog is not None and dialog.get_mapped(), f"XP {name} did not map"
+            assert dialog._luna_caption.get_mapped(), f"XP {name} caption not mapped"
+            rect = self._desktop_rect()
+            x, y = dialog.get_window().get_root_origin()
+            width, height = dialog.get_size()
+            assert (rect.x <= x and rect.y <= y and
+                    x + width <= rect.x + rect.width and
+                    y + height <= rect.y + rect.height - panel_height), (
+                f"XP {name} offscreen: {x},{y} {width}x{height}")
+
+        def _capture_luna_system_snapshot(self):
+            try:
+                dialog = self._luna_system_dialog
+                self._assert_luna_dialog_on_screen(dialog, "System Properties")
+                self._capture_screen(
+                    f"ricebowl-winxp-system-0.9.1{self._capture_variant}-extra.png")
+                dialog.response(Gtk.ResponseType.CLOSE)
+                self._luna_help_dialog.response(Gtk.ResponseType.CLOSE)
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._smoke_failed = True
+            self.quit()
             return False
 
         def _capture_workspace_start(self):

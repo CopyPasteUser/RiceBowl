@@ -96,20 +96,6 @@ def center_on_workarea(rect, width: int, height: int, panel_height: int = 40):
             rect.y + max(0, (rect.height - panel_height - height) // 2))
 
 
-def configure_properties_window(dialog, Gdk) -> None:
-    """Use an actual WM client with our own draggable Luna caption.
-
-    XFWM does not consistently decorate dialogs transient for a DOCK window.
-    A client-drawn caption keeps dragging available in the XFCE shell and in
-    native X11 screenshot/test sessions alike.
-    """
-    from .rice_windows import configure_settings_window
-
-    configure_settings_window(dialog, Gdk, role="ricebowl-xp-taskbar-properties")
-    dialog.set_decorated(False)
-    dialog.set_resizable(False)
-
-
 def show(shell, Gtk):
     """Single-instance, real Luna-styled properties window with Apply/Cancel."""
     existing = getattr(shell, "_luna_taskbar_dialog", None)
@@ -121,31 +107,18 @@ def show(shell, Gtk):
                         transient_for=shell.bar,
                         flags=Gtk.DialogFlags.DESTROY_WITH_PARENT)
     from gi.repository import Gdk
-    from .rice_windows import draggable_caption
+    from .luna_dialog import attach_luna_dialog_chrome
 
-    configure_properties_window(dialog, Gdk)
     dialog.get_style_context().add_class("luna-taskbar-properties")
     dialog.set_default_size(438, 488)
     dialog.add_button("Cancel", Gtk.ResponseType.CANCEL)
     dialog.add_button("Apply", Gtk.ResponseType.APPLY)
     dialog.add_button("OK", Gtk.ResponseType.OK)
     dialog.set_default_response(Gtk.ResponseType.OK)
-    area = dialog.get_content_area()
-    area.set_border_width(0)
-    area.set_spacing(0)
-
-    caption = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=8)
-    caption.get_style_context().add_class("luna-control-caption")
-    heading = Gtk.Label(label="Taskbar and Start Menu Properties", xalign=0)
-    caption.pack_start(draggable_caption(dialog, heading, Gtk, Gdk, maximizable=False),
-                       True, True, 0)
-    close_title = Gtk.Button(label="×")
-    close_title.get_style_context().add_class("luna-control-close")
-    close_title.get_accessible().set_name("Close Taskbar and Start Menu Properties")
-    close_title.connect("clicked", lambda _button: dialog.response(Gtk.ResponseType.CANCEL))
-    caption.pack_end(close_title, False, False, 0)
-    area.pack_start(caption, False, False, 0)
-    dialog._luna_caption = caption
+    area = attach_luna_dialog_chrome(
+        dialog, Gtk, Gdk, role="ricebowl-xp-taskbar-properties",
+        title="Taskbar and Start Menu Properties",
+        close_response=Gtk.ResponseType.CANCEL)
 
     tabs = Gtk.Notebook()
     tabs.set_margin_start(9)

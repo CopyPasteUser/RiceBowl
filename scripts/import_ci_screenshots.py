@@ -39,7 +39,7 @@ DEEP_VIEWS = (
 VERSIONS.update({f"winxp-{view}": f"ricebowl-winxp-{view}-0.9.1.png"
                  for view in DEEP_VIEWS})
 VERSIONS.update({f"winxp-{view}": f"ricebowl-winxp-{view}-0.9.1-extra.png"
-                 for view in ("properties", "notification-icons", "run")})
+                 for view in ("properties", "notification-icons", "run", "help", "system")})
 VERSIONS.update({f"chromeos-{view}": f"ricebowl-chromeos-{view}-0.9.1-extra.png"
                  for view in ("notifications", "settings")})
 VERSIONS.update({f"windows10-settings-{view}":

@@ -177,7 +177,15 @@ def show_run(shell, Gtk, Gio, *, theme="winclassic"):
     dialog.add_button("OK", Gtk.ResponseType.OK)
     dialog.set_default_response(Gtk.ResponseType.OK)
     dialog.set_default_size(450, -1)
-    body = dialog.get_content_area()
+    if theme == "winxp":
+        from gi.repository import Gdk
+        from .luna_dialog import attach_luna_dialog_chrome
+
+        body = attach_luna_dialog_chrome(
+            dialog, Gtk, Gdk, role="ricebowl-xp-run", title="Run",
+            close_response=Gtk.ResponseType.CANCEL)
+    else:
+        body = dialog.get_content_area()
     body.set_spacing(9)
     body.set_margin_start(14)
     body.set_margin_end(14)

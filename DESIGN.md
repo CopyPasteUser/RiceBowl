@@ -207,6 +207,12 @@ secondary pages; prototypes and the release roadmap do not crowd the selector.
   XP also persists its Start-only favorites independently of taskbar pins;
   right-click offers pin/unpin/reorder, while the lower program list sorts by
   actual successful launches (bounded user-local history, never telemetry).
+  RiceBowl-owned Luna dialogs use `luna_dialog.attach_luna_dialog_chrome` for a
+  single draggable cobalt caption and original red close button, with modal
+  GTK responses unchanged. Taskbar Properties, Run, notification-icon settings,
+  Help Center and System Properties share that title treatment; Help remains
+  resizable. XFWM4 still moves/manages every window and non-Luna dialogs are
+  unaffected. This does not claim GTK3 can repaint arbitrary Qt/Electron apps.
 - **98 / 2000:** visually faithful 1998 desktop: solid `#008080` wallpaper,
   compact 34px `#c0c0c0` taskbar, 19px original CRT/penguin Start badge,
   2px white/light-gray/dark recessed versus raised frames, `#000080` focused

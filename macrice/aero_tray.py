@@ -428,7 +428,16 @@ class StatusNotifierTray:
         dialog.add_button("Cancel", Gtk.ResponseType.CANCEL)
         dialog.add_button("Restore defaults", Gtk.ResponseType.APPLY)
         dialog.add_button("Save", Gtk.ResponseType.OK)
-        content = dialog.get_content_area()
+        if theme == "luna":
+            from gi.repository import Gdk
+            from .luna_dialog import attach_luna_dialog_chrome
+
+            content = attach_luna_dialog_chrome(
+                dialog, Gtk, Gdk, role="ricebowl-xp-notification-icons",
+                title="Customize Notification Area Icons",
+                close_response=Gtk.ResponseType.CANCEL)
+        else:
+            content = dialog.get_content_area()
         content.set_spacing(10)
         content.set_margin_start(16)
         content.set_margin_end(16)

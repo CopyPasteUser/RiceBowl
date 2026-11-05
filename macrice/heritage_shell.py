@@ -415,6 +415,18 @@ window.luna-tray-popup {
 .luna-properties-note { color: #596d85; font-size: 10px; }
 .luna-properties-error { color: #a11e1e; font-weight: bold; }
 .luna-group-task { padding-right: 5px; }
+.luna-owned-dialog { background: #ece9d8; border: 3px solid #1953b7;
+  color: #172d4e; font-family: "Tahoma", "DejaVu Sans", sans-serif; font-size: 11px; }
+.luna-owned-dialog .luna-control-close,
+.luna-owned-dialog .luna-control-close:hover,
+.luna-owned-dialog .luna-control-close:focus { color: #fff;
+  background-image: linear-gradient(#ffb58c, #d7472b);
+  border: 1px solid #fff4d3; border-radius: 4px; min-width: 24px;
+  min-height: 22px; padding: 0; box-shadow: inset 0 1px #ffefc8; }
+.luna-owned-dialog .luna-control-close label { color: #fff; font-weight: bold; }
+.luna-owned-dialog .luna-control-close:hover,
+.luna-owned-dialog .luna-control-close:focus {
+  background-image: linear-gradient(#ffcdad, #e95835); border-color: white; }
 .luna-help-window { background: #ece9d8; color: #172d4e;
   font-family: "Tahoma", "DejaVu Sans", sans-serif; font-size: 11px; }
 .luna-run-dialog { background: #ece9d8; color: #172d4e;
