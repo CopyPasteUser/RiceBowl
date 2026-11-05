@@ -4387,6 +4387,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             back_to_places.get_accessible().set_name("Open places")
             back_to_places.connect("clicked", lambda _button: switch_to("Places"))
             settings_navigation.pack_end(back_to_places, True, True, 0)
+            # The navigation container is excluded from the launcher's later
+            # show_all() pass (no_show_all keeps it hidden outside Settings).
+            # Realize its two children now so showing the container later
+            # exposes clickable buttons, not an empty/childless GTK region.
+            settings_navigation.show_all()
             settings_navigation.set_no_show_all(True)
             root.pack_start(settings_navigation, False, False, 0)
             # Gtk.ToggleButton.set_active() can emit "clicked" in GTK3.

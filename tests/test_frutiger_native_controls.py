@@ -95,6 +95,7 @@ class LauncherRegressionTests(unittest.TestCase):
         self.assertIn('label="‹ All apps"', launcher)
         self.assertIn('label="Places ›"', launcher)
         self.assertIn('settings_navigation.set_no_show_all(True)', launcher)
+        self.assertIn('settings_navigation.show_all()', launcher)
         self.assertIn('settings_page.set_max_content_height(325)', launcher)
         self.assertIn('switch_to("Apps")', launcher)
         self.assertIn('self._frutiger_tab_buttons = buttons', launcher)
