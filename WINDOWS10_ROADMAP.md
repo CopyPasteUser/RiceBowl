@@ -125,6 +125,28 @@ criteria below. XFCE Notifyd remains the only notification service.
 The original 22H2 fidelity checklist below remains authoritative: new
 entry points do **not** mean every Windows 10 feature is implemented.
 
+## 22H2 interaction depth checkpoint — 5 November 2026
+
+- [x] Start's A–Z picker jumps to the real installed Gio app groups (including
+  accented Latin names); the usual initial list remains bounded on low-RAM
+  systems and all existing app launch/context actions stay available.
+- [x] The blank taskbar context menu now exposes persistent, Windows-10-only
+  Search and Task View visibility choices and opens the native Personalization
+  settings. Preferences are validated, atomically saved, and do not touch XFCE
+  global settings or other RiceBowl styles.
+- [x] Action Center groups XFCE history by the sending application, shows true
+  timestamps/icons, supports per-notification read/dismiss, and asks before
+  permanently clearing all history. History deletion runs through the existing
+  asynchronous XFCE backend, with failure feedback and stale-request safety.
+  Extra quick actions expand/collapse without inventing providers.
+- [x] Isolated Python regression coverage for A–Z selection, notifications,
+  async clear errors and safe taskbar preference storage.
+- [ ] CI-native X11 rendering review and updated 1600×900 + 1024×768 captures;
+  physical Mint XFCE and multi-monitor acceptance remain separate.
+
+This is a **partial** implementation of the open P0 criteria below, not a
+declaration that Windows 10 fidelity or riceExplorer integration is complete.
+
 
 ---
 

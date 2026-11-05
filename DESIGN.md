@@ -134,6 +134,11 @@ secondary pages; prototypes and the release roadmap do not crowd the selector.
   always reflect Linux-backed action state. `ten_settings.py` owns the widget
   hierarchy and search behavior; `.ten-settings-*` rules in `ten_shell.CSS`
   remain the sole runtime visual owner. No shared hub, XP or Aero tokens change.
+  Start has a native A–Z picker for real Gio apps; the taskbar's context-menu
+  Search/Task View visibility is saved atomically in a Windows-10-only file.
+  Action Center groups the XFCE notification log by app with real timestamps
+  and icons, confirms permanent history clearing and can collapse the optional
+  second row of Linux shortcuts. The look stays square and charcoal/cobalt.
 - **XP Luna:** 40px cobalt/green molded taskbar, contiguous bright-cyan notification
   tray, user-account Start header, ivory programs and pastel-blue system-links
   columns, separate log-off/power affordances, and a warm meadow wallpaper.
