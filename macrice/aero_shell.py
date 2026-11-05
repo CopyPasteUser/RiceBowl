@@ -852,6 +852,20 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     self._hide_if_unfocused("menu")
                     assert self.menu.get_visible(), "Win98 Start closed while Programs was open"
                     programs_button.set_active(False)
+                    if os.environ.get("RICEHUB_CLASSIC_POINTER_NATIVE") == "1":
+                        import subprocess
+
+                        x, y = self.menu.get_position()
+                        subprocess.run(("xdotool", "mousemove", "--sync",
+                                        str(x + 35), str(y + 40)), check=True,
+                                       capture_output=True, timeout=4)
+                        self._menu_focus_out()
+                        for _step in range(115):
+                            while Gtk.events_pending():
+                                Gtk.main_iteration_do(False)
+                            GLib.usleep(10000)
+                        assert self.menu.get_visible(), (
+                            "Classic Start menu closed while the pointer was inside")
                 if profile == "winxp":
                     self.search.set_text("")
                     self._reveal_luna_search()
@@ -1331,8 +1345,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     assert self._status_widgets["battery"][0].get_sensitive()
                     self.aqua_bluetooth_button.clicked()
                     assert self._aqua_flyouts.popovers["bluetooth"].get_visible()
+                    assert isinstance(self._aqua_flyouts.popovers["bluetooth"], Gtk.Window)
                     self._status_widgets["network"][0].clicked()
                     assert self._aqua_flyouts.popovers["network"].get_visible()
+                    assert isinstance(self._aqua_flyouts.popovers["network"], Gtk.Window)
                     self._aqua_flyouts.popovers["network"].popdown()
             except Exception:
                 import traceback
@@ -4380,6 +4396,13 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             """Same keyboard, focus and installed-app lifecycle for each identity."""
             menu.connect("focus-in-event", self._menu_focus_in)
             menu.connect("focus-out-event", self._menu_focus_out)
+            if profile == "winclassic":
+                menu.add_events(Gdk.EventMask.ENTER_NOTIFY_MASK |
+                                Gdk.EventMask.LEAVE_NOTIFY_MASK)
+                menu.connect("enter-notify-event",
+                             lambda *_: self._cancel_popup_hide("menu"))
+                menu.connect("leave-notify-event",
+                             lambda *_: self._schedule_popup_hide("menu"))
             menu.connect("key-press-event", lambda _widget, event: self._search_key(event))
             search.connect("key-press-event", lambda _widget, event: self._search_key(event))
             def changed(*_args):
@@ -5977,12 +6000,36 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 return False
             if name == "menu" and self._start_open_menus:
                 return False
+            if name == "menu" and profile == "winclassic":
+                # XFWM can move focus while the pointer enters a native menu.
+                if (self._pointer_inside(self.menu) or
+                        self._pointer_inside(getattr(self, "start_button", None)) or
+                        any(menu.get_visible() for menu in getattr(self, "classic_menus", ()))):
+                    return False
             if window.get_visible() and not window.is_active():
                 if name == "menu":
                     self._hide_menu()
                 else:
                     self._hide_actions()
             return False
+
+        def _pointer_inside(self, widget):
+            if widget is None or not widget.get_visible() or not widget.get_window():
+                return False
+            pointer = Gdk.Display.get_default().get_default_seat().get_pointer()
+            _screen, x, y = pointer.get_position()
+            if widget.get_has_window():
+                wx, wy = widget.get_window().get_root_origin()
+            else:
+                parent = widget.get_toplevel()
+                offset = widget.translate_coordinates(parent, 0, 0)
+                if offset is None or not parent.get_window():
+                    return False
+                wx, wy = parent.get_window().get_root_origin()
+                wx += offset[0]
+                wy += offset[1]
+            return (wx <= x < wx + widget.get_allocated_width() and
+                    wy <= y < wy + widget.get_allocated_height())
 
         def _hide_actions(self):
             self._cancel_popup_hide("control")

@@ -54,6 +54,10 @@ Pick a style in the Hub. **Nothing is applied automatically**: RiceBowl checks r
 
 ## Project status
 
+Recent QA work keeps Frutiger tray flyouts outside the dock's clipping area
+and the Windows 98 Start menu open during pointer navigation; hardware
+validation remains open.
+
 <strong>Development preview</strong> · Latest tagged build: [v0.9.1](https://github.com/CopyPasteUser/RiceBowl/releases/tag/v0.9.1). Newer changes are on `main`; 1.0 hardware acceptance on real XFCE systems is still pending.
 
 **ricePlate stays inside RiceBowl.** The optional GTK desktop canvas previews the selected rice's wallpaper and real Desktop icons, with per-rice icon size, alignment and visibility settings. Gio file notifications refresh visible files without background polling:
