@@ -1,5 +1,16 @@
 # RiceBowl changelog
 
+## Unreleased — cross-application window theme diagnostics (5 November 2026)
+
+- Added `macrice app-compat --select` and `--window-id HEX [--json]` for
+  read-only X11 window-class/decoration-hint and current GTK/XFWM theme checks.
+  Bounded subprocess calls exclude private titles, arguments and profiles.
+- Documented PhotoCraft's egui/System Title Bar and Thunderbird's native
+  title-bar settings. XFWM cannot theme their custom-drawn application content.
+  No third-party preferences, GTK profiles or Thunderbird CSS are rewritten.
+- Confirmed existing XFCE/GNOME Task Manager fallbacks instead of claiming a
+  custom themed process monitor. On-device app/window acceptance stays open.
+
 ## Unreleased — Windows 10 Settings navigation and visual depth (5 November 2026)
 
 - Rebuilt the native Windows 10 Settings experience with a centered category
