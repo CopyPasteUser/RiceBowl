@@ -21,7 +21,7 @@ A collection of deeply customizable, OS-inspired desktop experiences — growing
 
 <p align="center"><sub>Real GTK/X11 project captures. <a href="screenshots/current/README.md">Explore the full gallery.</a></sub></p>
 
-> **Status:** RiceBowl **0.9.x is an XFCE/X11 development preview**, not yet a standalone Wayland desktop environment. The labwc transition is being developed alongside the working XFCE version. Real-hardware acceptance is still required.
+> **Status:** RiceBowl **0.9.x remains an XFCE/X11 development preview**. An optional, independently selectable [labwc/Wayland session preview](WAYLAND_SESSION.md) is now available for testing; it still uses a temporary Waybar shell. RicePlate and the complete standalone DE are not finished. Real-hardware acceptance is required.
 
 ## Seven desktop experiences
 
@@ -70,6 +70,8 @@ RiceBowl will keep the existing styles while replacing XFCE-specific desktop res
 The XFCE/X11 workflow remains available while the Wayland path matures. We reuse Linux services such as NetworkManager, PipeWire and UPower instead of duplicating them.
 
 [Full DE development roadmap](RICEBOWL_DE_ROADMAP.md) · [Current XFCE resource boundaries](XFCE_RESOURCE_BOUNDARIES.md) · [Rice ecosystem](RICE_ECOSYSTEM_ROADMAP.md)
+
+**Try the experimental session:** [setup, limitations and recovery](WAYLAND_SESSION.md). Installation is a separate, explicit choice; the normal RiceBowl installer does not modify your login sessions.
 
 ## Project links
 

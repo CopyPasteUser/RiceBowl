@@ -69,8 +69,10 @@ def parser() -> argparse.ArgumentParser:
             trace.add_argument("--trace-path", action="store_true", help="Print evidence file location without running the shell")
     commands.add_parser("session-sync", help="Reconcile active rice after XFCE autostart")
     de = commands.add_parser("de", help="Inspect experimental RiceBowl Wayland desktop prerequisites")
-    de.add_argument("action", choices=("check",))
+    de.add_argument("action", choices=("check", "start", "shell"))
     de.add_argument("--json", action="store_true", help="Read-only machine-readable preflight")
+    de.add_argument("--nested", action="store_true",
+                    help="Explicitly test a separate labwc session inside an active desktop")
     commands.add_parser("session-menu", help="Toggle the active rice's application menu")
     commands.add_parser("session-control", help="Toggle the active rice's control panel")
     commands.add_parser("session-keys-restore", help="Restore the previous Super/Right Control shortcuts")
@@ -127,6 +129,18 @@ def main(argv: list[str] | None = None) -> int:
             from .riceware_cli import run as run_riceware
             return run_riceware(args)
         if args.command == "de":
+            if args.action == "start":
+                if args.json:
+                    raise ValueError("--json only applies to de check")
+                from .de.session import start
+                return start(nested=args.nested)
+            if args.action == "shell":
+                if args.json or args.nested:
+                    raise ValueError("de shell does not accept --json or --nested")
+                from .de.session import shell
+                return shell()
+            if args.nested:
+                raise ValueError("--nested only applies to de start")
             from .de.diagnostics import inspect
             report = inspect()
             if args.json:
@@ -135,7 +149,7 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"RiceBowl DE / labwc preflight (current session: {report.session_type})")
                 for check in report.checks:
                     print(f"[{check.status.upper():8}] {check.label}: {check.detail}")
-                print("Standalone RiceBowl Wayland desktop: not implemented yet")
+                print("Wayland preview: optional login session available; complete RiceBowl DE pending")
             return 0 if report.compositor_available else 1
         if args.command in (None, "gui"):
             from .gui import run

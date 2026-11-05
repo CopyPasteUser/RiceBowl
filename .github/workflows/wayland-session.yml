@@ -1,0 +1,54 @@
+name: Wayland session preview
+
+on:
+  push:
+    paths:
+      - '.github/workflows/wayland-session.yml'
+      - 'macrice/de/**'
+      - 'macrice/cli.py'
+      - 'macrice/installer.py'
+      - 'packaging/wayland/**'
+      - 'scripts/build_wayland_session_deb.sh'
+      - 'scripts/smoke_wayland_session.sh'
+      - 'tests/test_de_*.py'
+  pull_request:
+    paths:
+      - '.github/workflows/wayland-session.yml'
+      - 'macrice/de/**'
+      - 'macrice/cli.py'
+      - 'macrice/installer.py'
+      - 'packaging/wayland/**'
+      - 'scripts/build_wayland_session_deb.sh'
+      - 'scripts/smoke_wayland_session.sh'
+      - 'tests/test_de_*.py'
+
+permissions:
+  contents: read
+
+jobs:
+  session-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install native Wayland compositor and shell dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y labwc waybar foot fuzzel swaylock swaybg \
+            xwayland dbus-user-session dbus-x11 xdg-desktop-portal \
+            xdg-desktop-portal-gtk xdg-desktop-portal-wlr \
+            wayland-utils
+      - name: Validate and test isolated session runtime
+        run: |
+          /usr/bin/python3 -m compileall -q macrice/de macrice/cli.py
+          /usr/bin/python3 -m unittest discover -s tests -p 'test_de_*.py' -v
+          # Session-specific DesktopNames is valid for display managers but
+          # desktop-file-validate only knows ordinary application entries.
+          sh -n scripts/build_wayland_session_deb.sh
+          sh -n scripts/smoke_wayland_session.sh
+      - name: Build non-installed login session package
+        run: |
+          sh scripts/build_wayland_session_deb.sh
+          dpkg-deb --field dist/ricebowl-wayland-session_0.1.0~preview1_all.deb
+      - name: Boot actual labwc and Waybar headlessly
+        run: timeout -k 5s 45s sh scripts/smoke_wayland_session.sh

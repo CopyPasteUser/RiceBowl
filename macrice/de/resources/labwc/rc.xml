@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Isolated preview configuration: never overrides ~/.config/labwc. -->
+<labwc_config>
+  <keyboard>
+    <default />
+    <keybind key="W-Return">
+      <action name="Execute" command="foot" />
+    </keybind>
+    <keybind key="W-space">
+      <action name="Execute" command="fuzzel" />
+    </keybind>
+    <keybind key="W-l">
+      <action name="Execute" command="swaylock -f" />
+    </keybind>
+  </keyboard>
+</labwc_config>

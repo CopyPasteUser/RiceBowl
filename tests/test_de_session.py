@@ -1,0 +1,183 @@
+"""Session safety: login, nested mode, sandboxed config and supervised clients."""
+
+import os
+import shlex
+import tempfile
+import unittest
+import xml.etree.ElementTree as ET
+from pathlib import Path
+from unittest import mock
+
+from macrice.de import session
+
+
+class _ExecCalled(Exception):
+    def __init__(self, program, argv, env):
+        self.program = program
+        self.argv = argv
+        self.env = env
+
+
+def _record_exec(program, argv, env):
+    raise _ExecCalled(program, argv, env)
+
+
+class _FakeProcess:
+    def __init__(self):
+        self.terminated = False
+        self.killed = False
+
+    def poll(self):
+        return 0 if self.terminated else None
+
+    def terminate(self):
+        self.terminated = True
+
+    def kill(self):
+        self.killed = True
+        self.terminated = True
+
+    def wait(self, timeout=None):
+        return 0
+
+
+class WaylandSessionTests(unittest.TestCase):
+    def setUp(self):
+        self.runtime = tempfile.TemporaryDirectory()
+        os.chmod(self.runtime.name, 0o700)
+        self.addCleanup(self.runtime.cleanup)
+        self.env = {"XDG_RUNTIME_DIR": self.runtime.name, "DBUS_SESSION_BUS_ADDRESS": "unix:path=test"}
+        self.tools = {name: f"/usr/bin/{name}" for name in (*session.REQUIRED_TOOLS, "dbus-run-session")}
+
+    def which(self, command):
+        return self.tools.get(command)
+
+    @mock.patch("macrice.de.session.os.geteuid", return_value=1000)
+    @mock.patch("macrice.de.session._check_runtime_dir")
+    def test_nested_exec_uses_isolated_config_and_preserves_parent_bus(self, _runtime, _uid):
+        env = {**self.env, "DISPLAY": ":0", "XDG_CURRENT_DESKTOP": "XFCE"}
+        with self.assertRaises(_ExecCalled) as caught:
+            session.start(nested=True, environment=env, which=self.which, execute=_record_exec)
+        call = caught.exception
+        self.assertEqual(call.program, "/usr/bin/labwc")
+        self.assertIn("--config-dir", call.argv)
+        self.assertEqual(call.argv[call.argv.index("--config-dir") + 1],
+                         str(session.resources() / "labwc"))
+        self.assertEqual(call.env["LABWC_UPDATE_ACTIVATION_ENV"], "0")
+        self.assertEqual(call.env["XDG_CURRENT_DESKTOP"], session.DESKTOP_NAME)
+        self.assertEqual(env["XDG_CURRENT_DESKTOP"], "XFCE")
+        self.assertIn("de shell", call.argv[-1])
+        wrapper = shlex.split(call.argv[-1])
+        self.assertEqual(wrapper[:2], ["sh", "-c"])
+        self.assertIn("labwc --exit", wrapper[2])
+
+    def test_existing_desktop_requires_nested_or_login_wrapper(self):
+        with self.assertRaisesRegex(session.SessionError, "already active"):
+            session.start(environment={**self.env, "DISPLAY": ":0"}, which=self.which,
+                          execute=_record_exec)
+
+    @mock.patch("macrice.de.session.os.geteuid", return_value=1000)
+    @mock.patch("macrice.de.session._check_runtime_dir")
+    def test_login_manager_does_not_inherit_greeter_display(self, _runtime, _uid):
+        env = {**self.env, "RICEBOWL_DM_SESSION": "1", "DISPLAY": ":10",
+               "WAYLAND_DISPLAY": "wayland-greeter", "LABWC_UPDATE_ACTIVATION_ENV": "0"}
+        with self.assertRaises(_ExecCalled) as caught:
+            session.start(environment=env, which=self.which, execute=_record_exec)
+        self.assertNotIn("DISPLAY", caught.exception.env)
+        self.assertNotIn("WAYLAND_DISPLAY", caught.exception.env)
+        self.assertNotIn("LABWC_UPDATE_ACTIVATION_ENV", caught.exception.env)
+
+    @mock.patch("macrice.de.session._check_runtime_dir")
+    def test_start_works_with_mint_22_labwc_071_options(self, _runtime):
+        with self.assertRaises(_ExecCalled) as caught:
+            session.start(environment=self.env, which=self.which, execute=_record_exec)
+        self.assertIn("--startup", caught.exception.argv)
+        self.assertNotIn("--session", caught.exception.argv)
+
+    def test_missing_tool_fails_before_starting_compositor(self):
+        with self.assertRaisesRegex(session.SessionError, "Missing Wayland preview dependencies: foot"):
+            session.start(environment=self.env, which=lambda name: None if name == "foot"
+                          else self.which(name), execute=_record_exec)
+
+    def test_missing_bus_reexecs_at_most_once(self):
+        env = {"XDG_RUNTIME_DIR": self.runtime.name}
+        with self.assertRaises(_ExecCalled) as caught:
+            session.start(environment=env, which=self.which, execute=_record_exec)
+        self.assertEqual(caught.exception.program, "/usr/bin/dbus-run-session")
+        self.assertEqual(caught.exception.argv[1], "--")
+        self.assertEqual(caught.exception.env["RICEBOWL_DE_BUS_REEXEC"], "1")
+        with self.assertRaisesRegex(session.SessionError, "unbounded restart"):
+            session.start(environment={**env, "RICEBOWL_DE_BUS_REEXEC": "1"},
+                          which=self.which, execute=_record_exec)
+
+    def test_wrong_runtime_directory_is_rejected(self):
+        os.chmod(self.runtime.name, 0o755)
+        with self.assertRaisesRegex(session.SessionError, "owner-only"):
+            session.start(environment=self.env, which=self.which, execute=_record_exec)
+
+    @mock.patch("macrice.de.session.os.geteuid", return_value=0)
+    def test_no_root_session(self, _uid):
+        with self.assertRaisesRegex(session.SessionError, "unprivileged"):
+            session.start(environment=self.env, which=self.which, execute=_record_exec)
+
+    def test_shell_rejects_calls_outside_its_labwc_session(self):
+        with self.assertRaisesRegex(session.SessionError, "only run inside"):
+            session.shell(environment={"WAYLAND_DISPLAY": "wayland-0"}, which=self.which)
+
+    def test_shell_supervises_background_services_and_uses_private_panel_config(self):
+        commands = []
+        processes = []
+
+        def spawn(command, **_kwargs):
+            commands.append(command)
+            process = _FakeProcess()
+            processes.append(process)
+            return process
+
+        choices = {**self.tools, "swaybg": "/usr/bin/swaybg", "mako": "/usr/bin/mako",
+                   "lxpolkit": "/usr/bin/lxpolkit", "swayidle": "/usr/bin/swayidle"}
+        env = {"RICEBOWL_DE_SHELL_CHILD": "1", "RICEBOWL_DE_NESTED": "1",
+               "WAYLAND_DISPLAY": "wayland-0"}
+        with mock.patch("macrice.de.session.signal.signal"):
+            result = session.shell(environment=env, which=choices.get, spawn=spawn)
+        self.assertEqual(result, 0)
+        self.assertIn("--config", commands[-1])
+        self.assertIn(str(session.resources() / "waybar/config.jsonc"), commands[-1])
+        self.assertFalse(any(command[0] == "/usr/bin/swayidle" for command in commands))
+        self.assertTrue(all(proc.terminated for proc in processes[:-1]))
+
+    def test_failed_panel_start_cleans_up_background_services(self):
+        processes = []
+
+        def spawn(command, **_kwargs):
+            if command[0] == "/usr/bin/waybar":
+                raise OSError("panel unavailable")
+            process = _FakeProcess()
+            processes.append(process)
+            return process
+
+        env = {"RICEBOWL_DE_SHELL_CHILD": "1", "RICEBOWL_DE_NESTED": "0",
+               "WAYLAND_DISPLAY": "wayland-0"}
+        choices = {**self.tools, "swaybg": "/usr/bin/swaybg", "swayidle": "/usr/bin/swayidle"}
+        with self.assertRaisesRegex(OSError, "panel unavailable"):
+            session.shell(environment=env, which=choices.get, spawn=spawn)
+        self.assertTrue(processes)
+        self.assertTrue(all(process.terminated for process in processes))
+
+    def test_bundled_labwc_keybindings_are_valid_xml(self):
+        config = ET.parse(session.resources() / "labwc/rc.xml")
+        self.assertEqual(config.getroot().tag, "labwc_config")
+        commands = [item.get("command") for item in config.findall(".//action")]
+        self.assertIn("swaylock -f", commands)
+        self.assertIn("foot", commands)
+
+    def test_root_menu_has_terminal_and_safe_logout(self):
+        menu = ET.parse(session.resources() / "labwc/menu.xml").getroot()
+        self.assertEqual(menu.tag, "openbox_menu")
+        self.assertEqual(menu.find(".//menu").get("id"), "root-menu")
+        self.assertIsNotNone(menu.find(".//action[@name='Exit']"))
+        self.assertIsNotNone(menu.find(".//action[@command='foot']"))
+
+
+if __name__ == "__main__":
+    unittest.main()

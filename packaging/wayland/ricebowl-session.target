@@ -1,0 +1,4 @@
+[Unit]
+Description=RiceBowl labwc user session
+Documentation=https://github.com/CopyPasteUser/Ricebowl
+PartOf=graphical-session.target

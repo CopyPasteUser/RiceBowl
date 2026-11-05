@@ -1,0 +1,19 @@
+{
+  "layer": "top",
+  "position": "bottom",
+  "height": 36,
+  "spacing": 8,
+  "modules-left": ["wlr/taskbar"],
+  "modules-center": ["clock"],
+  "modules-right": ["network", "pulseaudio", "battery", "tray"],
+  "wlr/taskbar": {
+    "format": "{icon}",
+    "icon-size": 22,
+    "on-click": "minimize-raise",
+    "tooltip-format": "{title}"
+  },
+  "clock": {
+    "format": "{:%a %d %b  %H:%M}",
+    "tooltip-format": "{:%A, %d %B %Y}"
+  }
+}

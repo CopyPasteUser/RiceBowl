@@ -101,7 +101,10 @@ class InstallerTests(unittest.TestCase):
             self.assertTrue((installed / "RICEPLATE_DESKTOP_ROADMAP.md").is_file())
             self.assertTrue((installed / "XFCE_RESOURCE_BOUNDARIES.md").is_file())
             self.assertTrue((installed / "RICEBOWL_DE_ROADMAP.md").is_file())
+            self.assertTrue((installed / "WAYLAND_SESSION.md").is_file())
             self.assertTrue((installed / "macrice/de/diagnostics.py").is_file())
+            self.assertTrue((installed / "macrice/de/session.py").is_file())
+            self.assertTrue((installed / "macrice/de/resources/labwc/rc.xml").is_file())
             self.assertTrue((installed / "RICEPACK_SPEC.md").is_file())
             self.assertTrue((installed / "macrice/riceware/packs.py").is_file())
 
