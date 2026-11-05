@@ -268,7 +268,7 @@ def _write_entrypoints(installed: Path) -> None:
     bowl_content = (
         '#!/bin/sh\n' + RICEBOWL_LAUNCHER_MARKER + '\n'
         + 'case "${1:-}" in\n'
-        + '  update) shift; if [ "$#" -eq 0 ]; then set -- check --refresh; fi\n'
+        + '  update) shift; if [ "$#" -eq 0 ]; then set -- check --refresh --preserve-checkout; fi\n'
         + '    exec /usr/bin/python3 "' + str(installed / "launcher.py") + '" update "$@" ;;\n'
         + '  *) exec /usr/bin/python3 "' + str(installed / "launcher.py") + '" hub "$@" ;;\n'
         + 'esac\n'
