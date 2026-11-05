@@ -110,6 +110,23 @@ class WaylandSessionTests(unittest.TestCase):
             session.start(environment={**env, "RICEBOWL_DE_BUS_REEXEC": "1"},
                           which=self.which, execute=_record_exec)
 
+    @mock.patch("macrice.de.session.os.geteuid", return_value=1000)
+    @mock.patch("macrice.de.session._check_runtime_dir")
+    def test_selected_recipe_survives_one_time_dbus_reexec(self, _runtime, _uid):
+        with self.assertRaises(_ExecCalled) as caught:
+            session.start(nested=True, recipe="chrome",
+                          environment={"XDG_RUNTIME_DIR": self.runtime.name},
+                          which=self.which, execute=_record_exec)
+        self.assertEqual(caught.exception.program, "/usr/bin/dbus-run-session")
+        self.assertEqual(caught.exception.argv[-2:], ["--recipe", "chrome"])
+
+    @mock.patch("macrice.de.session.os.geteuid", return_value=1000)
+    @mock.patch("macrice.de.session._check_runtime_dir")
+    def test_bad_recipe_fails_before_labwc_exec(self, _runtime, _uid):
+        with self.assertRaisesRegex(ValueError, "absolute"):
+            session.start(nested=True, recipe="unknown-nonabsolute-recipe",
+                          environment=self.env, which=self.which, execute=_record_exec)
+
     def test_wrong_runtime_directory_is_rejected(self):
         os.chmod(self.runtime.name, 0o755)
         with self.assertRaisesRegex(session.SessionError, "owner-only"):

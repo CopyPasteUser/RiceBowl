@@ -23,6 +23,8 @@ A collection of deeply customizable, OS-inspired desktop experiences — growing
 
 > **Status:** RiceBowl **0.9.x remains an XFCE/X11 development preview**. An optional, independently selectable [labwc/Wayland session preview](WAYLAND_SESSION.md) is now available for testing; it still uses a temporary Waybar shell. RicePlate and the complete standalone DE are not finished. Real-hardware acceptance is required.
 
+The optional Wayland preview also supports two early data-driven panel layouts (`ricebowl de recipes`); the native RicePlate shell remains in development.
+
 ## Seven desktop experiences
 
 - **Windows 98 / Classic:** compact menus, classic taskbar and Control Panel.

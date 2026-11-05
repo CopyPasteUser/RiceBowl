@@ -4,6 +4,7 @@
 set -eu
 
 project_root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd -P)
+recipe=${1:-}
 runtime=$(mktemp -d)
 chmod 0700 "$runtime"
 trap 'rm -r -- "$runtime"' EXIT
@@ -16,7 +17,13 @@ export XDG_SESSION_TYPE=wayland
 dbus-run-session -- sh -eu -c '
     project_root=$1
     runtime=$2
-    /usr/bin/python3 "$project_root/launcher.py" de start --nested >"$runtime/labwc.log" 2>&1 &
+    recipe=$3
+    if [ -n "$recipe" ]; then
+        set -- --recipe "$recipe"
+    else
+        set --
+    fi
+    /usr/bin/python3 "$project_root/launcher.py" de start --nested "$@" >"$runtime/labwc.log" 2>&1 &
     compositor=$!
     trap "kill $compositor 2>/dev/null || :; wait $compositor 2>/dev/null || :" EXIT
     ready=0
@@ -84,4 +91,4 @@ dbus-run-session -- sh -eu -c '
     echo "labwc stayed alive after the panel exited" >&2
     sed -n "1,100p" "$runtime/labwc.log" >&2
     exit 1
-' sh "$project_root" "$runtime"
+' sh "$project_root" "$runtime" "$recipe"
