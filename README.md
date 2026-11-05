@@ -1,73 +1,76 @@
 <div align="center">
 
-<img src="assets/ricebowl-symbolic.svg" alt="RiceBowl logo" width="88">
+<img src="assets/ricebowl-symbolic.svg" alt="RiceBowl" width="88">
 
 # RiceBowl
 
-**Seven desktop styles. One Linux desktop.**
+**Seven personalities. One Linux desktop.**
 
-Give XFCE a completely different personality—from Windows XP nostalgia to Frutiger Aero—without replacing your operating system.
+A collection of deeply customizable, OS-inspired desktop experiences — growing into a lightweight, modular desktop environment powered by **Wayland + labwc**.
 
-[Explore styles](#desktop-styles) · [Get started](#get-started) · [All screenshots](screenshots/current/README.md)
+[See the desktops](#seven-desktop-experiences) · [Install today](#try-ricebowl) · [Wayland roadmap](RICEBOWL_DE_ROADMAP.md) · [Screenshot gallery](screenshots/current/README.md)
 
 </div>
 
 <p align="center">
-  <a href="screenshots/current/aero-start.webp"><img src="screenshots/current/aero-start.webp" alt="Windows 7 Aero desktop with Start menu" width="48%"></a>
-  <a href="screenshots/current/frutiger-start.webp"><img src="screenshots/current/frutiger-start.webp" alt="Frutiger Aero desktop with Aqua launcher" width="48%"></a>
-  <a href="screenshots/current/winxp-start.webp"><img src="screenshots/current/winxp-start.webp" alt="Windows XP Luna desktop with Start menu" width="48%"></a>
-  <a href="screenshots/current/windows10-start.webp"><img src="screenshots/current/windows10-start.webp" alt="Windows 10 desktop with Start menu, alphabetical applications and live tiles" width="48%"></a>
+  <a href="screenshots/current/aero-start.webp"><img src="screenshots/current/aero-start.webp" width="48%" alt="Aero Seven desktop and Start menu"></a>
+  <a href="screenshots/current/frutiger-start.webp"><img src="screenshots/current/frutiger-start.webp" width="48%" alt="Frutiger Aero launcher"></a>
+  <a href="screenshots/current/winxp-start.webp"><img src="screenshots/current/winxp-start.webp" width="48%" alt="XP Luna taskbar and Start menu"></a>
+  <a href="screenshots/current/windows10-start.webp"><img src="screenshots/current/windows10-start.webp" width="48%" alt="Windows 10-inspired Start menu"></a>
 </p>
 
-<div align="center"><sub>Actual GTK/X11 captures from the <a href="https://github.com/CopyPasteUser/RiceBowl/actions/runs/42045518423">latest verified CI run</a> · <a href="screenshots/current/README.md">See all 42 screenshots</a></sub></div>
+<p align="center"><sub>Real GTK/X11 project captures. <a href="screenshots/current/README.md">Explore the full gallery.</a></sub></p>
 
-## Desktop styles
+> **Status:** RiceBowl **0.9.x is an XFCE/X11 development preview**, not yet a standalone Wayland desktop environment. The labwc transition is being developed alongside the working XFCE version. Real-hardware acceptance is still required.
 
-[macOS Aurora](components/macmenu/README.md) · [Windows 7 Aero](WIN7_AERO_ROADMAP.md) · [Windows 10](WINDOWS10_ROADMAP.md) · [Windows XP Luna](XP_LUNA_ROADMAP.md) · [Windows 98](CLASSIC_98_ROADMAP.md) · [ChromeOS](CHROMEOS_ROADMAP.md) · [Frutiger Aero](FRUTIGER_AERO_ROADMAP.md)
+## Seven desktop experiences
 
-Each style brings its own taskbar, launcher, menus, icons, wallpaper and system controls. RiceBowl uses native GTK and real Linux services—**no Electron or fake device toggles**.
+- **Windows 98 / Classic:** compact menus, classic taskbar and Control Panel.
+- **XP Luna:** cobalt taskbar, two-column Start and Luna-style settings.
+- **Windows 7 Aero:** glass-inspired Superbar, Start menu and desktop controls.
+- **Windows 10:** Start tiles, Task View, action center and native-style settings.
+- **Frutiger Aero:** bright, organic dashboards and interactive controls.
+- **ChromeOS:** launcher, shelf and quick settings.
+- **macOS Aurora:** menu bar, dock integration and macOS-inspired controls.
 
-**XP Luna:** faithful two-column Start, cobalt taskbar, custom Linux icon art, Explorer-style Control Panel navigation and working taskbar/Start preferences. [Fidelity roadmap](XP_LUNA_ROADMAP.md). XFWM4 and Thunar remain available.
+Every rice has its own layout and identity, backed by real Linux status and actions. The artwork is original, not copied from other operating systems.
 
-**Windows 10:** A–Z Start, resizable/draggable tiles, independent Settings, real device flyouts, Task View and configurable search/taskbar. [Screenshots](screenshots/current/README.md) · [Fidelity roadmap](WINDOWS10_ROADMAP.md) · [Mint test checklist](WINDOWS10_MANUAL_ACCEPTANCE.md). Original Linux artwork only.
+## Try RiceBowl
 
-## Get started
-
-For **Linux Mint XFCE or another XFCE/X11 desktop**:
+Currently for **Linux Mint XFCE or a compatible XFCE/X11 session**:
 
 ```bash
 sudo apt install -y git python3-gi python3-cairo python3-gi-cairo gir1.2-gtk-3.0 gir1.2-wnck-3.0
-git clone https://github.com/CopyPasteUser/RiceBowl.git "$HOME/RiceBowl"
+git clone https://github.com/CopyPasteUser/Ricebowl.git "$HOME/RiceBowl"
 cd "$HOME/RiceBowl"
 bash install.sh --dry-run
 bash install.sh
 "$HOME/.local/bin/ricebowl"
 ```
 
-Pick a style in the Hub. **Nothing is applied automatically**: RiceBowl checks requirements, asks for confirmation and saves a recovery snapshot before switching.
+Choose a rice in the Hub. Switching requires confirmation and saves recovery state; installation alone does not apply a theme.
 
-**Updating:** Use **Check for updates → Install update** in the Hub (your local edits stay untouched), or check from the terminal with `ricebowl update`. Restart RiceBowl after installation. To revert desktop settings, run `macrice rice restore`.
+- **Update:** use the Hub's update action or `ricebowl update`.
+- **Check requirements:** `macrice doctor --style aero-meadow`.
+- **Restore:** `macrice rice restore`.
+- **Customize:** [Rice packs and profiles](RICEPACK_SPEC.md).
 
-**Before switching:** Use **Check requirements** in the Hub, or `macrice doctor --style aero-meadow`, to check the selected rice without applying changes.
+## From ricing suite to desktop environment
 
-**Rice packs:** `macrice riceware packs list` discovers built-in styles, named presets and securely imported visual packs (wallpaper, GTK, XFWM and icons). [Create or import a pack](RICEPACK_SPEC.md)—no daemon or auto-apply.
+RiceBowl will keep the existing styles while replacing XFCE-specific desktop responsibilities incrementally:
 
-## Project status
+1. **RiceSession + labwc:** an optional, independently selectable Wayland session.
+2. **RicePlate:** panels, taskbars, desktop icons, wallpapers and launchers.
+3. **RiceSpice + RicePop:** Linux settings, quick controls, notifications and OSD.
+4. **RiceField + Taskotto:** independent, themeable file manager and task manager.
+5. **Stability and efficiency:** cross-session compatibility, measured memory use, hardware testing and recovery.
 
-Recent QA work keeps Frutiger tray flyouts outside the dock's clipping area
-and the Windows 98 Start menu open during pointer navigation; hardware
-validation remains open.
+The XFCE/X11 workflow remains available while the Wayland path matures. We reuse Linux services such as NetworkManager, PipeWire and UPower instead of duplicating them.
 
-<strong>Development preview</strong> · Latest tagged build: [v0.9.1](https://github.com/CopyPasteUser/RiceBowl/releases/tag/v0.9.1). Newer changes are on `main`; 1.0 hardware acceptance on real XFCE systems is still pending.
+[Full DE development roadmap](RICEBOWL_DE_ROADMAP.md) · [Current XFCE resource boundaries](XFCE_RESOURCE_BOUNDARIES.md) · [Rice ecosystem](RICE_ECOSYSTEM_ROADMAP.md)
 
-**ricePlate stays inside RiceBowl.** The optional GTK desktop canvas previews the selected rice's wallpaper and real Desktop icons, with per-rice icon size, alignment and visibility settings. Gio file notifications refresh visible files without background polling:
+## Project links
 
-```bash
-macrice riceware plate preview --style winxp
-```
+[Releases](https://github.com/CopyPasteUser/Ricebowl/releases) · [Roadmap](ROADMAP.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [MIT License](LICENSE)
 
-This normal window does **not** disable XFDesktop, install a background service or modify your Desktop files. XFWM4 and the XFCE session stay in charge. See the [ricePlate desktop plan](RICEPLATE_DESKTOP_ROADMAP.md) and [XFCE resource boundaries](XFCE_RESOURCE_BOUNDARIES.md).
-
-[Roadmap](ROADMAP.md) · [Known issues & hardware checks](ACCEPTANCE_1_0.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [License](LICENSE)
-
-<sub>RiceBowl uses original artwork and is not affiliated with Apple, Google or Microsoft. Thunar remains available; [riceExplorer](https://github.com/CopyPasteUser/riceExplorer) is a separate work in progress.</sub>
+RiceBowl is not affiliated with Microsoft, Apple or Google. [RiceField](https://github.com/CopyPasteUser/Ricefield) remains a separate release candidate and does not replace Thunar automatically.
