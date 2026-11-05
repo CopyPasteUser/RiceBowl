@@ -296,6 +296,8 @@ window.luna-tray-popup {
   padding: 3px 5px; box-shadow: none; font-size: 12px; }
 .luna-program:hover, .luna-program:focus { background: #316ac5; color: #fff;
   border-color: #316ac5; }
+.luna-program:active { background: #174a9d; color: #fff; }
+.luna-program:focus { outline: 1px dotted #fff; outline-offset: -4px; }
 .luna-featured { min-height: 43px; padding: 4px 5px; }
 .luna-program-category { font-size: 12px; font-weight: bold; color: #173a6e; }
 .luna-program:hover .luna-program-category, .luna-program:focus .luna-program-category { color: #fff; }
@@ -317,6 +319,8 @@ window.luna-tray-popup {
 }
 .luna-place:hover, .luna-place:focus { background: #316ac5; color: #fff;
   border-color: #316ac5; }
+.luna-place:active { background: #174b9c; color: #fff; }
+.luna-place:focus { outline: 1px dotted #fff; outline-offset: -3px; }
 .luna-place:disabled { color: #4d6b91; }
 .luna-places separator { background: #9dbce6; min-height: 1px; }
 .luna-footer {
@@ -351,6 +355,33 @@ window.luna-tray-popup {
   border-radius: 3px; font-size: 10px; padding: 2px 6px; }
 .luna-taskbar-properties { background: #ece9d8; color: #172b4b;
   font-family: "Tahoma", "DejaVu Sans", sans-serif; font-size: 11px; }
+.luna-taskbar-properties frame { color: #17498b; border-color: #a2b6d4; }
+.luna-taskbar-properties frame > label { color: #17498b; font-weight: bold; }
+.luna-taskbar-properties checkbutton label { color: #252525; font-size: 11px; }
+.luna-properties-preview { background-image: linear-gradient(#cde7ff, #95c6f5 66%, #5e9fdb);
+  border: 2px inset #dceaf8; min-height: 89px; color: #123a77; }
+.luna-properties-preview label { color: #254d82; font-size: 10px; }
+.luna-properties-preview-bar { background-image: linear-gradient(#5797ef, #275dc5 60%, #17479c);
+  min-height: 26px; border-top: 1px solid #b3ddff; }
+.luna-properties-preview-start { background-image: linear-gradient(#a1ed81, #329a26 65%, #19741b);
+  border: 1px solid #adf094; border-radius: 0 10px 10px 0; padding: 4px 11px;
+  color: #fff; font-size: 11px; font-weight: bold; font-style: italic; }
+.luna-properties-preview-quick { border-left: 1px solid #76a9eb;
+  padding: 3px 6px; color: #fff; }
+.luna-properties-preview-task { background-image: linear-gradient(#5c99ed, #2762c9);
+  border: 1px solid #81b7ff; border-radius: 3px; color: #fff; padding: 3px 8px; }
+.luna-properties-preview-clock { background-image: linear-gradient(#5abbef, #1589cf);
+  border-left: 1px solid #9dd9fc; color: #fff; padding: 3px 12px; }
+.luna-properties-preview-bar label { color: #fff; }
+.luna-properties-start-preview { border: 2px solid #3064b5; border-radius: 5px 5px 0 0;
+  background-image: linear-gradient(#74aeef, #1858bd); color: white; }
+.luna-properties-start-preview > label { color: #fff; font-weight: bold;
+  padding: 6px 12px; }
+.luna-properties-start-apps { background: #fff; color: #19395f;
+  padding: 9px 12px; font-size: 11px; }
+.luna-properties-start-places { background: #d6e5fa; color: #17437d;
+  border-left: 1px solid #8eb1de; padding: 9px 12px; font-size: 11px; }
+.luna-taskbar-properties frame button { min-height: 20px; }
 .luna-taskbar-properties notebook { background: #ece9d8; }
 .luna-taskbar-properties notebook > header { background: #d7e4f4;
   border-bottom: 1px solid #6b8fc2; }
@@ -421,6 +452,7 @@ menu.luna-popup menuitem:hover > box > label,
 menu.luna-popup menuitem:selected > box > label,
 menu.luna-popup menuitem:focus > box > label { color: #fff; }
 menu.luna-popup menuitem:disabled label { color: #6c7e95; }
+menu.luna-popup menuitem:focus { outline: 1px dotted #fff; outline-offset: -4px; }
 menu.luna-popup separator { background: #b6c9df; min-height: 1px; margin: 3px 5px; }
 menu.luna-popup arrow { color: #315b94; }
 menu.luna-popup menuitem:hover arrow, menu.luna-popup menuitem:selected arrow { color: #fff; }
@@ -924,6 +956,21 @@ CONTROL_DETAIL_CSS = {
   min-height: 22px; padding: 0; color: white; box-shadow: inset 0 1px #ffefc8; }
 .luna-control-close label { color: white; font: bold 17px Sans; }
 .luna-control-close:hover { background: #f15b38; border-color: white; }
+.luna-control-toolbar { background-image: linear-gradient(#ffffff, #eeeade);
+  color: #2c2b27; border-bottom: 1px solid #bdb6a4;
+  padding: 3px 8px; min-height: 29px; }
+.luna-control-tool { background: transparent; border: 1px solid transparent;
+  box-shadow: none; color: #213e65; border-radius: 2px;
+  padding: 3px 8px; font-size: 11px; }
+.luna-control-tool:hover, .luna-control-tool:focus { background: #fff5d3;
+  border-color: #e1ac4f; color: #143b73; }
+.luna-control-tool:disabled { color: #9098a3; background: transparent;
+  border-color: transparent; box-shadow: none; }
+.luna-control-address { background-image: linear-gradient(#eeeadd, #f9f7ee);
+  border-bottom: 1px solid #bfbdb5; padding: 3px 9px;
+  color: #343434; font-size: 11px; }
+.luna-control-location { background: #fff; border: 1px solid #879fb7;
+  color: #223b61; padding: 3px 8px; }
 .luna-control-sidebar { background-image: linear-gradient(to right, #6595d4, #c7dafa);
   padding: 15px 12px; border-right: 1px solid #8ba9d5; }
 .luna-control-side-group { background: #d7e6fa; border: 1px solid #7b9dcd;

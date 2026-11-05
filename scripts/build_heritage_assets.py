@@ -174,6 +174,54 @@ thunar paned separator, .thunar paned separator { background: #acbed8; }
 """, encoding="utf-8")
 
 
+def _luna_fidelity_gtk(destination: Path) -> None:
+    """Finish the Linux-owned Luna GTK controls; safely rerunnable."""
+    target = destination / "gtk-3.0/gtk.css"
+    existing = target.read_text(encoding="utf-8")
+    marker = "/* RiceBowl Luna controls fidelity v2. */"
+    if marker in existing:
+        return
+    target.write_text(existing + """
+/* RiceBowl Luna controls fidelity v2. */
+/* Use square early-2000s controls, consistent hover/focus and no Windows art. */
+window, dialog, .background, viewport { background-color: #ece9d8; color: #1b1b1b; }
+frame > border { border: 1px solid #a9a89b; border-radius: 1px; }
+frame > label { color: #1e4b91; font-weight: bold; padding: 0 4px; }
+button:focus { outline: 1px dotted #2c4b7e; outline-offset: -5px; }
+button:disabled { background-image: linear-gradient(#f7f5ed, #deded4);
+  color: #88877e; border-color: #b9b7ac; box-shadow: none; opacity: 1; }
+checkbutton, radiobutton { color: #1a1a1a; padding: 3px 2px; }
+checkbutton check, radiobutton radio { background-image: linear-gradient(#fff, #eaf1fa);
+  border: 1px solid #7d9cbc; color: #124d91; min-width: 13px; min-height: 13px;
+  border-radius: 1px; box-shadow: inset 0 1px #fff; }
+radiobutton radio { border-radius: 9px; }
+checkbutton:hover check, radiobutton:hover radio,
+checkbutton:focus check, radiobutton:focus radio { border-color: #e4a143;
+  background-image: linear-gradient(#fff, #fff4d5); }
+checkbutton:disabled, radiobutton:disabled { color: #888; }
+scale trough { background: #f9fafb; border: 1px solid #8a9eb7;
+  border-radius: 2px; min-height: 7px; }
+scale slider { background-image: linear-gradient(#fff, #c3d9f5);
+  border: 1px solid #4979b6; border-radius: 3px; min-width: 13px; min-height: 16px; }
+scale slider:hover { border-color: #dd9e3f;
+  background-image: linear-gradient(#fffef2, #ecd49d); }
+notebook > header > tabs > tab:focus { outline: 1px dotted #244f8b;
+  outline-offset: -3px; }
+menu { border-radius: 0; box-shadow: 2px 3px 4px rgba(35,43,56,.22); }
+menuitem { padding: 3px 9px; min-height: 21px; }
+menuitem:disabled { color: #858585; }
+menuitem:focus { outline: 1px dotted #fff; outline-offset: -3px; }
+separator { background: #b4b8c0; min-height: 1px; min-width: 1px; }
+scrollbar slider { background-image: linear-gradient(#eaf5ff, #9dbfe5);
+  border: 1px solid #6e98c6; border-radius: 1px; }
+scrollbar slider:hover { background-image: linear-gradient(#fff5d9, #e8bf72);
+  border-color: #b78433; }
+treeview.view:focus { outline-color: #316ac5; }
+tooltip { background: #fffbd0; border: 1px solid #7e796d; border-radius: 0;
+  color: #181818; box-shadow: 1px 2px 3px rgba(0,0,0,.18); }
+""", encoding="utf-8")
+
+
 def _classic_chrome(destination: Path) -> None:
     """Draw authentic square 9x-era XFWM furniture from original pixels."""
     frame = destination / "xfwm4"
@@ -730,6 +778,7 @@ def main(*, luna_only: bool = False, frutiger_only: bool = False,
                 gtk(path, palette)
             _luna_chrome(path)
             _luna_gtk(path)
+            _luna_fidelity_gtk(path)
         else:
             chrome(path, palette)
             gtk(path, palette)

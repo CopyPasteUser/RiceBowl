@@ -91,7 +91,7 @@ class LunaGeometryTests(unittest.TestCase):
         self.assertIn('action_heights.get(profile, 430)', shell)
         self.assertIn('from .luna_control_panel import build', shell)
         self.assertIn('width = min(746, max(0, rect.width - 24))', shell)
-        self.assertIn('height = min(536, max(0, rect.height - panel_height - 24))', shell)
+        self.assertIn('height = min(592, max(0, rect.height - panel_height - 24))', shell)
 
     def test_control_panel_caption_uses_input_window_and_keeps_close_outside_drag(self):
         panel = (project_root() / "macrice/luna_control_panel.py").read_text()
@@ -123,6 +123,25 @@ class LunaGeometryTests(unittest.TestCase):
         self.assertIn("Gtk.ButtonsType.YES_NO", shell)
         self.assertIn("folder.mkdir(parents=True, exist_ok=True)", shell)
         self.assertIn('"Control Panel", "preferences-system", callback=self._toggle_actions', shell)
+
+    def test_device_overview_and_control_panel_navigation_are_real_linux_actions(self):
+        shell = (project_root() / "macrice/aero_shell.py").read_text()
+        panel = (project_root() / "macrice/luna_control_panel.py").read_text()
+        self.assertIn('Gio.AppInfo.launch_default_for_uri("computer:///", None)', shell)
+        self.assertIn('callback=self._open_luna_computer', shell)
+        self.assertIn('current_location.set_text("Control Panel / " + category)', panel)
+        self.assertIn('back_tool.set_sensitive(False)', panel)
+        self.assertIn('search_tool.connect("clicked", lambda _button: search.grab_focus())', panel)
+
+    def test_original_recent_document_icon_and_luna_widget_skin(self):
+        root = project_root()
+        icon = root / "assets/icons/RiceHub-Luna-Icons/scalable/actions/document-open-recent.svg"
+        self.assertEqual(ElementTree.parse(icon).getroot().tag,
+                         "{http://www.w3.org/2000/svg}svg")
+        css = (root / "assets/themes/RiceHub-Luna/gtk-3.0/gtk.css").read_text()
+        self.assertIn("/* RiceBowl Luna controls fidelity v2. */", css)
+        self.assertIn("checkbutton check", css)
+        self.assertIn("radiobutton radio", css)
 
     def test_40px_taskbar_menu_above_panel_on_common_screens(self):
         for x, y, width, height in ((0, 0, 1600, 900), (0, 0, 1024, 768),

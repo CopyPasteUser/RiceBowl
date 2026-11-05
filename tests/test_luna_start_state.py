@@ -6,7 +6,8 @@ import unittest
 from pathlib import Path
 
 from macrice.luna_start_state import (
-    StartState, change_favorite, load_start_state, record_launch, save_start_state,
+    StartState, change_favorite, clear_recent_programs, load_start_state,
+    record_launch, save_start_state,
 )
 
 
@@ -41,6 +42,15 @@ class LunaStartStateTests(unittest.TestCase):
         self.assertTrue(change_favorite(state, "browser.desktop", "unpin"))
         self.assertEqual(state.favorites, ("terminal.desktop", "mail.desktop"))
         self.assertFalse(change_favorite(state, "mail.desktop", "down"))
+
+    def test_clear_recent_history_preserves_pins_and_persists(self):
+        with tempfile.TemporaryDirectory() as directory:
+            file = Path(directory) / "winxp-start.json"
+            state = StartState(("terminal.desktop",), {"browser.desktop": (4, 100)})
+            self.assertTrue(clear_recent_programs(state))
+            self.assertFalse(clear_recent_programs(state))
+            save_start_state(state, file)
+            self.assertEqual(load_start_state(file), StartState(("terminal.desktop",), {}))
 
     def test_refuses_symlink_and_malformed_preferences(self):
         with tempfile.TemporaryDirectory() as directory:

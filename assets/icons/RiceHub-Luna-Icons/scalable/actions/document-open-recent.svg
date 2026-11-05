@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>RiceBowl Luna recent documents</title>
+  <defs>
+    <linearGradient id="paper" x2="0" y2="1">
+      <stop stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#dae9fb"/>
+    </linearGradient>
+    <linearGradient id="clock" x2="0" y2="1">
+      <stop stop-color="#fff4bd"/>
+      <stop offset="1" stop-color="#e1a53e"/>
+    </linearGradient>
+  </defs>
+  <path d="M12 8h30l9 10v37H12z" fill="#598bcc" stroke="#23539a" stroke-width="2"/>
+  <path d="M9 5h30l9 10v37H9z" fill="url(#paper)" stroke="#467bb8" stroke-width="2"/>
+  <path d="M39 5v11h9" fill="#b9d7f5" stroke="#467bb8" stroke-width="1.5"/>
+  <path d="M16 24h24M16 31h19M16 38h17" fill="none" stroke="#7b9fc6" stroke-width="2"/>
+  <circle cx="43" cy="43" r="16" fill="url(#clock)" stroke="#8d632b" stroke-width="2.5"/>
+  <circle cx="43" cy="43" r="12" fill="#fff9de" stroke="#bd9651" stroke-width="1"/>
+  <path d="M43 34v10l-7 4" fill="none" stroke="#31558a" stroke-width="2.7" stroke-linecap="round"/>
+  <circle cx="43" cy="43" r="2" fill="#31558a"/>
+</svg>

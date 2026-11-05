@@ -1,6 +1,6 @@
 # RiceBowl screenshot gallery
 
-**34 real GTK/X11 captures** from the latest verified `main` build. Click any preview to open it full-size.
+**34 real GTK/X11 captures** from a verified pull-request build. Click any preview to open it full-size.
 
 <p align="center">
   <a href="aero-start.webp"><img src="aero-start.webp" alt="Windows 7 Aero Start menu" width="48%"></a>
@@ -29,7 +29,7 @@
 <details>
 <summary>Capture provenance and limitations</summary>
 
-These are actual applications rendered under XFWM4 in virtual X11 at 1600×900, not mockups. The [successful 5 November 2026 CI run](https://github.com/CopyPasteUser/RiceBowl/actions/runs/42003767466) captured commit [`e54f238`](https://github.com/CopyPasteUser/RiceBowl/commit/e54f2382e2714e046845d32e97ff2c7792ad276c). The [manifest](manifest.json) records original and converted image hashes; compact 1024×768 captures are in the CI artifact. Historical `0.9.1` capture filenames are script compatibility names, not the tested release version.
+These are actual applications rendered under XFWM4 in virtual X11 at 1600×900, not mockups. The [successful 5 November 2026 CI run](https://github.com/CopyPasteUser/RiceBowl/actions/runs/42026502990) captured commit [`52ad483`](https://github.com/CopyPasteUser/RiceBowl/commit/52ad483253d2972c5035a37c9a3df25e133bbed0). The [manifest](manifest.json) records original and converted image hashes; compact 1024×768 captures are in the CI artifact. Historical `0.9.1` capture filenames are script compatibility names, not the tested release version.
 
 Virtual-X11 captures do not establish physical Mint/XFCE hardware, suspend or multi-monitor acceptance. Unavailable device features in CI are shown honestly.
 

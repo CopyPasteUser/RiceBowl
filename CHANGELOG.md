@@ -1,5 +1,17 @@
 # RiceBowl changelog
 
+## Unreleased — XP Luna native fidelity overhaul (5 November 2026)
+
+- Bring XP Control Panel closer to Explorer with a real Back/Home/Search strip,
+  descriptive address breadcrumb and preserved category/classic/search routes.
+- Rework taskbar properties with 2001-style grouped settings, live sample,
+  real notification-icon customization and confirmed recent-program clearing
+  without touching Start favorites or other desktop profiles.
+- Prefer the genuine Gio device/volume browser for My Computer with a safe
+  filesystem fallback. Add original recent-document artwork and cohesive
+  Luna-only GTK controls, context menus, keyboard focus and hover states.
+
+
 ## Unreleased — secure visual Rice packs v2 (5 November 2026)
 
 - Build, inspect and import local ZIP packs containing declared and SHA-256

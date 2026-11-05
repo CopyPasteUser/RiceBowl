@@ -19,13 +19,15 @@ Give XFCE a completely different personality—from Windows XP nostalgia to Frut
   <a href="screenshots/current/windows10-settings-home.webp"><img src="screenshots/current/windows10-settings-home.webp" alt="Windows 10 desktop with native Settings window" width="48%"></a>
 </p>
 
-<div align="center"><sub>Actual GTK/X11 captures from the <a href="https://github.com/CopyPasteUser/RiceBowl/actions/runs/42003767466">5 November 2026 CI run</a> · <a href="screenshots/current/README.md">See all 34 screenshots</a></sub></div>
+<div align="center"><sub>Actual GTK/X11 captures from the <a href="https://github.com/CopyPasteUser/RiceBowl/actions/runs/42026502990">5 November 2026 CI run</a> · <a href="screenshots/current/README.md">See all 34 screenshots</a></sub></div>
 
 ## Desktop styles
 
 [macOS Aurora](components/macmenu/README.md) · [Windows 7 Aero](WIN7_AERO_ROADMAP.md) · [Windows 10](WINDOWS10_ROADMAP.md) · [Windows XP Luna](XP_LUNA_ROADMAP.md) · [Windows 98](CLASSIC_98_ROADMAP.md) · [ChromeOS](CHROMEOS_ROADMAP.md) · [Frutiger Aero](FRUTIGER_AERO_ROADMAP.md)
 
 Each style brings its own taskbar, launcher, menus, icons, wallpaper and system controls. RiceBowl uses native GTK and real Linux services—**no Electron or fake device toggles**.
+
+**XP Luna:** faithful two-column Start, cobalt taskbar, custom Linux icon art, Explorer-style Control Panel navigation and working taskbar/Start preferences. [Fidelity roadmap](XP_LUNA_ROADMAP.md). XFWM4 and Thunar remain available.
 
 ## Get started
 
