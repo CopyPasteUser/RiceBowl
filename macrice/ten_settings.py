@@ -57,6 +57,10 @@ class TenSettings:
         self.window.set_decorated(False)
         self.window.set_default_size(880, 600)
         configure_settings_window(self.window, Gdk, role="ricebowl-windows10-settings")
+        from .window_geometry import restore_and_track
+
+        self._positioned = restore_and_track(
+            self.window, "ricebowl-windows10-settings", Gdk, GLib)
         root = shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0),
                             "ten-settings-root")
         toolbar = shell._class(Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10),

@@ -3840,6 +3840,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             button.connect("clicked", lambda _button, target=path:
                            self._open_luna_user_folder(target) if offer_create else
                            self._open_uri(target.as_uri()))
+            if path.is_dir() and path != Path("/"):
+                from .riceware.dnd_gtk import attach_folder_drop
+
+                attach_folder_drop(button, path, Gtk, Gdk, GLib)
             return button
 
         def _finish_heritage_menu(self, menu, search):
@@ -3957,6 +3961,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 button.set_tooltip_text("Open " + str(path) if path.is_dir() else
                                         "Folder not available: " + str(path))
                 button.connect("clicked", lambda _button: self._open_uri(path.as_uri()))
+                if path.is_dir() and path != Path("/"):
+                    from .riceware.dnd_gtk import attach_folder_drop
+
+                    attach_folder_drop(button, path, Gtk, Gdk, GLib)
             elif command is not None:
                 candidates = (command,) if isinstance(command, str) else command
                 installed = next((name for name in candidates if shutil.which(name)), None)
@@ -4249,6 +4257,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                                         "Create and open " + str(target) + " (with confirmation)")
                 button.connect("clicked", lambda _button, folder=target:
                                self._open_luna_user_folder(folder))
+                if target.is_dir() and target != Path("/"):
+                    from .riceware.dnd_gtk import attach_folder_drop
+
+                    attach_folder_drop(button, target, Gtk, Gdk, GLib)
                 shortcuts.attach(button, i, 0, 1, 1)
             root.pack_start(shortcuts, False, False, 0)
             # Three live pages mirror the reference: Apps / Places / Settings.
@@ -5252,9 +5264,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     self._error("The display is too small for Control Panel.")
                     return
                 self.actions.show_all()
-                self.actions.resize(width, height)
-                self.actions.move(rect.x + (rect.width - width) // 2,
-                                  rect.y + (rect.height - panel_height - height) // 2)
+                if not getattr(self, "_classic98_settings_positioned", False):
+                    self.actions.resize(width, height)
+                    self.actions.move(rect.x + (rect.width - width) // 2,
+                                      rect.y + (rect.height - panel_height - height) // 2)
+                    self._classic98_settings_positioned = True
                 self.actions.present()
                 return
             if profile == "winxp":
@@ -5283,9 +5297,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 # authoritative category/search view before presenting.
                 self.win7_panel_search.set_text("")
                 self.win7_panel_reset()
-                self.actions.resize(width, height)
-                self.actions.move(rect.x + (rect.width - width) // 2,
-                                  rect.y + (rect.height - panel_height - height) // 2)
+                if not getattr(self, "_win7_settings_positioned", False):
+                    self.actions.resize(width, height)
+                    self.actions.move(rect.x + (rect.width - width) // 2,
+                                      rect.y + (rect.height - panel_height - height) // 2)
+                    self._win7_settings_positioned = True
                 self.actions.present()
                 return
             if profile == "frutiger":

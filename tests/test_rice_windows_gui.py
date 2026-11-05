@@ -95,3 +95,53 @@ class RiceWindowsGtkTests(unittest.TestCase):
         finally:
             panel.dispose()
             window.destroy()
+
+    def test_native_aqua_monitor_editor_only_offers_confirmed_safe_mode_changes(self):
+        import gi
+
+        gi.require_version("Gtk", "3.0")
+        from gi.repository import Gtk, GLib
+        from macrice.display_layout import DisplayOutput
+        from macrice.frutiger_native_controls import NativeAquaControls
+
+        initialized = Gtk.init_check()
+        if not (initialized[0] if isinstance(initialized, tuple) else initialized):
+            self.skipTest("GTK display unavailable; native Xvfb CI supplies one")
+
+        class InlineRunner:
+            def submit(self, _key, job, callback):
+                callback(SimpleNamespace(error=None, value=job()))
+
+        monitor = DisplayOutput("eDP-1", "1920x1080", (0, 0), True,
+                                ("1920x1080", "1600x900"))
+        backend = SimpleNamespace(read_brightness=lambda: None,
+                                  read_monitor_layout=lambda: (monitor,))
+        shell = SimpleNamespace(_class=lambda widget, _style: widget)
+        window = Gtk.Window()
+        parent = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        window.add(parent)
+        panel = NativeAquaControls(shell, Gtk, GLib, parent, is_current=lambda: True,
+                                   backend=backend, runner=InlineRunner())
+        panel.display()
+        window.show_all()
+
+        def find_button(root, label):
+            if isinstance(root, Gtk.Button) and root.get_label() == label:
+                return root
+            if isinstance(root, Gtk.Container):
+                for child in root.get_children():
+                    found = find_button(child, label)
+                    if found:
+                        return found
+            return None
+
+        try:
+            apply = find_button(parent, "Try display layout (18 s)")
+            keep = find_button(parent, "Keep display settings")
+            self.assertIsNotNone(apply)
+            self.assertIsNotNone(keep)
+            self.assertTrue(apply.get_sensitive())
+            self.assertFalse(keep.get_sensitive())
+        finally:
+            panel.dispose()
+            window.destroy()

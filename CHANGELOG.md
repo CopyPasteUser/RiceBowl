@@ -1,5 +1,24 @@
 # RiceBowl changelog
 
+## Unreleased — cross-rice persisted windows, limited file drops and display guard (5 November 2026)
+
+- Six non-macOS Settings windows now persist independently in bounded,
+  private user geometry files. Hidden/reopened windows retain size/position;
+  stale off-screen coordinates are recovered after a display change.
+- Added `ricePlate` copy-only, `text/uri-list` GTK drop targets to XP/Win7/Aqua
+  folder shortcuts and the Win98 Desktop inspector. A drop confirms the exact
+  folder and count; background copies refuse existing names, do not follow
+  symlinks and offer an undo for unchanged new files. Desktop ownership stays
+  with XFDesktop/Thunar, and full folder moves await riceExplorer **1.0**.
+- Aqua Display now has an explicit temporary mode/position editor for one
+  active X11 output; its detached, private-session rollback helper reverts
+  after 18 seconds unless user-confirmed. Rotation, scaling, physical HDMI
+  failure/black-screen recovery and full multi-output transactions are not
+  claimed complete. No root process or persistent daemon was added.
+- New hermetic unit tests cover rollback failures/timeouts, off-screen
+  window recovery, file collision/cancellation/undo and GTK drop registration.
+  Native GTK CI and real Mint hardware checks are still required.
+
 ## Unreleased — native settings windows and Hub update entry (5 November 2026)
 
 - Added a visible two-stage **Check for updates → Install update…** action to

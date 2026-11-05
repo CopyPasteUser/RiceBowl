@@ -70,11 +70,15 @@ def visible_applets(query: str = "") -> tuple[Applet, ...]:
 
 
 def build(shell, Gtk, Gdk):
+    from gi.repository import GLib
+    from .window_geometry import restore_and_track
     """Construct a real, standalone GTK window with the classic icon view."""
     window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
     window.set_title("Control Panel")
     window.set_icon_name("preferences-system")
     window.set_default_size(690, 475)
+    shell._classic98_settings_positioned = restore_and_track(
+        window, "ricebowl-win98-control-panel", Gdk, GLib)
     window.set_resizable(True)
     window.set_skip_taskbar_hint(False)
     window.set_skip_pager_hint(False)

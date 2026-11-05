@@ -116,7 +116,12 @@ class ChromeSettings:
         self.window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
         self.window.set_title("Settings — RiceBowl ChromeOS")
         self.window.set_default_size(860, 570)
-        self.window.set_position(Gtk.WindowPosition.CENTER)
+        from .window_geometry import restore_and_track
+
+        self._positioned = restore_and_track(
+            self.window, "ricebowl-chromeos-settings", Gdk, GLib)
+        if not self._positioned:
+            self.window.set_position(Gtk.WindowPosition.CENTER)
         self.window.set_application(shell)
         self.window.connect("delete-event", self._hide)
         self.window.connect("key-press-event", self._key)

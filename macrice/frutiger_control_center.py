@@ -7,6 +7,7 @@ import shutil
 from .frutiger_device_details import ProbeResult, probe
 from .frutiger_native_controls import NATIVE_TASKS, build_native_controls
 from .rice_windows import configure_settings_window, draggable_caption
+from .window_geometry import restore_and_track
 
 
 # id, label, icon, short explanation, (label, icon, utility candidates, purpose)
@@ -119,6 +120,8 @@ def build(shell, Gtk, Gdk):
     window.set_decorated(False)
     configure_settings_window(window, Gdk, role="ricebowl-aqua-settings")
     window.set_default_size(492, 620)
+    shell._aqua_settings_positioned = restore_and_track(
+        window, "ricebowl-aqua-settings", Gdk, GLib)
 
     root = shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=9),
                         "aqua-control-root")
