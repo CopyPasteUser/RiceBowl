@@ -15,7 +15,8 @@
 - Add native Settings Storage, Power & sleep and installed-app browsing pages;
   Start can also search Settings and real local folder shortcuts.
 - Extend native-X11 CI capture sequence with volume/calendar/network/Task View,
-  Storage and Apps screenshots; keep device and multi-monitor acceptance open
+  Storage and Apps screenshots; import all 42 verified current images from the
+  green final CI run and refresh the Hub's preview. Device and multi-monitor acceptance remain open
   until verified on a real Mint XFCE laptop.
 - Add a detailed, non-destructive physical acceptance checklist in
   `WINDOWS10_MANUAL_ACCEPTANCE.md`.

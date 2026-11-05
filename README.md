@@ -19,7 +19,7 @@ Give XFCE a completely different personality—from Windows XP nostalgia to Frut
   <a href="screenshots/current/windows10-start.webp"><img src="screenshots/current/windows10-start.webp" alt="Windows 10 desktop with Start menu, alphabetical applications and live tiles" width="48%"></a>
 </p>
 
-<div align="center"><sub>Actual GTK/X11 captures from the <a href="https://github.com/CopyPasteUser/RiceBowl/actions/runs/42035681537">5 November 2026 CI run</a> · <a href="screenshots/current/README.md">See all 36 screenshots</a></sub></div>
+<div align="center"><sub>Actual GTK/X11 captures from the <a href="https://github.com/CopyPasteUser/RiceBowl/actions/runs/42045518423">latest verified CI run</a> · <a href="screenshots/current/README.md">See all 42 screenshots</a></sub></div>
 
 ## Desktop styles
 

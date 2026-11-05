@@ -172,9 +172,10 @@ declaration that Windows 10 fidelity or riceExplorer integration is complete.
   matching green GitHub Actions screenshot artifact**.
 - [x] Add separate step-by-step Mint/XFCE acceptance checklist in
   [`WINDOWS10_MANUAL_ACCEPTANCE.md`](WINDOWS10_MANUAL_ACCEPTANCE.md).
-- [ ] Verify the new GUI in fresh virtual X11 at 1600×900/1024×768 and inspect
-  all actual screen images, then import to `screenshots/current` and refresh
-  the Hub preview. This must precede the final merge.
+- [x] Native GTK/XFWM screenshot CI green at 1600×900 and 1024×768;
+  validated final run `42045518423` (commit `cdf458a`), inspected the Start,
+  device flyouts, Settings and Task View, then imported all 42 genuine
+  screenshots to `screenshots/current` and refreshed the Hub preview.
 - [ ] Physical Mint hardware, multi-monitor, scaling, suspend, no-battery,
   NetworkManager credentials and full RiceExplorer Win10 renderer acceptance.
 - [ ] Remaining fidelity scope below (full Snap Assist, global Win+ shortcuts,
