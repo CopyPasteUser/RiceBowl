@@ -1,5 +1,19 @@
 # RiceBowl changelog
 
+## Unreleased — Frutiger taskbar pointer evidence (5 November 2026)
+
+- Added an explicitly enabled Frutiger interaction trace for Start, pinned
+  apps, audio/network/power/Bluetooth, mounts, notifications and calendar.
+  `macrice frutiger-shell --trace-actions` begins recording on the existing
+  shell; `--trace-stop` ends it; `--trace-path` prints the private output path.
+- Records only allowlisted targets, click/dispatch/result phases and Boolean
+  popup visibility. Cache file is private, size-limited and rejects symlinks;
+  no auto-start, secret capture, polling loop or device mutation is added.
+- The root cause of the owner's inert-button report is **still unverified**;
+  physical Mint/XFCE evidence is needed before claiming it fixed.
+- Recorded `RiceTask` as a future separate Rust process-manager project,
+  explicitly deferred until the owner authorizes creating the repository.
+
 ## Unreleased — consistent real Task Manager access (5 November 2026)
 
 - Windows 98, XP Luna and Windows 10 now include a real Task Manager action

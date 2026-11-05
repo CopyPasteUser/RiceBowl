@@ -33,6 +33,8 @@ pointer checks with passing virtual-X11 CI. [PR #73](https://github.com/CopyPast
 merged the separately confirmed dirty-checkout updater path. [PR #74](https://github.com/CopyPasteUser/RiceBowl/pull/74)
 merged the Windows 10 Settings overhaul with passing native-X11 CI.
 Automated checks do not replace physical Mint/XFCE acceptance.
+For an unresolved Frutiger taskbar click on the owner's laptop, use the
+[private on-demand click trace](FRUTIGER_QA_DIAGNOSTICS.md) to identify the event boundary.
 
 ## Styles
 

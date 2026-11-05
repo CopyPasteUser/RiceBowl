@@ -601,6 +601,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                                create_window_tracker, is_task_window, toggle_window_id,
                                window_layout)
     from .installer import project_root
+    from .interaction_trace import InteractionTrace
 
     class AeroShell(Gtk.Application):
         def __init__(self):
@@ -664,6 +665,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._capture_variant = ""
             self._chrome_settings = None
             self._popup_hide_sources = {"menu": 0, "control": 0}
+            self._interaction_trace = InteractionTrace() if profile == "frutiger" else None
+
+        def _trace_aqua(self, event, target, visible=None):
+            if self._interaction_trace is not None:
+                self._interaction_trace.record(event, target, visible)
 
         def do_startup(self):
             Gtk.Application.do_startup(self)
@@ -699,6 +705,18 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def do_command_line(self, command_line):
             args = command_line.get_arguments()
+            if profile == "frutiger" and "--trace-stop" in args:
+                self._interaction_trace.stop()
+                return 0
+            if profile == "frutiger" and "--trace-actions" in args:
+                try:
+                    self._interaction_trace.start()
+                except OSError as exc:
+                    logging.getLogger(__name__).error("Aqua trace not enabled: %s", exc)
+                    return 1
+                if self.bar is None:
+                    self.activate()
+                return 0
             if "--quit" in args:
                 if self.bar is not None:
                     self.quit()
@@ -1957,7 +1975,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 name = app.get_display_name() or app.get_name() or identifier
                 btn.set_tooltip_text(name)
                 btn.get_accessible().set_name("Launch " + name)
-                btn.connect("clicked", lambda _btn, selected=app: self._launch(selected))
+                btn.connect("clicked", lambda _btn, selected=app: self._launch_aqua_pin(selected)
+                            if profile == "frutiger" else self._launch(selected))
                 btn.connect("button-press-event", lambda widget, event, selected=app:
                             self._pin_context(widget, selected, event))
                 if profile == "aero":
@@ -2317,11 +2336,13 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self.classic98_tray_show(name)
                 return
             if profile == "frutiger":
+                self._trace_aqua("click", name)
                 if not hasattr(self, "_aqua_flyouts"):
                     from .frutiger_flyouts import AquaFlyouts
 
                     self._aqua_flyouts = AquaFlyouts(self, Gtk)
                 self._aqua_flyouts.show(name)
+                self._trace_aqua("result", name, self._aqua_flyouts.popovers[name].get_visible())
                 return
             if profile == "chromeos" and name == "network":
                 self._toggle_chrome_quick_page("Network")
@@ -2416,10 +2437,12 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 drives.set_tooltip_text("Mounted USB and network locations · Aqua World")
 
                 def show_drives(_button):
+                    self._trace_aqua("click", "drives")
                     if not hasattr(self, "_aqua_drives"):
                         from .frutiger_drives import AquaDrives
                         self._aqua_drives = AquaDrives(self, Gtk, Gio)
                     self._aqua_drives.show()
+                    self._trace_aqua("result", "drives", self._aqua_drives.popover.get_visible())
 
                 drives.connect("clicked", show_drives)
                 row.pack_end(drives, False, False, 0)
@@ -2428,7 +2451,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 notifications.add(self._icon("preferences-desktop-notification", Gtk.IconSize.MENU))
                 notifications.get_accessible().set_name("Open Aqua notifications")
                 notifications.set_tooltip_text("Native XFCE notifications · Aqua World")
-                notifications.connect("clicked", lambda _button: self._show_aqua_notifications())
+                notifications.connect("clicked", lambda _button: self._open_aqua_notifications())
                 row.pack_end(notifications, False, False, 0)
                 self.aqua_notifications_button = notifications
             elif profile == "winclassic":
@@ -2790,7 +2813,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             start.add(contents)
             start.get_accessible().set_name("Toggle " + (heritage.name if heritage else
                 "Windows 10" if ten else "Aero") + " application menu")
-            start.connect("clicked", lambda _button: self._toggle_menu())
+            start.connect("clicked", lambda _button: self._open_aqua_start()
+                          if profile == "frutiger" else self._toggle_menu())
             if profile == "winxp":
                 start.connect("button-press-event", self._luna_start_context)
             start.set_tooltip_text("Start")
@@ -2940,6 +2964,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 clock_button.set_tooltip_text("Show the current date and local calendar")
 
                 def show_aqua_calendar(_button):
+                    self._trace_aqua("click", "calendar")
                     if hasattr(self, "_aqua_notifications"):
                         self._aqua_notifications.popover.popdown()
                     if hasattr(self, "_aqua_flyouts"):
@@ -2951,6 +2976,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                         from .frutiger_calendar import AquaCalendar
                         self._aqua_calendar = AquaCalendar(clock_button, Gtk)
                     self._aqua_calendar.show()
+                    self._trace_aqua("result", "calendar", self._aqua_calendar.popover.get_visible())
 
                 clock_button.connect("clicked", show_aqua_calendar)
                 right_area.pack_end(clock_button, False, False, 6)
@@ -5468,6 +5494,24 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             if hasattr(self, "_aqua_calendar"):
                 self._aqua_calendar.popover.popdown()
             self._aqua_notifications.show()
+
+        def _open_aqua_notifications(self):
+            self._trace_aqua("click", "notifications")
+            self._show_aqua_notifications()
+            self._trace_aqua("result", "notifications",
+                             self._aqua_notifications.popover.get_visible())
+
+        def _open_aqua_start(self):
+            self._trace_aqua("click", "start")
+            self._toggle_menu()
+            self._trace_aqua("result", "start", self.menu.get_visible())
+
+        def _launch_aqua_pin(self, app):
+            self._trace_aqua("click", "app-pin")
+            self._launch(app)
+            # Dispatch means the click handler ran, not that the OS launched
+            # the application. Reported launch failures have their own dialog.
+            self._trace_aqua("dispatch", "app-pin")
 
         def _show_aqua_control(self, category=None, task=None):
             """Open a real Aqua detail page without toggling an open panel shut."""
