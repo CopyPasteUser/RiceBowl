@@ -1135,6 +1135,15 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                         pointer_click(connection_row)
                         assert self.actions.get_visible() and not self.menu.get_visible(), (
                             "Aqua Settings selection must open the Control Center, not trap the launcher")
+                        # The same Settings entry must behave when the
+                        # independent Control Center is already open. The
+                        # launcher has keep-above enabled and must not cover
+                        # the window on a subsequent invocation.
+                        self._toggle_menu()
+                        pointer_click(self._frutiger_tab_buttons["Settings"])
+                        pointer_click(connection_row)
+                        assert self.actions.get_visible() and not self.menu.get_visible(), (
+                            "Existing Aqua Control Center remains behind a stuck launcher")
                         self._hide_actions()
                         self._toggle_menu()
                         for page in ("Places", "Apps"):
