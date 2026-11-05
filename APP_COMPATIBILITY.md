@@ -55,13 +55,17 @@ is not part of this workstream.
 
 ### A consistent Task Manager (QA-01)
 
-Existing rice integrations already prefer the installed `xfce4-taskmanager`
-and fall back to `gnome-system-monitor` in supported settings menus; the
-Windows 7 taskbar also provides a native **Start Task Manager** action. Those
-launch genuine OS process managers, not a fake shell. With the GTK-compatible
-XFCE task manager, GTK theme and XFWM frame provide the closest low-overhead
-match. A fully reimplemented Windows-like process manager would be a separate
-product and must not displace the user's trusted system tool automatically.
+The Windows 98, XP Luna, Windows 7 and Windows 10 taskbars expose a
+**right-click blank taskbar → Task Manager** action. All use a single
+installed-tool resolver, preferring `xfce4-taskmanager` and falling back to
+`gnome-system-monitor`; the action is disabled with an install hint when both
+are absent. ChromeOS and Frutiger Aero continue to link a task manager from
+their native Settings, where the same Linux utilities are already supported.
+These actions launch genuine OS process managers, not a fake shell. With the
+GTK-compatible XFCE task manager, GTK theme and XFWM frame provide the closest
+low-overhead match. A fully reimplemented Windows-like process manager would
+be a separate product and must not displace the user's trusted system tool
+automatically.
 
 ## On-device acceptance still required
 

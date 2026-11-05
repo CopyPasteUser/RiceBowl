@@ -293,6 +293,11 @@ GTK/XFWM assets. Change both together when a theme identity changes.
 - `Super_L` toggles the active rice's menu; `Control_R` toggles its quick settings.
 - Every shell performs actual Gio app discovery/launch and event-driven Wnck
   task switching. Menu and settings are independent toggles with Escape support.
+- Windows 98, XP Luna, Windows 7 and Windows 10 reserve blank-taskbar
+  right-click menus for genuine desktop actions, including Task Manager.
+  One shared installed-tool resolver prefers XFCE's system process monitor,
+  then GNOME's. Missing tools disable the action rather than showing fake
+  process data. Pinned apps and tray icons keep their own click handlers.
 - Exactly one RiceBowl taskbar may be active. The manager must stop inactive bars,
   Plank and MacBar before starting the selected taskbar; XFCE's stock panel
   exits only after a successful replacement handoff.

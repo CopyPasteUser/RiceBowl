@@ -37,6 +37,12 @@ LAUNCHABLE_TOOLS = frozenset((
 ))
 
 
+def preferred_task_manager(which=shutil.which) -> str | None:
+    """Pick a real installed GTK task manager; never substitute a fake UI."""
+    return next((name for name in ("xfce4-taskmanager", "gnome-system-monitor")
+                 if which(name)), None)
+
+
 def app_catalog(Gio):
     """Keep only visible, distinct real application launchers."""
     candidates = (app for app in Gio.AppInfo.get_all() if app.should_show())
@@ -792,6 +798,21 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             try:
                 assert self.bar is not None and self.bar.get_visible()
                 assert self.menu is not None and not self.menu.get_visible()
+                if profile in ("winclassic", "winxp", "aero", "windows10"):
+                    context_menu = {
+                        "winclassic": self._classic98_taskbar_menu,
+                        "winxp": self._luna_taskbar_menu,
+                        "aero": self._win7_taskbar_menu,
+                        "windows10": self._ten_taskbar_menu,
+                    }[profile]()
+                    task_label = "Start Task Manager" if profile == "aero" else "Task Manager"
+                    manager_item = next((item for item in context_menu.get_children()
+                                         if isinstance(item, Gtk.MenuItem)
+                                         and item.get_label() == task_label), None)
+                    assert manager_item is not None, "Task Manager is missing from taskbar context menu"
+                    assert manager_item.get_sensitive() == (preferred_task_manager() is not None), (
+                        "Task Manager should be disabled if neither supported system utility exists")
+                    context_menu.destroy()
                 self._toggle_menu()
                 assert self.menu.get_visible()
                 self.search.set_text("unlikely-app-id-ricehub-smoke-39083")
@@ -2838,7 +2859,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.overflow_button.get_accessible().set_name("Show other running windows")
             self.overflow_button.connect("clicked", self._show_overflow)
             shelf_box.pack_start(self.tasks, False, False, 4)
-            if profile in ("winclassic", "winxp", "aero"):
+            if profile in ("winclassic", "winxp", "aero", "windows10"):
                 # Only blank taskbar space owns this menu; right-clicks on
                 # tray controls and task buttons retain their own semantics.
                 taskbar_spacer = Gtk.EventBox()
@@ -2846,6 +2867,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 taskbar_spacer.connect("button-press-event",
                                         self._classic98_taskbar_context if profile == "winclassic"
                                         else self._luna_taskbar_context if profile == "winxp"
+                                        else self._ten_taskbar_context if profile == "windows10"
                                         else self._win7_taskbar_context)
             else:
                 taskbar_spacer = Gtk.Box()
@@ -3083,22 +3105,46 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
         def _classic98_taskbar_context(self, _widget, event):
             if profile != "winclassic" or event.button != 3:
                 return False
+            menu = self._classic98_taskbar_menu()
+            menu.show_all()
+            menu.popup_at_pointer(event)
+            return True
+
+        def _task_manager_item(self, label="Task Manager"):
+            name = preferred_task_manager()
+            item = Gtk.MenuItem(label=label)
+            item.set_sensitive(name is not None)
+            if name is None:
+                item.set_tooltip_text("Install xfce4-taskmanager or gnome-system-monitor")
+            else:
+                item.connect("activate", lambda _item, selected=name: self._open_tool(selected))
+            return item
+
+        def _classic98_taskbar_menu(self):
             menu = Gtk.Menu()
             menu.get_style_context().add_class("classic98-window-menu")
+            menu.append(self._task_manager_item())
+            menu.append(Gtk.SeparatorMenuItem())
             properties = Gtk.MenuItem(label="Properties")
             properties.connect("activate", lambda *_args:
                                self.classic98_open_taskbar_properties())
             menu.append(properties)
-            menu.show_all()
-            menu.popup_at_pointer(event)
-            return True
+            return menu
 
         def _luna_taskbar_context(self, _widget, event):
             """XP blank-taskbar menu; actions touch no XFCE state without consent."""
             if profile != "winxp" or event.button != 3:
                 return False
+            menu = self._luna_taskbar_menu()
+            menu.show_all()
+            menu.popup_at_pointer(event)
+            return True
+
+        def _luna_taskbar_menu(self):
             menu = Gtk.Menu()
             self._track_start_popup(menu)
+            menu.append(self._task_manager_item())
+            menu.append(Gtk.SeparatorMenuItem())
             for title, action in (
                 ("Taskbar and Start Menu Properties…", self.luna_open_taskbar_properties),
                 ("Customize notification icons…", lambda: self._tray.open_preferences()
@@ -3117,9 +3163,27 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     item.set_sensitive(self._tray is not None)
                 item.connect("activate", lambda _item, callback=action: callback())
                 menu.append(item)
+            return menu
+
+        def _ten_taskbar_context(self, _widget, event):
+            """Right-click blank Windows 10 taskbar space, not pinned apps or tray."""
+            if profile != "windows10" or event.button != 3:
+                return False
+            menu = self._ten_taskbar_menu()
             menu.show_all()
             menu.popup_at_pointer(event)
             return True
+
+        def _ten_taskbar_menu(self):
+            menu = Gtk.Menu()
+            menu.get_style_context().add_class("aero-menu-root")
+            desktop = Gtk.MenuItem(label="Show the desktop")
+            desktop.set_sensitive(self._window_tracker is not None)
+            desktop.connect("activate", lambda _item: self._show_desktop())
+            menu.append(desktop)
+            menu.append(Gtk.SeparatorMenuItem())
+            menu.append(self._task_manager_item())
+            return menu
 
         def _luna_manage_desktop(self, action):
             """Explicit opt-in with confirmation; untouched user icons remain safe."""
@@ -3207,15 +3271,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 item.connect("activate", lambda _item, callback=action: callback())
                 menu.append(item)
             menu.append(Gtk.SeparatorMenuItem())
-            task_manager = next((name for name in ("xfce4-taskmanager", "gnome-system-monitor")
-                                 if shutil.which(name)), None)
-            item = Gtk.MenuItem(label="Start Task Manager")
-            item.set_sensitive(task_manager is not None)
-            if task_manager is None:
-                item.set_tooltip_text("Install xfce4-taskmanager or gnome-system-monitor")
-            else:
-                item.connect("activate", lambda _item, name=task_manager: self._open_tool(name))
-            menu.append(item)
+            menu.append(self._task_manager_item(label="Start Task Manager"))
             return menu
 
         def _win7_manage_desktop(self, action):
