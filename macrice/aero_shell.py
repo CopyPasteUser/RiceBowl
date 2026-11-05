@@ -6267,9 +6267,16 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
             settings_matches = search_destinations(query)[:6] if query.strip() else ()
             root = Path.home()
-            user_folders = (("Home", root), ("Documents", root / "Documents"),
-                            ("Downloads", root / "Downloads"),
-                            ("Pictures", root / "Pictures"))
+            def xdg_folder(kind, fallback):
+                configured = GLib.get_user_special_dir(kind)
+                return Path(configured) if configured else root / fallback
+
+            user_folders = (
+                ("Home", root),
+                ("Documents", xdg_folder(GLib.UserDirectory.DIRECTORY_DOCUMENTS, "Documents")),
+                ("Downloads", xdg_folder(GLib.UserDirectory.DIRECTORY_DOWNLOAD, "Downloads")),
+                ("Pictures", xdg_folder(GLib.UserDirectory.DIRECTORY_PICTURES, "Pictures")),
+            )
             places = tuple((name, folder) for name, folder in user_folders
                            if query.strip() and query.casefold().strip() in name.casefold()
                            and folder.is_dir())
