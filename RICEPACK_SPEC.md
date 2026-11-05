@@ -1,10 +1,91 @@
-# Rice packs · data-only preset format v1
+# Rice packs · presets v1 and visual assets v2
 
-RiceBowl supports **named, plug-in presets** that reuse one of its existing,
-transactionally tested XFCE rices. They are intentionally **not executable
-plugins**: a downloaded JSON file cannot start a process, add a command,
-install a theme or replace system services. New wallpapers, third-party
-renderers and asset bundles need a separate, reviewed import mechanism.
+RiceBowl supports both **v1 named presets** and **v2 visual packs** built on
+one of its existing, transactionally tested XFCE rices. Neither format is an
+executable plugin: no scripts, extra services or network downloads run.
+
+## Visual pack v2 · create, inspect and import
+
+Create a directory containing `manifest.json` and only the assets you use:
+
+```text
+my-rice/
+  manifest.json
+  wallpaper/background.png
+  gtk/gtk-3.0/gtk.css
+  xfwm/xfwm4/themerc
+  xfwm/xfwm4/close-active.png
+  icons/index.theme
+  icons/16x16/apps/example.png
+```
+
+Example `manifest.json` (leave the `files` field out; the builder writes all
+file hashes automatically):
+
+```json
+{
+  "schema_version": 2,
+  "id": "my-seaside",
+  "name": "My Seaside",
+  "base_style": "aero-meadow",
+  "description": "A custom Aero colorway",
+  "license": {
+    "spdx": "CC0-1.0",
+    "author": "Your name",
+    "source": "My original artwork"
+  },
+  "assets": {
+    "wallpaper": "wallpaper/background.png",
+    "gtk": true,
+    "xfwm": true,
+    "icons": true
+  }
+}
+```
+
+Every declared asset is optional, but at least one is required. If you only
+want a custom wallpaper, remove `gtk`, `xfwm` and `icons` plus their files.
+For custom GTK/WM/icon themes, the minimum files are respectively
+`gtk/gtk-3.0/gtk.css`, `xfwm/xfwm4/themerc` and `icons/index.theme`.
+Icons can inherit `Adwaita` through `index.theme`; use PNG/JPEG for artwork.
+
+```bash
+macrice riceware packs build --directory my-rice --output my-seaside.zip
+macrice riceware packs inspect --archive my-seaside.zip
+# Review license, authorship and source before acknowledging their terms:
+macrice riceware packs import --archive my-seaside.zip --accept-license
+macrice riceware packs check my-seaside
+# Changes the live desktop, with the normal Rice backup and rollback:
+macrice riceware packs apply my-seaside --yes
+# First restore/switch away, then remove an inactive pack:
+macrice rice restore
+macrice riceware packs remove my-seaside --yes
+```
+
+The Hub's Appearance picker also lists imported visual packs next to their
+base style, previews their imported wallpaper (when present), checks the
+actual assets and uses its normal confirmation/rollback flow. Installing
+is never the same as activating; use `macrice rice restore` to undo a rice.
+
+**Security boundaries.** v2 accepts local ZIP files only: no unpacking
+arbitrary paths, symlinks, executable scripts, SVG/XML, or CSS network/file
+resource references. The builder refuses to overwrite an archive. Import is
+limited to 32 MiB ZIP / 48 MiB extracted, 128 files, 12 MiB per file and a
+64 KiB manifest. File SHA-256 checksums, user ownership and permissions are
+verified again before applying. Theme and icon names are dedicated to each
+pack revision; existing names are never overwritten. Partial imports are
+cleaned up. Removal refuses an active theme or referenced pending restore;
+accepted removals move original assets and metadata to private recovery
+storage under `$XDG_DATA_HOME/ricebowl/removed/` (not a permanent erase).
+
+The license information is a **user declaration**, not cryptographic
+signature verification or legal proof of rights. Only import art and themes
+you have permission to use. GTK/CSS and image decoders still process those
+files, so import assets from sources you trust. Independent renderer code,
+remote marketplace installs and automatic executable plugins remain out of
+scope for v2.
+
+## Named preset v1 (no custom files)
 
 ## Discover and check
 
@@ -80,7 +161,6 @@ automatic just because the JSON exists. Return with `macrice rice restore`.
 
 ### Future expansion gate
 
-To support genuinely custom visual packs, next define bounded asset import,
-copyright/licensing checks, file integrity, trust model, collision policy,
-transactional installation and full removal/rollback. Do not reinterpret
-arbitrary JSON paths as shell commands or run third-party scripts.
+Adding new renderer code, CSS resource imports, SVG icon sanitization and
+verified pack publishers will require separate review. Neither v1 nor v2
+accepts arbitrary commands from a manifest.

@@ -545,7 +545,7 @@ def run() -> int:
         def _select_family(self, key):
             family = FAMILY_BY_KEY[key]
             packs, _warnings = discover_rice_packs()
-            self._user_packs = tuple(p for p in packs if p.source == "user")
+            self._user_packs = tuple(p for p in packs if p.source in ("user", "installed"))
             self._selected = key
             for current, button in self._family_buttons.items():
                 context = button.get_style_context()
@@ -571,7 +571,21 @@ def run() -> int:
             if style_id not in STYLES:
                 return
             self._preview_style = style_id
-            if self._selected in PREVIEW_FILES:
+            custom = next((p for p in self._user_packs
+                           if p.id == self.style_picker.get_active_id() and p.source == "installed"), None)
+            custom_wallpaper = None
+            if custom is not None and "wallpaper" in custom.asset_types:
+                try:
+                    from .riceware.pack_import import style_for
+                    _appearance, custom_wallpaper = style_for(custom)
+                except (OSError, ValueError):
+                    pass  # Check shows the reason; don't crash the Appearance view.
+            if custom_wallpaper is not None:
+                asset = custom.revision
+                key = "custom:" + custom.id + ":" + asset
+                path = custom_wallpaper
+                self.preview_caption.set_text("Imported wallpaper · local visual pack")
+            elif self._selected in PREVIEW_FILES:
                 asset = PREVIEW_FILES[self._selected]
                 key = "capture:" + asset
                 path = project_root() / "assets/hub-previews" / asset
@@ -738,8 +752,18 @@ def run() -> int:
             if selected not in STYLES:
                 return
 
+            from .riceware.pack_import import apply_pack, plan_pack, style_for
+            choice = self.style_picker.get_active_id()
+            pack = next((p for p in self._user_packs if p.id == choice), None)
+
+            def inspect_selected():
+                if pack is None:
+                    return plan(selected), STYLES[selected].gtk
+                appearance, _wallpaper = style_for(pack)
+                return plan_pack(pack), appearance.gtk
+
             def ready(outcome):
-                changes, _apps, _source, _target = outcome
+                (changes, _apps, _source, _target), gtk_name = outcome
                 count = sum(change["before"] != change["after"] for change in changes)
                 message = f"{name} is ready. {count} desktop fields would change."
                 self._notify(message)
@@ -749,14 +773,14 @@ def run() -> int:
                         "This changes GTK, windows, Thunar, Plank, MacBar, menu, Control Center and wallpaper. "
                         "A private backup will be saved. No system packages are removed.",
                         lambda: self._work("Applying the complete desktop rice…",
-                                           lambda: apply(selected),
-                                           lambda backup: self._after_apply(backup, selected)),
+                                           lambda: apply_pack(pack) if pack else apply(selected),
+                                           lambda backup: self._after_apply(backup, gtk_name)),
                         "Apply rice",
                     )
 
-            self._work("Checking installed themes and desktop settings…", lambda: plan(selected), ready)
+            self._work("Checking installed themes and desktop settings…", inspect_selected, ready)
 
-        def _after_apply(self, backup, style_id):
+        def _after_apply(self, backup, gtk_name):
             def activate():
                 from .shell_session import install_login_reconciler, sync_theme
                 try:
@@ -764,7 +788,7 @@ def run() -> int:
                     startup_warnings = ()
                 except OSError as exc:
                     startup_warnings = (f"Login sync: {exc}",)
-                return startup_warnings + sync_theme(STYLES[style_id].gtk)
+                return startup_warnings + sync_theme(gtk_name)
 
             def finished(warnings):
                 if warnings:

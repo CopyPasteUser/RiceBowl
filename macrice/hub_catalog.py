@@ -72,8 +72,9 @@ def style_options(family_key: str, user_packs=()) -> tuple[tuple[str, str], ...]
 
     family = FAMILY_BY_KEY[family_key]
     built_in = tuple((key, STYLES[key].name) for key in family.styles)
-    custom = tuple((pack.id, f"{pack.name} · preset") for pack in user_packs
-                   if pack.source == "user" and pack.base_style in family.styles)
+    custom = tuple((pack.id, f"{pack.name} · {'visual pack' if pack.source == 'installed' else 'preset'}")
+                   for pack in user_packs
+                   if pack.source in ("user", "installed") and pack.base_style in family.styles)
     return built_in + custom
 
 
@@ -84,7 +85,7 @@ def selected_style(choice: str | None, user_packs=()) -> tuple[str | None, str |
     if choice in STYLES:
         return choice, STYLES[choice].name
     for pack in user_packs:
-        if pack.source == "user" and pack.id == choice and pack.base_style in STYLES:
+        if pack.source in ("user", "installed") and pack.id == choice and pack.base_style in STYLES:
             return pack.base_style, pack.name
     return None, None
 

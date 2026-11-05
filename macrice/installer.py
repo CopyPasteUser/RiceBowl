@@ -76,6 +76,7 @@ def _check_layout(source: Path) -> None:
         "macrice/riceware/worker.py",
         "macrice/riceware/profiles.py",
         "macrice/riceware/packs.py",
+        "macrice/riceware/pack_import.py",
         "RICEPACK_SPEC.md",
         "RICEWARE_FOUNDATIONS.md",
         "RICEWARE_MIGRATION_GUIDE.md",

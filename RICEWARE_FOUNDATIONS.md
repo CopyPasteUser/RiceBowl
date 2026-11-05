@@ -15,7 +15,7 @@ has passed full physical 1.0 acceptance.
 | `macrice.riceware.wine_apps` | Safe per-prefix Windows-app catalog (`register`, `list_apps`, `launch_app`, `unregister`) | Automatic Windows program scanning and installer execution |
 | `macrice.riceware.worker` | `LatestRequestRunner(GLib.idle_add)` to keep GUI reads/writes off GTK thread and drop stale responses | One global resident polling daemon |
 | `macrice.riceware.profiles` | `family(style_key)` for all seven rice UI families | Reusing a single visual layout across rices |
-| `macrice.riceware.packs` | Versioned built-in/data-only user preset catalog, dependency inventory, canonical theme-to-shell resolver | Untrusted new renderers and third-party asset installation; see [Rice pack v1](RICEPACK_SPEC.md) |
+| `macrice.riceware.packs` / `pack_import` | Built-in/user pack catalog, component checks, safe local visual ZIP import (GTK/XFWM/icons/wallpaper), verified reversible apply and recovery-first removal | Executable renderers, online pack marketplace, signed provenance; see [Rice pack spec](RICEPACK_SPEC.md) |
 
 All APIs are importable without GTK or any resident service. Hardware mutations
 delegate to `macrice.hardware_status`; native notification history delegates to
@@ -29,6 +29,7 @@ From a checkout (or use `macrice` after the normal RiceBowl update):
 python3 -m macrice riceware manifest                 # Stable renderer API without I/O
 python3 -m macrice riceware packs list               # On-demand data-only preset discovery
 python3 -m macrice riceware packs check winxp        # Optional/required local integration inventory
+python3 -m macrice riceware packs inspect --archive example.zip  # Local checksum and license check
 python3 -m macrice riceware spice status             # On-demand real hardware state
 python3 -m macrice riceware spice get wifi          # Read without changing it
 python3 -m macrice riceware pop list                # Existing XFCE log, if exposed

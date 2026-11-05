@@ -5,16 +5,24 @@ from __future__ import annotations
 import argparse
 import json
 from dataclasses import asdict, is_dataclass
+from pathlib import Path
 
 
 def add_commands(commands) -> None:
     riceware = commands.add_parser("riceware", help="Inspect and use opt-in riceware backends")
     backends = riceware.add_subparsers(dest="riceware_backend", required=True)
     backends.add_parser("manifest", help="Inspect the versioned renderer API without probing hardware")
-    packs = backends.add_parser("packs", help="Discover safe data-only Rice presets and dependencies")
-    packs.add_argument("action", choices=("list", "show", "check", "template", "apply"))
+    packs = backends.add_parser("packs", help="Discover presets and import verified visual Rice packs")
+    packs.add_argument("action", choices=("list", "show", "check", "template", "apply",
+                                          "build", "inspect", "import", "remove"))
     packs.add_argument("id", nargs="?", help="Built-in style or installed user pack ID")
     packs.add_argument("--yes", action="store_true", help="Confirm applying a pack to the XFCE desktop")
+    packs.add_argument("--archive", type=Path,
+                       help="Local .zip Rice pack to inspect or import")
+    packs.add_argument("--directory", type=Path, help="Draft Rice pack directory to build")
+    packs.add_argument("--output", type=Path, help="New ZIP archive path to build (never overwritten)")
+    packs.add_argument("--accept-license", action="store_true",
+                       help="Confirm you reviewed and accept the archive's license and origin")
     spice = backends.add_parser("spice", help="Read real hardware state or request an explicit change")
     spice.add_argument("action", choices=("status", "get", "set"))
     spice.add_argument("name", nargs="?")
@@ -91,14 +99,36 @@ def run(args) -> int:
         return 0
     if args.riceware_backend == "packs":
         from .riceware import packs
+        from .riceware import pack_import
+
+        if args.action == "build":
+            if args.id or args.yes or args.archive or args.accept_license or not args.directory or not args.output:
+                raise ValueError("Use packs build --directory DRAFT --output PACK.zip")
+            _dump(pack_import.build_archive(args.directory, args.output))
+            return 0
+        if args.directory or args.output:
+            raise ValueError("--directory and --output are only for packs build")
+        if args.action in ("inspect", "import"):
+            if args.id or args.yes or not args.archive or (args.action == "inspect" and args.accept_license):
+                raise ValueError("Use packs inspect|import --archive LOCAL.zip (import also requires --accept-license)")
+            if args.action == "inspect":
+                _dump(pack_import.inspect_archive(args.archive))
+            else:
+                installed = pack_import.install_archive(args.archive, accept_license=args.accept_license)
+                _dump({"installed": installed.id, "revision": installed.revision,
+                       "assets": installed.asset_types, "activated": False})
+            return 0
+        if args.archive or args.accept_license:
+            raise ValueError("--archive and --accept-license are only for packs inspect|import")
 
         found, warnings = packs.discover()
         if args.action == "list":
             if args.id or args.yes:
                 raise ValueError("packs list accepts no ID or --yes")
             _dump({"schema_version": packs.SCHEMA_VERSION,
+                   "visual_schema_version": pack_import.VERSION,
                    "packs": [{"id": p.id, "name": p.name, "base_style": p.base_style,
-                              "source": p.source} for p in found], "warnings": warnings})
+                              "source": p.source, "assets": p.asset_types} for p in found], "warnings": warnings})
             return 0
         if not args.id:
             raise ValueError(f"packs {args.action} requires a pack ID")
@@ -116,22 +146,38 @@ def run(args) -> int:
             return 0
         if args.action == "check":
             result = packs.capabilities(pack)
+            if pack.source == "installed":
+                try:
+                    pack_import.verify_installed(pack)
+                    result["assets_valid"] = True
+                except (OSError, ValueError) as exc:
+                    result["assets_valid"] = False
+                    result["asset_error"] = str(exc)
+                result["ready"] = result["ready"] and result["assets_valid"]
             _dump(result)
             return 0 if result["ready"] else 1
+        if args.action == "remove":
+            if pack.source != "installed":
+                raise ValueError("Only imported visual packs can be removed")
+            if not args.yes:
+                raise ValueError("Removing a pack requires --yes and an inactive rice")
+            recovery = pack_import.remove_installed(pack)
+            _dump({"removed": pack.id, "recovery": str(recovery)})
+            return 0
         if not args.yes:
             raise ValueError("Applying a pack changes desktop settings; review packs show/check, then use --yes")
         # No arbitrary commands, assets or scripts can be supplied by JSON.
         # All changes still use the existing journaled, reversible rice engine.
-        from .rice import STYLES, apply
         from .shell_session import install_login_reconciler, sync_theme
 
-        backup = apply(pack.base_style)
+        style, _wallpaper = pack_import.style_for(pack)
+        backup = pack_import.apply_pack(pack)
         notices = []
         try:
             install_login_reconciler()
         except OSError:
             notices.append("Login reconciler could not be installed")
-        notices.extend(sync_theme(STYLES[pack.base_style].gtk))
+        notices.extend(sync_theme(style.gtk))
         _dump({"applied": pack.id, "base_style": pack.base_style,
                "backup": str(backup), "session_warnings": notices})
         return 1 if notices else 0

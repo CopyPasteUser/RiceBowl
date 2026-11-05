@@ -59,9 +59,12 @@ completion does **not** override contradictory on-device reports.
   user-owned named presets, show available shared components, and apply only
   via explicit `--yes` through the existing reversible desktop transaction.
   Session routing shares the canonical renderer-family registry; no daemon.
-- [ ] Safely importing custom theme/icon/wallpaper assets and genuinely new
-  renderers requires integrity, collision, licensing and removal/recovery
-  design beyond the v1 preset alias format. See [pack spec](RICEPACK_SPEC.md).
+- [x] Visual Rice packs v2: bounded local ZIP build/inspect/import, per-file
+  SHA-256 checks, required license/provenance declaration, no scripts/SVG/links,
+  exclusive namespaced GTK/XFWM/icon assets, verified application through the
+  existing rollback journal, and recoverable removal. See [pack spec](RICEPACK_SPEC.md).
+- [ ] New *renderer code*, signed/published pack provenance, optional safe SVG
+  sanitization and on-device Mint/XFCE acceptance remain gated separately.
 - [x] Opt-in official-origin fast-forward update: `macrice update check
   --refresh`, then `macrice update apply --yes`; stage a pinned Git revision,
   preserve user edits, save previous bundle and attempt reinstall on failure.

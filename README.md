@@ -46,7 +46,7 @@ Pick a style in the Hub. **Nothing is applied automatically**: RiceBowl checks r
 
 **Before switching:** Use **Check requirements** in the Hub, or `macrice doctor --style aero-meadow`, to check the selected rice without applying changes.
 
-**Reusable presets:** `macrice riceware packs list` discovers built-in and user-installed data-only Rice packs. [Create your own named preset](RICEPACK_SPEC.md) without installing a daemon.
+**Rice packs:** `macrice riceware packs list` discovers built-in styles, named presets and securely imported visual packs (wallpaper, GTK, XFWM and icons). [Create or import a pack](RICEPACK_SPEC.md)—no daemon or auto-apply.
 
 ## Project status
 
