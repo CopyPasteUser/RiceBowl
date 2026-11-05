@@ -1,5 +1,25 @@
 # RiceBowl changelog
 
+## Unreleased — Windows 10 native interaction expansion (5 November 2026)
+
+- Build native 22H2-inspired sound, Bluetooth, battery and calendar flyouts
+  using existing verified Linux adapters. Keep Wi-Fi in its independent
+  NetworkManager flyout; no new resident service or Microsoft artwork.
+- Persist independent Start tile groups, names, sizes (Small/Medium/Wide/Large),
+  drag order and pins in a bounded private config file. Retain absent app IDs.
+- Add the characteristic optional taskbar search box with automatic small-screen
+  icon fallback, safe migration of older visibility preferences and drag/drop
+  reorder of taskbar pins with genuine recent-file Jump Lists.
+- Make Task View a two-column, real-app-icon overview with window close,
+  activation, workspace move and live XFCE desktop management.
+- Add native Settings Storage, Power & sleep and installed-app browsing pages;
+  Start can also search Settings and real local folder shortcuts.
+- Extend native-X11 CI capture sequence with volume/calendar/network/Task View,
+  Storage and Apps screenshots; keep device and multi-monitor acceptance open
+  until verified on a real Mint XFCE laptop.
+- Add a detailed, non-destructive physical acceptance checklist in
+  `WINDOWS10_MANUAL_ACCEPTANCE.md`.
+
 ## Unreleased — Windows 10 22H2 interaction pass (5 November 2026)
 
 - Add a working A–Z Start-menu jump list for real installed applications,

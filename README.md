@@ -29,7 +29,7 @@ Each style brings its own taskbar, launcher, menus, icons, wallpaper and system 
 
 **XP Luna:** faithful two-column Start, cobalt taskbar, custom Linux icon art, Explorer-style Control Panel navigation and working taskbar/Start preferences. [Fidelity roadmap](XP_LUNA_ROADMAP.md). XFWM4 and Thunar remain available.
 
-**Windows 10:** native Start with A–Z navigation, pinned tiles, separate Settings, expandable Action Center and per-rice taskbar preferences. [See the current screenshots](screenshots/current/README.md) and [remaining fidelity work](WINDOWS10_ROADMAP.md). All art is independently created.
+**Windows 10:** A–Z Start, resizable/draggable tiles, independent Settings, real device flyouts, Task View and configurable search/taskbar. [Screenshots](screenshots/current/README.md) · [Fidelity roadmap](WINDOWS10_ROADMAP.md) · [Mint test checklist](WINDOWS10_MANUAL_ACCEPTANCE.md). Original Linux artwork only.
 
 ## Get started
 

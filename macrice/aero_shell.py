@@ -892,6 +892,16 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self._toggle_actions()
                 assert self.actions.get_visible()
                 if profile == "windows10":
+                    assert set(self.luna_tray.popovers) == {
+                        "audio", "battery", "bluetooth", "clock"}
+                    for name, popup in self.luna_tray.popovers.items():
+                        assert popup.get_style_context().has_class("ten-tray-popup")
+                        assert isinstance(popup, Gtk.Window)
+                        assert popup.get_type_hint() == Gdk.WindowTypeHint.UTILITY
+                        self.luna_tray.toggle(name)
+                        assert popup.get_visible(), "Windows 10 " + name + " tray is not visible"
+                        self.luna_tray.toggle(name)
+                        assert not popup.get_visible()
                     self._toggle_ten_network()
                     assert self.ten_network.window.get_visible()
                     assert self.ten_network.networks is not None
@@ -1541,6 +1551,101 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 assert settings.sidebar.get_visible() and settings._sliders["audio"].get_visible()
                 self._capture_screen(
                     f"ricebowl-windows10-settings-sound-0.9.1{self._capture_variant}-extra.png")
+                settings.navigate("storage")
+                GLib.timeout_add(380, self._capture_ten_settings_storage)
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._smoke_failed = True
+                self.quit()
+            return False
+
+        def _capture_ten_settings_storage(self):
+            try:
+                settings = self.ten_settings
+                assert settings.window.get_mapped() and settings.current == "storage"
+                assert settings.storage_meter.get_visible()
+                self._capture_screen(
+                    f"ricebowl-windows10-settings-storage-0.9.1{self._capture_variant}-extra.png")
+                settings.navigate("apps_installed")
+                GLib.timeout_add(400, self._capture_ten_settings_apps)
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._smoke_failed = True
+                self.quit()
+            return False
+
+        def _capture_ten_settings_apps(self):
+            try:
+                settings = self.ten_settings
+                assert settings.window.get_mapped() and settings.current == "apps_installed"
+                assert settings.apps_results.get_visible()
+                self._capture_screen(
+                    f"ricebowl-windows10-settings-apps-0.9.1{self._capture_variant}-extra.png")
+                settings.hide()
+                self.luna_tray.toggle("audio")
+                GLib.timeout_add(450, self._capture_ten_audio)
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._smoke_failed = True
+                self.quit()
+            return False
+
+        def _capture_ten_audio(self):
+            try:
+                popup = self.luna_tray.popovers["audio"]
+                assert popup.get_mapped(), "Windows 10 volume flyout is not mapped"
+                self._assert_popup_on_monitor(popup)
+                self._capture_screen(
+                    f"ricebowl-windows10-audio-0.9.1{self._capture_variant}-extra.png")
+                self.luna_tray.toggle("clock")
+                GLib.timeout_add(400, self._capture_ten_calendar)
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._smoke_failed = True
+                self.quit()
+            return False
+
+        def _capture_ten_calendar(self):
+            try:
+                popup = self.luna_tray.popovers["clock"]
+                assert popup.get_mapped(), "Windows 10 calendar flyout is not mapped"
+                self._assert_popup_on_monitor(popup)
+                self._capture_screen(
+                    f"ricebowl-windows10-calendar-0.9.1{self._capture_variant}-extra.png")
+                self._toggle_ten_network()
+                GLib.timeout_add(550, self._capture_ten_network)
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._smoke_failed = True
+                self.quit()
+            return False
+
+        def _capture_ten_network(self):
+            try:
+                assert self.ten_network.window.get_mapped(), "Network flyout did not map"
+                self._assert_popup_on_monitor(self.ten_network.window)
+                self._capture_screen(
+                    f"ricebowl-windows10-network-0.9.1{self._capture_variant}-extra.png")
+                self._toggle_ten_task_view()
+                GLib.timeout_add(450, self._capture_ten_task_view)
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._smoke_failed = True
+                self.quit()
+            return False
+
+        def _capture_ten_task_view(self):
+            try:
+                assert self.ten_task_view.window.get_mapped(), "Task View did not map"
+                self._assert_popup_on_monitor(self.ten_task_view.window)
+                self._capture_screen(
+                    f"ricebowl-windows10-task-view-0.9.1{self._capture_variant}-extra.png")
             except Exception:
                 import traceback
                 traceback.print_exc()
@@ -1939,7 +2044,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self._tray = None
             if self.luna_balloon is not None:
                 self.luna_balloon.close()
-            if profile in ("winxp", "aero") and self.luna_tray is not None:
+            if profile in ("winxp", "aero", "windows10") and self.luna_tray is not None:
                 self.luna_tray.close()
             if profile == "windows10" and hasattr(self, "ten_controller"):
                 self.ten_controller.close()
@@ -2000,7 +2105,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             if self.actions.get_visible():
                 self._hide_actions()
             if profile == "windows10":
+                if hasattr(self, "ten_search_button"):
+                    self._ten_refresh_search_appearance(rect.width)
                 self.ten_network.hide()
+                for popup in self.luna_tray.popovers.values():
+                    popup.hide()
                 if hasattr(self, "ten_task_view"):
                     self.ten_task_view.hide()
             if profile == "winclassic" and hasattr(self, "classic98_tray_hide"):
@@ -2034,8 +2143,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                             if profile == "frutiger" else self._launch(selected))
                 btn.connect("button-press-event", lambda widget, event, selected=app:
                             self._pin_context(widget, selected, event))
-                if profile == "aero":
-                    target = Gtk.TargetEntry.new("application/x-ricebowl-win7-pin",
+                if profile in ("aero", "windows10"):
+                    target = Gtk.TargetEntry.new("application/x-ricebowl-" +
+                                                 ("win7" if profile == "aero" else "win10") +
+                                                 "-pin",
                                                  Gtk.TargetFlags.SAME_APP, 0)
                     btn.drag_source_set(Gdk.ModifierType.BUTTON1_MASK,
                                         [target], Gdk.DragAction.MOVE)
@@ -2061,7 +2172,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             Gtk.drag_finish(context, success, False, time)
 
         def _win7_reorder_pin(self, source, target, *, after=False):
-            if profile != "aero":
+            if profile not in ("aero", "windows10"):
                 return False
             from .aero_pins import reorder_pins
 
@@ -2089,8 +2200,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             if profile == "winxp":
                 self._track_start_popup(menu)
             pinned = identifier in self._pinned_ids
-            if profile == "aero" and widget.get_parent() is self.pinned_box:
-                menu.get_style_context().add_class("win7-jumplist")
+            if profile in ("aero", "windows10") and widget.get_parent() is self.pinned_box:
+                menu.get_style_context().add_class(
+                    "win7-jumplist" if profile == "aero" else "ten-jumplist")
                 launch = Gtk.MenuItem(label="Open " + (app.get_display_name() or app.get_name()))
                 launch.connect("activate", lambda _item: self._launch(app))
                 menu.append(launch)
@@ -2431,8 +2543,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self.luna_balloon = Win7Balloon(self, Gtk, Gdk, GLib)
             elif profile == "windows10":
                 from .ten_riceware import TenController
+                from .ten_tray import TenTray
 
                 self.ten_controller = TenController(self, Gtk, GLib)
+                self.luna_tray = TenTray(self, Gtk, GLib)
             elif profile == "winclassic":
                 from .classic98_riceware import Classic98Controller
 
@@ -2462,11 +2576,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                                    self._status_action(selected))
                 row.pack_end(button, False, False, 0)
                 self._status_widgets[name] = (button, image, label)
-                if self.luna_tray is not None:
+                if self.luna_tray is not None and not (ten and name == "network"):
                     self.luna_tray.install(name, button)
             if self.luna_tray is not None:
                 bluetooth = self._class(Gtk.Button(), "rice-status")
-                bluetooth.add(self._icon("bluetooth-active" if profile == "aero" else
+                bluetooth.add(self._icon("bluetooth-active" if profile in ("aero", "windows10") else
                                          "ricehub-luna-task-bluetooth", Gtk.IconSize.MENU))
                 bluetooth.set_tooltip_text("Bluetooth devices and adapter")
                 bluetooth.get_accessible().set_name("Bluetooth device controls")
@@ -2657,7 +2771,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             battery_button, battery_icon, battery_label = self._status_widgets["battery"]
             battery = status.battery
             if battery is None:
-                if self.luna_tray is None and profile not in ("winclassic", "frutiger"):
+                if (profile == "windows10" or
+                        self.luna_tray is None and profile not in ("winclassic", "frutiger")):
                     battery_button.hide()
                 else:
                     battery_button.show_all()
@@ -2893,18 +3008,24 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     self.ten_taskbar_options = load(self.ten_taskbar_preferences_path)
                 except (OSError, ValueError) as exc:
                     logging.getLogger(__name__).warning("Windows 10 taskbar defaults: %s", exc)
-                    self.ten_taskbar_options = {"search": True, "task_view": True}
-                # Windows 10 supports the compact taskbar search-icon mode.
-                # The functional text field remains inside Start, not twice on screen.
+                    self.ten_taskbar_options = {"search_mode": "box", "task_view": True}
+                # The original 22H2 search-box silhouette, with a compact
+                # fallback on 1024px and smaller displays. Actual text search
+                # stays in Start so the taskbar never has a stale duplicate.
                 search_button = self._class(Gtk.Button(), "ten-search")
-                search_button.add(self._icon("edit-find-symbolic", Gtk.IconSize.BUTTON))
+                search_content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
+                search_content.pack_start(self._icon("edit-find-symbolic", Gtk.IconSize.BUTTON),
+                                          False, False, 0)
+                self.ten_search_label = Gtk.Label(label="Type here to search")
+                self.ten_search_label.set_xalign(0)
+                search_content.pack_start(self.ten_search_label, True, True, 0)
+                search_button.add(search_content)
                 search_button.get_accessible().set_name("Search installed applications")
                 search_button.set_tooltip_text("Search installed applications")
                 search_button.connect("clicked", lambda _button: self._open_search())
                 row.pack_start(search_button, False, False, 0)
                 self.ten_search_button = search_button
-                search_button.set_no_show_all(not self.ten_taskbar_options["search"])
-                search_button.set_visible(self.ten_taskbar_options["search"])
+                self._ten_refresh_search_appearance(rect.width)
                 view = self._class(Gtk.Button(), "ten-search")
                 view.add(self._icon("view-grid-symbolic", Gtk.IconSize.BUTTON))
                 view.get_accessible().set_name("Task View: open windows and desktops")
@@ -3017,9 +3138,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 bell.get_accessible().set_name("Open notifications")
                 bell.connect("clicked", lambda _button: self._toggle_chrome_notifications())
                 right_area.pack_end(bell, False, False, 0)
-            elif profile in ("winxp", "aero"):
+            elif profile in ("winxp", "aero", "windows10"):
                 clock_button = self._class(Gtk.Button(), "luna-clock-button" if profile == "winxp"
-                                           else "win7-clock-button")
+                                           else "ten-clock-button" if ten else "win7-clock-button")
                 clock_button.add(clock)
                 clock_button.get_accessible().set_name("Show date and calendar")
                 self._luna_clock_button = clock_button
@@ -3272,13 +3393,23 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
         def _ten_taskbar_menu(self):
             menu = Gtk.Menu()
             menu.get_style_context().add_class("aero-menu-root")
-            for option, label in (("search", "Show Search"),
-                                  ("task_view", "Show Task View")):
+            search = Gtk.MenuItem(label="Search")
+            search_modes = Gtk.Menu()
+            for mode, label in (("hidden", "Hidden"), ("icon", "Show search icon"),
+                                ("box", "Show search box")):
                 item = Gtk.CheckMenuItem(label=label)
-                item.set_active(self.ten_taskbar_options[option])
-                item.connect("toggled", lambda widget, key=option:
-                             self._ten_set_taskbar_option(key, widget.get_active()))
-                menu.append(item)
+                item.set_draw_as_radio(True)
+                item.set_active(self.ten_taskbar_options["search_mode"] == mode)
+                item.connect("activate", lambda _item, chosen=mode:
+                             self._ten_set_taskbar_option("search_mode", chosen))
+                search_modes.append(item)
+            search.set_submenu(search_modes)
+            menu.append(search)
+            view = Gtk.CheckMenuItem(label="Show Task View button")
+            view.set_active(self.ten_taskbar_options["task_view"])
+            view.connect("toggled", lambda widget:
+                         self._ten_set_taskbar_option("task_view", widget.get_active()))
+            menu.append(view)
             menu.append(Gtk.SeparatorMenuItem())
             desktop = Gtk.MenuItem(label="Show the desktop")
             desktop.set_sensitive(self._window_tracker is not None)
@@ -3303,10 +3434,28 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self._error("Could not save Windows 10 taskbar preference: " + str(exc))
                 return
             self.ten_taskbar_options = updated
-            button = (self.ten_search_button if key == "search" else
-                      self.ten_task_view_button)
-            button.set_no_show_all(not enabled)
-            button.set_visible(enabled)
+            if key == "search_mode":
+                self._ten_refresh_search_appearance(self._desktop_rect().width)
+            else:
+                self.ten_task_view_button.set_no_show_all(not enabled)
+                self.ten_task_view_button.set_visible(enabled)
+
+        def _ten_refresh_search_appearance(self, screen_width):
+            mode = self.ten_taskbar_options["search_mode"]
+            full_box = mode == "box" and screen_width >= 1280
+            button = self.ten_search_button
+            context = button.get_style_context()
+            if full_box:
+                context.add_class("ten-search-box")
+                button.set_size_request(215, -1)
+            else:
+                context.remove_class("ten-search-box")
+                button.set_size_request(-1, -1)
+            self.ten_search_label.set_no_show_all(not full_box)
+            self.ten_search_label.set_visible(full_box)
+            visible = mode != "hidden"
+            button.set_no_show_all(not visible)
+            button.set_visible(visible)
 
         def _luna_manage_desktop(self, action):
             """Explicit opt-in with confirmation; untouched user icons remain safe."""
@@ -4872,6 +5021,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._hide_menu()
             self._hide_actions()
             self.ten_network.hide()
+            for popup in self.luna_tray.popovers.values():
+                popup.hide()
             if not hasattr(self, "ten_settings"):
                 from .ten_settings import TenSettings
 
@@ -4887,6 +5038,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 return
             self._hide_menu()
             self._hide_actions()
+            for popup in self.luna_tray.popovers.values():
+                popup.hide()
             if hasattr(self, "ten_task_view"):
                 self.ten_task_view.hide()
             self.ten_network.show()
@@ -4904,6 +5057,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._hide_menu()
             self._hide_actions()
             self.ten_network.hide()
+            for popup in self.luna_tray.popovers.values():
+                popup.hide()
             self.ten_task_view.show()
 
         def _open_ten_explorer(self):
@@ -5083,19 +5238,22 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             apps_column.pack_start(scroller, True, True, 0)
             columns.pack_start(apps_column, True, True, 0)
 
+            from . import ten_tiles
+
+            self._ten_tile_path = ten_tiles.preferences_path()
+            try:
+                self.ten_tile_layout = ten_tiles.load(self._ten_tile_path)
+            except (OSError, ValueError) as exc:
+                self._error("Windows 10 Start layout could not be loaded: " + str(exc))
+                self.ten_tile_layout = None
+            self.ten_tile_custom = self.ten_tile_layout is not None
+            self.ten_tile_scroll = Gtk.ScrolledWindow()
+            self.ten_tile_scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+            self.ten_tile_scroll.set_size_request(331, -1)
             self.ten_tiles_panel = self._class(
-                Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=10), "ten-tiles-panel")
-            self.ten_tiles_panel.pack_start(
-                self._class(Gtk.Label(label="Productivity", xalign=0), "ten-section-heading"),
-                False, False, 0)
-            self.tile_grid = Gtk.Grid(row_spacing=5, column_spacing=5)
-            self.ten_tiles_panel.pack_start(self.tile_grid, False, False, 0)
-            self.ten_tiles_panel.pack_start(
-                self._class(Gtk.Label(label="Explore", xalign=0), "ten-section-heading"),
-                False, False, 3)
-            self.explore_grid = Gtk.Grid(row_spacing=5, column_spacing=5)
-            self.ten_tiles_panel.pack_start(self.explore_grid, False, False, 0)
-            columns.pack_start(self.ten_tiles_panel, False, False, 0)
+                Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=12), "ten-tiles-panel")
+            self.ten_tile_scroll.add(self.ten_tiles_panel)
+            columns.pack_start(self.ten_tile_scroll, True, True, 0)
             root.pack_start(main, True, True, 0)
 
             menu.add(root)
@@ -5105,7 +5263,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             def search_changed(*_args):
                 self._app_page_size = 24
                 query = search.get_text()
-                self.ten_tiles_panel.set_visible(not bool(query.strip()))
+                self.ten_tile_scroll.set_visible(not bool(query.strip()))
                 self._populate(query)
             search.connect("search-changed", search_changed)
             search.connect("key-press-event", lambda _widget, event: self._search_key(event))
@@ -5260,51 +5418,262 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 self.results.attach(more, 0, more_row, 4, 1)
             self.results.show_all()
 
-        def _render_ten_tiles(self):
-            if not hasattr(self, "tile_grid"):
-                return
-            if profile == "windows10":
-                from .ten_shell import start_tiles
+        def _ten_save_tile_layout(self, layout):
+            """Persist before rendering; a failed write leaves the current UI intact."""
+            from . import ten_tiles
 
-                for grid in (self.tile_grid, self.explore_grid):
-                    for child in grid.get_children():
-                        grid.remove(child)
-                apps = start_tiles(self.apps, self._pinned_ids)
-                for index, app in enumerate(apps):
-                    grid = self.tile_grid if index < 4 else self.explore_grid
-                    tile_index = index if index < 4 else index - 4
-                    button = self._class(Gtk.Button(), "ten-tile")
-                    if index in (1, 4):
-                        button.get_style_context().add_class("ten-tile-alt")
-                    if index == 0:
-                        button.get_style_context().add_class("ten-tile-wide")
-                    button.set_size_request(136, 95 if index == 0 else 81)
-                    name = app.get_display_name() or app.get_name() or "Application"
-                    content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
-                    icon = app.get_icon()
-                    picture = (Gtk.Image.new_from_gicon(icon, Gtk.IconSize.DIALOG) if icon else
-                               self._icon("applications-other", Gtk.IconSize.DIALOG))
-                    picture.set_halign(Gtk.Align.CENTER)
-                    content.pack_start(picture, True, True, 0)
-                    caption = self._class(Gtk.Label(label=name, xalign=0), "ten-tile-label")
-                    caption.set_max_width_chars(16)
-                    caption.set_ellipsize(Pango.EllipsizeMode.END)
-                    content.pack_end(caption, False, False, 0)
-                    button.add(content)
-                    button.get_accessible().set_name("Launch " + name)
-                    button.set_tooltip_text(name + " · Right-click to pin or unpin")
-                    button.connect("clicked", lambda _button, selected=app: self._launch(selected))
-                    button.connect("button-press-event", lambda widget, event, selected=app:
-                                   self._pin_context(widget, selected, event))
-                    button.connect("popup-menu", lambda widget, selected=app:
-                                   self._pin_context(widget, selected))
-                    grid.attach(button, tile_index % 2, tile_index // 2, 1, 1)
-                if not apps:
-                    self.tile_grid.attach(self._class(
-                        Gtk.Label(label="No desktop applications installed", xalign=0),
-                        "ten-muted"), 0, 0, 2, 1)
-                self.tile_grid.show_all()
-                self.explore_grid.show_all()
+            try:
+                ten_tiles.save(self._ten_tile_path, layout)
+            except (OSError, ValueError) as exc:
+                self._error("Could not save Windows 10 Start tiles: " + str(exc))
+                return False
+            self.ten_tile_layout = layout
+            self.ten_tile_custom = True
+            self._render_ten_tiles()
+            return True
+
+        def _ten_edit_tile_group(self, group_index, header, heading):
+            """Edit tile headings inline, with Enter to save and Escape to discard."""
+            name = self.ten_tile_layout["groups"][group_index]["name"]
+            heading.hide()
+            entry = self._class(Gtk.Entry(text=name), "ten-group-entry")
+            entry.set_max_length(36)
+            entry.get_accessible().set_name("Tile group name")
+            header.pack_start(entry, True, True, 0)
+            entry.show()
+            entry.grab_focus()
+            entry.select_region(0, -1)
+
+            def finish(save):
+                if save:
+                    from . import ten_tiles
+
+                    try:
+                        candidate = ten_tiles.rename_group(
+                            self.ten_tile_layout, group_index, entry.get_text())
+                    except ValueError as exc:
+                        self._error(str(exc))
+                    else:
+                        if self._ten_save_tile_layout(candidate):
+                            return
+                header.remove(entry)
+                heading.show()
+
+            entry.connect("activate", lambda _entry: finish(True))
+
+            def key_press(_entry, event):
+                if event.keyval == Gdk.KEY_Escape:
+                    finish(False)
+                    return True
+                return False
+
+            entry.connect("key-press-event", key_press)
+
+        def _ten_change_tile(self, identifier, action, *, size=None, offset=0,
+                             group_index=None):
+            from . import ten_tiles
+
+            try:
+                if action == "pin":
+                    candidate = ten_tiles.pin(self.ten_tile_layout, identifier,
+                                              group_index=group_index or 0)
+                elif action == "unpin":
+                    candidate = ten_tiles.unpin(self.ten_tile_layout, identifier)
+                elif action == "resize":
+                    candidate = ten_tiles.resize(self.ten_tile_layout, identifier, size)
+                elif action == "move":
+                    candidate = ten_tiles.move(self.ten_tile_layout, identifier,
+                                               group_index=group_index, offset=offset)
+                else:
+                    raise ValueError("Unsupported Start tile action")
+            except ValueError as exc:
+                self._error(str(exc))
+                return
+            if candidate != self.ten_tile_layout:
+                self._ten_save_tile_layout(candidate)
+
+        def _ten_app_context(self, widget, app, event=None):
+            """Native Windows 10 app/tile context menu; pins stay independent."""
+            if event is not None and event.button != 3:
+                return False
+            from . import ten_tiles
+
+            identifier = app.get_id()
+            if not identifier:
+                return False
+            menu = Gtk.Menu()
+            self._track_start_popup(menu)
+            title = app.get_display_name() or app.get_name() or "Application"
+            opened = Gtk.MenuItem(label="Open " + title)
+            opened.connect("activate", lambda _item: self._launch(app))
+            menu.append(opened)
+            menu.append(Gtk.SeparatorMenuItem())
+            location = ten_tiles.tile_location(self.ten_tile_layout, identifier)
+            total = sum(len(group["tiles"]) for group in self.ten_tile_layout["groups"])
+            start_pin = Gtk.MenuItem(label=("Unpin from Start" if location is not None
+                                            else "Pin to Start"))
+            start_pin.set_sensitive(location is not None or total < ten_tiles.MAX_TILES)
+            start_pin.connect("activate", lambda _item: self._ten_change_tile(
+                identifier, "unpin" if location is not None else "pin"))
+            menu.append(start_pin)
+            taskbar_pinned = identifier in self._pinned_ids
+            taskbar = Gtk.MenuItem(label=("Unpin from taskbar" if taskbar_pinned
+                                           else "Pin to taskbar"))
+            taskbar.set_sensitive(taskbar_pinned or len(self._pinned_ids) < PIN_LIMIT)
+            taskbar.connect("activate", lambda _item: self._change_pin(
+                identifier, not taskbar_pinned))
+            menu.append(taskbar)
+            if location is not None:
+                group_index, position = location
+                tile = self.ten_tile_layout["groups"][group_index]["tiles"][position]
+                resize = Gtk.MenuItem(label="Resize")
+                sizes = Gtk.Menu()
+                for size in ten_tiles.SIZES:
+                    item = Gtk.CheckMenuItem(label=size.capitalize())
+                    item.set_draw_as_radio(True)
+                    item.set_active(tile["size"] == size)
+                    item.connect("activate", lambda _item, chosen=size: self._ten_change_tile(
+                        identifier, "resize", size=chosen))
+                    sizes.append(item)
+                resize.set_submenu(sizes)
+                menu.append(resize)
+                group_length = len(self.ten_tile_layout["groups"][group_index]["tiles"])
+                if group_length > 1:
+                    for label, offset in (("Move tile earlier", -1), ("Move tile later", 1)):
+                        move = Gtk.MenuItem(label=label)
+                        move.set_sensitive(0 <= position + offset < group_length)
+                        move.connect("activate", lambda _item, step=offset: self._ten_change_tile(
+                            identifier, "move", offset=step))
+                        menu.append(move)
+                groups = Gtk.Menu()
+                for index, group in enumerate(self.ten_tile_layout["groups"]):
+                    if index == group_index:
+                        continue
+                    move = Gtk.MenuItem(label=group["name"])
+                    move.connect("activate", lambda _item, destination=index:
+                                 self._ten_change_tile(identifier, "move",
+                                                       group_index=destination))
+                    groups.append(move)
+                if groups.get_children():
+                    item = Gtk.MenuItem(label="Move to group")
+                    item.set_submenu(groups)
+                    menu.append(item)
+            menu.show_all()
+            if event is not None:
+                menu.popup_at_pointer(event)
+            else:
+                menu.popup_at_widget(widget, Gdk.Gravity.SOUTH_WEST,
+                                     Gdk.Gravity.NORTH_WEST, None)
+            return True
+
+        def _ten_tile_dropped(self, widget, context, x, selection, event_time, target):
+            """Persist tile drag order before acknowledging the X11 drag."""
+            from . import ten_tiles
+
+            try:
+                data = selection.get_data()
+                source = data.decode("utf-8").rstrip("\x00") if data else ""
+                candidate = ten_tiles.move_to(
+                    self.ten_tile_layout, source, target,
+                    after=x >= widget.get_allocated_width() / 2)
+            except (UnicodeError, ValueError) as exc:
+                logging.getLogger(__name__).debug("Ignored invalid Start tile drag: %s", exc)
+                Gtk.drag_finish(context, False, False, event_time)
+                return
+            if candidate == self.ten_tile_layout:
+                Gtk.drag_finish(context, True, False, event_time)
+                return
+            if not self._ten_save_tile_layout(candidate):
+                Gtk.drag_finish(context, False, False, event_time)
+                return
+            Gtk.drag_finish(context, True, False, event_time)
+
+        def _render_ten_tiles(self):
+            if profile == "windows10":
+                if not hasattr(self, "ten_tiles_panel"):
+                    return
+                from . import ten_tiles
+
+                if not self.ten_tile_custom:
+                    self.ten_tile_layout = ten_tiles.default_layout(self.apps, self._pinned_ids)
+                for child in self.ten_tiles_panel.get_children():
+                    self.ten_tiles_panel.remove(child)
+                catalog = {app.get_id(): app for app in self.apps if app.get_id()}
+                unavailable = 0
+                for group_index, group in enumerate(self.ten_tile_layout["groups"]):
+                    heading = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
+                    title = self._class(Gtk.Label(label=group["name"], xalign=0),
+                                        "ten-section-heading")
+                    heading.pack_start(title, True, True, 0)
+                    rename = self._class(Gtk.Button(), "ten-group-edit")
+                    rename.set_image(self._icon("document-edit", Gtk.IconSize.MENU))
+                    rename.set_tooltip_text("Rename " + group["name"] + " tile group")
+                    rename.get_accessible().set_name("Rename tile group " + group["name"])
+                    rename.connect("clicked", lambda _button, index=group_index,
+                                   row=heading, label=title: self._ten_edit_tile_group(index, row, label))
+                    heading.pack_end(rename, False, False, 0)
+                    self.ten_tiles_panel.pack_start(heading, False, False, 0)
+                    grid = Gtk.Grid(row_spacing=5, column_spacing=5)
+                    grid.set_halign(Gtk.Align.START)
+                    visible_tiles = [tile for tile in group["tiles"] if tile["id"] in catalog]
+                    unavailable += len(group["tiles"]) - len(visible_tiles)
+                    for tile, (col, row, width, height) in zip(
+                            visible_tiles, ten_tiles.grid_positions(visible_tiles)):
+                        app = catalog[tile["id"]]
+                        name = app.get_display_name() or app.get_name() or "Application"
+                        button = self._class(Gtk.Button(), "ten-tile")
+                        button.get_style_context().add_class("ten-tile-" + tile["size"])
+                        if (col + row + group_index) % 3 == 1:
+                            button.get_style_context().add_class("ten-tile-alt")
+                        button.set_size_request(width * 68 + (width - 1) * 5,
+                                                height * 44 + (height - 1) * 5)
+                        content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
+                        icon = app.get_icon()
+                        picture = (Gtk.Image.new_from_gicon(icon, Gtk.IconSize.DIALOG) if icon
+                                   else self._icon("applications-other", Gtk.IconSize.DIALOG))
+                        picture.set_pixel_size(22 if tile["size"] == "small" else 32)
+                        picture.set_halign(Gtk.Align.CENTER if tile["size"] == "small"
+                                           else Gtk.Align.START)
+                        content.pack_start(picture, True, True, 0)
+                        if tile["size"] != "small":
+                            caption = self._class(Gtk.Label(label=name, xalign=0), "ten-tile-label")
+                            caption.set_ellipsize(Pango.EllipsizeMode.END)
+                            caption.set_max_width_chars(24 if width == 4 else 14)
+                            content.pack_end(caption, False, False, 0)
+                        button.add(content)
+                        button.get_accessible().set_name("Launch " + name + " · " + tile["size"] + " tile")
+                        button.set_tooltip_text(name + " · Right-click to customize Start")
+                        button.connect("clicked", lambda _button, selected=app: self._launch(selected))
+                        button.connect("button-press-event", lambda widget, event, selected=app:
+                                       self._ten_app_context(widget, selected, event))
+                        button.connect("popup-menu", lambda widget, selected=app:
+                                       self._ten_app_context(widget, selected))
+                        drag_target = Gtk.TargetEntry.new(
+                            "application/x-ricebowl-win10-tile", Gtk.TargetFlags.SAME_APP, 0)
+                        button.drag_source_set(Gdk.ModifierType.BUTTON1_MASK,
+                                               [drag_target], Gdk.DragAction.MOVE)
+                        button.drag_dest_set(Gtk.DestDefaults.ALL, [drag_target],
+                                             Gdk.DragAction.MOVE)
+                        button.connect("drag-data-get", lambda _button, _context, selection,
+                                       _info, _time, identifier=tile["id"]: selection.set(
+                                           selection.get_target(), 8,
+                                           identifier.encode("utf-8")))
+                        button.connect("drag-data-received", lambda widget, context, x, _y,
+                                       selection, _info, time, identifier=tile["id"]:
+                                       self._ten_tile_dropped(widget, context, x, selection,
+                                                              time, identifier))
+                        grid.attach(button, col, row, width, height)
+                    if not visible_tiles:
+                        grid.attach(self._class(Gtk.Label(label="Pin apps here from All apps",
+                                                          xalign=0), "ten-muted"), 0, 0, 4, 1)
+                    self.ten_tiles_panel.pack_start(grid, False, False, 0)
+                if unavailable:
+                    self.ten_tiles_panel.pack_start(self._class(Gtk.Label(
+                        label=f"{unavailable} pinned apps are not installed", xalign=0),
+                        "ten-muted"), False, False, 0)
+                self.ten_tiles_panel.show_all()
+                return
+            if not hasattr(self, "tile_grid"):
                 return
             for child in self.tile_grid.get_children():
                 self.tile_grid.remove(child)
@@ -5894,9 +6263,19 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             from .ten_shell import app_letter
 
             matches = matching_apps(self.apps, query)
-            if not matches:
+            from .ten_settings import search_destinations
+
+            settings_matches = search_destinations(query)[:6] if query.strip() else ()
+            root = Path.home()
+            user_folders = (("Home", root), ("Documents", root / "Documents"),
+                            ("Downloads", root / "Downloads"),
+                            ("Pictures", root / "Pictures"))
+            places = tuple((name, folder) for name, folder in user_folders
+                           if query.strip() and query.casefold().strip() in name.casefold()
+                           and folder.is_dir())
+            if not (matches or settings_matches or places):
                 self.results.pack_start(self._class(Gtk.Label(
-                    label="No matching applications", xalign=0), "ten-muted"),
+                    label="No matching apps, settings or folders", xalign=0), "ten-muted"),
                     False, False, 12)
             previous_letter = None
             self._ten_letter_rows = {}
@@ -5924,9 +6303,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 button.get_accessible().set_name("Launch " + title)
                 button.connect("clicked", lambda _button, selected=app: self._launch(selected))
                 button.connect("button-press-event", lambda widget, event, selected=app:
-                               self._pin_context(widget, selected, event))
+                               self._ten_app_context(widget, selected, event))
                 button.connect("popup-menu", lambda widget, selected=app:
-                               self._pin_context(widget, selected))
+                               self._ten_app_context(widget, selected))
                 self.results.pack_start(button, False, False, 0)
             if len(matches) > self._app_page_size:
                 more = self._class(Gtk.Button(label="Show more apps"), "aero-menu-app")
@@ -5936,6 +6315,27 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     self._populate(self.search.get_text())
                 more.connect("clicked", expand)
                 self.results.pack_start(more, False, False, 4)
+            if settings_matches:
+                self.results.pack_start(self._class(
+                    Gtk.Label(label="Settings", xalign=0), "ten-letter"), False, False, 5)
+                for page, title, _description in settings_matches:
+                    button = self._class(Gtk.Button(label=title), "aero-menu-app")
+                    button.get_child().set_xalign(0)
+                    button.get_accessible().set_name("Open Settings: " + title)
+                    button.connect("clicked", lambda _button, target=page:
+                                   self._open_ten_settings(target))
+                    self.results.pack_start(button, False, False, 0)
+            if places:
+                self.results.pack_start(self._class(
+                    Gtk.Label(label="Folders · shortcuts", xalign=0), "ten-letter"),
+                    False, False, 5)
+                for name, folder in places:
+                    button = self._class(Gtk.Button(label=name), "aero-menu-app")
+                    button.get_child().set_xalign(0)
+                    button.get_accessible().set_name("Open " + name + " folder")
+                    button.connect("clicked", lambda _button, uri=folder.as_uri():
+                                   self._open_uri(uri))
+                    self.results.pack_start(button, False, False, 0)
             self.results.show_all()
 
         def _populate_frutiger(self, query):
@@ -6187,6 +6587,13 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 if apps:
                     self._launch(apps[0])
                     return True
+                if profile == "windows10":
+                    first = next((child for child in self.results.get_children()
+                                  if isinstance(child, Gtk.Button) and
+                                  child.get_visible() and child.get_sensitive()), None)
+                    if first is not None:
+                        first.clicked()
+                        return True
             if (event.keyval == Gdk.KEY_Down and self.search.is_focus()
                     and self.results.get_children()):
                 first = next((child for child in self.results.get_children()
