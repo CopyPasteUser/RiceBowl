@@ -1426,6 +1426,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 settings = self.ten_settings
                 assert settings.window.get_mapped() and settings.current == "home"
                 assert settings.home_search.get_visible() and not settings.sidebar.get_visible()
+                home_scroll = settings.stack.get_child_by_name("home")
+                adjustment = home_scroll.get_vadjustment()
+                assert adjustment.get_upper() <= adjustment.get_page_size() + 3, (
+                    "Windows 10 category home clips its bottom row at the capture size")
                 self._capture_screen(
                     f"ricebowl-windows10-settings-home-0.9.1{self._capture_variant}-extra.png")
                 settings.navigate("sound")

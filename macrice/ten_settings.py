@@ -126,14 +126,14 @@ class TenSettings:
                                        "ten-settings-caption")
         toolbar.pack_start(draggable_caption(self.window, self.breadcrumb, Gtk, Gdk),
                            True, True, 0)
-        refresh = shell._class(Gtk.Button(label="↻"), "ten-settings-chrome")
-        refresh.get_accessible().set_name("Refresh current settings and hardware state")
-        refresh.connect("clicked", lambda _button: self.refresh())
-        toolbar.pack_end(refresh, False, False, 0)
         close = shell._class(Gtk.Button(label="×"), "ten-settings-close")
         close.get_accessible().set_name("Close Settings")
         close.connect("clicked", lambda _button: self.hide())
         toolbar.pack_end(close, False, False, 0)
+        refresh = shell._class(Gtk.Button(label="↻"), "ten-settings-chrome")
+        refresh.get_accessible().set_name("Refresh current settings and hardware state")
+        refresh.connect("clicked", lambda _button: self.refresh())
+        toolbar.pack_end(refresh, False, False, 0)
         root.pack_start(toolbar, False, False, 0)
 
         main = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=0)
@@ -226,13 +226,13 @@ class TenSettings:
         self.home_search.set_size_request(330, -1)
         self.home_search.set_halign(Gtk.Align.CENTER)
         self.home_search.connect("changed", self._search_changed)
-        body.pack_start(self.home_search, False, False, 15)
+        body.pack_start(self.home_search, False, False, 6)
         grid = Gtk.Grid(row_spacing=8, column_spacing=8)
         grid.set_column_homogeneous(True)
         for index, (key, title, description) in enumerate(CATEGORIES):
             tile = self.shell._class(Gtk.Button(), "ten-settings-tile")
             content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=12)
-            icon = self._icon(CATEGORY_ICONS[key], Gtk.IconSize.DIALOG)
+            icon = self._icon(CATEGORY_ICONS[key], Gtk.IconSize.DND)
             content.pack_start(icon, False, False, 0)
             labels = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
             title_label = self.shell._class(Gtk.Label(label=title, xalign=0),
@@ -248,6 +248,7 @@ class TenSettings:
             tile.connect("clicked", lambda _button, target=key: self.navigate(target))
             grid.attach(tile, index % 3, index // 3, 1, 1)
         body.pack_start(grid, False, False, 0)
+        self.home_grid = grid
         return page
 
     def _icon(self, name, size):

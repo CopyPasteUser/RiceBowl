@@ -44,6 +44,9 @@ class TenSettingsGtkTests(unittest.TestCase):
             self.assertFalse(view.sidebar.get_visible())
             self.assertEqual(view.stack.get_visible_child_name(), "home")
             self.assertTrue(view.home_search.get_visible())
+            adjustment = view.stack.get_child_by_name("home").get_vadjustment()
+            self.assertLessEqual(adjustment.get_upper(), adjustment.get_page_size() + 3,
+                                 "Category home must fit on a 1024×768 desktop")
 
             view.home_search.set_text("volume")
             self.assertEqual(view.current, "results")

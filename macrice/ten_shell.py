@@ -192,19 +192,19 @@ CSS = b"""
 .ten-settings-home-link, .ten-settings-nav {
   color: #ededed; background: transparent; border: 0;
   border-left: 3px solid transparent; border-radius: 0;
-  padding: 9px 10px; min-height: 27px; box-shadow: none;
+  padding: 6px 10px; min-height: 22px; box-shadow: none;
   font-size: 12px; }
 .ten-settings-home-link:hover, .ten-settings-nav:hover,
 .ten-settings-home-link:focus, .ten-settings-nav:focus { background: #323232; }
 .ten-settings-nav-selected { border-left-color: @ten-blue; background: #2e2e2e; }
 .ten-settings-page { background: #202020; padding: 29px 39px 35px; }
 .ten-settings-heading { color: #ffffff; font-size: 27px; font-weight: 400; }
-.ten-settings-home { padding: 42px 33px 30px; }
+.ten-settings-home { padding: 22px 33px 16px; }
 .ten-settings-home .ten-settings-heading { font-size: 30px; }
 .ten-settings-home .ten-muted { font-size: 12px; }
 .ten-settings-tile { background: transparent; color: white;
   border: 1px solid transparent; border-radius: 0; box-shadow: none;
-  padding: 12px 10px; min-height: 91px; }
+  padding: 7px 10px; min-height: 68px; }
 .ten-settings-tile:hover, .ten-settings-tile:focus {
   background: #343434; border-color: #606060; }
 .ten-settings-tile:active { background: #454545; }
