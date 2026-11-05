@@ -589,16 +589,16 @@ def build(shell, Gtk, Gdk, Gio, GLib, Pango):
             entry.connect("activate", lambda _entry: action())
         return entry
 
-    programs = Gtk.Menu()
+    programs = shell._track_start_popup(Gtk.Menu())
     row("Programs", "applications-other", cascade=programs)
-    favorites = Gtk.Menu()
+    favorites = shell._track_start_popup(Gtk.Menu())
     row("Favorites", "user-home", cascade=favorites)
-    documents = Gtk.Menu()
+    documents = shell._track_start_popup(Gtk.Menu())
     row("Documents", "folder-documents", cascade=documents)
     main.pack_start(Gtk.Separator(orientation=Gtk.Orientation.HORIZONTAL), False, False, 2)
-    settings = Gtk.Menu()
+    settings = shell._track_start_popup(Gtk.Menu())
     row("Settings", "classic-control-panel", cascade=settings)
-    finder = Gtk.Menu()
+    finder = shell._track_start_popup(Gtk.Menu())
     row("Find", "edit-find", cascade=finder)
     row("Help", "help-browser", action=lambda: show_help(shell, Gtk))
     row("Run…", "system-run", action=lambda: show_run(shell, Gtk, Gio))
@@ -650,7 +650,7 @@ def build(shell, Gtk, Gdk, Gio, GLib, Pango):
         for group, apps in groups.items():
             if not apps:
                 continue
-            submenu = Gtk.Menu()
+            submenu = shell._track_start_popup(Gtk.Menu())
             submenu.get_style_context().add_class("classic98-flyout")
             children = []
             for app in sorted(apps, key=lambda a: (a.get_display_name() or a.get_name() or "").casefold()):
@@ -662,7 +662,7 @@ def build(shell, Gtk, Gdk, Gio, GLib, Pango):
                     if event is not None and event.button != 3:
                         return False
                     identifier = selected.get_id()
-                    context = Gtk.Menu()
+                    context = shell._track_start_popup(Gtk.Menu())
                     open_item = Gtk.MenuItem(label="Open")
                     open_item.connect("activate", lambda _item: shell._launch(selected))
                     context.append(open_item)

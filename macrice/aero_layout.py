@@ -29,6 +29,13 @@ def actual_popup_y(monitor_y: int, monitor_height: int, actual_height: int,
                monitor_y + monitor_height - panel_height - margin - actual_height)
 
 
+def anchored_popup_x(monitor_x: int, monitor_width: int, button_x: int,
+                     button_width: int, popup_width: int) -> int:
+    """Center a tray flyout on its real button, clamped to its monitor."""
+    return max(monitor_x + 4, min(button_x + (button_width - popup_width) // 2,
+                                  monitor_x + monitor_width - popup_width - 4))
+
+
 def task_capacity(width: int, pinned: int, tray_reserve: int = 185,
                   *, compact: bool = False) -> int:
     """Conservatively reserve space for Start, launchers, status and tray.

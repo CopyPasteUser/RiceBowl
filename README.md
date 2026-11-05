@@ -26,6 +26,12 @@ RiceBowl changes real Linux desktop elements—taskbar, Start/launcher, menus, s
 | Aqua file manager and display arrangement | ◐ Native X11 monitor editor with independent 18 s rollback helper; virtual-X11 CI green; no renderer replacement | Real multi-monitor revert/confirm tests; riceExplorer renderer after its 1.0 |
 
 Track every remaining item in the [1.0 roadmap](ROADMAP.md) and [owner acceptance sheet](ACCEPTANCE_1_0.md). The **macOS Aurora UI is intentionally unchanged**.
+The [11 owner-reported interaction and styling issues](OWNER_QA_2026-11-05.md)
+are tracked separately. The current local QA batch addresses ChromeOS Wi-Fi,
+Windows 7 blank category pages, XP caption dragging, Windows 98 tray anchors
+and dirty-checkout diagnostics; Frutiger pointer-hit validation is pending.
+These changes are **not yet released or device-approved**. Automated fixes
+do not replace Mint/XFCE acceptance.
 
 ## Styles
 
@@ -84,6 +90,9 @@ Recovery also exposes the detailed update controls and read-only checks.
 The updater accepts a clean official Git `main`, stages a pinned
 revision and attempts archived recovery on install failure. It does **not**
 verify signed releases or guarantee atomic multi-component rollback. For a
+dirty checkout, the updater reports changed paths and leaves everything
+untouched. Review the listed files and explicitly commit or preserve your
+changes before updating; RiceBowl never auto-stashes personal edits. For a
 manual source update, `cd "$HOME/RiceBowl" && git pull --ff-only && bash install.sh`
 still works. Never run any installer/updater with `sudo`.
 

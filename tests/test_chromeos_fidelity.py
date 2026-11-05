@@ -70,6 +70,12 @@ class ChromeOSFidelityTests(unittest.TestCase):
         self.assertIn(b".chrome-quick-chevron", CSS)
         self.assertNotIn("sudo", source)
 
+    def test_shelf_network_icon_opens_owned_network_page(self):
+        shell = (ROOT / "macrice/aero_shell.py").read_text(encoding="utf-8")
+        self.assertTrue('if profile == "chromeos" and name == "network":' in shell,
+                        "The Wi-Fi status button must route into native Quick Settings")
+        self.assertIn('self._toggle_chrome_quick_page("Network")', shell)
+
     def test_calendar_tracks_local_month_without_fake_cloud_events(self):
         self.assertEqual(calendar_today(date(2024, 2, 29)), (2024, 1, 29))
         self.assertEqual(calendar_today(date(2027, 1, 1)), (2027, 0, 1))
