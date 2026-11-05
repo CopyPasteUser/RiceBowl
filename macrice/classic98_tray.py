@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import shutil
 
+from .aero_layout import anchored_popup_x
 from .riceware import spice
 
 
@@ -482,12 +483,17 @@ def build(shell, Gtk, Gdk):
             x = rect.x + (rect.width - width) // 2
             y = rect.y + (rect.height - height - 34) // 2
         else:
-            anchor = shell._status_widgets.get(kind, (None,))[0]
-            if anchor and anchor.get_window():
-                origin = anchor.get_window().get_origin()
-                x = origin[1] if len(origin) == 3 else origin[0]
-            else:
-                x = rect.x + rect.width - width - 12
+            anchor = (shell.classic98_clock_button if kind == "clock" else
+                      getattr(shell, "classic98_bluetooth_button", None) if kind == "bluetooth" else
+                      shell._status_widgets.get(kind, (None,))[0])
+            offset = (anchor.translate_coordinates(shell.bar, 0, 0)
+                      if anchor is not None and shell.bar.get_window() else None)
+            # Gtk.Button is usually a NO_WINDOW widget: anchor.get_window()
+            # belongs to the whole taskbar and its origin is at the far left.
+            button_x = (shell.bar.get_window().get_root_origin()[0] + offset[0]
+                        if offset is not None else rect.x + rect.width - 16)
+            button_width = anchor.get_allocated_width() if offset is not None else 24
+            x = anchored_popup_x(rect.x, rect.width, button_x, button_width, width)
             y = rect.y + rect.height - 34 - height - 5
         x = max(rect.x + 4, min(x, rect.x + rect.width - width - 4))
         y = max(rect.y + 4, y)

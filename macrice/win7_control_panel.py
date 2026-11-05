@@ -177,6 +177,14 @@ def build(shell, Gtk, Gdk):
     history = [("home", None, None)]
     position = 0
 
+    def reveal_page(container):
+        # no-show-all prevents a parent window.show_all() from resurfacing
+        # inactive pages. It also skips descendants when called directly on
+        # the protected container, so show each child before its parent.
+        for child in container.get_children():
+            child.show_all()
+        container.show()
+
     def render_home():
         for widget in details.get_children():
             details.remove(widget)
@@ -187,7 +195,7 @@ def build(shell, Gtk, Gdk):
             categories_grid.show()
         else:
             categories_grid.hide()
-            icons_grid.show_all()
+            reveal_page(icons_grid)
         view_row.show_all()
         breadcrumb.set_label("Control Panel")
         heading.set_text("Adjust your computer's settings")
@@ -211,7 +219,7 @@ def build(shell, Gtk, Gdk):
         heading.set_text(category.name)
         for task in category.tasks:
             details.pack_start(task_link(category, task), False, False, 0)
-        details.show_all()
+        reveal_page(details)
         scroll.get_vadjustment().set_value(0)
 
     def render_task(category, task):
@@ -250,7 +258,7 @@ def build(shell, Gtk, Gdk):
         if command:
             action.connect("clicked", lambda _button: shell._open_tool(command))
         details.pack_start(action, False, False, 4)
-        details.show_all()
+        reveal_page(details)
         scroll.get_vadjustment().set_value(0)
 
     def render():
@@ -415,5 +423,7 @@ def build(shell, Gtk, Gdk):
     shell.win7_panel_show_home = show_home
     shell.win7_panel_reset = reset
     shell.win7_panel_view_by = view_by
+    shell.win7_panel_details = details
+    shell.win7_panel_icons_grid = icons_grid
     render()
     return window

@@ -81,6 +81,19 @@ class FrutigerAeroContractTests(unittest.TestCase):
         self.assertIn("picture.set_pixel_size(48)", grid)
         self.assertIn('profile in ("winxp", "aero", "frutiger", "winclassic", "windows10", "chromeos")', source)
 
+    def test_application_pins_do_not_silently_accept_failed_gio_launches(self):
+        from unittest.mock import Mock
+        from macrice.aero_shell import launch_app_checked
+
+        success = Mock()
+        success.launch.return_value = True
+        launch_app_checked(success)
+        success.launch.assert_called_once_with([], None)
+        failed = Mock()
+        failed.launch.return_value = False
+        with self.assertRaisesRegex(RuntimeError, "reported failure"):
+            launch_app_checked(failed)
+
     def test_aqua_glass_css_is_profile_scoped(self):
         css = CSS["frutiger"]
         for selector in (b"frutiger-taskbar", b"frutiger-start", b"frutiger-tray",

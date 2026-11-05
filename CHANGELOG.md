@@ -1,5 +1,38 @@
 # RiceBowl changelog
 
+## Unreleased — owner QA interaction follow-up (5 November 2026)
+
+- ChromeOS WLAN shelf button opens the native Network page of its Quick
+  Settings panel and toggles it on repeat clicks instead of spawning an
+  external settings tool. Added GTK smoke and source contract regressions.
+- Windows 7 Control Panel category, task and Large/Small icon pages explicitly
+  reveal both their `no-show-all` GTK containers **and their child widgets**;
+  native smoke verifies visible page contents rather than just navigation.
+- Windows 98 tray popups calculate root coordinates from the clicked status
+  button rather than the shared taskbar's window; 1024px/offset-monitor
+  placement has deterministic geometry regressions.
+- XP Luna Control Panel uses the shared, keyboard-accessible GTK EventBox
+  caption handle; Close stays outside the draggable region.
+- The opt-in updater reports changed Git path names safely (including spaces
+  and staged renames), retains its refusal to overwrite dirty checkouts and
+  exposes the full selectable preservation guidance inside Hub Recovery.
+- Explicit Gio desktop-launch failure from any pinned or menu app now shows
+  an error instead of silently treating `False` as successful.
+- Extended Frutiger native-X11 pointer test coverage to actual tray flyouts,
+  Start and app pins; **this is diagnostic coverage, not proof that the user's
+  inert-icon report is resolved**. All physical Mint/XFCE acceptance remains
+  open in the owner QA sheet; no new release has been declared.
+
+## Unreleased — Windows 98 Start cascade focus guard (5 November 2026)
+
+- Share the existing XP native-popup focus guard with Windows 98: root and
+  nested GTK cascades are tracked while mapped, so an X11 focus transfer to
+  Programs/Favorites/Settings no longer triggers the 650 ms Start dismissal.
+  Intentional Start toggles and menu actions still close the popup tree.
+- Added a headless regression contract and a native GTK smoke assertion for
+  the mapped Programs cascade. Full pointer traversal on the owner's Mint/XFCE
+  laptop remains an explicit acceptance gate in `OWNER_QA_2026-11-05.md`.
+
 ## Unreleased — Frutiger launcher escape and real tray menus (5 November 2026)
 
 - Fixed a focus-dependent Settings dead end: selecting an Aqua Control Center

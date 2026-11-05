@@ -1,10 +1,22 @@
 """Aero geometry and overflow regressions; independent of GTK hardware."""
 import unittest
 
-from macrice.aero_layout import PANEL_HEIGHT, actual_popup_y, bottom_strut, menu_geometry, task_capacity, select_windows
+from macrice.aero_layout import (PANEL_HEIGHT, actual_popup_y, anchored_popup_x,
+                                 bottom_strut, menu_geometry, task_capacity, select_windows)
 
 
 class AeroLayoutTests(unittest.TestCase):
+    def test_tray_popup_tracks_button_not_parent_window_origin(self):
+        for monitor_x, width, button_x, button_width, popup_width, expected in (
+            (0, 1024, 950, 24, 255, 765),
+            (0, 1600, 1470, 26, 255, 1341),
+            (1920, 1366, 3180, 25, 275, 3007),
+            (-1280, 1280, -95, 24, 255, -259),
+            (0, 1024, 20, 24, 255, 4),
+        ):
+            self.assertEqual(anchored_popup_x(monitor_x, width, button_x,
+                                               button_width, popup_width), expected)
+
     def test_menu_is_bounded_to_monitor_with_nonzero_origin(self):
         for x, y, w, h in [(0, 0, 1920, 1080), (1920, 0, 1366, 768), (-1280, 50, 1280, 720),
                             (0, 0, 480, 360), (0, 0, 320, 240)]:

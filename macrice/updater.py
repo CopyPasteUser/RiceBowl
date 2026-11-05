@@ -54,7 +54,7 @@ class UpdatePlan:
         return self.commits > 0
 
 
-def _git(source: Path, *args: str, timeout: int = 15) -> str:
+def _git(source: Path, *args: str, timeout: int = 15, strip: bool = True) -> str:
     try:
         proc = subprocess.run(["git", "-C", str(source), *args], text=True,
                               capture_output=True, timeout=timeout, check=False)
@@ -63,7 +63,22 @@ def _git(source: Path, *args: str, timeout: int = 15) -> str:
     if proc.returncode:
         raise UpdateError("Git " + args[0] + " failed: " +
                           (proc.stderr.strip() or "check the checkout and network")[-180:])
-    return proc.stdout.strip()
+    return proc.stdout.strip() if strip else proc.stdout
+
+
+def checkout_changes(source: Path) -> tuple[str, ...]:
+    """Read changed path names, including spaces and staged renames, without edits."""
+    entries = _git(source, "status", "--porcelain=v1", "-z",
+                   "--untracked-files=normal", strip=False).split("\0")
+    paths = []
+    index = 0
+    while index < len(entries) and entries[index]:
+        entry = entries[index]
+        paths.append(entry[3:])
+        if "R" in entry[:2] or "C" in entry[:2]:
+            index += 1  # -z adds the original name after a renamed/copied path.
+        index += 1
+    return tuple(paths)
 
 
 def inspect(*, source: Path | None = None, refresh: bool = False) -> UpdatePlan:
@@ -77,8 +92,16 @@ def inspect(*, source: Path | None = None, refresh: bool = False) -> UpdatePlan:
         raise UpdateError("Origin is not the official RiceBowl repository; refusing code execution")
     if _git(source, "symbolic-ref", "--short", "HEAD") != "main":
         raise UpdateError("Switch to your clean main branch before updating")
-    if _git(source, "status", "--porcelain", "--untracked-files=normal"):
-        raise UpdateError("Checkout contains local changes; commit or preserve them first")
+    changes = checkout_changes(source)
+    if changes:
+        sample = ", ".join(repr(path) for path in changes[:6])
+        extra = f" (+{len(changes) - 6} more)" if len(changes) > 6 else ""
+        raise UpdateError(
+            f"Checkout contains {len(changes)} local changes: {sample}{extra}. "
+            "Nothing was changed. Review `git status --short` in your RiceBowl "
+            "checkout. Commit your edits, or explicitly preserve them with "
+            "`git stash push -u` before retrying. After updating, use "
+            "`git stash apply` to restore them; Git will report conflicts.")
     if refresh:
         _git(source, "fetch", "--no-tags", "origin", "main", timeout=45)
     current = _git(source, "rev-parse", "HEAD")

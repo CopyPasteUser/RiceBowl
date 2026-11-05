@@ -481,6 +481,11 @@ def run() -> int:
                             False, False, 0)
             self.update_label = label("Not checked yet. Existing Rice and personal settings are preserved.",
                                       "hub-hint", True)
+            # A dirty checkout must name the affected files and explain how
+            # to preserve them. Keep the complete, selectable read-only error
+            # in Recovery rather than silently truncating it to 180 chars.
+            self.update_label.set_selectable(True)
+            self.update_label.set_line_wrap_mode(Pango.WrapMode.WORD_CHAR)
             body.pack_start(self.update_label, False, False, 0)
             updates = horizontal(9)
             body.pack_start(updates, False, False, 0)
@@ -664,7 +669,7 @@ def run() -> int:
                 self._update_plan = None
                 self.quick_update_button.set_label(quick_update_label(None))
                 self.quick_update_status.set_text("Update failed · See details below")
-                self.update_label.set_text("Update failed: " + error[:180])
+                self.update_label.set_text("Update blocked: " + error)
             self._update_activity = None
             if error:
                 self._notify(error, error=True)

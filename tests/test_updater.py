@@ -111,12 +111,23 @@ class UpdateTests(unittest.TestCase):
 
     def test_dirty_checkout_and_wrong_origin_are_rejected(self):
         (self.checkout / "untracked.txt").write_text("personal")
-        with self.assertRaisesRegex(updater.UpdateError, "local changes"):
+        with self.assertRaisesRegex(updater.UpdateError, "untracked.txt"):
             updater.inspect(source=self.checkout)
         (self.checkout / "untracked.txt").unlink()
         with mock.patch.object(updater, "ALLOWED_REMOTES", {"https://example.invalid/other.git"}):
             with self.assertRaisesRegex(updater.UpdateError, "official RiceBowl"):
                 updater.inspect(source=self.checkout)
+
+    def test_dirty_summary_preserves_spaced_paths_and_staged_renames(self):
+        (self.checkout / "personal notes.txt").write_text("keep")
+        git(self.checkout, "mv", "revision.txt", "new revision.txt")
+        paths = updater.checkout_changes(self.checkout)
+        self.assertEqual(paths, ("new revision.txt", "personal notes.txt"))
+        with self.assertRaisesRegex(updater.UpdateError, "2 local changes") as error:
+            updater.inspect(source=self.checkout)
+        self.assertIn("git stash push -u", str(error.exception))
+        self.assertTrue((self.checkout / "personal notes.txt").exists())
+        self.assertEqual(git(self.checkout, "status", "--porcelain").count("\n"), 1)
 
     def test_cli_accepts_explicit_pinned_revision_and_requires_user_confirmation(self):
         args = parser().parse_args(["update", "apply", "--yes", "--revision", "a" * 40])

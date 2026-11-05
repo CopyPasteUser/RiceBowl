@@ -85,6 +85,14 @@ class Win98FidelityTests(unittest.TestCase):
         self.assertIn("Gtk.ResponseType.APPLY", taskbar_options)
         self.assertEqual(PROFILES["winclassic"].wallpaper, "classic-teal.jpg")
 
+    def test_classic_cascades_hold_start_open_during_gtk_pointer_grabs(self):
+        classic = (ROOT / "macrice/classic98_menu.py").read_text(encoding="utf-8")
+        shell = (ROOT / "macrice/aero_shell.py").read_text(encoding="utf-8")
+        self.assertTrue("shell._track_start_popup(Gtk.Menu())" in classic,
+                        "Classic GTK flyouts must register with the shared focus guard")
+        self.assertTrue('if name == "menu" and self._start_open_menus:' in shell,
+                        "Focus timeout must not hide Start while a cascade is mapped")
+
     def test_gtk_and_live_shell_use_90s_widget_grammar(self):
         css = CSS["winclassic"]
         for token in (b".classic-chevron", b".classic-menu-list", b".classic-brand-label",

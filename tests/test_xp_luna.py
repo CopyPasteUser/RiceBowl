@@ -93,6 +93,11 @@ class LunaGeometryTests(unittest.TestCase):
         self.assertIn('width = min(746, max(0, rect.width - 24))', shell)
         self.assertIn('height = min(536, max(0, rect.height - panel_height - 24))', shell)
 
+    def test_control_panel_caption_uses_input_window_and_keeps_close_outside_drag(self):
+        panel = (project_root() / "macrice/luna_control_panel.py").read_text()
+        self.assertIn("draggable_caption(window, title, Gtk, Gdk)", panel)
+        self.assertIn("caption.pack_end(close, False, False, 0)", panel)
+
     def test_control_panel_categories_never_launch_fake_or_unavailable_applets(self):
         self.assertEqual(len(LUNA_CATEGORIES), 9)
         self.assertEqual(available_program(("missing", "installed"),

@@ -67,6 +67,12 @@ def default_pins(apps) -> tuple[str, ...]:
     return tuple(selected)
 
 
+def launch_app_checked(app) -> None:
+    """Do not silently treat Gio's explicit launch failure as success."""
+    if app.launch([], None) is False:
+        raise RuntimeError("The installed desktop launcher reported failure")
+
+
 def matching_apps(apps, query: str):
     needle = query.casefold().strip()
     return tuple(app for app in apps if needle in
@@ -613,8 +619,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._win7_peek_timer = 0
             self._win7_peek_active = False
             self._menu_focused = False
-            self._luna_popup_depth = 0
-            self._luna_open_menus = set()
+            self._start_open_menus = set()
             self._tray = None
             self._status_pending = False
             self._status_widgets = {}
@@ -791,6 +796,23 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 assert self.menu.get_visible()
                 self.search.set_text("unlikely-app-id-ricehub-smoke-39083")
                 assert self.results.get_children()
+                if profile == "winclassic":
+                    # A Gtk.MenuButton's cascade grabs X11 focus. In the old
+                    # shell this closed Start 650 ms after the pointer entered.
+                    main = self.menu.get_child().get_children()[-1]
+                    programs_button = next(child for child in main.get_children()
+                                           if isinstance(child, Gtk.MenuButton))
+                    programs_button.set_active(True)
+                    for _ in range(20):
+                        if not Gtk.events_pending():
+                            break
+                        Gtk.main_iteration_do(False)
+                    assert self._start_open_menus, "Win98 Programs popup was not tracked"
+                    self._menu_focus_out()
+                    self._cancel_popup_hide("menu")
+                    self._hide_if_unfocused("menu")
+                    assert self.menu.get_visible(), "Win98 Start closed while Programs was open"
+                    programs_button.set_active(False)
                 if profile == "winxp":
                     self.search.set_text("")
                     self._reveal_luna_search()
@@ -838,6 +860,14 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     from .chrome_settings import ACTIONS
                     from .chrome_quick_settings import calendar_today
                     assert self.chrome_controller is not None
+                    network_button = self._status_widgets["network"][0]
+                    network_button.clicked()
+                    assert self.chrome_quick_stack.get_visible_child_name() == "Network"
+                    network_button.clicked()
+                    assert not self.actions.get_visible()
+                    network_button.clicked()
+                    assert self.actions.get_visible()
+                    assert self.chrome_quick_stack.get_visible_child_name() == "Network"
                     self._toggle_chrome_calendar()
                     assert self.chrome_quick_stack.get_visible_child_name() == "Calendar"
                     assert self.chrome_quick_calendar.get_date() == calendar_today()
@@ -1021,13 +1051,28 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     self.win7_panel_search.emit("search-changed")
                     self.win7_panel_view_by.set_active(1)
                     assert self.win7_panel_view_by.get_active() == 1
+                    assert self.win7_panel_icons_grid.get_visible(), (
+                        "Win7 icon view container is hidden after selecting Large icons")
+                    assert any(row.get_visible()
+                               for row in self.win7_panel_icons_grid.get_children()), (
+                        "Win7 icon view has no visible entries")
                     self.win7_panel_view_by.set_active(2)
                     assert self.win7_panel_view_by.get_active() == 2
+                    assert self.win7_panel_icons_grid.get_visible(), (
+                        "Win7 icon view container is hidden after selecting Small icons")
                     self.win7_panel_view_by.set_active(0)
                     self.win7_panel_show_category(self.win7_panel_rows[0][0])
                     assert self.win7_panel_back.get_sensitive()
+                    assert self.win7_panel_details.get_visible(), (
+                        "Win7 category page hidden despite populated task links")
+                    assert any(child.get_visible()
+                               for child in self.win7_panel_details.get_children())
                     category = self.win7_panel_rows[0][0]
                     self.win7_panel_show_task(category, category.tasks[0])
+                    assert self.win7_panel_details.get_visible(), (
+                        "Win7 task details invisible after navigating into a setting")
+                    assert any(child.get_visible()
+                               for child in self.win7_panel_details.get_children())
                     assert self.win7_panel_forward.get_sensitive() is False
                     self.win7_panel_back.clicked()
                     assert self.win7_panel_forward.get_sensitive()
@@ -1105,8 +1150,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                         def pointer_click(widget):
                             while Gtk.events_pending():
                                 Gtk.main_iteration_do(False)
-                            offset = widget.translate_coordinates(self.menu, 0, 0)
-                            origin = self.menu.get_window().get_root_origin()
+                            surface = widget.get_toplevel()
+                            offset = widget.translate_coordinates(surface, 0, 0)
+                            origin = surface.get_window().get_root_origin()
                             assert offset is not None
                             point = (origin[0] + offset[0] + widget.get_allocated_width() // 2,
                                      origin[1] + offset[1] + widget.get_allocated_height() // 2)
@@ -1170,6 +1216,40 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                             pointer_click(self._frutiger_tab_buttons[page])
                             assert self.aqua_stack.get_visible_child_name() == page, (
                                 f"Aqua {page} unresponsive after closing Settings")
+                        self._hide_menu()
+                        for kind in ("network", "audio", "battery", "bluetooth"):
+                            trigger = (self.aqua_bluetooth_button if kind == "bluetooth"
+                                       else self._status_widgets[kind][0])
+                            pointer_click(trigger)
+                            assert self._aqua_flyouts.popovers[kind].get_visible(), (
+                                f"Real X11 click on Aqua {kind} tray icon opened no flyout")
+                            self._aqua_flyouts.popovers[kind].popdown()
+                        pointer_click(self.aqua_drives_button)
+                        assert self._aqua_drives.popover.get_visible(), (
+                            "Real X11 click on Aqua drives icon opened no flyout")
+                        self._aqua_drives.popover.popdown()
+                        pointer_click(self.aqua_notifications_button)
+                        assert self._aqua_notifications.popover.get_visible(), (
+                            "Real X11 click on Aqua notifications icon opened no flyout")
+                        self._aqua_notifications.popover.popdown()
+                        pointer_click(self.aqua_clock_button)
+                        assert self._aqua_calendar.popover.get_visible(), (
+                            "Real X11 click on Aqua calendar icon opened no flyout")
+                        self._aqua_calendar.popover.popdown()
+                        pointer_click(self.start_button)
+                        assert self.menu.get_visible(), (
+                            "Real X11 click on Aqua Start icon opened no launcher")
+                        self._hide_menu()
+                        pins = self.pinned_box.get_children()
+                        if pins:
+                            launched = []
+                            original_launch = self._launch
+                            try:
+                                self._launch = lambda app: launched.append(app)
+                                pointer_click(pins[0])
+                            finally:
+                                self._launch = original_launch
+                            assert launched, "Real X11 click on Aqua app pin was ignored"
                     self._show_aqua_control("sound", "Input & output devices")
                     assert self.actions.get_visible()
 
@@ -1873,7 +1953,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 return False
             menu = Gtk.Menu()
             if profile == "winxp":
-                self._track_luna_popup(menu)
+                self._track_start_popup(menu)
             pinned = identifier in self._pinned_ids
             if profile == "aero" and widget.get_parent() is self.pinned_box:
                 menu.get_style_context().add_class("win7-jumplist")
@@ -2183,6 +2263,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     self._aqua_flyouts = AquaFlyouts(self, Gtk)
                 self._aqua_flyouts.show(name)
                 return
+            if profile == "chromeos" and name == "network":
+                self._toggle_chrome_quick_page("Network")
+                return
             if name in ("audio", "battery"):
                 self._toggle_actions()
                 return
@@ -2295,6 +2378,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 bluetooth.get_accessible().set_name("Bluetooth controls")
                 bluetooth.connect("clicked", lambda _button: self.classic98_tray_show("bluetooth"))
                 row.pack_end(bluetooth, False, False, 0)
+                self.classic98_bluetooth_button = bluetooth
             self._refresh_status_async()
             GLib.timeout_add_seconds(20, self._refresh_status_async)
 
@@ -2809,6 +2893,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
                 clock_button.connect("clicked", show_aqua_calendar)
                 right_area.pack_end(clock_button, False, False, 6)
+                self.aqua_clock_button = clock_button
             else:
                 right_area.pack_end(clock, False, False, 6)
             if tiles:
@@ -2942,7 +3027,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             if profile != "winxp" or event.button != 3:
                 return False
             menu = Gtk.Menu()
-            self._track_luna_popup(menu)
+            self._track_start_popup(menu)
             item = Gtk.MenuItem(label="Properties")
             item.connect("activate", lambda *_args: self.luna_open_taskbar_properties())
             menu.append(item)
@@ -2974,7 +3059,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             if profile != "winxp" or event.button != 3:
                 return False
             menu = Gtk.Menu()
-            self._track_luna_popup(menu)
+            self._track_start_popup(menu)
             for title, action in (
                 ("Taskbar and Start Menu Properties…", self.luna_open_taskbar_properties),
                 ("Customize notification icons…", lambda: self._tray.open_preferences()
@@ -3294,7 +3379,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _luna_group_popup(self, button, group, *, show_close=False):
             menu = Gtk.Menu()
-            self._track_luna_popup(menu)
+            self._track_start_popup(menu)
             for window in group.windows:
                 item = Gtk.MenuItem(label=window.title)
                 item.connect("activate", lambda _item, xid=window.xid:
@@ -3937,21 +4022,20 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self.menu, self.search = menu, search
             self._populate("")
 
-        def _track_luna_popup(self, menu):
-            """Style native GTK flyouts and preserve Start while a submenu owns focus."""
-            if profile != "winxp":
+        def _track_start_popup(self, menu):
+            """Keep the Win98/XP Start window open while GTK cascades own focus."""
+            if profile not in ("winxp", "winclassic"):
                 return menu
-            menu.get_style_context().add_class("luna-popup")
+            if profile == "winxp":
+                menu.get_style_context().add_class("luna-popup")
 
             def mapped(_menu):
-                self._luna_open_menus.add(_menu)
-                self._luna_popup_depth = len(self._luna_open_menus)
+                self._start_open_menus.add(_menu)
                 self._cancel_popup_hide("menu")
 
             def unmapped(_menu):
-                self._luna_open_menus.discard(_menu)
-                self._luna_popup_depth = len(self._luna_open_menus)
-                if not self._luna_popup_depth and not self.menu.is_active():
+                self._start_open_menus.discard(_menu)
+                if not self._start_open_menus and not self.menu.is_active():
                     self._schedule_popup_hide("menu")
 
             menu.connect("map", mapped)
@@ -3988,7 +4072,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 ("Office", ("Office", "Spreadsheet", "WordProcessor")),
                 ("System Tools", ("System", "Settings", "FileManager", "Terminal")),
             )
-            programs_menu = self._track_luna_popup(Gtk.Menu())
+            programs_menu = self._track_start_popup(Gtk.Menu())
             if profile == "winxp":
                 program_groups = luna_program_groups(self.apps)
             else:
@@ -4005,7 +4089,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     if members:
                         program_groups.append((title, None, members))
             for title, icon, members in program_groups:
-                submenu = self._track_luna_popup(Gtk.Menu())
+                submenu = self._track_start_popup(Gtk.Menu())
                 for app in members:
                     name = app.get_display_name() or app.get_name()
                     item = (self._luna_menu_item(name, app.get_icon() or "applications-other")
@@ -4091,7 +4175,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             content.pack_end(Gtk.Label(label="▸"), False, False, 0)
             button.add(content)
             button.set_direction(Gtk.ArrowType.RIGHT)
-            menu = self._track_luna_popup(Gtk.Menu())
+            menu = self._track_start_popup(Gtk.Menu())
             self.luna_recent_popup = menu
             try:
                 items = (item for item in Gtk.RecentManager.get_default().get_items()
@@ -5253,7 +5337,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             if name == "control" and profile in ("frutiger", "winxp"):
                 # Standalone settings windows persist across app focus changes.
                 return False
-            if name == "menu" and self._luna_popup_depth:
+            if name == "menu" and self._start_open_menus:
                 return False
             if window.get_visible() and not window.is_active():
                 if name == "menu":
@@ -5319,37 +5403,29 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     self.aqua_control_show_home()
                 self.actions.present()
 
-        def _toggle_chrome_calendar(self):
-            """The clock opens a real month view without breaking system-menu toggle."""
+        def _toggle_chrome_quick_page(self, page):
+            """Route shelf controls into owned pages, toggling the same page shut."""
             if profile != "chromeos":
                 return
             self._cancel_popup_hide("control")
             if self.actions.get_visible():
-                if self.chrome_quick_stack.get_visible_child_name() == "Calendar":
+                if self.chrome_quick_stack.get_visible_child_name() == page:
                     self._hide_actions()
                 else:
-                    self.chrome_quick_show_page("Calendar")
+                    self.chrome_quick_show_page(page)
                     self.actions.present()
                 return
             self._toggle_actions()
             if self.actions.get_visible():
-                self.chrome_quick_show_page("Calendar")
+                self.chrome_quick_show_page(page)
+
+        def _toggle_chrome_calendar(self):
+            """The clock opens a real month view without breaking system-menu toggle."""
+            self._toggle_chrome_quick_page("Calendar")
 
         def _toggle_chrome_notifications(self):
             """Open Xfce's real notification log without replacing its daemon."""
-            if profile != "chromeos":
-                return
-            self._cancel_popup_hide("control")
-            if self.actions.get_visible():
-                if self.chrome_quick_stack.get_visible_child_name() == "Notifications":
-                    self._hide_actions()
-                else:
-                    self.chrome_quick_show_page("Notifications")
-                    self.actions.present()
-                return
-            self._toggle_actions()
-            if self.actions.get_visible():
-                self.chrome_quick_show_page("Notifications")
+            self._toggle_chrome_quick_page("Notifications")
 
         def _toggle_actions(self):
             self._cancel_popup_hide("control")
@@ -5836,13 +5912,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             return False
 
         def _hide_menu(self):
-            if profile == "winclassic":
-                for popup in getattr(self, "classic_menus", ()):
-                    popup.popdown()
-            if profile == "winxp":
+            if profile in ("winclassic", "winxp"):
                 # Native Gtk.Menu flyouts are separate X11 popup surfaces: hiding
                 # the Start Gtk.Window alone does not release their pointer grab.
-                for popup in tuple(self._luna_open_menus):
+                for popup in tuple(self._start_open_menus):
                     popup.popdown()
             self._cancel_popup_hide("menu")
             self._menu_focused = False
@@ -5963,7 +6036,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _launch(self, app):
             try:
-                app.launch([], None)
+                launch_app_checked(app)
                 if profile == "winxp" and self._luna_start_state is not None:
                     from .luna_start_state import record_launch, save_start_state
 
@@ -5973,7 +6046,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     except (OSError, ValueError) as exc:
                         logging.getLogger(__name__).warning("Could not save XP recent apps: %s", exc)
                 self._hide_menu()
-            except GLib.Error as exc:
+            except (GLib.Error, OSError, RuntimeError) as exc:
                 self._error(str(exc))
 
         def _error(self, message, *, title="Could not launch application"):
