@@ -32,6 +32,24 @@ def wallpaper_file(style: str, root: Path | None = None) -> Path:
     return directory / "assets/wallpapers" / STYLES[style].wallpaper
 
 
+def canvas_stylesheet(fallback: str, text_color: str, accent: str, radius: int) -> bytes:
+    """Generate the small scoped GTK stylesheet; testable without X11."""
+    return (
+        f"#riceplate-preview {{ background: {fallback}; }}\n"
+        "#riceplate-preview iconview, #riceplate-preview scrolledwindow, "
+        "#riceplate-preview viewport { background: transparent; border: none; }\n"
+        f"#riceplate-preview iconview {{ color: {text_color}; "
+        "font-family: Sans; font-size: 12px; }\n"
+        f"#riceplate-preview iconview:selected {{ background: {accent}; "
+        f"border-radius: {radius}px; }}\n"
+        "#riceplate-preview .riceplate-footer { background: #18212c; "
+        "color: #f3f6fa; padding: 9px 12px; }\n"
+        "#riceplate-preview .riceplate-hint { background: rgba(0,0,0,0.68); "
+        "color: white; padding: 14px; border-radius: 8px; }\n"
+        "#riceplate-preview .riceplate-status { color: #ebf1f8; }\n"
+    ).encode("utf-8")
+
+
 def build_window(style: str, *, folder: Path | None = None,
                  config_root: Path | None = None):
     """Create a normal interactive window (caller owns GTK's main loop)."""
@@ -54,20 +72,7 @@ def build_window(style: str, *, folder: Path | None = None,
     }
     fallback, text_color, accent, radius = styles[family]
     css = Gtk.CssProvider()
-    css.load_from_data((
-        f"#riceplate-preview {{ background: {fallback}; }}\n"
-        "#riceplate-preview iconview, #riceplate-preview scrolledwindow, "
-        "#riceplate-preview viewport { background: transparent; border: none; }\n"
-        f"#riceplate-preview iconview {{ color: {text_color}; "
-        "font-family: Sans; font-size: 12px; }}\n"
-        f"#riceplate-preview iconview:selected {{ background: {accent}; "
-        f"border-radius: {radius}px; }}\n"
-        "#riceplate-preview .riceplate-footer { background: #18212c; "
-        "color: #f3f6fa; padding: 9px 12px; }\n"
-        "#riceplate-preview .riceplate-hint { background: rgba(0,0,0,0.68); "
-        "color: white; padding: 14px; border-radius: 8px; }\n"
-        "#riceplate-preview .riceplate-status { color: #ebf1f8; }\n"
-    ).encode("utf-8"))
+    css.load_from_data(canvas_stylesheet(fallback, text_color, accent, radius))
     screen = Gdk.Screen.get_default()
     if screen is not None:
         Gtk.StyleContext.add_provider_for_screen(screen, css,

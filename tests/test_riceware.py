@@ -127,6 +127,19 @@ class PopTests(unittest.TestCase):
 
 
 class PlateTests(unittest.TestCase):
+    def test_riceplate_stylesheet_is_valid_gtk_css_without_display(self):
+        from macrice.riceware.plate_preview import canvas_stylesheet
+
+        try:
+            import gi
+        except ImportError:
+            self.skipTest("GTK introspection unavailable")
+        gi.require_version("Gtk", "3.0")
+        from gi.repository import Gtk
+
+        provider = Gtk.CssProvider()
+        provider.load_from_data(canvas_stylesheet("#194da1", "#ffffff", "#316ac5", 5))
+
     def test_each_rice_has_a_distinct_desktop_policy(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
