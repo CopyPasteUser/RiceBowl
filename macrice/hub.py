@@ -90,6 +90,15 @@ def dirty_update_summary(plan) -> str:
             f"{examples}{remaining}. Git main will not be advanced.")
 
 
+def update_revision_summary(plan) -> str:
+    """Do not equate a pulled Git checkout with the installed application."""
+    installed = plan.installed[:12] if plan.installed else "unknown (older installation)"
+    description = ("Update available" if plan.needed else "Installed version is current")
+    return (f"{description} · Installed {installed} · GitHub {plan.available[:12]} "
+            f"· Local Git {plan.current[:12]} ({plan.commits} new source commit(s))" +
+            ("\n" + dirty_update_summary(plan) if plan.changed else ""))
+
+
 def _activate_hub_window(application, windows, factory) -> bool:
     """Never leave a registered but invisible Gtk.ApplicationWindow behind.
 
@@ -859,24 +868,18 @@ def run() -> int:
 
         def _show_update(self, plan):
             self._update_plan = plan
-            self.update_label.set_text(
-                f"Installed source {plan.current[:12]} · origin/main {plan.available[:12]} · "
-                f"{plan.commits} new commit(s)" +
-                ("\n" + dirty_update_summary(plan) if plan.changed else "")
-                if plan.needed else
-                f"Source already up to date at {plan.current[:12]}" +
-                ("\n" + dirty_update_summary(plan) if plan.changed else ""))
+            self.update_label.set_text(update_revision_summary(plan))
             self.update_apply_button.set_sensitive(plan.needed)
             self.update_apply_button.set_label(
                 "Install; preserve checkout…" if plan.changed else "Install checked revision…")
             self.quick_update_button.set_label(quick_update_label(plan))
             self.quick_update_status.set_text(
-                f"{plan.commits} new commit(s) · " +
+                "New version available · " +
                 ("Local edits stay untouched" if plan.changed else "Confirm to install")
                 if plan.needed else
-                "Already up to date")
-            self._notify("A checked fast-forward update is available." if plan.needed else
-                         "RiceBowl source is up to date.")
+                "Installed version is current")
+            self._notify("A checked RiceBowl update is available." if plan.needed else
+                         "Installed RiceBowl is up to date.")
 
         def _confirm_update(self):
             from .updater import apply as apply_update
