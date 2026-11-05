@@ -64,7 +64,7 @@ dbus-run-session -- sh -eu -c '
         exit 1
     fi
     # Closing the native panel must also end the compositor. This is essential
-    # on Mint 22's labwc 0.7.1, which lacks --session supervision.
+    # on labwc 0.7.1 shipped with Mint 22, which lacks --session supervision.
     pkill -TERM -u "$(id -u)" -x waybar
     count=0
     while [ "$count" -lt 40 ]; do
@@ -72,6 +72,12 @@ dbus-run-session -- sh -eu -c '
             echo "labwc and Waybar started, then exited cleanly together"
             exit 0
         fi
+        # A terminated child remains visible to kill -0 until the EXIT trap
+        # reaps it. A zombie here also proves that labwc has shut down.
+        state=$(ps -o stat= -p "$compositor" 2>/dev/null || :)
+        case "$state" in
+            *Z*) echo "labwc and Waybar started, then exited cleanly together"; exit 0 ;;
+        esac
         count=$((count + 1))
         sleep 0.25
     done
