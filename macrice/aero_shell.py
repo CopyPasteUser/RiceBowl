@@ -1409,6 +1409,45 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     self.luna_tray.toggle("alerts")
                     GLib.timeout_add(780, self._capture_aero_alerts)
                     return False
+                if profile == "windows10":
+                    self._hide_actions()
+                    self._open_ten_settings("home")
+                    GLib.timeout_add(650, self._capture_ten_settings_home)
+                    return False
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._smoke_failed = True
+            self.quit()
+            return False
+
+        def _capture_ten_settings_home(self):
+            try:
+                settings = self.ten_settings
+                assert settings.window.get_mapped() and settings.current == "home"
+                assert settings.home_search.get_visible() and not settings.sidebar.get_visible()
+                home_scroll = settings.stack.get_child_by_name("home")
+                adjustment = home_scroll.get_vadjustment()
+                assert adjustment.get_upper() <= adjustment.get_page_size() + 3, (
+                    "Windows 10 category home clips its bottom row at the capture size")
+                self._capture_screen(
+                    f"ricebowl-windows10-settings-home-0.9.1{self._capture_variant}-extra.png")
+                settings.navigate("sound")
+                GLib.timeout_add(400, self._capture_ten_settings_detail)
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._smoke_failed = True
+                self.quit()
+            return False
+
+        def _capture_ten_settings_detail(self):
+            try:
+                settings = self.ten_settings
+                assert settings.window.get_mapped() and settings.current == "sound"
+                assert settings.sidebar.get_visible() and settings._sliders["audio"].get_visible()
+                self._capture_screen(
+                    f"ricebowl-windows10-settings-sound-0.9.1{self._capture_variant}-extra.png")
             except Exception:
                 import traceback
                 traceback.print_exc()

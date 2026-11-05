@@ -9,7 +9,9 @@ from macrice.hardware_status import BluetoothState, SoundState, WifiNetwork
 from macrice.riceware import spice
 from macrice.riceware.worker import Response
 from macrice.ten_network import TenNetworkFlyout, network_description
-from macrice.ten_settings import CATEGORIES, SUBPAGES, TenSettings, page_parent
+from macrice.ten_settings import (
+    CATEGORIES, SUBPAGES, TenSettings, page_parent, search_destinations,
+)
 from macrice.ten_task_view import MAX_VISIBLE_WINDOWS, TenTaskView, manageable_workspace_count
 
 
@@ -45,24 +47,65 @@ class Slider(Toggle):
 def settings_fixture():
     view = TenSettings.__new__(TenSettings)
     view._pending = set()
+    view._rendering_switches = set()
     view._switches = {
         "wifi": Toggle(), "bluetooth": Toggle(),
         "audio_mute": Toggle(), "quiet": Toggle(),
     }
     view._sliders = {"audio": Slider(), "brightness": Slider()}
     view._status_labels = {"bluetooth": Label(), "network": Label()}
+    view._control_feedback = {"wifi": Label(), "bluetooth": Label(),
+                              "audio_mute": Label(), "audio": Label(),
+                              "quiet": Label(), "brightness": Label()}
+    view._last_errors = {}
     view.refresh = Mock()
     return view
 
 
 class Win10DeepTests(unittest.TestCase):
     def test_settings_categories_and_real_navigation_hierarchy(self):
-        self.assertEqual(len(CATEGORIES), 9)
+        self.assertEqual(len(CATEGORIES), 12)
+        self.assertEqual(len({key for key, _title, _desc in CATEGORIES}), 12)
         self.assertEqual(page_parent("home"), "home")
         self.assertEqual(page_parent("network"), "home")
         for page, (parent, title) in SUBPAGES.items():
             self.assertEqual(page_parent(page), parent)
             self.assertTrue(title)
+
+    def test_search_finds_real_subpages_and_later_settings_categories(self):
+        self.assertIn("sound", [key for key, *_ in search_destinations("volume")])
+        self.assertIn("display", [key for key, *_ in search_destinations("monitors")])
+        self.assertIn("updates", [key for key, *_ in search_destinations("mint update")])
+        self.assertIn("network", [key for key, *_ in search_destinations("Wi-Fi")])
+        self.assertEqual(search_destinations("not-a-real-feature-123"), ())
+        self.assertEqual(search_destinations(" "), ())
+
+    def test_backend_error_without_response_value_is_unavailable(self):
+        view = settings_fixture()
+        view._render_capability("wifi", Response("wifi", 1, error="No network service"))
+        self.assertFalse(view._switches["wifi"].enabled)
+        self.assertIn("No network service", view._control_feedback["wifi"].value)
+
+    def test_switch_keeps_previous_state_until_verified_readback(self):
+        view = settings_fixture()
+        view._request = Mock()
+        view._switch_state_set(None, True, "wifi")
+        self.assertFalse(view._switches["wifi"].value)
+        self.assertFalse(view._switches["wifi"].enabled)
+        self.assertIn("Applying", view._control_feedback["wifi"].value)
+        callback = view._request.call_args.args[2]
+        callback(Response("wifi", 1, value=spice.Result("wifi", "error",
+                                                        reason="Radio blocked")))
+        self.assertIn("Radio blocked", view._control_feedback["wifi"].value)
+        self.assertIn("Radio blocked", view._last_errors["wifi"])
+        view.refresh.assert_called_once()
+
+    def test_failed_action_stays_visible_after_successful_readback(self):
+        view = settings_fixture()
+        view._last_errors["wifi"] = "Change failed · permission denied"
+        view._render_capability("wifi", Response("wifi", 2, value=spice.Result(
+            "wifi", "ok", False)))
+        self.assertIn("permission denied", view._control_feedback["wifi"].value)
 
     def test_capability_readback_updates_real_audio_and_mute(self):
         view = settings_fixture()

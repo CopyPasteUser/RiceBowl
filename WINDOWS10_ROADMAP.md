@@ -101,6 +101,27 @@ criteria below. XFCE Notifyd remains the only notification service.
   backed-up XFCE shortcuts, task previews/Snap Assist, interactive network
   credential dialog, notification grouping and full Win10 Explorer acceptance.
 
+## Owner QA-03 Settings depth and visual pass — 5 November 2026
+
+- [x] Home uses a Windows 10 22H2-style centered heading, prominent search
+  and icon-first 3-column category links; no Win11 card dashboard. Secondary
+  pages retain the familiar left navigation and a separate draggable title.
+- [x] Both search fields index real destinations, including Sound, Display,
+  Focus assist, the Linux software updater and controller settings. Empty
+  results are explicit, selection clears the query, Back/Escape return to a
+  usable parent, Ctrl+F focuses search, and no categories lead to blank pages.
+- [x] Genuine Gtk.Switch controls defer visual commitment until Linux backend
+  readback; pending, unavailable and failed writes are visible inline, and
+  unsuccessful changes cannot masquerade as success on the next refresh.
+- [x] All 12 implemented categories link to available Linux tools or state
+  explicitly that an optional tool is absent; no Windows-only switches are
+  invented. Runtime styling remains isolated to `ten_shell.CSS`.
+- [x] Added headless routing/write regressions, a real-GTK navigation smoke
+  and 1600×900/1024×768 Home/Sound capture assertions in X11 CI.
+- [ ] Inspect actual CI screenshots and obtain owner acceptance on Mint/XFCE.
+  More complete category implementations, forward history, account/phone
+  services, global Win+I binding and responsive DPI matrix remain open.
+
 The original 22H2 fidelity checklist below remains authoritative: new
 entry points do **not** mean every Windows 10 feature is implemented.
 
