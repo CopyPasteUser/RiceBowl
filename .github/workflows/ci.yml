@@ -63,6 +63,7 @@ jobs:
           # pages, including honest unavailable-provider states in CI.
           /usr/bin/python3 -c 'from pathlib import Path; import struct; names=("notifications","settings"); fs=[Path(f"screenshots/ricebowl-chromeos-{name}-0.9.1-extra.png") for name in names]; assert all(p.is_file() and p.stat().st_size>12000 and struct.unpack(">II",p.read_bytes()[16:24])==(1600,900) for p in fs), "Missing ChromeOS detail screenshots"'
           /usr/bin/python3 -c 'from pathlib import Path; import struct; names=("home","sound"); fs=[Path(f"screenshots/ricebowl-windows10-settings-{name}-0.9.1-extra.png") for name in names]; assert all(p.is_file() and p.stat().st_size>16000 and struct.unpack(">II",p.read_bytes()[16:24])==(1600,900) for p in fs), "Missing Windows 10 Settings screenshots"'
+          /usr/bin/python3 -c 'from pathlib import Path; import struct; names=("letters","actions-expanded"); fs=[Path(f"screenshots/ricebowl-windows10-{name}-0.9.1-extra.png") for name in names]; assert all(p.is_file() and p.stat().st_size>16000 and struct.unpack(">II",p.read_bytes()[16:24])==(1600,900) for p in fs), "Missing Windows 10 interaction screenshots"'
           # Each desktop must also render a REAL application window, with its
           # own GTK theme, icons, Thunar controls and native XFWM4 titlebar.
           # The helper uses a temporary HOME inside a fresh DBus/Xvfb session.
@@ -134,6 +135,7 @@ jobs:
             screenshots/ricebowl-winclassic-*-0.9.1-1024.png
             screenshots/ricebowl-windows10-*-0.9.1-1024.png
             screenshots/ricebowl-windows10-settings-*-0.9.1*-extra.png
+            screenshots/ricebowl-windows10-*-0.9.1-extra.png
             screenshots/ricebowl-chromeos-*-0.9.1-1024.png
             screenshots/ricebowl-chromeos-*-0.9.1-extra.png
             screenshots/ricebowl-macmenu-dark-current.png

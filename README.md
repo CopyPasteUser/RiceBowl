@@ -16,10 +16,10 @@ Give XFCE a completely different personality—from Windows XP nostalgia to Frut
   <a href="screenshots/current/aero-start.webp"><img src="screenshots/current/aero-start.webp" alt="Windows 7 Aero desktop with Start menu" width="48%"></a>
   <a href="screenshots/current/frutiger-start.webp"><img src="screenshots/current/frutiger-start.webp" alt="Frutiger Aero desktop with Aqua launcher" width="48%"></a>
   <a href="screenshots/current/winxp-start.webp"><img src="screenshots/current/winxp-start.webp" alt="Windows XP Luna desktop with Start menu" width="48%"></a>
-  <a href="screenshots/current/windows10-settings-home.webp"><img src="screenshots/current/windows10-settings-home.webp" alt="Windows 10 desktop with native Settings window" width="48%"></a>
+  <a href="screenshots/current/windows10-start.webp"><img src="screenshots/current/windows10-start.webp" alt="Windows 10 desktop with Start menu, alphabetical applications and live tiles" width="48%"></a>
 </p>
 
-<div align="center"><sub>Actual GTK/X11 captures from the <a href="https://github.com/CopyPasteUser/RiceBowl/actions/runs/42029905195">5 November 2026 CI run</a> · <a href="screenshots/current/README.md">See all 34 screenshots</a></sub></div>
+<div align="center"><sub>Actual GTK/X11 captures from the <a href="https://github.com/CopyPasteUser/RiceBowl/actions/runs/42035681537">5 November 2026 CI run</a> · <a href="screenshots/current/README.md">See all 36 screenshots</a></sub></div>
 
 ## Desktop styles
 
@@ -28,6 +28,8 @@ Give XFCE a completely different personality—from Windows XP nostalgia to Frut
 Each style brings its own taskbar, launcher, menus, icons, wallpaper and system controls. RiceBowl uses native GTK and real Linux services—**no Electron or fake device toggles**.
 
 **XP Luna:** faithful two-column Start, cobalt taskbar, custom Linux icon art, Explorer-style Control Panel navigation and working taskbar/Start preferences. [Fidelity roadmap](XP_LUNA_ROADMAP.md). XFWM4 and Thunar remain available.
+
+**Windows 10:** native Start with A–Z navigation, pinned tiles, separate Settings, expandable Action Center and per-rice taskbar preferences. [See the current screenshots](screenshots/current/README.md) and [remaining fidelity work](WINDOWS10_ROADMAP.md). All art is independently created.
 
 ## Get started
 

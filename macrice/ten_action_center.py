@@ -28,7 +28,7 @@ def build(shell, Gtk, Gdk):
     actions.set_type_hint(Gdk.WindowTypeHint.UTILITY)
     actions.set_transient_for(shell.bar)
     actions.set_keep_above(True)
-    actions.set_default_size(362, 680)
+    actions.set_default_size(362, 820)
     root = shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0),
                         "ten-action-root")
 
@@ -44,6 +44,9 @@ def build(shell, Gtk, Gdk):
 
     scroll = Gtk.ScrolledWindow()
     scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+    # Expanded quick actions must not squeeze notifications into a clipped
+    # strip; the history scrolls independently of the bottom controls.
+    scroll.set_min_content_height(135)
     notifications = shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=11),
                                   "ten-action-notifications")
     notifications.pack_start(shell._class(
@@ -60,6 +63,10 @@ def build(shell, Gtk, Gdk):
     mark_read.set_sensitive(False)
     mark_read.get_accessible().set_name("Mark unread notifications as read")
     notification_tools.pack_start(mark_read, False, False, 0)
+    clear_all = shell._class(Gtk.Button(label="Clear all"), "ten-notification-dismiss")
+    clear_all.set_sensitive(False)
+    clear_all.get_accessible().set_name("Clear all XFCE notification history")
+    notification_tools.pack_start(clear_all, False, False, 0)
     notify_command = ("xfce4-notifyd-config"
                       if shutil.which("xfce4-notifyd-config") else None)
     notification_settings = shell._class(
@@ -75,6 +82,20 @@ def build(shell, Gtk, Gdk):
             "clicked", lambda _button, cmd=notify_command: shell._open_tool(cmd))
     notification_tools.pack_end(notification_settings, False, False, 0)
     notifications.pack_start(notification_tools, False, False, 0)
+    confirmation = shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8),
+                                "ten-notification-confirm")
+    warning = Gtk.Label(label="Permanently delete all XFCE notification history?", xalign=0)
+    warning.set_line_wrap(True)
+    confirmation.pack_start(warning, False, False, 0)
+    confirm_buttons = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
+    cancel = shell._class(Gtk.Button(label="Cancel"), "ten-notification-dismiss")
+    cancel.connect("clicked", lambda _button: confirmation.hide())
+    delete = shell._class(Gtk.Button(label="Delete history"), "ten-notification-danger")
+    confirm_buttons.pack_start(cancel, False, False, 0)
+    confirm_buttons.pack_start(delete, False, False, 0)
+    confirmation.pack_start(confirm_buttons, False, False, 0)
+    confirmation.set_no_show_all(True)
+    notifications.pack_start(confirmation, False, False, 0)
     scroll.add(notifications)
     root.pack_start(scroll, True, True, 0)
 
@@ -98,6 +119,12 @@ def build(shell, Gtk, Gdk):
     bottom.pack_start(live, False, False, 0)
     grid = Gtk.Grid(row_spacing=5, column_spacing=5)
     grid.set_column_homogeneous(True)
+    extra = Gtk.Revealer()
+    extra.set_transition_type(Gtk.RevealerTransitionType.SLIDE_DOWN)
+    extra.set_transition_duration(140)
+    extra_grid = Gtk.Grid(row_spacing=5, column_spacing=5)
+    extra_grid.set_column_homogeneous(True)
+    extra.add(extra_grid)
     for index, (name, icon_name, command) in enumerate(QUICK_ACTIONS):
         button = shell._class(Gtk.Button(), "ten-quick")
         tile = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
@@ -124,10 +151,25 @@ def build(shell, Gtk, Gdk):
                            shell._open_ten_settings(page))
         else:
             button.connect("clicked", lambda _button, cmd=command: shell._open_tool(cmd))
-        grid.attach(button, index % 4, index // 4, 1, 1)
+        if index < 4:
+            grid.attach(button, index, 0, 1, 1)
+        else:
+            extra_grid.attach(button, index - 4, 0, 1, 1)
         if name == "Network":
             shell.ten_network_action = button
     bottom.pack_start(grid, False, False, 0)
+    bottom.pack_start(extra, False, False, 0)
+    expand = shell._class(Gtk.Button(label="Expand  ⌄"), "ten-action-expand")
+    expand.get_accessible().set_name("Show more quick actions")
+    def toggle_extra(_button):
+        showing = not extra.get_reveal_child()
+        extra.set_reveal_child(showing)
+        expand.set_label("Collapse  ⌃" if showing else "Expand  ⌄")
+        expand.get_accessible().set_name(
+            "Show fewer quick actions" if showing else "Show more quick actions")
+    expand.connect("clicked", toggle_extra)
+    shell.ten_action_expand = expand
+    bottom.pack_start(expand, False, False, 0)
 
     hardware = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
     shell.control_network_label = shell._class(
@@ -176,5 +218,8 @@ def build(shell, Gtk, Gdk):
                     lambda _widget, event: shell._action_key(event))
     shell.ten_controller.bind(switches=live_switches, history_box=history_box,
                               history_message=history_message, mark_button=mark_read,
-                              feedback=feedback)
+                              feedback=feedback, clear_button=clear_all,
+                              confirmation=confirmation)
+    clear_all.connect("clicked", lambda _button: confirmation.show_all())
+    delete.connect("clicked", lambda _button: shell.ten_controller.clear_history())
     return actions

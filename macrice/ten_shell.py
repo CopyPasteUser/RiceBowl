@@ -2,8 +2,25 @@
 
 from __future__ import annotations
 
+import unicodedata
+
 
 APP_ID = "io.github.copypasteuser.RiceHub.TenShell"
+
+
+def app_letter(app) -> str:
+    """Windows 10 A-Z groups; accented Latin names sort into their base letter."""
+    title = app.get_display_name() or app.get_name() or ""
+    first = unicodedata.normalize("NFKD", title[:1]).upper()[:1]
+    return first if "A" <= first <= "Z" else "#"
+
+
+def letter_positions(apps) -> dict[str, int]:
+    """First visible real app per letter, in the Gio catalog's existing order."""
+    result = {}
+    for index, app in enumerate(apps):
+        result.setdefault(app_letter(app), index)
+    return result
 
 
 def start_tiles(apps, pinned_ids: tuple[str, ...], *, limit: int = 6):
@@ -99,6 +116,19 @@ CSS = b"""
 .ten-section-heading { color: #f2f2f2; font-size: 11px; font-weight: 600; }
 .ten-letter { background: #2c2c2c; color: #93cfff; font-size: 12px;
   font-weight: bold; padding: 4px 7px; }
+.ten-letters-picker { background: #252525; border: 1px solid #555;
+  padding: 11px; color: white; }
+.ten-letters-popover, .ten-letters-popover > contents {
+  background: #252525; border-color: #555; color: white; }
+.ten-letters-button { background: transparent; color: white; border: 0;
+  border-radius: 0; box-shadow: none; min-width: 33px; min-height: 33px;
+  font-size: 13px; }
+.ten-letters-button:hover, .ten-letters-button:focus {
+  background: @ten-blue; color: white; }
+.ten-letters-button:disabled { color: #757575; background: transparent; }
+.ten-letters-trigger { background: transparent; border: 0; border-radius: 0;
+  box-shadow: none; color: #d1e7fa; padding: 2px 7px; font-size: 11px; }
+.ten-letters-trigger:hover, .ten-letters-trigger:focus { background: #454545; }
 .ten-app-list { background: transparent; }
 .aero-menu-search {
   background: #f8f8f8; border: 1px solid #686868; color: #191919;
@@ -133,6 +163,15 @@ CSS = b"""
 .ten-notification-card { background: #303030; border: 1px solid #444444;
                          border-left: 3px solid #666666; padding: 9px 11px; }
 .ten-notification-unread { border-left-color: @ten-blue; }
+.ten-notification-group { color: white; font-size: 12px; font-weight: 600;
+                          padding: 8px 0 2px; }
+.ten-notification-time { color: #b9b9b9; font-size: 10px; }
+.ten-notification-confirm { background: #363636; border-left: 3px solid #d69a42;
+                            padding: 10px; color: white; }
+.ten-notification-danger { background: #a12622; color: white; border: 1px solid #d6544e;
+                           border-radius: 0; box-shadow: none; padding: 5px 9px; }
+.ten-notification-danger:hover, .ten-notification-danger:focus {
+  background: #bb3630; border-color: white; }
 .ten-notification-title { color: white; font-size: 12px; font-weight: 600; }
 .ten-notification-dismiss { background: transparent; color: #bce4ff;
                             border: 1px solid #595959; padding: 3px 7px; font-size: 10px; }
@@ -150,6 +189,10 @@ CSS = b"""
 .ten-quick:disabled { background: #2e2e2e; color: #8f8f8f; border-color: #414141; }
 .ten-quick-icon { color: white; }
 .ten-quick-label { color: white; font-size: 10px; }
+.ten-action-expand { background: transparent; border: 0; border-radius: 0;
+  box-shadow: none; color: #bedfff; padding: 2px 8px; font-size: 11px; }
+.ten-action-expand:hover, .ten-action-expand:focus {
+  background: #363636; color: white; }
 .ten-action-detail { color: #d0d0d0; font-size: 11px; }
 .ten-mute { background: #3b3b3b; color: white; border: 1px solid #545454;
   border-radius: 0; box-shadow: none; padding: 5px; }

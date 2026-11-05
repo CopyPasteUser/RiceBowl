@@ -15,6 +15,14 @@ LOG = logging.getLogger(__name__)
 TOGGLES = ("wifi", "bluetooth", "quiet")
 
 
+def group_notifications(items):
+    """Keep application groups in recency order without duplicating XFCE data."""
+    groups = {}
+    for item in items:
+        groups.setdefault(item.application, []).append(item)
+    return tuple((app, tuple(entries)) for app, entries in groups.items())
+
+
 def switch_state(results):
     """Return (enabled, available) without guessing from failed probes."""
     wifi, bluetooth, quiet = results
@@ -39,6 +47,8 @@ class TenController:
         self.history_box = None
         self.history_message = None
         self.mark_button = None
+        self.clear_button = None
+        self.confirmation = None
         self.feedback = None
         self.opened = False
         self.closed = False
@@ -47,12 +57,16 @@ class TenController:
         self._ids = ()
         self._states = {name: (None, False) for name in TOGGLES}
         self._writing = set()
+        self._clearing_history = False
 
-    def bind(self, *, switches, history_box, history_message, mark_button, feedback):
+    def bind(self, *, switches, history_box, history_message, mark_button, feedback,
+             clear_button=None, confirmation=None):
         self.switches = switches
         self.history_box = history_box
         self.history_message = history_message
         self.mark_button = mark_button
+        self.clear_button = clear_button
+        self.confirmation = confirmation
         self.feedback = feedback
         for name, button in switches.items():
             button.set_sensitive(False)
@@ -100,6 +114,10 @@ class TenController:
                 self.history_box.remove(child)
         if self.mark_button is not None:
             self.mark_button.set_sensitive(False)
+        if self.clear_button is not None:
+            self.clear_button.set_sensitive(False)
+        if self.confirmation is not None:
+            self.confirmation.hide()
 
     def _message(self, message):
         if self.feedback is not None and self.opened:
@@ -174,7 +192,7 @@ class TenController:
         self.runner.submit("ten-toggle-" + name, change, done)
 
     def refresh_history(self):
-        if not self.opened or self.closed or self.history_box is None:
+        if not self.opened or self.closed or self.history_box is None or self._clearing_history:
             return
         epoch = self.epoch
         self.history_message.set_text("Loading notifications…")
@@ -185,15 +203,27 @@ class TenController:
             if response.error:
                 self.history_message.set_text("Notification history unavailable")
                 self._message(response.error)
+                self._ids = ()
+                for child in self.history_box.get_children():
+                    self.history_box.remove(child)
+                self.mark_button.set_sensitive(False)
+                if self.clear_button is not None:
+                    self.clear_button.set_sensitive(False)
                 return
             items = response.value[:20]
             self._ids = tuple(item.identifier for item in response.value if not item.is_read)
             for child in self.history_box.get_children():
                 self.history_box.remove(child)
             self.mark_button.set_sensitive(bool(self._ids))
+            if self.clear_button is not None:
+                self.clear_button.set_sensitive(bool(response.value))
             self.history_message.set_text("" if items else "You're all caught up")
-            for item in items:
-                self._add_notification(item)
+            for application, entries in group_notifications(items):
+                self.history_box.pack_start(self.shell._class(
+                    self.Gtk.Label(label=f"{application}  ·  {len(entries)}", xalign=0),
+                    "ten-notification-group"), False, False, 0)
+                for item in entries:
+                    self._add_notification(item)
             self.history_box.show_all()
 
         self.runner.submit("ten-history", pop.history, done)
@@ -204,21 +234,27 @@ class TenController:
                                  "ten-notification-card")
         if not item.is_read:
             card.get_style_context().add_class("ten-notification-unread")
+        heading = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
+        heading.pack_start(self.shell._icon(item.icon, Gtk.IconSize.MENU), False, False, 0)
         title = self.shell._class(Gtk.Label(label=item.summary or item.application,
                                               xalign=0), "ten-notification-title")
         title.set_line_wrap(True)
         title.set_selectable(True)
-        card.pack_start(title, False, False, 0)
+        heading.pack_start(title, True, True, 0)
+        heading.pack_end(self.shell._class(
+            Gtk.Label(label=item.timestamp), "ten-notification-time"), False, False, 0)
+        card.pack_start(heading, False, False, 0)
         if item.body:
             body = self.shell._class(Gtk.Label(label=item.body, xalign=0), "ten-muted")
             body.set_line_wrap(True)
             body.set_selectable(True)
             card.pack_start(body, False, False, 0)
         controls = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        source = self.shell._class(Gtk.Label(label=item.application, xalign=0),
-                                   "ten-muted")
-        source.set_ellipsize(3)  # Pango.EllipsizeMode.END
-        controls.pack_start(source, True, True, 0)
+        if not item.is_read:
+            read = self.shell._class(Gtk.Button(label="Mark read"), "ten-notification-dismiss")
+            read.connect("clicked", lambda _button, identifier=item.identifier:
+                         self._history_change(lambda: pop.mark_read((identifier,))))
+            controls.pack_start(read, False, False, 0)
         dismiss = self.shell._class(Gtk.Button(label="Dismiss"), "ten-notification-dismiss")
         dismiss.get_accessible().set_name("Dismiss notification from " + item.application)
         dismiss.connect("clicked", lambda _button, identifier=item.identifier:
@@ -226,6 +262,29 @@ class TenController:
         controls.pack_end(dismiss, False, False, 0)
         card.pack_start(controls, False, False, 0)
         self.history_box.pack_start(card, False, False, 0)
+
+    def clear_history(self):
+        """Clear only after the user confirms; XFCE remains the log owner."""
+        if not self.opened or self.closed or self._clearing_history:
+            return
+        if self.confirmation is not None:
+            self.confirmation.hide()
+        self._clearing_history = True
+        if self.clear_button is not None:
+            self.clear_button.set_sensitive(False)
+        self.mark_button.set_sensitive(False)
+        self._message("Deleting XFCE notification history…")
+        epoch = self.epoch
+
+        def done(response):
+            self._clearing_history = False
+            if epoch != self.epoch or not self.opened:
+                return
+            self._message("Notification history cleared" if response.error is None else
+                          "Could not clear notifications: " + response.error)
+            self.refresh_history()
+
+        self.runner.submit("ten-clear-history", pop.clear_history, done)
 
     def mark_read(self):
         if not self._ids or not self.opened:

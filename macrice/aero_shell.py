@@ -586,7 +586,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     56 if profile == "chromeos" else
                     48 if profile == "aero" else PANEL_HEIGHT)
     action_heights = {"winclassic": 570, "aero": 530,
-                      "frutiger": 560, "chromeos": 608, "windows10": 680}
+                      "frutiger": 560, "chromeos": 608, "windows10": 820}
     if ten:
         from .ten_shell import APP_ID as TEN_APP_ID, CSS as TEN_CSS
     if heritage:
@@ -869,6 +869,18 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                         assert self._search_key(letter)
                         assert self.search.is_focus()
                         assert self.search.get_text() == "z"
+                if profile == "windows10":
+                    from .ten_shell import letter_positions
+
+                    self.search.set_text("")
+                    picker = self.ten_letter_trigger.get_popover()
+                    assert picker is not None
+                    choices = [button for button in picker.get_child().get_children()
+                               if button.get_sensitive()]
+                    assert len(choices) == len(letter_positions(self.apps))
+                    if choices:
+                        choices[-1].clicked()
+                        assert self._ten_letter_rows.get(choices[-1].get_label()) is not None
                 self._hide_menu()
                 assert not self.menu.get_visible()
                 assert self.lookup_action("toggle-menu") is not None
@@ -1368,11 +1380,34 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 if profile == "winxp":
                     self.luna_browse.clicked()
                     GLib.timeout_add(350, self._capture_luna_flyout)
+                elif profile == "windows10" and not self._capture_variant:
+                    self.ten_letter_trigger.set_active(True)
+                    GLib.timeout_add(340, self._capture_ten_letters)
                 else:
                     self._hide_menu()
                     self._toggle_actions()
                     assert self.actions.get_visible()
                     GLib.timeout_add(400, self._capture_actions)
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._smoke_failed = True
+                self.quit()
+            return False
+
+        def _capture_ten_letters(self):
+            try:
+                picker = self.ten_letter_trigger.get_popover()
+                assert picker.get_visible(), (
+                    "Windows 10 A–Z popup did not open")
+                assert picker.get_child().get_mapped(), (
+                    "Windows 10 A–Z popup was empty instead of rendering its grid")
+                self._assert_popup_on_monitor(self.menu)
+                self._capture_screen("ricebowl-windows10-letters-0.9.1-extra.png")
+                self.ten_letter_trigger.set_active(False)
+                self._hide_menu()
+                self._toggle_actions()
+                GLib.timeout_add(420, self._capture_actions)
             except Exception:
                 import traceback
                 traceback.print_exc()
@@ -1449,6 +1484,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     GLib.timeout_add(780, self._capture_aero_alerts)
                     return False
                 if profile == "windows10":
+                    if not self._capture_variant:
+                        self.ten_action_expand.clicked()
+                        GLib.timeout_add(330, self._capture_ten_actions_expanded)
+                        return False
                     self._hide_actions()
                     self._open_ten_settings("home")
                     GLib.timeout_add(650, self._capture_ten_settings_home)
@@ -1458,6 +1497,21 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 traceback.print_exc()
                 self._smoke_failed = True
             self.quit()
+            return False
+
+        def _capture_ten_actions_expanded(self):
+            try:
+                assert self.actions.get_visible()
+                self._assert_popup_on_monitor(self.actions)
+                self._capture_screen("ricebowl-windows10-actions-expanded-0.9.1-extra.png")
+                self._hide_actions()
+                self._open_ten_settings("home")
+                GLib.timeout_add(650, self._capture_ten_settings_home)
+            except Exception:
+                import traceback
+                traceback.print_exc()
+                self._smoke_failed = True
+                self.quit()
             return False
 
         def _capture_ten_settings_home(self):
@@ -2832,6 +2886,14 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 shelf_box = row
             self.start_button = start
             if ten:
+                from .ten_taskbar import load, preferences_path
+
+                self.ten_taskbar_preferences_path = preferences_path()
+                try:
+                    self.ten_taskbar_options = load(self.ten_taskbar_preferences_path)
+                except (OSError, ValueError) as exc:
+                    logging.getLogger(__name__).warning("Windows 10 taskbar defaults: %s", exc)
+                    self.ten_taskbar_options = {"search": True, "task_view": True}
                 # Windows 10 supports the compact taskbar search-icon mode.
                 # The functional text field remains inside Start, not twice on screen.
                 search_button = self._class(Gtk.Button(), "ten-search")
@@ -2840,12 +2902,18 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 search_button.set_tooltip_text("Search installed applications")
                 search_button.connect("clicked", lambda _button: self._open_search())
                 row.pack_start(search_button, False, False, 0)
+                self.ten_search_button = search_button
+                search_button.set_no_show_all(not self.ten_taskbar_options["search"])
+                search_button.set_visible(self.ten_taskbar_options["search"])
                 view = self._class(Gtk.Button(), "ten-search")
                 view.add(self._icon("view-grid-symbolic", Gtk.IconSize.BUTTON))
                 view.get_accessible().set_name("Task View: open windows and desktops")
                 view.set_tooltip_text("Task View")
                 view.connect("clicked", lambda _button: self._toggle_ten_task_view())
                 row.pack_start(view, False, False, 0)
+                self.ten_task_view_button = view
+                view.set_no_show_all(not self.ten_taskbar_options["task_view"])
+                view.set_visible(self.ten_taskbar_options["task_view"])
             self.pinned_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=2)
             if profile == "frutiger":
                 self.pinned_box.get_style_context().add_class("frutiger-pins")
@@ -3204,13 +3272,41 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
         def _ten_taskbar_menu(self):
             menu = Gtk.Menu()
             menu.get_style_context().add_class("aero-menu-root")
+            for option, label in (("search", "Show Search"),
+                                  ("task_view", "Show Task View")):
+                item = Gtk.CheckMenuItem(label=label)
+                item.set_active(self.ten_taskbar_options[option])
+                item.connect("toggled", lambda widget, key=option:
+                             self._ten_set_taskbar_option(key, widget.get_active()))
+                menu.append(item)
+            menu.append(Gtk.SeparatorMenuItem())
             desktop = Gtk.MenuItem(label="Show the desktop")
             desktop.set_sensitive(self._window_tracker is not None)
             desktop.connect("activate", lambda _item: self._show_desktop())
             menu.append(desktop)
             menu.append(Gtk.SeparatorMenuItem())
             menu.append(self._task_manager_item())
+            settings = Gtk.MenuItem(label="Taskbar settings")
+            settings.connect("activate", lambda _item:
+                             self._open_ten_settings("personalization"))
+            menu.append(settings)
             return menu
+
+        def _ten_set_taskbar_option(self, key, enabled):
+            from .ten_taskbar import save
+
+            updated = dict(self.ten_taskbar_options)
+            updated[key] = enabled
+            try:
+                save(self.ten_taskbar_preferences_path, updated)
+            except (OSError, ValueError) as exc:
+                self._error("Could not save Windows 10 taskbar preference: " + str(exc))
+                return
+            self.ten_taskbar_options = updated
+            button = (self.ten_search_button if key == "search" else
+                      self.ten_task_view_button)
+            button.set_no_show_all(not enabled)
+            button.set_visible(enabled)
 
         def _luna_manage_desktop(self, action):
             """Explicit opt-in with confirmation; untouched user icons remain safe."""
@@ -4145,8 +4241,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._populate("")
 
         def _track_start_popup(self, menu):
-            """Keep the Win98/XP Start window open while GTK cascades own focus."""
-            if profile not in ("winxp", "winclassic"):
+            """Keep Start visible while native GTK menus/popovers own focus."""
+            if profile not in ("winxp", "winclassic", "windows10"):
                 return menu
             if profile == "winxp":
                 menu.get_style_context().add_class("luna-popup")
@@ -4882,6 +4978,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                         item.connect("activate", lambda _item, cmd=command: self._open_tool(cmd))
                 navigation_menu.append(item)
             navigation_menu.show_all()
+            self._track_start_popup(navigation_menu)
             navigation.set_popup(navigation_menu)
             rail.pack_start(navigation, False, False, 0)
             rail.pack_start(Gtk.Box(), True, True, 0)
@@ -4928,9 +5025,56 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             main.pack_start(columns, True, True, 0)
             apps_column = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
             apps_column.set_size_request(238, -1)
-            apps_column.pack_start(self._class(Gtk.Label(label="All apps", xalign=0),
-                                               "ten-section-heading"),
-                                   False, False, 0)
+            app_heading = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=7)
+            app_heading.pack_start(self._class(
+                Gtk.Label(label="All apps", xalign=0), "ten-section-heading"),
+                True, True, 0)
+            jump = self._class(Gtk.MenuButton(label="A–Z"), "ten-letters-trigger")
+            jump.set_tooltip_text("Jump to an alphabetical application group")
+            jump.get_accessible().set_name("Choose application letter")
+            picker = self._class(Gtk.Popover.new(jump), "ten-letters-popover")
+            picker_grid = self._class(Gtk.Grid(row_spacing=2, column_spacing=2),
+                                      "ten-letters-picker")
+            from .ten_shell import letter_positions
+            positions = letter_positions(self.apps)
+
+            def jump_to_letter(letter):
+                # Only expand the installed-app page on explicit user request.
+                # The initial Start remains bounded for low-memory machines.
+                self.search.set_text("")
+                self._app_page_size = max(self._app_page_size, positions[letter] + 24)
+                self._populate("")
+                picker.popdown()
+
+                def move_to_group():
+                    row = self._ten_letter_rows.get(letter)
+                    if row is not None:
+                        adjustment = scroller.get_vadjustment()
+                        adjustment.set_value(min(row.get_allocation().y,
+                                                 max(0, adjustment.get_upper() -
+                                                     adjustment.get_page_size())))
+                    return False
+
+                GLib.timeout_add(35, move_to_group)
+
+            for index, letter in enumerate("#ABCDEFGHIJKLMNOPQRSTUVWXYZ"):
+                button = self._class(Gtk.Button(label=letter), "ten-letters-button")
+                button.set_sensitive(letter in positions)
+                button.get_accessible().set_name("Jump to " + letter)
+                if letter in positions:
+                    button.connect("clicked", lambda _button, chosen=letter:
+                                   jump_to_letter(chosen))
+                picker_grid.attach(button, index % 7, index // 7, 1, 1)
+            picker.add(picker_grid)
+            # Popovers own a separate window: Start.show_all() does not
+            # realize their child grid. Keep the popover itself hidden until
+            # the user opens the A–Z menu button.
+            picker_grid.show_all()
+            self._track_start_popup(picker)
+            jump.set_popover(picker)
+            self.ten_letter_trigger = jump
+            app_heading.pack_end(jump, False, False, 0)
+            apps_column.pack_start(app_heading, False, False, 0)
             scroller = Gtk.ScrolledWindow()
             scroller.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
             self.results = self._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=1),
@@ -5747,18 +5891,22 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _populate_windows10(self, query):
             """Compact Windows 10 alphabetical app rail with real Gio launchers."""
+            from .ten_shell import app_letter
+
             matches = matching_apps(self.apps, query)
             if not matches:
                 self.results.pack_start(self._class(Gtk.Label(
                     label="No matching applications", xalign=0), "ten-muted"),
                     False, False, 12)
             previous_letter = None
+            self._ten_letter_rows = {}
             for app in matches[:self._app_page_size]:
                 title = app.get_display_name() or app.get_name() or "Application"
-                letter = title[0].upper() if title[0].isalpha() else "#"
+                letter = app_letter(app)
                 if not query.strip() and letter != previous_letter:
-                    self.results.pack_start(self._class(
-                        Gtk.Label(label=letter, xalign=0), "ten-letter"), False, False, 3)
+                    heading = self._class(Gtk.Label(label=letter, xalign=0), "ten-letter")
+                    self.results.pack_start(heading, False, False, 3)
+                    self._ten_letter_rows.setdefault(letter, heading)
                     previous_letter = letter
                 button = self._class(Gtk.Button(), "aero-menu-app")
                 content = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
@@ -6053,7 +6201,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             return False
 
         def _hide_menu(self):
-            if profile in ("winclassic", "winxp"):
+            if profile in ("winclassic", "winxp", "windows10"):
                 # Native Gtk.Menu flyouts are separate X11 popup surfaces: hiding
                 # the Start Gtk.Window alone does not release their pointer grab.
                 for popup in tuple(self._start_open_menus):

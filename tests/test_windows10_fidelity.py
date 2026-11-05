@@ -10,7 +10,7 @@ from PIL import Image
 from macrice.asset_upgrade import git_blob_sha, trusted_assets
 from macrice.installer import project_root
 from macrice.ten_action_center import QUICK_ACTIONS
-from macrice.ten_shell import CSS, start_tiles
+from macrice.ten_shell import CSS, app_letter, letter_positions, start_tiles
 
 
 ROOT = project_root()
@@ -32,6 +32,12 @@ class App:
 
 
 class Windows10FidelityTests(unittest.TestCase):
+    def test_start_alphabet_jump_uses_real_apps_and_normalizes_umlauts(self):
+        apps = (App("123 Tools", "numbers.desktop"), App("Änderungen", "a.desktop"),
+                App("Öffnen", "o.desktop"), App("Zoom", "z.desktop"))
+        self.assertEqual(tuple(app_letter(app) for app in apps), ("#", "A", "O", "Z"))
+        self.assertEqual(letter_positions(apps), {"#": 0, "A": 1, "O": 2, "Z": 3})
+
     def test_start_tiles_are_genuine_deduplicated_apps_and_respect_pins(self):
         apps = (App("Calculator", "calc.desktop"), App("Text Editor", "edit.desktop"),
                 App("File Manager", "files.desktop"), App("Web Browser", "web.desktop"),

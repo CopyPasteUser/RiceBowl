@@ -71,8 +71,10 @@ are independently drawn, Linux-specific, and do not imply Microsoft branding.
 - [x] Stale notification callbacks are discarded on close and all workers/
   XFCE notification observers are released on shell shutdown.
 - [x] Hermetic adapter tests and existing seven-rice Python regression suite.
-- [ ] Native-X11 CI smoke/screenshots and physical Mint audio/network/Bluetooth
-  + notification acceptance; these are not implied by Python unit tests.
+- [x] Native-X11 CI smoke and real screenshot coverage (including new A–Z and
+  expanded Action Center views); see the 5 November interaction checkpoint.
+- [ ] Physical Mint audio/network/Bluetooth + notification acceptance;
+  headless X11 smoke and Python tests cannot establish hardware behavior.
 - [ ] Full 22H2 fidelity gates below, including separate Win10 network flyout,
   richer Settings, app grouping/clear-all with confirmation, projection,
   battery saver, VPN, Airplane mode, Task View and riceExplorer integration.
@@ -124,6 +126,30 @@ criteria below. XFCE Notifyd remains the only notification service.
 
 The original 22H2 fidelity checklist below remains authoritative: new
 entry points do **not** mean every Windows 10 feature is implemented.
+
+## 22H2 interaction depth checkpoint — 5 November 2026
+
+- [x] Start's A–Z picker jumps to the real installed Gio app groups (including
+  accented Latin names); the usual initial list remains bounded on low-RAM
+  systems and all existing app launch/context actions stay available.
+- [x] The blank taskbar context menu now exposes persistent, Windows-10-only
+  Search and Task View visibility choices and opens the native Personalization
+  settings. Preferences are validated, atomically saved, and do not touch XFCE
+  global settings or other RiceBowl styles.
+- [x] Action Center groups XFCE history by the sending application, shows true
+  timestamps/icons, supports per-notification read/dismiss, and asks before
+  permanently clearing all history. History deletion runs through the existing
+  asynchronous XFCE backend, with failure feedback and stale-request safety.
+  Extra quick actions expand/collapse without inventing providers.
+- [x] Isolated Python regression coverage for A–Z selection, notifications,
+  async clear errors and safe taskbar preference storage.
+- [x] CI-native X11 rendering review at 1600×900, including the A–Z letter
+  grid and expanded Action Center. Both were corrected after screenshot
+  inspection; native 1024×768 smoke also remains part of CI.
+- [ ] Physical Mint XFCE and multi-monitor acceptance remain separate.
+
+This is a **partial** implementation of the open P0 criteria below, not a
+declaration that Windows 10 fidelity or riceExplorer integration is complete.
 
 
 ---

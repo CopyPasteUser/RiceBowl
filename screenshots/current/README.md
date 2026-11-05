@@ -1,6 +1,6 @@
 # RiceBowl screenshot gallery
 
-**34 real GTK/X11 captures** from a verified pull-request build. Click any preview to open it full-size.
+**36 real GTK/X11 captures** from a verified pull-request build. Click any preview to open it full-size.
 
 <p align="center">
   <a href="aero-start.webp"><img src="aero-start.webp" alt="Windows 7 Aero Start menu" width="48%"></a>
@@ -16,7 +16,7 @@
 | Style | Controls | Real application window |
 | --- | --- | --- |
 | Windows 7 | [Control Panel](aero-controls.webp) | [Thunar / XFWM4](aero-workspace.webp) |
-| Windows 10 | [Action Center](windows10-controls.webp) · [Settings home](windows10-settings-home.webp) · [Sound](windows10-settings-sound.webp) | [Thunar / XFWM4](windows10-workspace.webp) |
+| Windows 10 | [Action Center](windows10-controls.webp) · [Expanded](windows10-actions-expanded.webp) · [A–Z Start](windows10-letters.webp) · [Settings home](windows10-settings-home.webp) · [Sound](windows10-settings-sound.webp) | [Thunar / XFWM4](windows10-workspace.webp) |
 | XP Luna | [Control Panel](winxp-controls.webp) · [All Programs](winxp-programs.webp) · [Detail](winxp-detail.webp) · [Classic view](winxp-classic.webp) | [Thunar / XFWM4](winxp-workspace.webp) |
 | Windows 98 | [Control Panel](winclassic-controls.webp) | [Thunar / XFWM4](winclassic-workspace.webp) |
 | ChromeOS | [Quick Settings](chromeos-controls.webp) · [Notifications](chromeos-notifications.webp) · [Settings](chromeos-settings.webp) | [Thunar / XFWM4](chromeos-workspace.webp) |
@@ -29,7 +29,7 @@
 <details>
 <summary>Capture provenance and limitations</summary>
 
-These are actual applications rendered under XFWM4 in virtual X11 at 1600×900, not mockups. The [successful 5 November 2026 CI run](https://github.com/CopyPasteUser/RiceBowl/actions/runs/42029905195) captured commit [`12aadcb`](https://github.com/CopyPasteUser/RiceBowl/commit/12aadcb9ada293b769e0b06659ac34fc1969db37). The [manifest](manifest.json) records original and converted image hashes; compact 1024×768 captures are in the CI artifact. Historical `0.9.1` capture filenames are script compatibility names, not the tested release version.
+These are actual applications rendered under XFWM4 in virtual X11 at 1600×900, not mockups. The [successful 5 November 2026 CI run](https://github.com/CopyPasteUser/RiceBowl/actions/runs/42035681537) captured commit [`f02efdf`](https://github.com/CopyPasteUser/RiceBowl/commit/f02efdfc804034523132ef38290061152f147543). The [manifest](manifest.json) records original and converted image hashes; compact 1024×768 captures are in the CI artifact. Historical `0.9.1` capture filenames are script compatibility names, not the tested release version.
 
 Virtual-X11 captures do not establish physical Mint/XFCE hardware, suspend or multi-monitor acceptance. Unavailable device features in CI are shown honestly.
 

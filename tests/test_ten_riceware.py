@@ -7,7 +7,8 @@ from unittest.mock import patch
 
 from macrice.riceware import spice
 from macrice.riceware.worker import Response
-from macrice.ten_riceware import TenController, switch_state
+from macrice.riceware.pop import Notification
+from macrice.ten_riceware import TenController, group_notifications, switch_state
 
 
 class Runner:
@@ -86,9 +87,12 @@ class Win10RicewareTests(unittest.TestCase):
         self.message = Label()
         self.mark = Button()
         self.feedback = Label()
+        self.clear = Button()
+        self.confirmation = type("Confirmation", (), {"hide": lambda _: None})()
         self.controller.bind(switches=self.buttons, history_box=self.history,
                              history_message=self.message, mark_button=self.mark,
-                             feedback=self.feedback)
+                             feedback=self.feedback, clear_button=self.clear,
+                             confirmation=self.confirmation)
 
     def tearDown(self):
         self.controller.close()
@@ -206,6 +210,41 @@ class Win10RicewareTests(unittest.TestCase):
             self.runner.deliver()
         mark.assert_called_once_with(("valid-id",))
         self.assertFalse(self.mark.sensitive)
+
+    def test_notifications_group_by_actual_application_in_first_seen_order(self):
+        def entry(identifier, application):
+            return Notification(identifier, "12:30", application, "dialog-information",
+                                "Notice", "Body", False)
+
+        items = (entry("1", "Mail"), entry("2", "Files"), entry("3", "Mail"))
+        self.assertEqual(tuple((app, tuple(item.identifier for item in entries))
+                               for app, entries in group_notifications(items)),
+                         (("Mail", ("1", "3")), ("Files", ("2",))))
+
+    def test_clear_all_is_async_and_only_touches_xfce_history_on_confirmation(self):
+        self.controller.opened = True
+        with patch("macrice.ten_riceware.pop.clear_history") as clear, \
+             patch("macrice.ten_riceware.pop.history", return_value=()):
+            self.assertEqual(self.runner.queued, [])
+            self.controller.clear_history()
+            self.assertFalse(self.clear.sensitive)
+            self.assertFalse(self.mark.sensitive)
+            self.assertEqual(len(self.runner.queued), 1)
+            self.runner.deliver()
+            clear.assert_called_once_with()
+            self.runner.deliver()
+        self.assertFalse(self.clear.sensitive)
+        self.assertIn("cleared", self.feedback.text)
+
+    def test_failed_clear_preserves_history_and_reports_error(self):
+        self.controller.opened = True
+        with patch("macrice.ten_riceware.pop.clear_history",
+                   side_effect=RuntimeError("XFCE permission denied")), \
+             patch("macrice.ten_riceware.pop.history", return_value=()):
+            self.controller.clear_history()
+            self.runner.deliver()
+            self.assertIn("XFCE permission denied", self.feedback.text)
+            self.runner.deliver()
 
     def test_close_releases_runner_and_prevents_reopen(self):
         self.controller.close()

@@ -1,5 +1,22 @@
 # RiceBowl changelog
 
+## Unreleased — Windows 10 22H2 interaction pass (5 November 2026)
+
+- Add a working A–Z Start-menu jump list for real installed applications,
+  including German umlaut groups, without expanding the list at startup.
+- Give the Windows 10 taskbar persistent, per-rice Search/Task View visibility
+  options in its right-click menu, plus a native Personalization entry.
+- Group genuine XFCE notifications by application with original icon/time,
+  per-item read/dismiss and confirmed asynchronous Clear all. Allow Quick
+  Actions to expand/collapse; unsupported providers remain disabled.
+- Keep the Start menu mapped while its native A–Z or navigation popup owns
+  focus; give the letter grid an explicit visible dark surface. Let the tall
+  Action Center scroll history above its expanded quick-action controls.
+- Refresh the real 1600×900 GTK/XFWM gallery, including separate A–Z Start
+  and expanded Action Center views; regenerate the hub's JPEG previews.
+- Keep all other desktop styles, global XFCE settings and pre-existing
+  Microsoft-free RiceBowl artwork unchanged.
+
 ## Unreleased — XP Luna native fidelity overhaul (5 November 2026)
 
 - Bring XP Control Panel closer to Explorer with a real Back/Home/Search strip,
