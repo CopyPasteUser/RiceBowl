@@ -13,6 +13,37 @@ controls, wallpaper, icons, window chrome and behavior of our own components.
 Running third-party GTK/Qt apps cannot be forced into arbitrary client-side
 window decorations; use supported platform theming and preserve functionality.
 
+## Desktop creation as a first-class workflow
+
+**North star:** the same lightweight functional desktop core must make it easy
+to build both a convincing OS-inspired rice and a completely new rice from an
+AI-generated UI mockup. Authors should spend most of their time defining the
+experience, not writing another shell, panel, device backend or window manager.
+
+A rice is **more than a color theme**: it can choose and arrange shell
+components, navigation, menus, panels, desktop behavior, widgets, typography,
+artwork, transitions and available interactions. Shared RiceBowl components
+supply the real Linux behavior, state and recovery underneath.
+
+The intended authoring path is:
+
+1. Analyze a screenshot/mockup into regions, components, visual tokens,
+   responsive rules, interactive states and required Linux capabilities.
+2. Map it to reusable primitives and a **versioned declarative rice recipe**
+   with original or properly licensed assets. Extend the shared primitives
+   when necessary, rather than cloning the entire shell.
+3. Preview the full shell at multiple sizes, inspect differences and test
+   keyboard/focus, accessibility, live controls and real application windows.
+4. Validate and import the rice safely, then apply/switch/restore without
+   overwriting personal desktop settings.
+
+An AI agent may assist with steps 1–2, but **RiceBowl itself must not require
+AI inference or an online service**. Arbitrary images are not promised to
+become fully functional one-click conversions; unfamiliar controls require
+explicitly implemented behavior. Packs must never execute arbitrary generated
+scripts. Third-party GTK/Qt application decorations and Wayland protocol
+limits remain real constraints on cross-app fidelity.
+
 ### Repository and process ownership
 
 | Owner | Responsibility | Boundary |
@@ -65,6 +96,8 @@ without affecting the existing XFCE desktop, including failed-session recovery.
 - [ ] Populate tasks/windows through a supported foreign-toplevel protocol.
 - [ ] Implement launchers, task groups, tray, calendar, menus and keyboard
   navigation; avoid invisible or fake controls.
+- [ ] Expose reusable, composable shell primitives and stable interaction/state
+  bindings so substantially different rice layouts share core behavior.
 - [ ] Render wallpapers and desktop icons with correct layer, focus, hit tests,
   drag/drop, multimonitor geometry and hotplug behavior.
 - [ ] Support one selected rice at a time and restore the previous shell if a
@@ -91,6 +124,14 @@ depend on the XFCE session.
   and Taskotto. External applications work without RiceBowl installed.
 - [ ] Support rice-specific structure, spacing, colors and components with
   validated settings, not an unsafe arbitrary runtime plugin mechanism.
+- [ ] Specify a versioned, schema-validated rice recipe format for composable
+  panel, menu, desktop, widget and settings layouts, visual tokens, assets,
+  responsive behavior and explicit supported system-action bindings.
+- [ ] Provide a documented mockup-to-rice authoring workflow, editable
+  templates, isolated preview and safe pack import/export. An AI-generated
+  reference must be usable without any required AI/cloud runtime.
+- [ ] Validate malformed/oversized recipes, missing assets, unsupported
+  widgets/actions, keyboard/focus semantics and rollback before applying.
 - [ ] Port all seven styles individually while preserving names, legacy
   backup IDs and original assets.
 - [ ] Coordinate RiceField default-file-manager integration after its 1.0
@@ -98,6 +139,20 @@ depend on the XFCE session.
 
 **Done when:** switching a rice consistently updates every supported desktop
 component, and incompatible clients degrade gracefully.
+
+**Authoring acceptance (not yet implemented):**
+
+- [ ] Build one high-fidelity existing-OS-inspired rice **through the shared
+  recipe/component contract**, without a parallel bespoke shell or duplicate
+  hardware backend.
+- [ ] Build a second, visually distinct rice from an AI-generated or original
+  static mockup using documented steps; record unsupported interactions and
+  the code needed for any new reusable primitive.
+- [ ] Show install, preview, multi-resolution real-shell captures,
+  application-window interaction, keyboard navigation, live system actions,
+  switch and rollback for both rices.
+- [ ] Confirm the authoring and daily-use path works entirely offline once
+  the required packages/assets are present and does not load unused rices.
 
 ### 5 — Efficient, testable 1.0
 
@@ -110,6 +165,8 @@ component, and incompatible clients degrade gracefully.
 - [ ] Ship reproducible packages, uninstall/rollback, docs, CI and device QA.
 - [ ] Test fresh login, corrupted config, missing backend, locked screen,
   sleeping/waking, low-memory and disconnected network cases.
+- [ ] Gate 1.0 authoring claims on the two demonstrator rices and validated
+  recipe migration, recovery, responsiveness and runtime resource measurements.
 
 **Done when:** RiceBowl is independently installable, fully usable and
 recoverable as a desktop environment. RAM targets are measured, not promised.
