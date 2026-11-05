@@ -17,6 +17,7 @@ from .environment import bin_home, data_home
 
 COMPONENTS = ("macmenu", "control-center", "macbar")
 MANAGED_MARKER = ".macrice-managed"
+REVISION_MARKER = ".macrice-revision"
 LAUNCHER_MARKER = "# Managed by MacRice XFCE"
 DESKTOP_MARKER = "X-MacRice-Managed=true"
 HUB_LAUNCHER_MARKER = "# Managed by RiceHub XFCE"
@@ -186,6 +187,25 @@ def _copy_bundle(source: Path, stage: Path) -> None:
                  "CONTRIBUTORS.md"):
         shutil.copy2(source / file, stage / file)
     (stage / MANAGED_MARKER).write_text("Managed by MacRice XFCE\n", encoding="ascii")
+    # A staged Git archive has an explicit pinned revision. A regular checkout
+    # can only claim its HEAD if no local edits changed the installed content.
+    marker = source / REVISION_MARKER
+    revision = None
+    if marker.is_file() and not marker.is_symlink():
+        revision = marker.read_text(encoding="ascii").strip()
+    elif (source / ".git").is_dir() and not (source / ".git").is_symlink():
+        try:
+            status = subprocess.run(["git", "-C", str(source), "status", "--porcelain"],
+                                    capture_output=True, text=True, timeout=15, check=False)
+            if status.returncode == 0 and not status.stdout:
+                head = subprocess.run(["git", "-C", str(source), "rev-parse", "HEAD"],
+                                      capture_output=True, text=True, timeout=15, check=False)
+                if head.returncode == 0:
+                    revision = head.stdout.strip()
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+    if revision and len(revision) == 40 and all(c in "0123456789abcdef" for c in revision):
+        (stage / REVISION_MARKER).write_text(revision + "\n", encoding="ascii")
 
 
 def _install_manager(source: Path) -> Path:
@@ -247,7 +267,11 @@ def _write_entrypoints(installed: Path) -> None:
     bowl_launcher = binaries / "ricebowl"
     bowl_content = (
         '#!/bin/sh\n' + RICEBOWL_LAUNCHER_MARKER + '\n'
-        + 'exec /usr/bin/python3 "' + str(installed / "launcher.py") + '" hub "$@"\n'
+        + 'case "${1:-}" in\n'
+        + '  update) shift; if [ "$#" -eq 0 ]; then set -- check --refresh; fi\n'
+        + '    exec /usr/bin/python3 "' + str(installed / "launcher.py") + '" update "$@" ;;\n'
+        + '  *) exec /usr/bin/python3 "' + str(installed / "launcher.py") + '" hub "$@" ;;\n'
+        + 'esac\n'
     )
     _atomic_write(bowl_launcher, bowl_content, 0o755)
     fast_launcher = binaries / "ricehub-toggle"
