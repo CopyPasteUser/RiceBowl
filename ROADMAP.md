@@ -55,6 +55,13 @@ completion does **not** override contradictory on-device reports.
 - [x] Selected-rice `macrice doctor --style STYLE`: reuse the real read-only
   rice plan for bundled assets/settings and show concise readiness feedback in
   the Hub without changing the running desktop. Hardware sign-off stays open.
+- [x] Data-only Rice pack v1: inspect built-in styles, discover validated
+  user-owned named presets, show available shared components, and apply only
+  via explicit `--yes` through the existing reversible desktop transaction.
+  Session routing shares the canonical renderer-family registry; no daemon.
+- [ ] Safely importing custom theme/icon/wallpaper assets and genuinely new
+  renderers requires integrity, collision, licensing and removal/recovery
+  design beyond the v1 preset alias format. See [pack spec](RICEPACK_SPEC.md).
 - [x] Opt-in official-origin fast-forward update: `macrice update check
   --refresh`, then `macrice update apply --yes`; stage a pinned Git revision,
   preserve user edits, save previous bundle and attempt reinstall on failure.

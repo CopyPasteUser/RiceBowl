@@ -100,6 +100,8 @@ class InstallerTests(unittest.TestCase):
             self.assertTrue((installed / "RICE_WINDOWS_ROADMAP.md").is_file())
             self.assertTrue((installed / "RICEPLATE_DESKTOP_ROADMAP.md").is_file())
             self.assertTrue((installed / "XFCE_RESOURCE_BOUNDARIES.md").is_file())
+            self.assertTrue((installed / "RICEPACK_SPEC.md").is_file())
+            self.assertTrue((installed / "macrice/riceware/packs.py").is_file())
 
     def test_fast_toggle_prefers_dbus_and_falls_back_for_cold_shell(self):
         with tempfile.TemporaryDirectory() as directory:

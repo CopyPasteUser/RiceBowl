@@ -9,11 +9,14 @@ API_VERSION = "1.0"
 
 def manifest() -> dict[str, object]:
     """Stable feature discovery without accessing hardware or user files."""
-    from . import profiles, spice
+    from . import packs, profiles, spice
 
     return {
         "api_version": API_VERSION,
         "profiles": dict(profiles.PROFILE_FAMILIES),
+        "rice_packs": {"schema_version": packs.SCHEMA_VERSION,
+                       "inspect": "riceware packs list|show|check|template",
+                       "apply": "riceware packs apply ID --yes"},
         "components": {
             "riceSpice": {"read": (*spice.READERS, "scan_wifi"),
                           "write": tuple(spice.WRITERS)},
