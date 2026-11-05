@@ -28,7 +28,7 @@ def build(shell, Gtk, Gdk):
     actions.set_type_hint(Gdk.WindowTypeHint.UTILITY)
     actions.set_transient_for(shell.bar)
     actions.set_keep_above(True)
-    actions.set_default_size(362, 680)
+    actions.set_default_size(362, 820)
     root = shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=0),
                         "ten-action-root")
 
@@ -44,6 +44,9 @@ def build(shell, Gtk, Gdk):
 
     scroll = Gtk.ScrolledWindow()
     scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC)
+    # Expanded quick actions must not squeeze notifications into a clipped
+    # strip; the history scrolls independently of the bottom controls.
+    scroll.set_min_content_height(135)
     notifications = shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=11),
                                   "ten-action-notifications")
     notifications.pack_start(shell._class(

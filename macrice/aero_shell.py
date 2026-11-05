@@ -586,7 +586,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     56 if profile == "chromeos" else
                     48 if profile == "aero" else PANEL_HEIGHT)
     action_heights = {"winclassic": 570, "aero": 530,
-                      "frutiger": 560, "chromeos": 608, "windows10": 680}
+                      "frutiger": 560, "chromeos": 608, "windows10": 820}
     if ten:
         from .ten_shell import APP_ID as TEN_APP_ID, CSS as TEN_CSS
     if heritage:
@@ -1397,8 +1397,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _capture_ten_letters(self):
             try:
-                assert self.ten_letter_trigger.get_popover().get_visible(), (
+                picker = self.ten_letter_trigger.get_popover()
+                assert picker.get_visible(), (
                     "Windows 10 A–Z popup did not open")
+                assert picker.get_child().get_mapped(), (
+                    "Windows 10 A–Z popup was empty instead of rendering its grid")
                 self._assert_popup_on_monitor(self.menu)
                 self._capture_screen("ricebowl-windows10-letters-0.9.1-extra.png")
                 self.ten_letter_trigger.set_active(False)
@@ -4238,8 +4241,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             self._populate("")
 
         def _track_start_popup(self, menu):
-            """Keep the Win98/XP Start window open while GTK cascades own focus."""
-            if profile not in ("winxp", "winclassic"):
+            """Keep Start visible while native GTK menus/popovers own focus."""
+            if profile not in ("winxp", "winclassic", "windows10"):
                 return menu
             if profile == "winxp":
                 menu.get_style_context().add_class("luna-popup")
@@ -4975,6 +4978,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                         item.connect("activate", lambda _item, cmd=command: self._open_tool(cmd))
                 navigation_menu.append(item)
             navigation_menu.show_all()
+            self._track_start_popup(navigation_menu)
             navigation.set_popup(navigation_menu)
             rail.pack_start(navigation, False, False, 0)
             rail.pack_start(Gtk.Box(), True, True, 0)
@@ -5028,7 +5032,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             jump = self._class(Gtk.MenuButton(label="A–Z"), "ten-letters-trigger")
             jump.set_tooltip_text("Jump to an alphabetical application group")
             jump.get_accessible().set_name("Choose application letter")
-            picker = Gtk.Popover.new(jump)
+            picker = self._class(Gtk.Popover.new(jump), "ten-letters-popover")
             picker_grid = self._class(Gtk.Grid(row_spacing=2, column_spacing=2),
                                       "ten-letters-picker")
             from .ten_shell import letter_positions
@@ -5062,6 +5066,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                                    jump_to_letter(chosen))
                 picker_grid.attach(button, index % 7, index // 7, 1, 1)
             picker.add(picker_grid)
+            # Popovers own a separate window: Start.show_all() does not
+            # reliably realize their child grid when opened later.
+            picker.show_all()
+            self._track_start_popup(picker)
             jump.set_popover(picker)
             self.ten_letter_trigger = jump
             app_heading.pack_end(jump, False, False, 0)
@@ -6192,7 +6200,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             return False
 
         def _hide_menu(self):
-            if profile in ("winclassic", "winxp"):
+            if profile in ("winclassic", "winxp", "windows10"):
                 # Native Gtk.Menu flyouts are separate X11 popup surfaces: hiding
                 # the Start Gtk.Window alone does not release their pointer grab.
                 for popup in tuple(self._start_open_menus):

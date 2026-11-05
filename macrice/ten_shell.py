@@ -118,6 +118,8 @@ CSS = b"""
   font-weight: bold; padding: 4px 7px; }
 .ten-letters-picker { background: #252525; border: 1px solid #555;
   padding: 11px; color: white; }
+.ten-letters-popover, .ten-letters-popover > contents {
+  background: #252525; border-color: #555; color: white; }
 .ten-letters-button { background: transparent; color: white; border: 0;
   border-radius: 0; box-shadow: none; min-width: 33px; min-height: 33px;
   font-size: 13px; }
