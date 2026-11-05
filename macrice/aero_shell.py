@@ -1850,9 +1850,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
         def _capture_luna_run_start(self):
             try:
+                # Gtk.Dialog.run() enters a nested modal loop and does not
+                # return until the screenshot callback closes the dialog.
+                GLib.timeout_add(400, self._capture_luna_run_snapshot)
                 self._luna_open_run()
                 if not self._smoke_failed:
-                    GLib.timeout_add(400, self._capture_luna_run_snapshot)
                     return False
             except Exception:
                 import traceback
