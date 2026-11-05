@@ -24,6 +24,8 @@ class FrutigerCalendarGtkTests(unittest.TestCase):
         try:
             popup = AquaCalendar(anchor, Gtk)
             popup.show()
+            self.assertIsInstance(popup.popover, Gtk.Window)
+            self.assertFalse(isinstance(popup.popover, Gtk.Popover))
             year, month, day = popup.calendar.get_date()
             now = datetime.now().astimezone()
             self.assertEqual((year, month + 1, day), (now.year, now.month, now.day))

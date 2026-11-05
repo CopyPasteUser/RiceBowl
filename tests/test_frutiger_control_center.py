@@ -68,6 +68,7 @@ class AquaControlCenterTests(unittest.TestCase):
                          b".aqua-control-detail-title", b".aqua-control-search:focus",
                          b".aqua-control-unavailable", b".aqua-control-live",
                          b".aqua-control-launch:hover", b"popover.aqua-flyout",
+                         b"window.aqua-flyout",
                          b".aqua-flyout-mute:checked", b".aqua-control-probe-error"):
             self.assertIn(selector, css)
         for profile in ("winxp", "aero", "winclassic", "chromeos", "windows10"):
@@ -84,7 +85,7 @@ class AquaControlCenterTests(unittest.TestCase):
         flyouts = (ROOT / 'macrice/frutiger_flyouts.py').read_text(encoding='utf-8')
         for marker in ('"network": "connections"', '"audio": "sound"',
                        '"battery": "power"', 'shell._queue_volume_change',
-                       'shell._toggle_output_mute', 'Gtk.Popover.new(button)'):
+                       'shell._toggle_output_mute', 'create_tray_window(button, Gtk'):
             self.assertIn(marker, flyouts)
 
     def test_places_reads_live_gio_mounts_and_uses_real_trash(self):

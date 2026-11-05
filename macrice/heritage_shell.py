@@ -881,6 +881,11 @@ popover.aqua-flyout > contents {
   color: #07536e; border: 2px solid #94d4df; border-radius: 20px;
   box-shadow: inset 0 2px #fff, 0 4px 15px rgba(5,77,113,.26);
 }
+window.aqua-flyout {
+  background-image: linear-gradient(to bottom, #faffff, #e8fff6 44%, #ace6e6);
+  color: #07536e; border: 2px solid #94d4df; border-radius: 20px;
+  box-shadow: inset 0 2px #fff, 0 4px 15px rgba(5,77,113,.26);
+}
 .aqua-flyout .aqua-flyout-root { padding: 12px; }
 .aqua-flyout .aqua-flyout-heading {
   background-image: linear-gradient(#ffffff, #d8fff4 45%, #99e0e3);
