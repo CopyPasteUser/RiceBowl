@@ -28,7 +28,7 @@ Scope: the live `winxp` GTK/XFWM/X11 rice, not the read-only preview or other de
   GTK3 CSS with the real GTK provider.
 - [x] Validate the changed windows and flyouts in native CI screenshot captures
   at 1600×900 and 1024×768, then refresh the committed XP screenshots
-  ([successful CI run 42026502990](https://github.com/CopyPasteUser/RiceBowl/actions/runs/42026502990)).
+  ([successful CI run 42029905195](https://github.com/CopyPasteUser/RiceBowl/actions/runs/42029905195)).
 - [ ] Verify device overview, actual GTK app compatibility and hardware behavior
   on the owner's XFCE laptop. Do not claim pixel-perfect equivalence or 1.0 yet.
 

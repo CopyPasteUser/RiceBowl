@@ -29,7 +29,7 @@
 <details>
 <summary>Capture provenance and limitations</summary>
 
-These are actual applications rendered under XFWM4 in virtual X11 at 1600×900, not mockups. The [successful 5 November 2026 CI run](https://github.com/CopyPasteUser/RiceBowl/actions/runs/42026502990) captured commit [`52ad483`](https://github.com/CopyPasteUser/RiceBowl/commit/52ad483253d2972c5035a37c9a3df25e133bbed0). The [manifest](manifest.json) records original and converted image hashes; compact 1024×768 captures are in the CI artifact. Historical `0.9.1` capture filenames are script compatibility names, not the tested release version.
+These are actual applications rendered under XFWM4 in virtual X11 at 1600×900, not mockups. The [successful 5 November 2026 CI run](https://github.com/CopyPasteUser/RiceBowl/actions/runs/42029905195) captured commit [`12aadcb`](https://github.com/CopyPasteUser/RiceBowl/commit/12aadcb9ada293b769e0b06659ac34fc1969db37). The [manifest](manifest.json) records original and converted image hashes; compact 1024×768 captures are in the CI artifact. Historical `0.9.1` capture filenames are script compatibility names, not the tested release version.
 
 Virtual-X11 captures do not establish physical Mint/XFCE hardware, suspend or multi-monitor acceptance. Unavailable device features in CI are shown honestly.
 
