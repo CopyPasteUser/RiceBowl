@@ -18,6 +18,8 @@ jobs:
         run: |
           /usr/bin/python3 -m compileall -q macrice launcher.py
           /usr/bin/python3 -m unittest discover -s tests -v
+          # Exercise real Windows 10 Settings search, sidebar and live controls.
+          timeout 18s dbus-run-session -- xvfb-run -a /usr/bin/python3 -m unittest tests.test_ten_settings_gui -v
           # Exercise the actual Win98 Find GTK widgets, not only parser contracts.
           timeout 18s dbus-run-session -- xvfb-run -a /usr/bin/python3 -m unittest tests.test_classic98_find_gui -v
           # Exercise the second-click Win98 Help topics, Back and local Search in a real GTK window.
@@ -58,6 +60,7 @@ jobs:
           # Capture the real second-click ChromeOS notification and Settings
           # pages, including honest unavailable-provider states in CI.
           /usr/bin/python3 -c 'from pathlib import Path; import struct; names=("notifications","settings"); fs=[Path(f"screenshots/ricebowl-chromeos-{name}-0.9.1-extra.png") for name in names]; assert all(p.is_file() and p.stat().st_size>12000 and struct.unpack(">II",p.read_bytes()[16:24])==(1600,900) for p in fs), "Missing ChromeOS detail screenshots"'
+          /usr/bin/python3 -c 'from pathlib import Path; import struct; names=("home","sound"); fs=[Path(f"screenshots/ricebowl-windows10-settings-{name}-0.9.1-extra.png") for name in names]; assert all(p.is_file() and p.stat().st_size>16000 and struct.unpack(">II",p.read_bytes()[16:24])==(1600,900) for p in fs), "Missing Windows 10 Settings screenshots"'
           # Each desktop must also render a REAL application window, with its
           # own GTK theme, icons, Thunar controls and native XFWM4 titlebar.
           # The helper uses a temporary HOME inside a fresh DBus/Xvfb session.
@@ -94,6 +97,7 @@ jobs:
           # Windows 10's real three-column Start and tall Action Center stay inside 1024x768.
           RICEBOWL_CAPTURE_SIZE=1024 timeout 24s dbus-run-session -- xvfb-run -a -s '-screen 0 1024x768x24' /usr/bin/python3 -c 'from macrice.ten_shell import run; raise SystemExit(run(["ricebowl-windows10-shell", "--capture-gallery"]))'
           /usr/bin/python3 -c 'from pathlib import Path; import struct; fs=sorted(Path("screenshots").glob("ricebowl-windows10-*-0.9.1-1024.png")); assert len(fs)==2, "Ten small-screen captures missing"; assert all(struct.unpack(">II", p.read_bytes()[16:24])==(1024,768) for p in fs), "Ten 1024x768 capture invalid"'
+          /usr/bin/python3 -c 'from pathlib import Path; import struct; names=("home","sound"); fs=[Path(f"screenshots/ricebowl-windows10-settings-{name}-0.9.1-1024-extra.png") for name in names]; assert all(p.is_file() and p.stat().st_size>12000 and struct.unpack(">II",p.read_bytes()[16:24])==(1024,768) for p in fs), "Missing compact Windows 10 Settings screenshots"'
           # Material You Launcher + Quick Settings must both be fully visible on 1024x768.
           RICEBOWL_CAPTURE_SIZE=1024 timeout 24s dbus-run-session -- xvfb-run -a -s '-screen 0 1024x768x24' /usr/bin/python3 -c 'from macrice.aero_shell import run; raise SystemExit(run(["ricebowl-chromeos-shell", "--capture-gallery"], profile="chromeos"))'
           /usr/bin/python3 -c 'from pathlib import Path; import struct; fs=sorted(Path("screenshots").glob("ricebowl-chromeos-*-0.9.1-1024.png")); assert len(fs)==2, "ChromeOS small-screen captures missing"; assert all(struct.unpack(">II", p.read_bytes()[16:24])==(1024,768) for p in fs), "ChromeOS 1024x768 capture invalid"'

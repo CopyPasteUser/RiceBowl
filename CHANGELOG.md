@@ -1,5 +1,20 @@
 # RiceBowl changelog
 
+## Unreleased — Windows 10 Settings navigation and visual depth (5 November 2026)
+
+- Rebuilt the native Windows 10 Settings experience with a centered category
+  Home, system-theme icons, scrollable detail navigation, search results that
+  open real subpages and a no-results state. Back/Escape/Ctrl+F keep the flow
+  keyboard-reachable; search is synchronized between Home and detail views.
+- Replaced menu-like text controls with 22H2-style rectangular action rows,
+  well-spaced category hierarchy and compact native GTK radio/notification/
+  audio switches. Unavailable tools are visibly disabled, and backend errors
+  remain legible after readback; no unverified Linux switch state is faked.
+- Added genuine Linux handoff categories for Gaming, Search and Update &
+  Security. No software updates or sensitive permissions are changed silently.
+- Added hermetic regressions and native-X11 Home/Sound screenshot gates at
+  1600×900 and 1024×768. Real-hardware acceptance remains open.
+
 ## Unreleased — safe update of dirty checkouts (5 November 2026)
 
 - Added a dedicated, explicitly confirmed Hub recovery path for an existing

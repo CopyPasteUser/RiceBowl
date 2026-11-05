@@ -125,6 +125,14 @@ secondary pages; prototypes and the release roadmap do not crowd the selector.
   assets/trusted-ricebowl-ten-before-fidelity.json allow safe backup-backed
   upgrades while preserving custom theme edits. No blur, Win7 glass, XP gloss
   or Windows 11 centered widgets belong in Ten.
+  The native Settings window uses an independent dark #202020 Win10 canvas,
+  white category text, #0078d7 selected-navigation rail, 3-column icon-first
+  Home and compact square rows. Sidebar navigation is for inner pages, not
+  a permanently visible Windows 11-style home. Two search fields share one
+  real destination index; native GTK switches and inline verification text
+  always reflect Linux-backed action state. `ten_settings.py` owns the widget
+  hierarchy and search behavior; `.ten-settings-*` rules in `ten_shell.CSS`
+  remain the sole runtime visual owner. No shared hub, XP or Aero tokens change.
 - **XP Luna:** 40px cobalt/green molded taskbar, contiguous bright-cyan notification
   tray, user-account Start header, ivory programs and pastel-blue system-links
   columns, separate log-off/power affordances, and a warm meadow wallpaper.

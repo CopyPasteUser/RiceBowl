@@ -160,30 +160,81 @@ CSS = b"""
 .ten-action-root scale highlight { background: @ten-blue; }
 .ten-action-root scale slider { background: white; min-width: 13px; min-height: 13px; }
 .ten-action-root levelbar block.filled { background: @ten-blue; }
-/* Independent Windows 10 Settings, network and Task View windows. */
+/* Independent Windows 10 Settings, network and Task View windows. Settings
+   uses 22H2-era dark Fluent: open canvas, rectangular controls, Segoe-like
+   typography, cobalt links and a real Win10 category home (not Win11 cards). */
 .ten-settings-root, .ten-network-root, .ten-taskview-root {
-  background: #202020; color: #f4f4f4; border: 1px solid #484848;
+  background: #202020; color: #f4f4f4; border: 1px solid #414141;
   border-radius: 0; font-family: "Segoe UI", "Noto Sans", sans-serif;
 }
-.ten-settings-toolbar { background: #202020; padding: 9px 15px;
-  border-bottom: 1px solid #444444; }
-.ten-settings-sidebar { background: #191919; border-right: 1px solid #393939;
-  padding: 15px 9px; }
-.ten-settings-sidebar entry { background: #f5f5f5; color: #202020;
-  border-radius: 0; padding: 6px; }
-.ten-settings-nav { background: transparent; color: #eeeeee; border: 0;
-  border-radius: 0; padding: 10px; min-height: 32px; box-shadow: none; }
-.ten-settings-nav:hover, .ten-settings-nav:focus { background: #3a3a3a; }
-.ten-settings-page { background: #242424; padding: 22px 25px; }
-.ten-settings-heading { color: #ffffff; font-size: 24px; font-weight: 400; }
-.ten-settings-tile { background: #292929; color: white; border: 1px solid #424242;
-  border-radius: 0; padding: 17px 13px; min-height: 76px; }
-.ten-settings-tile:hover, .ten-settings-tile:focus { background: #383838;
-  border-color: #81caff; }
-.ten-settings-action { background: #353535; color: white; border: 1px solid #646464;
-  border-radius: 0; padding: 7px 10px; min-height: 26px; }
+.ten-settings-toolbar { background: #202020; padding: 0 2px 0 12px;
+  min-height: 37px; border-bottom: 1px solid #383838; }
+.ten-settings-caption { color: #f6f6f6; font-size: 11px; }
+.ten-settings-back, .ten-settings-chrome, .ten-settings-close {
+  color: #f4f4f4; background: transparent; border: 0; border-radius: 0;
+  box-shadow: none; padding: 4px 11px; min-width: 36px; min-height: 32px;
+  font-size: 17px; }
+.ten-settings-back:hover, .ten-settings-chrome:hover,
+.ten-settings-close:hover { background: #373737; }
+.ten-settings-close:hover { background: #c42b1c; }
+.ten-settings-back:disabled { color: #666666; background: transparent; }
+.ten-settings-back:focus, .ten-settings-chrome:focus,
+.ten-settings-close:focus { outline: 1px solid #9dd9ff; outline-offset: -2px; }
+.ten-settings-sidebar { background: #202020; border-right: 1px solid #393939;
+  padding: 14px 6px 10px 13px; }
+.ten-settings-sidebar entry, .ten-settings-home entry {
+  background: #333333; color: #fafafa; border: 1px solid #6b6b6b;
+  border-radius: 0; padding: 9px 10px; min-height: 22px;
+  box-shadow: none; caret-color: white; }
+.ten-settings-sidebar entry:focus, .ten-settings-home entry:focus {
+  border-color: @ten-blue; box-shadow: inset 0 -2px @ten-blue; }
+.ten-settings-sidebar entry image, .ten-settings-home entry image { color: #c7c7c7; }
+.ten-settings-home-link, .ten-settings-nav {
+  color: #ededed; background: transparent; border: 0;
+  border-left: 3px solid transparent; border-radius: 0;
+  padding: 9px 10px; min-height: 27px; box-shadow: none;
+  font-size: 12px; }
+.ten-settings-home-link:hover, .ten-settings-nav:hover,
+.ten-settings-home-link:focus, .ten-settings-nav:focus { background: #323232; }
+.ten-settings-nav-selected { border-left-color: @ten-blue; background: #2e2e2e; }
+.ten-settings-page { background: #202020; padding: 29px 39px 35px; }
+.ten-settings-heading { color: #ffffff; font-size: 27px; font-weight: 400; }
+.ten-settings-home { padding: 42px 33px 30px; }
+.ten-settings-home .ten-settings-heading { font-size: 30px; }
+.ten-settings-home .ten-muted { font-size: 12px; }
+.ten-settings-tile { background: transparent; color: white;
+  border: 1px solid transparent; border-radius: 0; box-shadow: none;
+  padding: 12px 10px; min-height: 91px; }
+.ten-settings-tile:hover, .ten-settings-tile:focus {
+  background: #343434; border-color: #606060; }
+.ten-settings-tile:active { background: #454545; }
+.ten-settings-tile image { color: #f0f0f0; }
+.ten-settings-tile-title { color: #f6f6f6; font-size: 13px; font-weight: 600; }
+.ten-settings-section { color: #f8f8f8; font-size: 18px; font-weight: 400;
+  padding: 12px 0 6px; }
+.ten-settings-row { background: transparent; color: #f4f4f4;
+  border: 1px solid transparent; border-bottom-color: #424242;
+  border-radius: 0; box-shadow: none; padding: 12px 9px; min-height: 40px; }
+.ten-settings-row:hover, .ten-settings-row:focus {
+  background: #303030; border-color: #525252; }
+.ten-settings-row:active { background: #404040; }
+.ten-settings-row:disabled { color: #858585; background: transparent; }
+.ten-settings-row:disabled label { color: #999999; }
+.ten-settings-row-title { color: #f3f3f3; font-size: 13px; }
+.ten-settings-chevron { color: #a4d4fa; font-size: 20px; }
+.ten-settings-empty { color: #c9c9c9; padding: 24px 4px; font-size: 13px; }
+.ten-settings-feedback { color: #b7b7b7; font-size: 11px; padding-bottom: 8px; }
+.ten-settings-switch { background: transparent; min-width: 47px; min-height: 22px; }
+.ten-settings-switch trough { background: #494949; border: 2px solid #d1d1d1;
+  border-radius: 12px; min-width: 43px; min-height: 18px; }
+.ten-settings-switch:checked trough { background: @ten-blue; border-color: @ten-blue; }
+.ten-settings-switch slider { background: #f5f5f5; border: 0;
+  border-radius: 100%; min-height: 14px; min-width: 14px; }
+.ten-settings-switch:disabled { opacity: .5; }
+.ten-settings-action { background: #333333; color: white; border: 1px solid #757575;
+  border-radius: 0; padding: 7px 12px; min-height: 26px; box-shadow: none; }
 .ten-settings-action:hover, .ten-settings-action:focus { background: #444444;
-  border-color: #86cfff; }
+  border-color: #9bcfff; }
 .ten-settings-action:disabled { background: #292929; color: #919191; }
 .ten-settings-page scale trough { background: #575757; min-height: 4px; }
 .ten-settings-page scale highlight { background: @ten-blue; }
