@@ -5067,8 +5067,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 picker_grid.attach(button, index % 7, index // 7, 1, 1)
             picker.add(picker_grid)
             # Popovers own a separate window: Start.show_all() does not
-            # reliably realize their child grid when opened later.
-            picker.show_all()
+            # realize their child grid. Keep the popover itself hidden until
+            # the user opens the A–Z menu button.
+            picker_grid.show_all()
             self._track_start_popup(picker)
             jump.set_popover(picker)
             self.ten_letter_trigger = jump
