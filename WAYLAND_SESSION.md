@@ -86,9 +86,14 @@ conversion or all seven native profiles are implemented yet.
 The repository additionally includes `components/riceplate-wayland`, an
 event-driven Rust/Smithay Client Toolkit layer-shell prototype. It paints a
 simple labelled surface with a fixed `Apps` button that launches the installed
-Fuzzel command without passing any recipe data to a shell. It is **not** a
-replacement taskbar: it has no window list, clock, tray, notification handling
-or multi-output ownership yet. Do not start it automatically alongside Waybar.
+Fuzzel command without passing any recipe data to a shell. When labwc offers
+`wlr-foreign-toplevel-management`, the prototype also displays live window
+titles and supports click-to-activate via the Wayland seat. The window list
+is deliberately bounded and only the visible entries accept clicks; if the
+protocol is missing the panel keeps its launcher and reports the limitation.
+It is **not** a replacement taskbar: it still lacks grouping, clocks, tray,
+notification handling or multi-output ownership. Do not start it automatically
+alongside Waybar.
 
 In a *disposable/nested* labwc session, developers with Rust 1.86+ can try:
 
