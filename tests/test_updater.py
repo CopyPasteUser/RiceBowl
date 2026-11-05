@@ -9,7 +9,7 @@ from unittest import mock
 
 from macrice import updater
 from macrice.cli import parser
-from macrice.installer import InstallationError, MANAGED_MARKER
+from macrice.installer import InstallationError, MANAGED_MARKER, REVISION_MARKER
 
 
 def git(path, *args):
@@ -74,6 +74,9 @@ class UpdateTests(unittest.TestCase):
             value = (source / "revision.txt").read_text() if (source / "revision.txt").exists() else (
                 source / "launcher.py").read_text()
             (self.installed / "launcher.py").write_text(value)
+            if (source / REVISION_MARKER).exists():
+                (self.installed / REVISION_MARKER).write_text(
+                    (source / REVISION_MARKER).read_text())
             if fail_new and value == "v2":
                 raise InstallationError("simulated installation failure")
         return install
@@ -83,6 +86,27 @@ class UpdateTests(unittest.TestCase):
         self.assertEqual(updater.inspect(source=self.checkout).commits, 0)
         self.assertEqual(updater.inspect(source=self.checkout, refresh=True).commits, 1)
         self.assertEqual(git(self.checkout, "rev-parse", "HEAD"), self.old)
+
+    def test_gui_detects_outdated_install_even_after_manual_git_pull(self):
+        revision = self.new_revision()
+        (self.installed / REVISION_MARKER).write_text(self.old + "\n")
+        git(self.checkout, "pull", "--ff-only")
+        plan = updater.inspect(source=self.checkout)
+        self.assertEqual(plan.commits, 0)
+        self.assertTrue(plan.needed)
+        self.assertEqual(plan.installed, self.old)
+        with mock.patch.object(updater, "install", side_effect=self.fake_installer()):
+            updater.apply(source=self.checkout)
+        self.assertEqual((self.installed / REVISION_MARKER).read_text().strip(), revision)
+        self.assertFalse(updater.inspect(source=self.checkout).needed)
+
+    def test_legacy_install_without_revision_offers_one_migration_install(self):
+        plan = updater.inspect(source=self.checkout)
+        self.assertEqual(plan.commits, 0)
+        self.assertTrue(plan.needed)
+        with mock.patch.object(updater, "install", side_effect=self.fake_installer()):
+            updater.apply(source=self.checkout)
+        self.assertFalse(updater.inspect(source=self.checkout).needed)
 
     def test_stale_preview_rejected_before_install(self):
         new = self.new_revision()
@@ -148,6 +172,7 @@ class UpdateTests(unittest.TestCase):
         self.assertEqual((self.checkout / "personal notes.txt").read_text(),
                          "private untracked data\n")
         self.assertEqual(git(self.checkout, "stash", "list"), "")
+        self.assertFalse(updater.inspect(source=self.checkout, allow_dirty=True).needed)
 
     def test_dirty_install_failure_restores_bundle_and_preserves_every_edit(self):
         self.new_revision()
