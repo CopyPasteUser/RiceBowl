@@ -143,7 +143,9 @@ class TenSettings:
         self.search = Gtk.SearchEntry()
         self.search.set_placeholder_text("Find a setting")
         self.search.get_accessible().set_name("Search Windows 10 settings categories")
-        self.search.connect("search-changed", self._search_changed)
+        # Gtk.SearchEntry's search-changed signal is intentionally delayed;
+        # our bounded local index should respond to every edit immediately.
+        self.search.connect("changed", self._search_changed)
         self.sidebar.pack_start(self.search, False, False, 9)
         home = shell._class(Gtk.Button(label="⌂   Home"), "ten-settings-home-link")
         home.connect("clicked", lambda _button: self.navigate("home"))
@@ -223,7 +225,7 @@ class TenSettings:
         self.home_search.get_accessible().set_name("Search settings")
         self.home_search.set_size_request(330, -1)
         self.home_search.set_halign(Gtk.Align.CENTER)
-        self.home_search.connect("search-changed", self._search_changed)
+        self.home_search.connect("changed", self._search_changed)
         body.pack_start(self.home_search, False, False, 15)
         grid = Gtk.Grid(row_spacing=8, column_spacing=8)
         grid.set_column_homogeneous(True)
