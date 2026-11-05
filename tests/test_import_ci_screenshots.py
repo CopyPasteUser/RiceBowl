@@ -16,6 +16,8 @@ class GalleryImportTests(unittest.TestCase):
                                  f"ricebowl-{profile}-{view}-0.9.1.png")
         self.assertIn("chromeos-notifications", VERSIONS)
         self.assertIn("chromeos-settings", VERSIONS)
+        self.assertIn("windows10-settings-home", VERSIONS)
+        self.assertIn("windows10-settings-sound", VERSIONS)
         self.assertIn("macmenu-dark", VERSIONS)
         self.assertEqual(len(VERSIONS), len(set(VERSIONS.values())))
 

@@ -42,6 +42,9 @@ VERSIONS.update({f"winxp-{view}": f"ricebowl-winxp-{view}-0.9.1-extra.png"
                  for view in ("properties", "notification-icons", "run")})
 VERSIONS.update({f"chromeos-{view}": f"ricebowl-chromeos-{view}-0.9.1-extra.png"
                  for view in ("notifications", "settings")})
+VERSIONS.update({f"windows10-settings-{view}":
+                 f"ricebowl-windows10-settings-{view}-0.9.1-extra.png"
+                 for view in ("home", "sound")})
 VERSIONS["macmenu-dark"] = "ricebowl-macmenu-dark-current.png"
 
 
