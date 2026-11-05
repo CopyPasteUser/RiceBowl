@@ -223,10 +223,13 @@ hardware/suspend acceptance and all end-to-end fidelity criteria below.
   block; closing the popover cancels it early. The known-device Pair action
   uses BlueZ `Device1.Pair` and an already-registered default system agent to
   handle PIN/confirmation instead of inventing insecure pairing dialogs.
-- [x] The native Display page now lists connected X11 outputs, primary flag,
-  actual geometry and available resolution modes. RandR is queried read-only,
-  bounded and outside GTK's main loop. XFCE still owns resolution/position
-  mutation and its screen-revert confirmation.
+- [x] The native Display page lists connected X11 outputs, primary flag,
+  actual geometry and available resolution modes. A separate, explicit
+  single-active-output mode/position trial now applies through an unprivileged
+  **detached 18-second rollback helper**; confirmation is required to keep it.
+  Rotation/scaling and full multi-monitor transactions stay with XFCE.
+- [ ] Verify real HDMI reconnect, no-PIN display server, GUI crash,
+  countdown expiry and session interruption on Mint/XFCE before sign-off.
 - [x] Aqua Control Center now behaves as a normal standalone XFWM4 window:
   movable custom titlebar, Alt-Tab/taskbar presence, user-chosen position,
   no always-on-top and no dismissal when another application gains focus.
@@ -234,8 +237,9 @@ hardware/suspend acceptance and all end-to-end fidelity criteria below.
   nearby scan and pairing through the registered BlueZ system PIN agent,
   with actual read-back and no automatic trust.
 - [ ] Verify title drag/resize/focus and BlueZ scan/pair on physical Mint.
-- [ ] Own PIN-agent wizard, richer USB eject/power-off control, transactional
-  display layout editing, physical-device and compact-screen acceptance remain open.
+- [ ] Own PIN-agent wizard, richer USB eject/power-off control, full
+  transactional multi-monitor editing, physical-device and compact-screen
+  acceptance remain open. File manager replacement waits for riceExplorer 1.0.
 
 **Still open:** Advanced enterprise Wi-Fi connection editing, complete
 Bluetooth PIN-agent workflows, writable monitor layout/scaling, persistence for

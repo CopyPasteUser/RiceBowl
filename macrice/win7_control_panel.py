@@ -78,13 +78,16 @@ def matching_categories(query: str) -> tuple[Category, ...]:
 
 def build(shell, Gtk, Gdk):
     """Build an actual navigable category window, not a quick-toggle popup."""
-    from gi.repository import GdkPixbuf
+    from gi.repository import GdkPixbuf, GLib
+    from .window_geometry import restore_and_track
 
     window = Gtk.Window(type=Gtk.WindowType.TOPLEVEL)
     window.set_title("Control Panel — RiceBowl Linux")
     window.set_icon_name("preferences-system")
     window.set_resizable(True)
     window.set_default_size(810, 565)
+    shell._win7_settings_positioned = restore_and_track(
+        window, "ricebowl-win7-control-panel", Gdk, GLib)
     window.set_skip_taskbar_hint(False)
     window.set_skip_pager_hint(False)
 

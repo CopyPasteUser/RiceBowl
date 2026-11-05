@@ -14,11 +14,21 @@
   nine-second discovery and Pair via the registered **system** PIN agent.
 - [x] PR #67 native GTK/X11 CI passed for settings window behavior, Aqua
   Bluetooth scan/pair flow and existing screenshot regression captures.
+- [x] Shared geometry preferences for all six non-macOS Settings windows:
+  atomic per-user save, debounce and off-screen recovery when monitors change.
+- [x] Restricted ricePlate GTK file/URI copy targets on XP, Win7 and Aqua
+  Places and the Windows 98 inspector: local regular files only, confirmation,
+  no overwrite, background copy and unchanged-file undo.
+- [x] Frutiger Aqua X11 mode/position **trial** using a detached, unprivileged
+  18-second guard which reverts unconfirmed changes after the GUI closes.
+- [ ] Native Xvfb/GTK CI and real XFWM4/HDMI acceptance for the new geometry,
+  file-drop and temporary display editor changes.
 - [ ] Owner Mint/XFCE tests for actual moving, focus, task switching,
   multi-monitor handling and USB file drops.
-- [ ] File/URI drag-and-drop remains unimplemented; local secure BlueZ PIN
-  agent, writable monitor editor with crash-safe revert and riceExplorer Aqua
-  renderer remain open.
+- [ ] File-manager-grade folder transfers/moves and riceExplorer renderers
+  are deferred until the **separate riceExplorer project reaches 1.0**.
+- [ ] Local secure BlueZ PIN agent, transactional multi-monitor layouts,
+  crash/HDMI recovery drills and full file-DnD physical testing remain open.
 
 - [x] `macrice doctor` / `--json`: read-only XFCE/X11, managed-install,
   launcher, optional hardware-backend and private shortcut-recovery checks.
@@ -38,8 +48,9 @@
 - [x] Native Frutiger Bluetooth discovery via BlueZ `StartDiscovery` with
   bounded wait and guaranteed `StopDiscovery` on cancel/close; Pair uses the
   default BlueZ system agent for passkey workflows (when available).
-- [x] Display Control Center reads connected RandR output geometry, primary
-  screen and modes without changing modes or risking a lost screen.
+- [x] Display Control Center reads real RandR output geometry, primary screen
+  and modes. The new opt-in single-active-output editor makes a reversible
+  trial only; automatic rollback is owned by a separate timed user process.
 - [x] Sequential seven-profile recovery simulations across non-macOS shells,
   including a failed mid-transition handoff; regression coverage in CI.
 - [x] On-demand repeated CPU/PSS/thread measurement with per-PID medians and

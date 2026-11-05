@@ -24,6 +24,9 @@ def display_items(snapshot):
 
 class Classic98Desktop:
     def __init__(self, shell, Gtk):
+        from gi.repository import Gdk, GLib
+        from .riceware.dnd_gtk import attach_file_drag_source, attach_folder_drop
+
         self.shell, self.Gtk = shell, Gtk
         self.epoch = 0
         self.closed = False
@@ -55,6 +58,15 @@ class Classic98Desktop:
             self.tree.append_column(column)
         self.tree.get_accessible().set_name("Real XFDesktop desktop items")
         self.tree.connect("row-activated", self._activate)
+
+        def selected_uri():
+            model, selected = self.tree.get_selection().get_selected()
+            if selected is None:
+                return None
+            path = Path(model[selected][3])
+            return path.as_uri() if path.is_file() and not path.is_symlink() else None
+
+        attach_file_drag_source(self.tree, Gtk, Gdk, selected_uri)
         scroll = Gtk.ScrolledWindow()
         scroll.set_policy(Gtk.PolicyType.AUTOMATIC, Gtk.PolicyType.AUTOMATIC)
         scroll.add(self.tree)
@@ -66,6 +78,11 @@ class Classic98Desktop:
         self.open_folder = Gtk.Button(label="Open Desktop Folder")
         self.open_folder.set_sensitive(False)
         self.open_folder.connect("clicked", lambda _button: self._open_folder())
+        from .luna_desktop import desktop_path
+
+        desktop = desktop_path()
+        if desktop.is_dir():
+            attach_folder_drop(self.open_folder, desktop, Gtk, Gdk, GLib)
         buttons.pack_start(self.open_folder, False, False, 0)
         xfdesktop = Gtk.Button(label="Desktop Settings…")
         xfdesktop.set_sensitive(shutil.which("xfdesktop-settings") is not None)

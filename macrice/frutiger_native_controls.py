@@ -43,6 +43,8 @@ class NativeAquaControls:
         self._renderer = None
         self._debounce = 0
         self._scan_cancel = None
+        self._display_change = None
+        self._display_poll = 0
 
         self.surface = shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=9),
                                     self._style("panel"))
@@ -231,6 +233,11 @@ class NativeAquaControls:
         if self._debounce:
             self.GLib.source_remove(self._debounce)
             self._debounce = 0
+        if getattr(self, "_display_poll", 0):
+            self.GLib.source_remove(self._display_poll)
+            self._display_poll = 0
+        # The independent guard reverts on timeout even if this page closes.
+        self._display_change = None
 
     def dispose(self):
         self._disposed = True
@@ -434,6 +441,8 @@ class NativeAquaControls:
         self.bind(read, render)
 
     def display(self):
+        from . import display_guard
+
         slider = self._scale("Laptop screen brightness", lambda value:
                               self.change(lambda: self.backend.set_brightness(value)), minimum=1)
         self._label("Backlight access requires a supported device and permission to use brightnessctl.",
@@ -442,8 +451,96 @@ class NativeAquaControls:
         self._label("CONNECTED X11 DISPLAYS", self._style("section"))
         screens = self.Gtk.Box(orientation=self.Gtk.Orientation.VERTICAL, spacing=5)
         self._add(screens)
-        self._label("Monitor positions and modes are read from X11. Use XFCE Display Settings "
-                    "for changes with its own revert confirmation.", self._style("hint"))
+        self._label("Change one active display at a time. The detached X11 safety helper "
+                    "reverts automatically after 18 seconds unless you confirm. "
+                    "XFCE Display Settings remains available for rotation and scaling.",
+                    self._style("hint"))
+        outputs = self._combo("Active display", lambda _name: update_selection())
+        modes = self._combo("Resolution", lambda _name: None)
+        coordinates = self.Gtk.Box(orientation=self.Gtk.Orientation.HORIZONTAL, spacing=8)
+        x = self.Gtk.SpinButton.new_with_range(-16384, 16384, 1)
+        y = self.Gtk.SpinButton.new_with_range(-16384, 16384, 1)
+        for axis, field in (("X position", x), ("Y position", y)):
+            column = self.Gtk.Box(orientation=self.Gtk.Orientation.VERTICAL, spacing=3)
+            label = self.Gtk.Label(label=axis, xalign=0)
+            column.pack_start(label, False, False, 0)
+            field.get_accessible().set_name(axis + " in pixels")
+            field.set_sensitive(False)
+            self._interactive.append(field)
+            column.pack_start(field, False, False, 0)
+            coordinates.pack_start(column, True, True, 0)
+        self._add(coordinates)
+        selection = {}
+
+        def update_selection():
+            item = selection.get(outputs.get_active_id())
+            modes.remove_all()
+            if item is None:
+                modes.set_sensitive(False)
+                return
+            for resolution in item.modes:
+                modes.append(resolution, resolution)
+            if item.current_mode in item.modes:
+                modes.set_active_id(item.current_mode)
+            modes.set_sensitive(bool(item.modes))
+            x.set_value(item.position[0])
+            y.set_value(item.position[1])
+
+        def poll_guard():
+            guard = self._display_change
+            if self._disposed or not self.is_current() or guard is None:
+                self._display_poll = 0
+                return False
+            try:
+                state, detail = display_guard.read_status(guard)
+            except (OSError, RuntimeError, ValueError) as exc:
+                keep.set_sensitive(False)
+                self._status(str(exc)[:180], error=True)
+                return True  # Keep waiting; the independent guard still owns rollback.
+            keep.set_sensitive(state == "pending")
+            if state in ("starting", "pending"):
+                self._status(detail)
+                return True
+            self._display_poll = 0
+            self._display_change = None
+            keep.set_sensitive(False)
+            self._submit(completion={"kept": "Display settings confirmed",
+                                     "reverted": "Previous display layout restored",
+                                     "failed": "Display change was not applied",
+                                     "revert-failed": "Rollback failed — open XFCE Display Settings"}.get(state))
+            if state in ("failed", "revert-failed"):
+                self._status(detail or "Display guard failed", error=True)
+            return False
+
+        def apply_layout():
+            name, resolution = outputs.get_active_id(), modes.get_active_id()
+            if name is None or resolution is None or self._display_change is not None:
+                return
+            proposed = (name, resolution, x.get_value_as_int(), y.get_value_as_int())
+            self._display_change = None
+
+            def begin():
+                self._display_change = display_guard.begin_change(*proposed)
+
+            self.change(begin)
+
+        apply = self._button("Try display layout (18 s)", apply_layout)
+        apply.get_accessible().set_name("Temporarily apply display mode and position")
+
+        def confirm_layout():
+            if self._display_change is not None:
+                try:
+                    display_guard.keep_change(self._display_change)
+                    keep.set_sensitive(False)
+                    self._status("Confirmation sent to the independent display guard…")
+                except (OSError, RuntimeError, ValueError) as exc:
+                    self._status(str(exc)[:180], error=True)
+
+        keep = self.Gtk.Button(label="Keep display settings")
+        keep.set_sensitive(False)
+        keep.get_accessible().set_name("Confirm temporary monitor settings before rollback")
+        keep.connect("clicked", lambda _button: confirm_layout())
+        self._add(keep)
 
         def read():
             brightness = self.backend.read_brightness()
@@ -472,6 +569,23 @@ class NativeAquaControls:
                                    (monitor.current_mode or "inactive") + location)
                 if monitor.modes:
                     self._display_line(screens, "Modes: " + ", ".join(monitor.modes[:5]))
+            previous = outputs.get_active_id()
+            selection.clear()
+            selection.update({monitor.name: monitor for monitor in monitors
+                              if monitor.current_mode and monitor.position and monitor.modes})
+            outputs.remove_all()
+            for item in selection.values():
+                outputs.append(item.name, item.name + (" · Primary" if item.primary else ""))
+            chosen = previous if previous in selection else next(
+                (item.name for item in selection.values() if item.primary),
+                next(iter(selection), None))
+            if chosen is not None:
+                outputs.set_active_id(chosen)
+            outputs.set_sensitive(bool(selection) and self._display_change is None)
+            update_selection()
+            apply.set_sensitive(bool(selection) and self._display_change is None)
+            if self._display_change is not None and not self._display_poll:
+                self._display_poll = self.GLib.timeout_add(200, poll_guard)
             screens.show_all()
             if value is None:
                 return "No writable laptop backlight reported"

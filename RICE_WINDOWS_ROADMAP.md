@@ -35,12 +35,12 @@ must behave like applications integrated into the actual Linux desktop:
 
 | Rice | Independent settings/window foundation | Remaining integration |
 | --- | --- | --- |
-| XP Luna | Custom draggable Control Panel caption; now normal WM client that stays open on focus loss | Persist geometry, deeper native task pages, drag-and-drop file surfaces |
-| Windows 98 SE | Normal decorated Control Panel window already managed by XFWM4 | Richer system applets, file/desktop drag-and-drop |
-| Windows 7 Aero | Normal decorated Control Panel already managed by XFWM4 | Native task dialogs, richer per-app windows and file/desktop drag-and-drop |
-| Windows 10 | Standalone native Settings shell; now has draggable custom title and taskbar identity | Stable geometry across external-display changes, deep app pages and file/desktop drag-and-drop |
-| ChromeOS | Separately decorated GTK Settings app | ChromeOS-specific file/desktop drop targets and window management fidelity |
-| Frutiger Aero | Aqua Control Center now normal, draggable, focus-persistent WM client with native hardware pages | Dedicated secure PIN agent, rollback-safe monitor editor, desktop/file drop targets, deeper control pages |
+| XP Luna | Draggable WM Control Panel and persisted geometry; local regular-file copies to existing folder shortcuts | Deeper native task pages, full folder moves and physical DnD testing |
+| Windows 98 SE | WM Control Panel with persisted geometry; Desktop inspector exports URI drags and confirms copies to Desktop | Richer system applets and complete desktop/file manager DnD |
+| Windows 7 Aero | WM Control Panel, persisted geometry and local file-copy targets on Places | Native task dialogs, deeper per-app windows and full folder DnD |
+| Windows 10 | WM-integrated native Settings shell, draggable caption and persisted geometry | Deep app pages and complete folder/file DnD |
+| ChromeOS | Normal GTK Settings app with persisted, bounded geometry | ChromeOS file/desktop targets and window-fidelity work |
+| Frutiger Aero | Draggable/persisted Aqua Control Center, bounded file-copy Places, opt-in timed RandR trial | Independent guard hardware proof, richer pages and full file DnD |
 | macOS Aurora | **Frozen — preserved** | No changes in this workstream |
 
 ## Implementation sequence
@@ -56,16 +56,26 @@ must behave like applications integrated into the actual Linux desktop:
   pinned, confirmed and recoverable updater; no automatic installation.
 - [x] [PR #67](https://github.com/CopyPasteUser/RiceBowl/pull/67) passed
   native GTK/X11 CI for these window changes and existing screenshot regressions.
+- [x] Per-role XDG user window geometry saved atomically and clamped to
+  a reachable display after unplug/reconfiguration; no new resident service.
+- [x] Shared limited URI targets for XP/Win7/Aqua folder shortcuts and the
+  Win98 Desktop inspector: confirmed regular-file copies, no overwrites,
+  background transfer, per-operation undo of *unchanged* copied files.
+- [x] Aqua single-active-monitor mode/position trial implementation with a
+  detached per-session guard and automatic 18-second unconfirmed rollback.
+- [ ] Verify the new DnD bindings, guard and geometry lifecycle on native GTK
+  CI and physical multi-monitor XFCE/X11, including display-server failure.
 - [ ] Validate focus switching, move, resize, maximize, taskbar, Escape,
   1024×768 and multi-monitor unplug using real XFWM4 on Linux Mint.
-- [ ] Add per-rice `Gtk.Dest`/GIO and riceExplorer drag source/target actions
-  for moving/copying files only after secure drop semantics and undo exist.
+- [ ] Full folder/move/cross-volume DnD, clipboard integration and themed
+  riceExplorer renderers **wait until riceExplorer 1.0**. XFDesktop/Thunar own
+  those workflows in the meantime; do not duplicate their file manager UI.
 - [ ] Build the local BlueZ PIN/confirm agent with strict request expiry,
   no passkey logging, explicit trust policy and physical device tests.
-- [ ] Add a staged monitor mode/position editor only after an independent,
-  crash-surviving revert timer is exercised across session changes.
-- [ ] Connect riceExplorer's Aqua renderer when its separate project passes
-  the shared file-operation compatibility and error-path gates.
+- [ ] Hardware-validate the guard across resolution failure, HDMI disconnect,
+  GUI crash and session interruption before marking writable layouts complete.
+- [ ] Connect riceExplorer only **after its own 1.0 release**, then verify the
+  shared file-operation compatibility and error-path gates.
 
 ## Release acceptance
 
@@ -79,5 +89,6 @@ must behave like applications integrated into the actual Linux desktop:
 - GitHub GTK/X11 CI and owner Mint/XFCE hardware acceptance both pass before
   moving this workstream from development to complete.
 
-**Important:** Moving a window by its caption is implemented where stated;
-generic file drag-and-drop support is **not** claimed complete.
+**Important:** Moving a window and limited, confirmed local-file copying are
+implemented where stated. Complete file-manager drag-and-drop, full monitor
+transactions and physical hardware sign-off are **not** claimed complete.
