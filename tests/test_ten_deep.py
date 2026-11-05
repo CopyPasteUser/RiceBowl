@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import unittest
+from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 from macrice.hardware_status import BluetoothState, SoundState, WifiNetwork
@@ -11,8 +12,11 @@ from macrice.riceware.worker import Response
 from macrice.ten_network import TenNetworkFlyout, network_description
 from macrice.ten_settings import (
     CATEGORIES, SUBPAGES, TenSettings, page_parent, search_destinations,
+    storage_description,
 )
-from macrice.ten_task_view import MAX_VISIBLE_WINDOWS, TenTaskView, manageable_workspace_count
+from macrice.ten_task_view import (
+    MAX_VISIBLE_WINDOWS, TenTaskView, card_position, manageable_workspace_count,
+)
 
 
 class Toggle:
@@ -63,6 +67,18 @@ def settings_fixture():
 
 
 class Win10DeepTests(unittest.TestCase):
+    def test_installed_app_page_allows_minimal_shell_without_app_catalog(self):
+        view = TenSettings.__new__(TenSettings)
+        view.shell = SimpleNamespace()
+        view.apps_results = Mock()
+        view.apps_results.get_children.return_value = []
+        view.apps_search = Mock()
+        view.apps_search.get_text.return_value = ""
+        view.apps_count = Mock()
+        view._apps_limit = 35
+        view._populate_apps()
+        view.apps_count.set_text.assert_called_once_with("0 desktop applications")
+
     def test_settings_categories_and_real_navigation_hierarchy(self):
         self.assertEqual(len(CATEGORIES), 12)
         self.assertEqual(len({key for key, _title, _desc in CATEGORIES}), 12)
@@ -77,8 +93,18 @@ class Win10DeepTests(unittest.TestCase):
         self.assertIn("display", [key for key, *_ in search_destinations("monitors")])
         self.assertIn("updates", [key for key, *_ in search_destinations("mint update")])
         self.assertIn("network", [key for key, *_ in search_destinations("Wi-Fi")])
+        self.assertIn("storage", [key for key, *_ in search_destinations("free disk")])
+        self.assertIn("apps_installed", [key for key, *_ in search_destinations("installed programs")])
         self.assertEqual(search_destinations("not-a-real-feature-123"), ())
         self.assertEqual(search_destinations(" "), ())
+
+    def test_storage_reports_real_units_and_rejects_bad_capacity(self):
+        label, fraction = storage_description(3 * 1024**3, 8 * 1024**3)
+        self.assertIn("3.0 GiB used of 8.0 GiB", label)
+        self.assertEqual(fraction, 0.375)
+        for used, total in ((-1, 5), (8, 5), (0, 0)):
+            with self.assertRaises(ValueError):
+                storage_description(used, total)
 
     def test_backend_error_without_response_value_is_unavailable(self):
         view = settings_fixture()
@@ -146,6 +172,23 @@ class Win10DeepTests(unittest.TestCase):
         self.assertTrue(manageable_workspace_count(11))
         self.assertFalse(manageable_workspace_count(12))
         self.assertEqual(MAX_VISIBLE_WINDOWS, 60)
+
+    def test_task_view_cards_wrap_into_two_columns(self):
+        self.assertEqual(tuple(card_position(i) for i in range(5)),
+                         ((0, 0), (1, 0), (0, 1), (1, 1), (0, 2)))
+        with self.assertRaises(ValueError):
+            card_position(-1)
+
+    def test_task_view_close_never_targets_missing_or_non_task_window(self):
+        view = TenTaskView.__new__(TenTaskView)
+        tracker = Mock()
+        tracker.wnck.Window.get.return_value = None
+        view.shell = Mock(_window_tracker=tracker)
+        view.message = Label()
+        view.refresh = Mock()
+        view._close_window(99)
+        self.assertIn("no longer available", view.message.value)
+        view.refresh.assert_called_once()
 
     def test_workspace_count_requires_real_wm_confirmation(self):
         view = TenTaskView.__new__(TenTaskView)

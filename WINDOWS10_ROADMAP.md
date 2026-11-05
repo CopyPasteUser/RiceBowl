@@ -151,6 +151,37 @@ entry points do **not** mean every Windows 10 feature is implemented.
 This is a **partial** implementation of the open P0 criteria below, not a
 declaration that Windows 10 fidelity or riceExplorer integration is complete.
 
+## Native interaction implementation — 5 November 2026 (pending hardware QA)
+
+- [x] Separate Windows-10-flat audio, battery/power, Bluetooth and calendar
+  flyouts, using the existing asynchronous Linux adapters. Keep the genuine
+  NetworkManager Wi-Fi flyout independent. No second notification daemon.
+- [x] Start tiles have four real grid sizes, independent private persisted
+  pin/group layout, inline group renaming, keyboard context menus, drag/drop
+  reordering, cross-group moves, and safe nonexistent-app retention.
+- [x] Win10 taskbar offers Search box/icon/hidden, auto-compact fallback at
+  narrow resolutions, persistent Task View toggle, authenticated schema-1
+  preference migration and pinned-app drag ordering/real recent-file menus.
+- [x] Task View renders two-column Wnck window cards with real icons and
+  click-to-activate/move/close; workspace creation/removal retains XFWM owner.
+- [x] Native Settings adds Storage measured from the user's home filesystem,
+  actual battery/desktop power status, searchable installed Gio applications;
+  Start search includes actual Settings destinations and folder shortcuts.
+- [x] Extend screenshot capture and import contracts with six additional
+  Win10 native interaction/detail surfaces; **gallery refresh requires the
+  matching green GitHub Actions screenshot artifact**.
+- [x] Add separate step-by-step Mint/XFCE acceptance checklist in
+  [`WINDOWS10_MANUAL_ACCEPTANCE.md`](WINDOWS10_MANUAL_ACCEPTANCE.md).
+- [x] Native GTK/XFWM screenshot CI green at 1600×900 and 1024×768;
+  validated final run `42045518423` (commit `cdf458a`), inspected the Start,
+  device flyouts, Settings and Task View, then imported all 42 genuine
+  screenshots to `screenshots/current` and refreshed the Hub preview.
+- [ ] Physical Mint hardware, multi-monitor, scaling, suspend, no-battery,
+  NetworkManager credentials and full RiceExplorer Win10 renderer acceptance.
+- [ ] Remaining fidelity scope below (full Snap Assist, global Win+ shortcuts,
+  advanced Settings, toasts, Explorer ribbon, High Contrast) is **not**
+  automatically passed by these milestones.
+
 
 ---
 

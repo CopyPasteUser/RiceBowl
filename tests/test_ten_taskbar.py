@@ -13,8 +13,8 @@ class TenTaskbarPreferencesTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "ricehub/windows10-taskbar.json"
             self.assertEqual(load(path), DEFAULTS)
-            save(path, {"search": False, "task_view": True})
-            self.assertEqual(load(path), {"search": False, "task_view": True})
+            save(path, {"search_mode": "hidden", "task_view": True})
+            self.assertEqual(load(path), {"search_mode": "hidden", "task_view": True})
             self.assertEqual(path.stat().st_mode & 0o777, 0o600)
             self.assertEqual(list(path.parent.glob(".ten-taskbar-*")), [])
 
@@ -22,7 +22,7 @@ class TenTaskbarPreferencesTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             source = root / "source.json"
-            source.write_text(json.dumps({"schema": 1, "options": DEFAULTS}))
+            source.write_text(json.dumps({"schema": 2, "options": DEFAULTS}))
             link = root / "link.json"
             link.symlink_to(source)
             with self.assertRaises(ValueError):
@@ -30,8 +30,17 @@ class TenTaskbarPreferencesTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 save(link, DEFAULTS)
             with self.assertRaises(ValueError):
-                save(source, {"search": "no", "task_view": True})
+                save(source, {"search_mode": "no", "task_view": True})
             self.assertEqual(load(source), DEFAULTS)
+
+    def test_existing_schema_one_preserves_search_visibility(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "windows10-taskbar.json"
+            for enabled in (True, False):
+                path.write_text(json.dumps({"schema": 1, "options": {
+                    "search": enabled, "task_view": False}}))
+                self.assertEqual(load(path), {"search_mode": "icon" if enabled else "hidden",
+                                              "task_view": False})
 
 
 if __name__ == "__main__":
