@@ -1129,13 +1129,21 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                                 f"Real X11 click on {page} did not navigate: "
                                 f"visible={self.menu.get_visible()}, "
                                 f"page={self.aqua_stack.get_visible_child_name()}")
+                        pointer_click(self._frutiger_tab_buttons["Settings"])
+                        pointer_click(self._frutiger_back_to_apps)
+                        assert self.aqua_stack.get_visible_child_name() == "Apps", (
+                            "Pinned Settings exit to Apps does not receive pointer input")
+                        pointer_click(self._frutiger_tab_buttons["Settings"])
+                        pointer_click(self._frutiger_back_to_places)
+                        assert self.aqua_stack.get_visible_child_name() == "Places", (
+                            "Pinned Settings exit to Places does not receive pointer input")
                         # Selecting Settings is not enough: a real row must
                         # launch a WM-managed Control Center, close, then let
                         # the reopened launcher navigate to Places and Apps.
                         pointer_click(self._frutiger_tab_buttons["Settings"])
                         settings_content = self.aqua_stack.get_child_by_name("Settings")
                         settings_content = settings_content.get_child().get_child()
-                        connection_row = settings_content.get_children()[1]
+                        connection_row = settings_content.get_children()[0]
                         pointer_click(connection_row)
                         assert self.actions.get_visible() and not self.menu.get_visible(), (
                             "Aqua Settings selection must open the Control Center, not trap the launcher")
@@ -4374,6 +4382,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             return_to_apps.connect("clicked", lambda _button: switch_to("Apps"))
             settings_navigation.pack_start(return_to_apps, True, True, 0)
             back_to_places = self._class(Gtk.Button(label="Places ›"), "aqua-settings-back")
+            self._frutiger_back_to_places = back_to_places
             back_to_places.set_tooltip_text("Browse your places and mounted drives")
             back_to_places.get_accessible().set_name("Open places")
             back_to_places.connect("clicked", lambda _button: switch_to("Places"))
