@@ -303,12 +303,13 @@ def main(argv: list[str] | None = None) -> int:
                 plan = inspect_update(source=args.source, refresh=args.refresh,
                                       allow_dirty=args.preserve_checkout)
                 print("Local revision: " + plan.current[:12])
+                print("Installed:      " + (plan.installed[:12] if plan.installed else "unknown (legacy installation)"))
                 print("Available:      " + plan.available)
                 if plan.changed:
                     print(f"Local files:    {len(plan.changed)} changed; a preserve-mode install will not advance the checkout")
-                print(f"New commits:    {plan.commits}" +
+                print(f"New source commits: {plan.commits}" +
                       (" — run update apply --yes (optionally --revision SHA) after review" if plan.needed else
-                       " — up to date (cached; use --refresh to check GitHub)"))
+                       " — installed version current (cached; use --refresh to check GitHub)"))
             return 0
         if args.command == "status":
             print("MacRice " + __version__)
