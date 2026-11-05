@@ -44,6 +44,8 @@ Pick a style in the Hub. **Nothing is applied automatically**: RiceBowl checks r
 
 **Updating:** Use **Check for updates** in the Hub. To return to your previous desktop settings, run `macrice rice restore`.
 
+**Before switching:** Use **Check requirements** in the Hub, or `macrice doctor --style aero-meadow`, to check the selected rice without applying changes.
+
 ## Project status
 
 <strong>Development preview</strong> · Latest tagged build: [v0.9.1](https://github.com/CopyPasteUser/RiceBowl/releases/tag/v0.9.1). Newer changes are on `main`; 1.0 hardware acceptance on real XFCE systems is still pending.

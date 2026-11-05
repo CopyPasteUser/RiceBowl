@@ -1,5 +1,17 @@
 # RiceBowl changelog
 
+## Unreleased — rice-specific plug-and-play checks (5 November 2026)
+
+- Extend the existing read-only `macrice doctor` with `--style STYLE` and
+  `--json`. It reuses that rice's real asset/settings preflight and reports
+  whether the plan succeeds, including a count of proposed changes; it does
+  not apply a theme or start a background checker.
+- The Hub's existing **Run read-only system check** now also checks the
+  currently chosen rice. Failures show a safe follow-up command without
+  exposing private configuration paths in the health summary.
+- Bundle the ricePlate desktop and XFCE recovery guides in user-local
+  installs, so their links stay usable after installation.
+
 ## Unreleased — internal ricePlate desktop preview (5 November 2026)
 
 - Preview Desktop icons now refresh automatically through Gio directory change
