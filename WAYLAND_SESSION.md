@@ -95,14 +95,22 @@ It is **not** a replacement taskbar: it still lacks grouping, clocks, tray,
 notification handling or multi-output ownership. Do not start it automatically
 alongside Waybar.
 
+The native prototype understands two *bundled* schema-v1 RicePlate recipes:
+`classic` (left-aligned bottom taskbar) and `chrome` (centered task list and
+taller shelf). Both are parsed from the same recipe JSON files as the
+temporary Waybar adapter, with strict schema/widget/color checks. Currently
+only the launcher and tasks widgets render natively; indicators, clock and
+tray still need functional Rust backends. Arbitrary custom recipe file paths
+are not accepted by the native binary yet.
+
 In a *disposable/nested* labwc session, developers with Rust 1.86+ can try:
 
 ```bash
-cargo run --manifest-path components/riceplate-wayland/Cargo.toml
+cargo run --manifest-path components/riceplate-wayland/Cargo.toml -- --recipe chrome
 ```
 
-The dedicated CI workflow compiles it and checks that the native layer surface
-stays alive on a real headless labwc compositor. Nothing changes the XFCE path,
+The dedicated CI workflow compiles it and checks that both native recipes
+stay alive on a real headless labwc compositor. Nothing changes the XFCE path,
 Waybar default or the optional session package.
 
 ## First-session controls

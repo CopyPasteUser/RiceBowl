@@ -9,6 +9,10 @@ if [ ! -x "$native" ]; then
     exit 1
 fi
 "$native" --version
+if "$native" --recipe ../classic >/dev/null 2>&1; then
+    echo "Native RicePlate accepted an unsupported external recipe" >&2
+    exit 1
+fi
 
 runtime=$(mktemp -d)
 chmod 0700 "$runtime"
@@ -57,21 +61,23 @@ dbus-run-session -- sh -eu -c '
         sed -n "1,70p" "$runtime/labwc.log" >&2
         exit 1
     fi
-    WAYLAND_DISPLAY=wayland-0 "$native" >"$runtime/plate.log" 2>&1 &
-    plate=$!
-    sleep 1
-    state=$(ps -o stat= -p "$plate" 2>/dev/null || :)
-    case "$state" in
-        ""|*Z*)
-            echo "Native RicePlate surface exited unexpectedly" >&2
-            sed -n "1,80p" "$runtime/plate.log" >&2
-            sed -n "1,80p" "$runtime/labwc.log" >&2
-            exit 1 ;;
-    esac
-    echo "Native RicePlate layer surface remained alive on headless labwc"
-    kill "$plate"
-    wait "$plate" 2>/dev/null || :
-    plate=
+    for recipe in classic chrome; do
+        WAYLAND_DISPLAY=wayland-0 "$native" --recipe "$recipe" >"$runtime/plate-$recipe.log" 2>&1 &
+        plate=$!
+        sleep 1
+        state=$(ps -o stat= -p "$plate" 2>/dev/null || :)
+        case "$state" in
+            ""|*Z*)
+                echo "Native RicePlate ($recipe) exited unexpectedly" >&2
+                sed -n "1,80p" "$runtime/plate-$recipe.log" >&2
+                sed -n "1,80p" "$runtime/labwc.log" >&2
+                exit 1 ;;
+        esac
+        echo "Native RicePlate $recipe layer surface remained alive"
+        kill "$plate"
+        wait "$plate" 2>/dev/null || :
+        plate=
+    done
     # We own this exact CI compositor PID. On labwc 0.7.1 the --exit client
     # command is not a reliable external teardown mechanism in a headless job.
     kill -TERM "$compositor"
