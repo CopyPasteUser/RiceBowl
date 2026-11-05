@@ -61,6 +61,12 @@ def parser() -> argparse.ArgumentParser:
         shell.add_argument("--quit", action="store_true")
         shell.add_argument("--toggle-menu", action="store_true")
         shell.add_argument("--control", action="store_true")
+        if key == "frutiger":
+            trace = shell.add_mutually_exclusive_group()
+            trace.add_argument("--trace-actions", action="store_true",
+                               help="Record only fixed Frutiger UI click/outcome labels to a private bounded file")
+            trace.add_argument("--trace-stop", action="store_true", help="Stop Frutiger UI evidence recording")
+            trace.add_argument("--trace-path", action="store_true", help="Print evidence file location without running the shell")
     commands.add_parser("session-sync", help="Reconcile active rice after XFCE autostart")
     commands.add_parser("session-menu", help="Toggle the active rice's application menu")
     commands.add_parser("session-control", help="Toggle the active rice's control panel")
@@ -134,7 +140,14 @@ def main(argv: list[str] | None = None) -> int:
         if args.command in ("winxp-shell", "winclassic-shell", "chromeos-shell", "frutiger-shell"):
             from .aero_shell import run
             profile = args.command.removesuffix("-shell")
-            suffix = ["--quit"] if args.quit else ["--control"] if args.control else ["--toggle-menu"] if args.toggle_menu else []
+            if profile == "frutiger" and args.trace_path:
+                from .interaction_trace import trace_path
+                print(trace_path())
+                return 0
+            suffix = (["--trace-actions"] if profile == "frutiger" and args.trace_actions else
+                      ["--trace-stop"] if profile == "frutiger" and args.trace_stop else
+                      ["--quit"] if args.quit else ["--control"] if args.control else
+                      ["--toggle-menu"] if args.toggle_menu else [])
             return run([f"ricehub-{profile}-shell", *suffix], profile=profile)
         if args.command in ("session-menu", "session-control"):
             from .session_shortcuts import dispatch

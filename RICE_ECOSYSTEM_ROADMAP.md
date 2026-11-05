@@ -13,6 +13,7 @@ Status: **shared API 1.0 implemented; XP Luna and Windows 7 Aero device/tray int
 | **ricePop** | Initially adapters around existing native/XFCE notifications | **Conditional independent notification host** | Only when authentic cross-application history/actions cannot be provided safely through existing supported APIs |
 | **ricePlate** | Initially XFDesktop + existing rice-specific desktop adapters | **Conditional independent desktop surface** | Only when tested desktop requirements cannot be delivered through XFDesktop and scoped extensions |
 | **riceWine** | Opt-in internal prototype, future independent helper if justified | **Minimal isolated-prefix prototype; not required for RiceBowl 1.0** | Separate repository only after demonstrated need beyond Wine/Bottles/Lutris launch flows |
+| **RiceTask** | **Proposed independent Rust application; repository not yet authorized** | Proposed native Linux process manager with per-rice layouts; **deferred until explicit owner approval**. Existing XFCE/GNOME Task Manager launchers remain intact. | Owner explicitly authorizes creating the separate repository and defining safe process-control actions |
 | RiceBowl shell/session | Existing RiceBowl repository | **Keep shared**: profile switching, backup/restore, launcher/taskbar/window tracking, tray ownership | Do not create a second shell manager |
 | Linux infrastructure | NetworkManager, BlueZ, PipeWire/PulseAudio, UPower, UDisks2/GVfs, XFWM4/XFCE | **Reuse platform services** | Never create a competing network, Bluetooth, audio or window-management daemon for aesthetic fidelity |
 
@@ -31,6 +32,7 @@ All helper names use the same **rice** family but keep an immediately understand
 | **ricePop** | Notification delivery/history and profile-specific presentation (conditional) |
 | **ricePlate** | Desktop surface, icons and desktop context actions (conditional) |
 | **riceWine** | Opt-in Wine application setup, per-app prefixes and launch integration (future optional project) |
+| **RiceTask** | Proposed customizable native process manager (idea recorded, **not implemented or published**; explicit approval pending) |
 
 The names are stable enough for planning; reserve public executable names, D-Bus IDs and separate repositories only when implementation boundaries have passed their decision gates. A new rice is **not** required to depend on all five helpers.
 
