@@ -107,6 +107,11 @@ def show_system(shell, Gtk):
     shell._luna_system_dialog = dialog
     refresh()
     dialog.show_all()
+    # A transient inherited from the XP DOCK otherwise gets placed directly
+    # above/beside the taskbar by XFWM, sometimes clipping the bottom controls.
+    from .luna_taskbar_settings import center_on_workarea
+
+    dialog.move(*center_on_workarea(shell._desktop_rect(), *dialog.get_size()))
     return dialog
 
 
@@ -235,4 +240,7 @@ def show_help(shell, Gtk):
     refresh()
     display()
     dialog.show_all()
+    from .luna_taskbar_settings import center_on_workarea
+
+    dialog.move(*center_on_workarea(shell._desktop_rect(), *dialog.get_size()))
     return dialog
