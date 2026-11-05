@@ -5,7 +5,7 @@ use std::{error::Error, process::Command};
 
 use font8x8::{UnicodeFonts, BASIC_FONTS};
 use smithay_client_toolkit::{
-    compositor::{CompositorHandler, CompositorState},
+    compositor::{CompositorHandler, CompositorState, FrameCallbackData},
     delegate_registry,
     output::{OutputHandler, OutputState},
     registry::{ProvidesRegistryState, RegistryState},
@@ -142,7 +142,7 @@ impl RicePlate {
                 // Compositor may still own the last buffer; retry on its next
                 // frame instead of killing the shell during a burst of events.
                 eprintln!("RicePlate: deferring busy Wayland buffer: {error}");
-                surface.frame(qh, surface.clone());
+                surface.frame(qh, FrameCallbackData(surface.clone()));
                 self.frame_pending = true;
                 self.layer.commit();
                 return;
@@ -173,7 +173,7 @@ impl RicePlate {
             self.closed = true;
             return;
         }
-        surface.frame(qh, surface.clone());
+        surface.frame(qh, FrameCallbackData(surface.clone()));
         self.frame_pending = true;
         self.needs_redraw = false;
         self.layer.commit();
