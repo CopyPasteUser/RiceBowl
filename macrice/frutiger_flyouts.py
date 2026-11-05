@@ -262,7 +262,8 @@ class AquaFlyouts:
         label.set_line_wrap(True)
         label.set_max_width_chars(27)
         row.pack_start(label, True, True, 0)
-        controls = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+        controls = (Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
+                    if secondary_button is not None else row)
         if button is not None:
             control = self.shell._class(Gtk.Button(label=button), "aqua-flyout-action")
             control.get_accessible().set_name(button + ": " + title)
@@ -273,7 +274,7 @@ class AquaFlyouts:
             control.get_accessible().set_name(secondary_button + ": " + title)
             control.connect("clicked", lambda _button: secondary_action())
             controls.pack_start(control, False, False, 0)
-        if button is not None or secondary_button is not None:
+        if secondary_button is not None:
             row.pack_end(controls, False, False, 0)
         parent.pack_start(row, False, False, 0)
 
