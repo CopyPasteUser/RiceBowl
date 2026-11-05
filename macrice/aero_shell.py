@@ -1098,31 +1098,49 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                         # the X11 hit regions at 1024x768 as a user would.
                         import subprocess
 
-                        for page in ("Settings", "Places", "Settings", "Apps", "Settings", "Apps"):
-                            button = self._frutiger_tab_buttons[page]
+                        def pointer_click(widget):
                             while Gtk.events_pending():
                                 Gtk.main_iteration_do(False)
-                            offset = button.translate_coordinates(self.menu, 0, 0)
+                            offset = widget.translate_coordinates(self.menu, 0, 0)
                             origin = self.menu.get_window().get_root_origin()
                             assert offset is not None
-                            point = (origin[0] + offset[0] + button.get_allocated_width() // 2,
-                                     origin[1] + offset[1] + button.get_allocated_height() // 2)
-                            print(f"Aqua pointer nav: click {page} at {point}, "
-                                  f"window={self.menu.get_position()} {self.menu.get_size()}",
-                                  flush=True)
+                            point = (origin[0] + offset[0] + widget.get_allocated_width() // 2,
+                                     origin[1] + offset[1] + widget.get_allocated_height() // 2)
                             subprocess.run(("xdotool", "mousemove", "--sync", str(point[0]),
                                             str(point[1]), "click", "1"),
                                            check=True, timeout=4, capture_output=True)
                             for _step in range(40):
                                 while Gtk.events_pending():
                                     Gtk.main_iteration_do(False)
-                                if self.aqua_stack.get_visible_child_name() == page:
-                                    break
-                                GLib.usleep(15000)
+                                GLib.usleep(10000)
+                            return point
+
+                        for page in ("Settings", "Places", "Settings", "Apps", "Settings", "Apps"):
+                            button = self._frutiger_tab_buttons[page]
+                            point = pointer_click(button)
+                            print(f"Aqua pointer nav: click {page} at {point}, "
+                                  f"window={self.menu.get_position()} {self.menu.get_size()}",
+                                  flush=True)
                             assert self.menu.get_visible() and self.aqua_stack.get_visible_child_name() == page, (
                                 f"Real X11 click on {page} did not navigate: "
                                 f"visible={self.menu.get_visible()}, "
                                 f"page={self.aqua_stack.get_visible_child_name()}")
+                        # Selecting Settings is not enough: a real row must
+                        # launch a WM-managed Control Center, close, then let
+                        # the reopened launcher navigate to Places and Apps.
+                        pointer_click(self._frutiger_tab_buttons["Settings"])
+                        settings_content = self.aqua_stack.get_child_by_name("Settings")
+                        settings_content = settings_content.get_child().get_child()
+                        connection_row = settings_content.get_children()[1]
+                        pointer_click(connection_row)
+                        assert self.actions.get_visible() and not self.menu.get_visible(), (
+                            "Aqua Settings selection must open the Control Center, not trap the launcher")
+                        self._hide_actions()
+                        self._toggle_menu()
+                        for page in ("Places", "Apps"):
+                            pointer_click(self._frutiger_tab_buttons[page])
+                            assert self.aqua_stack.get_visible_child_name() == page, (
+                                f"Aqua {page} unresponsive after closing Settings")
                     self._show_aqua_control("sound", "Input & output devices")
                     assert self.actions.get_visible()
 
