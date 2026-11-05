@@ -30,9 +30,9 @@ The [11 owner-reported interaction and styling issues](OWNER_QA_2026-11-05.md)
 are tracked separately. [PR #72](https://github.com/CopyPasteUser/RiceBowl/pull/72)
 merged Win98/Win7/XP/ChromeOS interaction fixes and extended Frutiger native
 pointer checks with passing virtual-X11 CI. [PR #73](https://github.com/CopyPasteUser/RiceBowl/pull/73)
-merged the separately confirmed dirty-checkout updater path. Windows 10
-Settings navigation and visual consistency are being improved under QA-03;
-automated checks do not replace physical Mint/XFCE acceptance.
+merged the separately confirmed dirty-checkout updater path. [PR #74](https://github.com/CopyPasteUser/RiceBowl/pull/74)
+merged the Windows 10 Settings overhaul with passing native-X11 CI.
+Automated checks do not replace physical Mint/XFCE acceptance.
 
 ## Styles
 
@@ -114,9 +114,12 @@ macrice rice restore           # Restore the previous desktop settings
 macrice session-sync           # Reconcile the current session after login
 macrice session-keys-restore   # Restore prior keyboard shortcuts
 macrice performance report --samples 5 --json  # On-demand PSS/CPU/threads
+macrice app-compat --select                     # Inspect a real app's window theme boundaries
 ```
 
 The active rice uses **Super** for its launcher and **Right Ctrl** for Control Panel / Quick Settings. Managed assets and keyboard shortcuts are backed up; later user edits are not silently overwritten.
+For apps whose title bars ignore XFWM (PhotoCraft, Thunderbird) see the
+[read-only compatibility inspector and supported app settings](APP_COMPATIBILITY.md).
 The resource report includes the six non-macOS RiceBowl shells when running and does not install an always-on monitor. A failed shell startup or panel handoff attempts to recover the original XFCE panel and shortcuts. Check recovery on your real XFCE machine before relying on it unattended.
 
 ## Scope

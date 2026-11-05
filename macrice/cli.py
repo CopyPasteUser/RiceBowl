@@ -71,6 +71,11 @@ def parser() -> argparse.ArgumentParser:
     commands.add_parser("inspect", help="Print a safe, read-only JSON appearance report")
     doctor = commands.add_parser("doctor", help="Run read-only RiceBowl/XFCE health checks")
     doctor.add_argument("--json", action="store_true", help="Print machine-readable health results")
+    app_compat = commands.add_parser("app-compat", help="Inspect a window's theme compatibility without modifying apps")
+    target = app_compat.add_mutually_exclusive_group(required=True)
+    target.add_argument("--select", action="store_true", help="Select an X11 window with the pointer")
+    target.add_argument("--window-id", metavar="HEX", help="Inspect an existing hexadecimal X11 window ID")
+    app_compat.add_argument("--json", action="store_true", help="Print sanitized machine-readable results")
     updater = commands.add_parser("update", help="Inspect or explicitly install a verified fast-forward revision")
     updater.add_argument("action", choices=("check", "apply"))
     updater.add_argument("--source", type=Path, help="Trusted RiceBowl Git checkout (defaults to ~/RiceBowl)")
@@ -245,6 +250,11 @@ def main(argv: list[str] | None = None) -> int:
                 ok, warnings, optional = summary(checks)
                 print(f"{ok} ready · {warnings} attention · {optional} optional")
             return 1 if any(item.status == "warning" for item in checks) else 0
+        if args.command == "app-compat":
+            from .app_compat import format_report, inspect_window
+            report = inspect_window(window_id=args.window_id)
+            print(json.dumps(report, indent=2, ensure_ascii=False) if args.json else format_report(report))
+            return 0
         if args.command == "update":
             from .updater import UpdateError, apply as apply_update, inspect as inspect_update
             if args.action == "apply":
