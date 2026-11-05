@@ -18,12 +18,13 @@ def configure_settings_window(window, Gdk, *, role: str) -> None:
     window.set_role(role)
 
 
-def draggable_caption(window, contents, Gtk, Gdk):
+def draggable_caption(window, contents, Gtk, Gdk, *, maximizable=True):
     """Wrap only non-interactive title content in a move/maximize handle."""
     handle = Gtk.EventBox()
     handle.set_visible_window(False)
     handle.set_can_focus(True)
-    handle.set_tooltip_text("Drag to move · Double-click to maximize")
+    handle.set_tooltip_text("Drag to move · Double-click to maximize" if maximizable
+                            else "Drag to move")
     handle.get_accessible().set_name("Move or maximize settings window")
     handle.add(contents)
 
@@ -37,6 +38,8 @@ def draggable_caption(window, contents, Gtk, Gdk):
         if event.button != 1:
             return False
         if event.type == Gdk.EventType._2BUTTON_PRESS:
+            if not maximizable:
+                return False
             toggle_maximize()
             return True
         if event.type == Gdk.EventType.BUTTON_PRESS:
@@ -45,7 +48,7 @@ def draggable_caption(window, contents, Gtk, Gdk):
         return False
 
     def keyboard(_widget, event):
-        if event.keyval in (Gdk.KEY_Return, Gdk.KEY_KP_Enter, Gdk.KEY_space):
+        if maximizable and event.keyval in (Gdk.KEY_Return, Gdk.KEY_KP_Enter, Gdk.KEY_space):
             toggle_maximize()
             return True
         return False

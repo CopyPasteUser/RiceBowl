@@ -18,6 +18,8 @@ Scope: the live `winxp` GTK/XFWM/X11 rice, not the read-only preview or other de
   category/address breadcrumb without changing the working settings backend.
 - [x] Rebuild Taskbar and Start Menu Properties around XP-era grouped controls,
   a responsive settings preview and actual notification-icon customization.
+- [x] Give the fixed-size properties dialog its own draggable, keyboard-safe
+  Luna caption without exposing an unintended maximize action.
 - [x] Add an explicitly confirmed Clear List operation for recent programs;
   preserve and separately persist user favorites.
 - [x] Finish Luna-only GTK checkbox/radio/scale/focus/menu/scrollbar styles,

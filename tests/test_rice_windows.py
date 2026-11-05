@@ -64,3 +64,19 @@ class RiceWindowTests(TestCase):
         self.assertTrue(keyboard(None, SimpleNamespace(keyval=13)))
         window.unmaximize.assert_called_once()
         self.assertFalse(keyboard(None, SimpleNamespace(keyval=70)))
+
+    def test_fixed_size_settings_caption_drags_without_maximizing(self):
+        window = mock.Mock()
+        Gdk = SimpleNamespace(EventType=SimpleNamespace(BUTTON_PRESS=1, _2BUTTON_PRESS=2),
+                              KEY_Return=13, KEY_KP_Enter=14, KEY_space=32)
+        Gtk = SimpleNamespace(EventBox=FakeEventBox)
+        handle = draggable_caption(window, object(), Gtk, Gdk, maximizable=False)
+        self.assertEqual(handle.tooltip, "Drag to move")
+        press = handle.signals["button-press-event"]
+        self.assertTrue(press(None, SimpleNamespace(button=1, type=1,
+                                                    x_root=80, y_root=90, time=50)))
+        window.begin_move_drag.assert_called_once_with(1, 80, 90, 50)
+        self.assertFalse(press(None, SimpleNamespace(button=1, type=2)))
+        self.assertFalse(handle.signals["key-press-event"](
+            None, SimpleNamespace(keyval=13)))
+        window.maximize.assert_not_called()

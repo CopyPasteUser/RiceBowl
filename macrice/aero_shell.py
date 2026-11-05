@@ -1650,6 +1650,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             try:
                 dialog = self._luna_taskbar_dialog
                 assert dialog is not None and dialog.get_mapped()
+                assert dialog._luna_caption.get_mapped(), "XP properties caption is not mapped"
                 rect = self._desktop_rect()
                 x, y = dialog.get_window().get_root_origin()
                 width, height = dialog.get_size()
