@@ -28,8 +28,9 @@
   machine-readable JSON. No new resident monitor or unmeasured RAM claims.
 - [x] PR #65's Xvfb/native GTK smoke passed on GitHub, including calendar,
   secret-entry and mounted-location popup constructors.
-- [ ] Re-run virtual X11 CI for the new Bluetooth/displays readout changes;
-  physical hardware acceptance and 1.0 security/fidelity gates still pending.
+- [x] PR #66 native X11 CI passed for the new Bluetooth scan-button lifecycle
+  and X11 display-readout changes, including existing screenshot regressions.
+- [ ] Physical hardware acceptance and 1.0 security/fidelity gates still pending.
 - [ ] Validate the new USB/media/date/credentials GTK surfaces in virtual X11
   and on the physical laptop; complete safe writable Frutiger monitor layout,
   local BlueZ PIN-agent wizard and separate riceExplorer Aqua renderer integration.
