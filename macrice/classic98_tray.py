@@ -16,6 +16,13 @@ def network_caption(network):
     return f"{network.signal}% · {security}" + (" · Connected" if network.connected else "")
 
 
+def anchored_popup_x(anchor_x: int, anchor_width: int, popup_width: int,
+                     screen_left: int, screen_width: int) -> int:
+    """Right-align a tray flyout to its button, within the active monitor."""
+    return max(screen_left + 4, min(anchor_x + anchor_width - popup_width,
+                                   screen_left + screen_width - popup_width - 4))
+
+
 def build(shell, Gtk, Gdk):
     """Install separate transient mini-panels without a second tray host."""
     from gi.repository import GLib, Pango
@@ -483,9 +490,17 @@ def build(shell, Gtk, Gdk):
             y = rect.y + (rect.height - height - 34) // 2
         else:
             anchor = shell._status_widgets.get(kind, (None,))[0]
-            if anchor and anchor.get_window():
-                origin = anchor.get_window().get_origin()
-                x = origin[1] if len(origin) == 3 else origin[0]
+            if anchor and anchor.get_realized() and shell.bar.get_window():
+                # Gtk.Button is windowless: its GdkWindow origin belongs to
+                # the dock, so translating the actual icon is essential.
+                translated = anchor.translate_coordinates(shell.bar, 0, 0)
+                if translated is not None:
+                    bar_x, _bar_y = shell.bar.get_window().get_root_origin()
+                    x = anchored_popup_x(bar_x + translated[0],
+                                         anchor.get_allocated_width(), width,
+                                         rect.x, rect.width)
+                else:
+                    x = rect.x + rect.width - width - 12
             else:
                 x = rect.x + rect.width - width - 12
             y = rect.y + rect.height - 34 - height - 5

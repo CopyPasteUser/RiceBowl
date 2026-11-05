@@ -2,14 +2,13 @@
 
 from datetime import datetime
 
+from .frutiger_tray_window import create_tray_window
+
 
 class AquaCalendar:
     def __init__(self, anchor, Gtk):
         self.Gtk = Gtk
-        self.popover = Gtk.Popover.new(anchor)
-        self.popover.set_modal(True)
-        self.popover.set_position(Gtk.PositionType.TOP)
-        self.popover.get_style_context().add_class("aqua-flyout")
+        self.popover = create_tray_window(anchor, Gtk, title="Aqua World · Calendar")
 
         root = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=8)
         root.get_style_context().add_class("aqua-flyout-root")

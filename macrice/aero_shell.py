@@ -851,6 +851,11 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     assert self.chrome_quick_stack.get_visible_child_name() == "overview"
                     self.chrome_quick_show_page("Network")
                     assert self.chrome_quick_stack.get_visible_child_name() == "Network"
+                    self._status_widgets["network"][0].clicked()
+                    assert not self.actions.get_visible()  # repeated click toggles
+                    self._status_widgets["network"][0].clicked()
+                    assert self.actions.get_visible()
+                    assert self.chrome_quick_stack.get_visible_child_name() == "Network"
                     self.chrome_quick_show_page("Bluetooth")
                     assert self.chrome_quick_stack.get_visible_child_name() == "Bluetooth"
                     self._action_key(type("Event", (), {"keyval": Gdk.KEY_Escape})())
@@ -888,6 +893,24 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     self.classic98_desktop.show()
                     assert self.classic98_desktop.window.get_visible()
                     self.classic98_desktop.hide()
+                    if os.environ.get("RICEHUB_CLASSIC_POINTER_NATIVE") == "1":
+                        import subprocess
+
+                        self._toggle_menu()
+                        while Gtk.events_pending():
+                            Gtk.main_iteration_do(False)
+                        x, y = self.menu.get_position()
+                        subprocess.run(("xdotool", "mousemove", "--sync",
+                                        str(x + 35), str(y + 40)), check=True,
+                                       capture_output=True, timeout=4)
+                        self._menu_focus_out()
+                        for _step in range(115):
+                            while Gtk.events_pending():
+                                Gtk.main_iteration_do(False)
+                            GLib.usleep(10000)
+                        assert self.menu.get_visible(), (
+                            "Classic Start menu auto-closed with pointer inside")
+                        self._hide_menu()
                 if profile == "winxp":
                     if self._tray is not None:
                         assert self._tray.theme == "luna"
@@ -941,6 +964,14 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     finally:
                         Gtk.Dialog.run = original_dialog_run
                     assert self.luna_control_stack.get_visible_child_name() == "categories"
+                    def caption_handles(widget):
+                        found = int(isinstance(widget, Gtk.EventBox) and
+                                    widget.get_accessible().get_name() ==
+                                    "Move or maximize settings window")
+                        if isinstance(widget, Gtk.Container):
+                            found += sum(caption_handles(child) for child in widget.get_children())
+                        return found
+                    assert caption_handles(self.actions) >= 1
                     assert set(self.luna_tray.popovers) == {
                         "audio", "network", "battery", "clock", "bluetooth"}
                     for popup in self.luna_tray.popovers.values():
@@ -1026,8 +1057,24 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     self.win7_panel_view_by.set_active(0)
                     self.win7_panel_show_category(self.win7_panel_rows[0][0])
                     assert self.win7_panel_back.get_sensitive()
+                    # A no-show-all child previously kept this page empty
+                    # despite a successful navigation history transition.
+                    control_body = self.actions.get_child()
+                    def find_class(widget, class_name):
+                        if widget.get_style_context().has_class(class_name):
+                            return widget
+                        if isinstance(widget, Gtk.Container):
+                            for child in widget.get_children():
+                                found = find_class(child, class_name)
+                                if found is not None:
+                                    return found
+                        return None
+                    cp_details = find_class(control_body, "win7-cp-details")
+                    assert cp_details is not None and cp_details.get_visible()
+                    assert cp_details.get_children()
                     category = self.win7_panel_rows[0][0]
                     self.win7_panel_show_task(category, category.tasks[0])
+                    assert cp_details.get_visible() and len(cp_details.get_children()) >= 2
                     assert self.win7_panel_forward.get_sensitive() is False
                     self.win7_panel_back.clicked()
                     assert self.win7_panel_forward.get_sensitive()
@@ -1190,8 +1237,10 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     assert self._status_widgets["battery"][0].get_sensitive()
                     self.aqua_bluetooth_button.clicked()
                     assert self._aqua_flyouts.popovers["bluetooth"].get_visible()
+                    assert isinstance(self._aqua_flyouts.popovers["bluetooth"], Gtk.Window)
                     self._status_widgets["network"][0].clicked()
                     assert self._aqua_flyouts.popovers["network"].get_visible()
+                    assert isinstance(self._aqua_flyouts.popovers["network"], Gtk.Window)
                     self._aqua_flyouts.popovers["network"].popdown()
             except Exception:
                 import traceback
@@ -2182,6 +2231,9 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
 
                     self._aqua_flyouts = AquaFlyouts(self, Gtk)
                 self._aqua_flyouts.show(name)
+                return
+            if profile == "chromeos" and name == "network":
+                self._toggle_chrome_page("Network")
                 return
             if name in ("audio", "battery"):
                 self._toggle_actions()
@@ -3928,6 +3980,13 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             """Same keyboard, focus and installed-app lifecycle for each identity."""
             menu.connect("focus-in-event", self._menu_focus_in)
             menu.connect("focus-out-event", self._menu_focus_out)
+            if profile == "winclassic":
+                # Pointer navigation must not be overridden by a transient
+                # focus loss when entering a classic GTK submenu.
+                menu.add_events(Gdk.EventMask.ENTER_NOTIFY_MASK |
+                                Gdk.EventMask.LEAVE_NOTIFY_MASK)
+                menu.connect("enter-notify-event", lambda *_: self._cancel_popup_hide("menu"))
+                menu.connect("leave-notify-event", lambda *_: self._schedule_popup_hide("menu"))
             menu.connect("key-press-event", lambda _widget, event: self._search_key(event))
             search.connect("key-press-event", lambda _widget, event: self._search_key(event))
             def changed(*_args):
@@ -5255,12 +5314,37 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 return False
             if name == "menu" and self._luna_popup_depth:
                 return False
+            if name == "menu" and profile == "winclassic":
+                # XFWM transfers focus away from this utility window while
+                # the cursor is still moving through the Start menu.
+                if (self._pointer_inside(self.menu) or
+                        self._pointer_inside(getattr(self, "start_button", None)) or
+                        any(menu.get_visible() for menu in getattr(self, "classic_menus", ()))):
+                    return False
             if window.get_visible() and not window.is_active():
                 if name == "menu":
                     self._hide_menu()
                 else:
                     self._hide_actions()
             return False
+
+        def _pointer_inside(self, widget):
+            if widget is None or not widget.get_visible() or not widget.get_window():
+                return False
+            pointer = Gdk.Display.get_default().get_default_seat().get_pointer()
+            _screen, x, y = pointer.get_position()
+            if widget.get_has_window():
+                wx, wy = widget.get_window().get_root_origin()
+            else:
+                parent = widget.get_toplevel()
+                translated = widget.translate_coordinates(parent, 0, 0)
+                if translated is None or not parent.get_window():
+                    return False
+                wx, wy = parent.get_window().get_root_origin()
+                wx += translated[0]
+                wy += translated[1]
+            return (wx <= x < wx + widget.get_allocated_width() and
+                    wy <= y < wy + widget.get_allocated_height())
 
         def _hide_actions(self):
             self._cancel_popup_hide("control")
@@ -5319,37 +5403,29 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     self.aqua_control_show_home()
                 self.actions.present()
 
-        def _toggle_chrome_calendar(self):
-            """The clock opens a real month view without breaking system-menu toggle."""
+        def _toggle_chrome_page(self, page):
+            """Toggle the native ChromeOS shelf page, including actual Wi-Fi."""
             if profile != "chromeos":
                 return
             self._cancel_popup_hide("control")
             if self.actions.get_visible():
-                if self.chrome_quick_stack.get_visible_child_name() == "Calendar":
+                if self.chrome_quick_stack.get_visible_child_name() == page:
                     self._hide_actions()
                 else:
-                    self.chrome_quick_show_page("Calendar")
+                    self.chrome_quick_show_page(page)
                     self.actions.present()
                 return
             self._toggle_actions()
             if self.actions.get_visible():
-                self.chrome_quick_show_page("Calendar")
+                self.chrome_quick_show_page(page)
+
+        def _toggle_chrome_calendar(self):
+            """The clock opens a real month view without breaking system-menu toggle."""
+            self._toggle_chrome_page("Calendar")
 
         def _toggle_chrome_notifications(self):
             """Open Xfce's real notification log without replacing its daemon."""
-            if profile != "chromeos":
-                return
-            self._cancel_popup_hide("control")
-            if self.actions.get_visible():
-                if self.chrome_quick_stack.get_visible_child_name() == "Notifications":
-                    self._hide_actions()
-                else:
-                    self.chrome_quick_show_page("Notifications")
-                    self.actions.present()
-                return
-            self._toggle_actions()
-            if self.actions.get_visible():
-                self.chrome_quick_show_page("Notifications")
+            self._toggle_chrome_page("Notifications")
 
         def _toggle_actions(self):
             self._cancel_popup_hide("control")

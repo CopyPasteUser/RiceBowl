@@ -66,9 +66,15 @@ def _git(source: Path, *args: str, timeout: int = 15) -> str:
     return proc.stdout.strip()
 
 
-def inspect(*, source: Path | None = None, refresh: bool = False) -> UpdatePlan:
-    """Read-only by default; explicit refresh fetches only the trusted main ref."""
-    source = _default_source() if source is None else source
+def local_changes(source: Path) -> tuple[str, ...]:
+    """Bounded, read-only filename summary; never read local file contents."""
+    lines = _git(source, "status", "--porcelain", "--untracked-files=normal").splitlines()
+    return tuple("".join(c if c.isprintable() else "?" for c in line)[:115]
+                 for line in lines[:12]) + ((f"… and {len(lines) - 12} more",)
+                                           if len(lines) > 12 else ())
+
+
+def _validate_checkout(source: Path) -> None:
     if os.geteuid() == 0:
         raise UpdateError("Update as your desktop user, not with sudo")
     if source.is_symlink() or (source / ".git").is_symlink() or not (source / ".git").is_dir():
@@ -77,8 +83,35 @@ def inspect(*, source: Path | None = None, refresh: bool = False) -> UpdatePlan:
         raise UpdateError("Origin is not the official RiceBowl repository; refusing code execution")
     if _git(source, "symbolic-ref", "--short", "HEAD") != "main":
         raise UpdateError("Switch to your clean main branch before updating")
-    if _git(source, "status", "--porcelain", "--untracked-files=normal"):
-        raise UpdateError("Checkout contains local changes; commit or preserve them first")
+
+
+def preserve_changes(*, source: Path | None = None) -> str:
+    """Explicitly stow dirty tracked/untracked files in a *local* Git stash.
+
+    Caller must obtain user consent beforehand. The stash is never dropped or
+    applied automatically; the owner can inspect/restore it after the update.
+    """
+    source = _default_source() if source is None else source
+    _validate_checkout(source)
+    if not local_changes(source):
+        raise UpdateError("No local changes need preserving")
+    _git(source, "stash", "push", "--include-untracked",
+         "--message", "RiceBowl updater: saved before manual update", timeout=90)
+    revision = _git(source, "rev-parse", "refs/stash")
+    if local_changes(source):
+        raise UpdateError("Some local edits remain; saved stash " + revision[:12] +
+                          " exists, but update is blocked")
+    return revision
+
+
+def inspect(*, source: Path | None = None, refresh: bool = False) -> UpdatePlan:
+    """Read-only by default; explicit refresh fetches only the trusted main ref."""
+    source = _default_source() if source is None else source
+    _validate_checkout(source)
+    dirty = local_changes(source)
+    if dirty:
+        raise UpdateError("Checkout contains local changes; commit or preserve them first:\n" +
+                          "\n".join(dirty))
     if refresh:
         _git(source, "fetch", "--no-tags", "origin", "main", timeout=45)
     current = _git(source, "rev-parse", "HEAD")

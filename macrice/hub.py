@@ -169,6 +169,7 @@ def run() -> int:
             self._preview_rendered = None
             self._update_plan = None
             self._update_activity = None
+            self._saved_update_stash = None
             try:
                 self.set_icon_from_file(str(project_root() / "assets/ricebowl-symbolic.svg"))
             except (OSError, GLib.Error):
@@ -660,19 +661,53 @@ def run() -> int:
 
         def _finished(self, result, error, completed):
             self._set_busy(False)
+            dirty_checkout = bool(error and self._update_activity == "check" and
+                                  error.startswith("Checkout contains local changes"))
             if error and self._update_activity:
                 self._update_plan = None
                 self.quick_update_button.set_label(quick_update_label(None))
-                self.quick_update_status.set_text("Update failed · See details below")
-                self.update_label.set_text("Update failed: " + error[:180])
+                self.quick_update_status.set_text(
+                    "Local edits need preserving" if dirty_checkout else
+                    "Update failed · See details below")
+                self.update_label.set_text("Update blocked: " + error[:420])
             self._update_activity = None
             if error:
                 self._notify(error, error=True)
+                if dirty_checkout:
+                    self._offer_preserve_checkout(error)
             elif completed:
                 completed(result)
             else:
                 self._notify("Done.")
             return False
+
+        def _offer_preserve_checkout(self, details):
+            dialog = Gtk.MessageDialog(
+                transient_for=self, modal=True, message_type=Gtk.MessageType.WARNING,
+                buttons=Gtk.ButtonsType.NONE, text="RiceBowl found local checkout edits")
+            dialog.format_secondary_text(
+                details[:1300] + "\n\nPreserve *all* tracked and untracked files in a "
+                "local Git stash? The update will then be checked again. "
+                "Nothing is deleted, uploaded or restored automatically; keep the "
+                "stash reference to recover your edits after upgrading.")
+            dialog.add_button("Leave files untouched", Gtk.ResponseType.CANCEL)
+            dialog.add_button("Preserve in local Git stash", Gtk.ResponseType.OK)
+            dialog.set_default_response(Gtk.ResponseType.CANCEL)
+            accepted = dialog.run() == Gtk.ResponseType.OK
+            dialog.destroy()
+            if accepted:
+                from .updater import preserve_changes
+                self._work("Preserving local checkout edits in Git stash…",
+                           preserve_changes, self._preserved_checkout)
+
+        def _preserved_checkout(self, revision):
+            self._saved_update_stash = revision
+            self.update_label.set_text(
+                "Local edits safely saved in Git stash " + revision[:12] +
+                ". Restore later with: git -C ~/RiceBowl stash apply " + revision)
+            self._notify("Local changes preserved in stash " + revision[:12] +
+                         "; checking for updates.")
+            self._check_update()
 
         def _confirm(self, title, details, proceed, confirm_label):
             dialog = Gtk.MessageDialog(
@@ -807,10 +842,16 @@ def run() -> int:
 
         def _show_update(self, plan):
             self._update_plan = plan
-            self.update_label.set_text(
+            summary = (
                 f"Installed source {plan.current[:12]} · origin/main {plan.available[:12]} · "
                 f"{plan.commits} new commit(s)" if plan.needed else
                 f"Source already up to date at {plan.current[:12]}")
+            if self._saved_update_stash:
+                summary += ("\nYour edits remain saved as local Git stash " +
+                            self._saved_update_stash[:12] +
+                            ". To restore after review: git -C ~/RiceBowl stash apply " +
+                            self._saved_update_stash)
+            self.update_label.set_text(summary)
             self.update_apply_button.set_sensitive(plan.needed)
             self.quick_update_button.set_label(quick_update_label(plan))
             self.quick_update_status.set_text(

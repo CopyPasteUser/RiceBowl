@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import threading
 
+from .frutiger_tray_window import create_tray_window
+
 
 class AquaFlyouts:
     def __init__(self, shell, Gtk):
@@ -75,10 +77,7 @@ class AquaFlyouts:
         shell = self.shell
         button = (shell.aqua_bluetooth_button if kind == "bluetooth"
                   else shell._status_widgets[kind][0])
-        popover = Gtk.Popover.new(button)
-        popover.set_position(Gtk.PositionType.TOP)
-        popover.set_modal(True)
-        popover.get_style_context().add_class("aqua-flyout")
+        popover = create_tray_window(button, Gtk, title="Aqua World · " + kind.title())
 
         root = shell._class(Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=7),
                             "aqua-flyout-root")
@@ -151,7 +150,7 @@ class AquaFlyouts:
         self.detail_status[kind] = detail_status
         root.pack_start(detail_status, False, False, 0)
         popover.add(root)
-        popover.connect("closed", lambda *_args: self._discard(kind))
+        popover.connect("hide", lambda *_args: self._discard(kind))
         return popover
 
     def _read_details(self, kind):

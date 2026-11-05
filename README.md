@@ -16,6 +16,8 @@ RiceBowl changes real Linux desktop elements—taskbar, Start/launcher, menus, s
 
 > **Release status: 0.9.1+ development — not yet stable 1.0.** The [v0.9.1 pre-release](https://github.com/CopyPasteUser/RiceBowl/releases/tag/v0.9.1) remains the last tagged build. Recovery, diagnostics and Aqua hardware improvements passed native-X11 CI in [PR #65](https://github.com/CopyPasteUser/RiceBowl/pull/65) and [PR #66](https://github.com/CopyPasteUser/RiceBowl/pull/66); cross-rice Settings windows, Bluetooth scanning and the Hub update shortcut passed in [PR #67](https://github.com/CopyPasteUser/RiceBowl/pull/67). Per-rice geometry persistence, limited confirmed file-copy drops and a time-limited Aqua X11 display editor **passed virtual-X11 CI in [PR #68](https://github.com/CopyPasteUser/RiceBowl/pull/68)**. **5 November Frutiger follow-up:** [PR #69](https://github.com/CopyPasteUser/RiceBowl/pull/69) addresses the launcher Settings navigation trap and replaces prominent tray “More settings” prompts with direct, scrollable device-action menus. **Physical Mint/XFCE acceptance is still pending.** Full file-manager DnD and a riceExplorer renderer are **explicitly deferred until riceExplorer 1.0**.
 
+**Current QA stabilization:** Windows 98 menu/flyout interaction, Windows 7 Control Panel navigation, XP Settings dragging, ChromeOS Wi-Fi shortcut, Frutiger dock menus and the safe dirty-checkout updater are under [owner QA verification](OWNER_QA_2026-11-05.md). Windows 10 Settings navigation has received a visual pass; [third-party application styling boundaries](APP_THEMING_SCOPE.md) are documented. None of these changes alone constitutes a 1.0 release or a real-device sign-off.
+
 | 1.0 workstream | Engineering status | Remaining gate |
 | --- | --- | --- |
 | Six non-macOS shells and stock XFCE recovery | ✅ Automated switching/rollback tests | Real login, HDMI and suspend tests |
@@ -76,6 +78,11 @@ macrice update apply --yes
 
 For a strictly pinned CLI update, append `--revision <full SHA shown by check>`;
 the Hub's confirmation always pins its reviewed revision automatically.
+If the Git checkout contains local edits, the Hub displays changed paths and
+offers to preserve tracked/untracked files in a **local Git stash**, but only
+after an explicit confirmation. You can later inspect `git stash list` and
+recover edits with `git stash apply <saved-sha>`; RiceBowl never drops or
+re-applies that stash automatically.
 
 **No terminal needed:** The RiceBowl Hub has a visible **Check for updates**
 button in its sidebar. After checking the trusted repository, it changes to

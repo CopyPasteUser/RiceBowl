@@ -187,6 +187,7 @@ def build(shell, Gtk, Gdk):
             categories_grid.show()
         else:
             categories_grid.hide()
+            icons_grid.show()
             icons_grid.show_all()
         view_row.show_all()
         breadcrumb.set_label("Control Panel")
@@ -211,6 +212,7 @@ def build(shell, Gtk, Gdk):
         heading.set_text(category.name)
         for task in category.tasks:
             details.pack_start(task_link(category, task), False, False, 0)
+        details.show()
         details.show_all()
         scroll.get_vadjustment().set_value(0)
 
@@ -250,6 +252,7 @@ def build(shell, Gtk, Gdk):
         if command:
             action.connect("clicked", lambda _button: shell._open_tool(command))
         details.pack_start(action, False, False, 4)
+        details.show()
         details.show_all()
         scroll.get_vadjustment().set_value(0)
 

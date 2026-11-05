@@ -7,7 +7,8 @@ from unittest.mock import patch
 
 from macrice.classic98_desktop import MAX_DESKTOP_ITEMS, display_items
 from macrice.classic98_riceware import Classic98Controller
-from macrice.classic98_tray import MAX_DEVICES, MAX_NETWORKS, network_caption
+from macrice.classic98_tray import (MAX_DEVICES, MAX_NETWORKS,
+                                   network_caption, anchored_popup_x)
 from macrice.classic98_control_panel import APPLETS
 from macrice.hardware_status import WifiNetwork
 from macrice.riceware import plate, spice
@@ -97,6 +98,11 @@ class ClassicRicewareTests(unittest.TestCase):
         self.assertIn("Connected", network_caption(WifiNetwork("SSID", 80, "--", True)))
         self.assertLessEqual(MAX_NETWORKS, 12)
         self.assertLessEqual(MAX_DEVICES, 12)
+
+    def test_tray_popups_anchor_right_to_icon_and_clamp_to_display(self):
+        self.assertEqual(anchored_popup_x(980, 24, 280, 0, 1024), 724)
+        self.assertEqual(anchored_popup_x(12, 20, 280, 0, 1024), 4)
+        self.assertEqual(anchored_popup_x(1880, 26, 280, 1024, 1920), 1626)
 
     def test_classic_control_panel_has_native_device_applets(self):
         applets = {applet.name for applet in APPLETS}

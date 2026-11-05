@@ -26,6 +26,14 @@ CATEGORIES = (
     ("privacy", "Privacy", "Actual desktop access and permissions"),
 )
 
+CATEGORY_ICONS = {
+    "system": "video-display", "devices": "bluetooth-active",
+    "network": "network-wireless", "personalization": "preferences-desktop-wallpaper",
+    "apps": "applications-system", "accounts": "system-users",
+    "time": "preferences-system-time", "accessibility": "preferences-desktop-accessibility",
+    "privacy": "changes-prevent",
+}
+
 SUBPAGES = {
     "sound": ("system", "Sound"),
     "display": ("system", "Display"),
@@ -92,7 +100,7 @@ class TenSettings:
         self.search.get_accessible().set_name("Search Windows 10 settings categories")
         self.search.connect("search-changed", self._filter)
         sidebar.pack_start(self.search, False, False, 4)
-        home = shell._class(Gtk.Button(label="Home"), "ten-settings-nav")
+        home = shell._class(Gtk.Button(label="⌂   Home"), "ten-settings-nav")
         home.connect("clicked", lambda _button: self.navigate("home"))
         sidebar.pack_start(home, False, False, 0)
         for key, title, _desc in CATEGORIES:
@@ -146,12 +154,16 @@ class TenSettings:
 
     def _build_home(self):
         Gtk = self.Gtk
-        page, body = self._page("Windows Settings", "Choose a category or search for a setting.")
-        grid = Gtk.Grid(row_spacing=7, column_spacing=7)
+        page, body = self._page("Windows Settings", "Find a setting or explore a category below.")
+        grid = Gtk.Grid(row_spacing=9, column_spacing=9)
         grid.set_column_homogeneous(True)
         for index, (key, title, description) in enumerate(CATEGORIES):
             tile = self.shell._class(Gtk.Button(), "ten-settings-tile")
-            content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=5)
+            content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+            icon = Gtk.Image.new_from_icon_name(CATEGORY_ICONS[key], Gtk.IconSize.DIALOG)
+            icon.set_pixel_size(30)
+            icon.get_style_context().add_class("ten-settings-tile-icon")
+            content.pack_start(icon, False, False, 0)
             content.pack_start(self.shell._class(Gtk.Label(label=title, xalign=0),
                                                  "ten-network-name"), False, False, 0)
             detail = self.shell._class(Gtk.Label(label=description, xalign=0), "ten-muted")
@@ -160,7 +172,7 @@ class TenSettings:
             tile.add(content)
             tile.get_accessible().set_name("Open " + title)
             tile.connect("clicked", lambda _button, target=key: self.navigate(target))
-            grid.attach(tile, index % 2, index // 2, 1, 1)
+            grid.attach(tile, index % 3, index // 3, 1, 1)
         body.pack_start(grid, False, False, 0)
         return page
 

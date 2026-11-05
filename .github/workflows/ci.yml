@@ -39,6 +39,8 @@ jobs:
           # Synthetic button.clicked() misses X11 pointer hit-testing after
           # switching Aqua from Apps to the taller Settings list.
           RICEHUB_AQUA_NAV_NATIVE=1 timeout 28s dbus-run-session -- xvfb-run -a -s '-screen 0 1024x768x24' sh -c 'xfwm4 --compositor=off >/tmp/ricebowl-aqua-native-xfwm4.log 2>&1 & sleep 1; test_config="$(mktemp -d -t ricebowl-aqua-nav-XXXXXX)"; XDG_CONFIG_HOME="$test_config" /usr/bin/python3 -c '\''from macrice.aero_shell import run; raise SystemExit(run(["ricehub-frutiger-shell", "--smoke-test"], profile="frutiger"))'\'''
+          # Native pointer dwell catches Win98's former ~650ms focus timer.
+          RICEHUB_CLASSIC_POINTER_NATIVE=1 timeout 28s dbus-run-session -- xvfb-run -a -s '-screen 0 1024x768x24' sh -c 'xfwm4 --compositor=off >/tmp/ricebowl-classic-pointer-xfwm4.log 2>&1 & sleep 1; /usr/bin/python3 -c '\''from macrice.aero_shell import run; raise SystemExit(run(["ricehub-winclassic-shell", "--smoke-test"], profile="winclassic"))'\'''
           timeout 30s dbus-run-session -- xvfb-run -a sh -c 'xfwm4 >/tmp/ricehub-ci-xfwm4.log 2>&1 & sleep 1; RICEHUB_WNCK_INTEGRATION=1 /usr/bin/python3 -m unittest tests.test_aero_windows.AeroWindowTests.test_native_window_open_close_does_not_crash_shell -v'
           timeout 18s dbus-run-session -- xvfb-run -a -s '-screen 0 1600x900x24' /usr/bin/python3 screenshots/capture_ten_shell.py
           timeout 18s dbus-run-session -- xvfb-run -a /usr/bin/python3 screenshots/capture_windows10.py
