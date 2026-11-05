@@ -1,0 +1,12 @@
+[package]
+name = "riceplate-native"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.86"
+license = "MIT"
+description = "Experimental event-driven native Wayland layer-shell surface for RiceBowl"
+
+[dependencies]
+smithay-client-toolkit = { version = "=0.21.1", default-features = false }
+wayland-client = "=0.31.14"
+font8x8 = "=0.3.1"
