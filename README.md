@@ -120,6 +120,8 @@ macrice app-compat --select                     # Inspect a real app's window th
 The active rice uses **Super** for its launcher and **Right Ctrl** for Control Panel / Quick Settings. Managed assets and keyboard shortcuts are backed up; later user edits are not silently overwritten.
 For apps whose title bars ignore XFWM (PhotoCraft, Thunderbird) see the
 [read-only compatibility inspector and supported app settings](APP_COMPATIBILITY.md).
+Windows 98, XP, Windows 7 and Windows 10 also offer a real Task Manager from
+the blank taskbar's right-click menu when an XFCE/GNOME system monitor is installed.
 The resource report includes the six non-macOS RiceBowl shells when running and does not install an always-on monitor. A failed shell startup or panel handoff attempts to recover the original XFCE panel and shortcuts. Check recovery on your real XFCE machine before relying on it unattended.
 
 ## Scope

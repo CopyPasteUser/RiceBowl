@@ -1,5 +1,17 @@
 # RiceBowl changelog
 
+## Unreleased — consistent real Task Manager access (5 November 2026)
+
+- Windows 98, XP Luna and Windows 10 now include a real Task Manager action
+  in the empty taskbar area's right-click menu. The existing Windows 7 action
+  uses the same resolver. ChromeOS and Frutiger retain their Settings links.
+- Prefer installed `xfce4-taskmanager`, falling back to `gnome-system-monitor`.
+  If neither is installed the action is disabled with a useful explanation;
+  no fake process UI or new daemon is launched.
+- Added a shared deterministic resolver, hermetic selection and source tests,
+  and GTK/X11 shell-smoke assertions covering all four taskbar menu variants.
+  Real hardware verification remains open.
+
 ## Unreleased — cross-application window theme diagnostics (5 November 2026)
 
 - Added `macrice app-compat --select` and `--window-id HEX [--json]` for
