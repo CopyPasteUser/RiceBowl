@@ -14,7 +14,7 @@ A lightweight, native Python/GTK3 desktop customization hub for **Linux Mint XFC
 
 RiceBowl changes real Linux desktop elements—taskbar, Start/launcher, menus, system controls, wallpaper, GTK/XFWM4 themes, icons and Thunar styling. Applications and device controls use real Linux backends. No Electron, telemetry or proprietary OS assets.
 
-> **Release status: 0.9.1+ development — not yet stable 1.0.** The [v0.9.1 pre-release](https://github.com/CopyPasteUser/RiceBowl/releases/tag/v0.9.1) remains the last tagged build. Recovery, diagnostics and deeper Aqua controls passed the [PR #65 native-X11 CI](https://github.com/CopyPasteUser/RiceBowl/pull/65). **The newer Bluetooth scan/display-readout changes need their own CI, and physical Mint/XFCE acceptance remains open.**
+> **Release status: 0.9.1+ development — not yet stable 1.0.** The [v0.9.1 pre-release](https://github.com/CopyPasteUser/RiceBowl/releases/tag/v0.9.1) remains the last tagged build. Recovery, diagnostics, Aqua media/drives and the new Bluetooth/display features passed native-X11 CI in [PR #65](https://github.com/CopyPasteUser/RiceBowl/pull/65) and [PR #66](https://github.com/CopyPasteUser/RiceBowl/pull/66). **Physical Mint/XFCE acceptance, safe writable display layout and the Aqua riceExplorer renderer remain open.**
 
 | 1.0 workstream | Engineering status | Remaining gate |
 | --- | --- | --- |
