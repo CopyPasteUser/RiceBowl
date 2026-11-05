@@ -85,7 +85,7 @@ class Windows10FidelityTests(unittest.TestCase):
         self.assertIn("Type here to search", shell)
         self.assertIn('screen_width >= 1280', shell)
         self.assertIn(b'.ten-search.ten-search-box', CSS)
-        self.assertIn('"windows10": (690, 560)', shell)
+        self.assertIn('"windows10": (690, 660)', shell)
         self.assertIn('self._populate_windows10(query)', shell)
         self.assertIn('self._render_ten_tiles()', shell)
         self.assertIn("from .ten_action_center import build", shell)

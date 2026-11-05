@@ -5093,7 +5093,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
             menu.set_keep_above(True)
             rect = self._desktop_rect()
             _, _, menu_w, menu_h = menu_geometry(rect.x, rect.y, rect.width, rect.height,
-                                                 preferred_width=690, preferred_height=560,
+                                                 preferred_width=690, preferred_height=660,
                                                  panel_height=panel_height)
             menu.set_default_size(menu_w, menu_h)
             def user_directory(kind, fallback):
@@ -5615,6 +5615,8 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                     self.ten_tiles_panel.pack_start(heading, False, False, 0)
                     grid = Gtk.Grid(row_spacing=5, column_spacing=5)
                     grid.set_halign(Gtk.Align.START)
+                    grid.set_column_homogeneous(True)
+                    grid.set_row_homogeneous(True)
                     visible_tiles = [tile for tile in group["tiles"] if tile["id"] in catalog]
                     unavailable += len(group["tiles"]) - len(visible_tiles)
                     for tile, (col, row, width, height) in zip(
@@ -5626,7 +5628,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                         if (col + row + group_index) % 3 == 1:
                             button.get_style_context().add_class("ten-tile-alt")
                         button.set_size_request(width * 68 + (width - 1) * 5,
-                                                height * 44 + (height - 1) * 5)
+                                                height * 68 + (height - 1) * 5)
                         content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=4)
                         icon = app.get_icon()
                         picture = (Gtk.Image.new_from_gicon(icon, Gtk.IconSize.DIALOG) if icon
@@ -6666,7 +6668,7 @@ def run(argv: list[str] | None = None, *, profile: str = "aero") -> int:
                 "winclassic": (262, 332),
                 "chromeos": (610, 628),
                 "frutiger": (600, 600),
-                "windows10": (690, 560),
+                "windows10": (690, 660),
                 "aero": (525, 535),
             }
             preferred_width, preferred_height = preferred_sizes.get(profile, (490, 505))

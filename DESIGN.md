@@ -118,7 +118,7 @@ secondary pages; prototypes and the release roadmap do not crowd the selector.
   aero_shell._create_ten_menu() owns a three-zone nav rail / alphabetical Gio
   application list / genuine-app pinned tile groups (saved pins/context menus).
   `ten_tiles.py` owns a separately persisted schema-validated four-column
-  Start mosaic: 68×44 base cells, 5px gutters, Small 1×1, Medium 2×2,
+  Start mosaic: square 68×68 base cells, 5px gutters, Small 1×1, Medium 2×2,
   Wide 4×2, Large 4×4; drag/drop order, group names and absent-app retention
   never alter taskbar pins. A 331px independent scroll lane holds the groups.
   The dark 362px Action Center is built by macrice/ten_action_center.py: a
