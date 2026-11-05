@@ -214,12 +214,14 @@ def _read_app_themes(config_root: Path) -> dict[str, str | None]:
     return result
 
 
-def _wallpaper_target(style: RiceStyle, data_root: Path, source_root: Path) -> tuple[Path, Path]:
-    source = source_root / "assets/wallpapers" / style.wallpaper
+def _wallpaper_target(style: RiceStyle, data_root: Path, source_root: Path,
+                      wallpaper_source: Path | None = None) -> tuple[Path, Path]:
+    source = wallpaper_source if wallpaper_source is not None else source_root / "assets/wallpapers" / style.wallpaper
     if not source.is_file() or source.is_symlink():
         raise RiceError(f"Missing bundled wallpaper: {style.wallpaper}")
     digest = hashlib.sha256(source.read_bytes()).hexdigest()[:12]
-    target = data_root / "macrice-state/wallpapers" / f"{style.name.lower().replace(' ', '-')}-{digest}.jpg"
+    extension = source.suffix.lower() if wallpaper_source is not None else ".jpg"
+    target = data_root / "macrice-state/wallpapers" / f"{style.name.lower().replace(' ', '-')}-{digest}{extension}"
     if target.is_symlink() or (target.exists() and (
         not target.is_file() or hashlib.sha256(target.read_bytes()).hexdigest()[:12] != digest
     )):
@@ -291,7 +293,8 @@ def _app_values(style: RiceStyle) -> dict[str, str]:
     return values
 
 
-def _changes(style: RiceStyle, backend: XfceBackend, target: Path, plank_theme: str) -> list[dict]:
+def _changes(style: RiceStyle, backend: XfceBackend, target: Path, plank_theme: str,
+             *, aero_family: bool = False) -> list[dict]:
     changes = []
     for channel, key, value in XFCONF:
         value = getattr(style, value, value)
@@ -304,7 +307,7 @@ def _changes(style: RiceStyle, backend: XfceBackend, target: Path, plank_theme: 
         changes.append({"kind": "gsettings", "channel": "plank", "key": key,
                         "before": backend.get("gsettings", "plank", key), "after": value})
     # Keep the hidden Windows 7 menu bar from persisting after a rice switch.
-    for key, value in preferences_for("aero" if style.gtk == AERO_THEME else "day"):
+    for key, value in preferences_for("aero" if aero_family else "day"):
         changes.append({"kind": "xfconf", "channel": "thunar", "key": key,
                         "before": backend.get_optional("xfconf", "thunar", key), "after": value})
     for image in backend.wallpaper_keys():
@@ -371,14 +374,16 @@ def repair_assets(style_name: str, *, data_root: Path | None = None,
 
 def plan(style_name: str, *, backend: XfceBackend | None = None,
          data_root: Path | None = None, source_root: Path | None = None,
-         config_root: Path | None = None) -> tuple[list[dict], dict[str, str | None], Path, Path]:
+         config_root: Path | None = None, style_override: RiceStyle | None = None,
+         wallpaper_source: Path | None = None) -> tuple[list[dict], dict[str, str | None], Path, Path]:
     if style_name not in STYLES:
         raise RiceError("Choose one of the available RiceBowl desktop styles")
     backend = backend or XfceBackend()
     data_root = data_root or data_home()
     source_root = source_root or project_root()
     config_root = config_root or config_home()
-    source, target = _wallpaper_target(STYLES[style_name], data_root, source_root)
+    style = style_override if style_override is not None else STYLES[style_name]
+    source, target = _wallpaper_target(style, data_root, source_root, wallpaper_source)
     _, dock_target = _plank_theme_target(STYLES[style_name], data_root, source_root)
     if STYLES[style_name].gtk == AERO_THEME:
         try:
@@ -403,8 +408,9 @@ def plan(style_name: str, *, backend: XfceBackend | None = None,
             heritage.read_autostart(key, config_root)
     except (OSError, UnicodeError, ValueError) as exc:
         raise RiceError(f"Theme and session preflight failed: {exc}") from exc
-    changes = _changes(STYLES[style_name], backend, target, dock_target.parent.name)
-    _preflight(STYLES[style_name], changes, backend)
+    changes = _changes(style, backend, target, dock_target.parent.name,
+                       aero_family=STYLES[style_name].gtk == AERO_THEME)
+    _preflight(style, changes, backend)
     return changes, _read_app_themes(config_root), source, target
 
 
@@ -454,7 +460,8 @@ def _shell_autostart_handlers():
 
 def apply(style_name: str, *, backend: XfceBackend | None = None,
           data_root: Path | None = None, source_root: Path | None = None,
-          config_root: Path | None = None) -> Path:
+          config_root: Path | None = None, style_override: RiceStyle | None = None,
+          wallpaper_source: Path | None = None) -> Path:
     """Preflight, journal, then apply. Revert all desktop values if a step fails."""
     if os.geteuid() == 0:
         raise RiceError("Apply Rice as your normal desktop user, never with sudo")
@@ -464,14 +471,16 @@ def apply(style_name: str, *, backend: XfceBackend | None = None,
     changes, previous, source, target = plan(
         style_name, backend=backend, data_root=data_root,
         source_root=source_root, config_root=config_root,
+        style_override=style_override, wallpaper_source=wallpaper_source,
     )
-    style = STYLES[style_name]
+    style = style_override if style_override is not None else STYLES[style_name]
     css = plan_css(_thunar_palette(style_name), config_root)
     shell_writers = _shell_autostart_handlers()
     shell_before = {key: reader(config_root) for key, (reader, _writer) in shell_writers.items()}
+    base_style = STYLES[style_name]
     shell_after = {
-        "aero": autostart_content(source_root or project_root()) if style.gtk == AERO_THEME else None,
-        "ten": ten.autostart_content(source_root or project_root()) if style.gtk in ten.THEMES else None,
+        "aero": autostart_content(source_root or project_root()) if base_style.gtk == AERO_THEME else None,
+        "ten": ten.autostart_content(source_root or project_root()) if base_style.gtk in ten.THEMES else None,
     }
     shell_after.update({key: heritage.autostart_content(key) if style_name == key else None
                         for key in heritage.PROFILES})
@@ -500,9 +509,9 @@ def apply(style_name: str, *, backend: XfceBackend | None = None,
     written = []
     css_written = False
     try:
-        if style.gtk == AERO_THEME:
+        if base_style.gtk == AERO_THEME:
             install_aero(preflight_aero(source_root or project_root(), data_root))
-        elif style.gtk in ten.THEMES:
+        elif base_style.gtk in ten.THEMES:
             install_aero(ten.preflight(source_root or project_root(), data_root))
         elif style_name in heritage.PROFILES:
             install_aero(heritage.preflight(style_name, source_root or project_root(), data_root))

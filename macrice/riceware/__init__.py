@@ -15,7 +15,9 @@ def manifest() -> dict[str, object]:
         "api_version": API_VERSION,
         "profiles": dict(profiles.PROFILE_FAMILIES),
         "rice_packs": {"schema_version": packs.SCHEMA_VERSION,
-                       "inspect": "riceware packs list|show|check|template",
+                       "visual_schema_version": 2,
+                       "inspect": "riceware packs list|show|check|template|inspect",
+                       "manage": "riceware packs build|import|remove",
                        "apply": "riceware packs apply ID --yes"},
         "components": {
             "riceSpice": {"read": (*spice.READERS, "scan_wifi"),

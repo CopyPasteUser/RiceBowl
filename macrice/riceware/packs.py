@@ -13,7 +13,7 @@ import os
 import re
 import shutil
 import stat
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Mapping
 
@@ -21,7 +21,7 @@ from ..environment import bin_home, data_home
 from .profiles import PROFILE_FAMILIES
 
 SCHEMA_VERSION = 1
-MAX_PACK_BYTES = 16 * 1024
+MAX_PACK_BYTES = 64 * 1024
 MAX_PACK_FILES = 128
 _IDENTIFIER = re.compile(r"[a-z][a-z0-9-]{1,47}\Z")
 _FIELDS = frozenset(("schema_version", "id", "name", "base_style", "description"))
@@ -41,15 +41,18 @@ class RicePack:
     base_style: str
     description: str = ""
     source: str = "built-in"
+    revision: str = ""
+    asset_types: tuple[str, ...] = ()
 
     def manifest(self) -> dict[str, object]:
         from ..rice import STYLES
 
         style = STYLES[self.base_style]
         family = PROFILE_FAMILIES[self.base_style]
-        return {
-            "schema_version": SCHEMA_VERSION,
-            **asdict(self),
+        result = {
+            "schema_version": 2 if self.source == "installed" else SCHEMA_VERSION,
+            "id": self.id, "name": self.name, "base_style": self.base_style,
+            "description": self.description, "source": self.source,
             "family": family,
             "shell": FAMILY_SHELL[family],
             "appearance": {
@@ -58,6 +61,14 @@ class RicePack:
                 "wallpaper": style.wallpaper,
             },
         }
+        if self.source == "installed":
+            from .pack_import import describe_installed, style_for
+            actual, wallpaper = style_for(self)
+            result["appearance"].update({"gtk": actual.gtk, "xfwm": actual.xfwm,
+                                          "icons": actual.icon_theme,
+                                          "wallpaper": "pack asset" if wallpaper else style.wallpaper})
+            result["visual_assets"] = describe_installed(self)
+        return result
 
 
 def builtins() -> tuple[RicePack, ...]:
@@ -78,6 +89,12 @@ def shell_for_theme(theme: str) -> tuple[str | None, bool]:
 
     families = {PROFILE_FAMILIES[key] for key, style in STYLES.items()
                 if style.gtk == theme}
+    if not families:
+        from .pack_import import theme_name
+        installed, _ = discover()
+        families = {PROFILE_FAMILIES[pack.base_style] for pack in installed
+                    if pack.source == "installed" and "gtk" in pack.asset_types
+                    and theme_name(pack) == theme}
     if len(families) != 1:
         return None, False
     family = families.pop()
@@ -105,6 +122,9 @@ def _read_user_pack(path: Path) -> RicePack:
         values = json.loads(raw.decode("utf-8"))
     except (UnicodeError, json.JSONDecodeError) as exc:
         raise ValueError("invalid UTF-8 JSON") from exc
+    if isinstance(values, dict) and values.get("schema_version") == 2:
+        from .pack_import import pack_from_record
+        return pack_from_record(values, path.stem)
     if (not isinstance(values, dict) or not set(values) <= _FIELDS
             or not (_FIELDS - {"description"}) <= set(values)
             or type(values["schema_version"]) is not int

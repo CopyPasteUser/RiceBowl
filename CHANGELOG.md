@@ -1,5 +1,19 @@
 # RiceBowl changelog
 
+## Unreleased — secure visual Rice packs v2 (5 November 2026)
+
+- Build, inspect and import local ZIP packs containing declared and SHA-256
+  verified wallpaper, GTK CSS, XFWM4 and PNG/JPEG icon assets. Reject unsafe
+  archive paths, symlinks, scripts, embedded SVG and CSS resource imports.
+- Require an explicit license/provenance declaration and user acknowledgment;
+  reserve versioned user-local theme/icon names without overwriting existing
+  themes. Imported packs appear in the existing Hub style selector.
+- Apply custom appearances through the existing RiceBowl preflight and desktop
+  rollback journal. The login reconciler recognizes installed GTK pack themes
+  and keeps the correct native rice shell; inactive packs can be moved into
+  private recovery storage instead of being erased.
+- No background process, network download, elevated privilege or new runtime dependency.
+
 ## Unreleased — data-only Rice pack discovery (5 November 2026)
 
 - Add a versioned, inspectable Rice pack catalog for all built-in styles and
