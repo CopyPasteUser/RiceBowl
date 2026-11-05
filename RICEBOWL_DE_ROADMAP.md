@@ -99,6 +99,10 @@ affecting XFCE, including a failed-session recovery. **Not yet signed off.**
 
 ### 2 — RicePlate Wayland shell
 
+- [x] Establish a non-executable versioned panel-layout recipe and an isolated,
+  temporary Waybar adapter with two distinct compositional layouts; validate
+  custom manifests and clean up generated session files. This is a stepping
+  stone, **not** the native RicePlate renderer.
 - [ ] Build a Wayland-native panel through `wlr-layer-shell`.
 - [ ] Populate tasks/windows through a supported foreign-toplevel protocol.
 - [ ] Implement launchers, task groups, tray, calendar, menus and keyboard

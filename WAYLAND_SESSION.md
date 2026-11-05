@@ -58,6 +58,29 @@ separate compositor with activation-environment updates disabled, so it
 doesn't hijack the current desktop's D-Bus/systemd Wayland variables.
 The compositor still requires hardware/driver support for a nested backend.
 
+### RicePlate layout recipes (first data-only contract)
+
+The experimental Waybar adapter can render two structurally different,
+declarative RicePlate panel layouts without starting a second panel or
+modifying your live desktop configuration:
+
+```bash
+ricebowl de recipes
+ricebowl de start --nested --recipe classic
+ricebowl de start --nested --recipe chrome
+```
+
+Custom recipes use the strict JSON schema illustrated in
+`macrice/de/resources/recipes/`. Supply an **absolute path** to an owner-only,
+regular JSON file (`chmod 600 YOUR_FILE.json`). Recipes are limited to 64 KiB,
+known panel widgets and six-digit colors. They cannot run commands, import CSS,
+load assets or define new system actions. Temporary Waybar configurations are
+created under the private `XDG_RUNTIME_DIR` and removed at session exit.
+
+This demonstrates structural composition through a shared recipe contract;
+it does **not** mean RicePlate's Rust layer-shell renderer, arbitrary mockup
+conversion or all seven native profiles are implemented yet.
+
 ## First-session controls
 
 | Key | Action |

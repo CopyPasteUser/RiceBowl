@@ -4,9 +4,26 @@
 set -eu
 
 project_root=$(CDPATH='' cd -- "$(dirname -- "$0")/.." && pwd -P)
+recipe=${1:-}
 runtime=$(mktemp -d)
 chmod 0700 "$runtime"
-trap 'rm -r -- "$runtime"' EXIT
+cleanup_runtime() {
+    # xdg-document-portal may asynchronously mount a FUSE doc directory in
+    # this CI-only runtime. Unmount our own mountpoint before removing it.
+    if command -v mountpoint >/dev/null 2>&1 && mountpoint -q "$runtime/doc"; then
+        if command -v fusermount3 >/dev/null 2>&1; then
+            fusermount3 -uz "$runtime/doc" 2>/dev/null || :
+        elif command -v fusermount >/dev/null 2>&1; then
+            fusermount -uz "$runtime/doc" 2>/dev/null || :
+        fi
+    fi
+    # A still-busy desktop-portal mount is outside the tested compositor's
+    # lifecycle; warn rather than turning a successful boot test into a fail.
+    if ! rm -r -- "$runtime" 2>/dev/null; then
+        echo "CI note: document portal left a busy runtime mount for runner cleanup" >&2
+    fi
+}
+trap cleanup_runtime EXIT
 export XDG_RUNTIME_DIR="$runtime"
 export WLR_BACKENDS=headless
 export WLR_HEADLESS_OUTPUTS=1
@@ -16,7 +33,13 @@ export XDG_SESSION_TYPE=wayland
 dbus-run-session -- sh -eu -c '
     project_root=$1
     runtime=$2
-    /usr/bin/python3 "$project_root/launcher.py" de start --nested >"$runtime/labwc.log" 2>&1 &
+    recipe=$3
+    if [ -n "$recipe" ]; then
+        set -- --recipe "$recipe"
+    else
+        set --
+    fi
+    /usr/bin/python3 "$project_root/launcher.py" de start --nested "$@" >"$runtime/labwc.log" 2>&1 &
     compositor=$!
     trap "kill $compositor 2>/dev/null || :; wait $compositor 2>/dev/null || :" EXIT
     ready=0
@@ -84,4 +107,4 @@ dbus-run-session -- sh -eu -c '
     echo "labwc stayed alive after the panel exited" >&2
     sed -n "1,100p" "$runtime/labwc.log" >&2
     exit 1
-' sh "$project_root" "$runtime"
+' sh "$project_root" "$runtime" "$recipe"

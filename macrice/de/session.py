@@ -9,7 +9,9 @@ import signal
 import stat
 import subprocess
 import sys
+import tempfile
 from collections.abc import Callable, Mapping
+from contextlib import ExitStack
 from pathlib import Path
 from typing import NoReturn
 
@@ -46,6 +48,7 @@ def _check_runtime_dir(environment: Mapping[str, str]) -> None:
 def start(
     *,
     nested: bool = False,
+    recipe: str | None = None,
     environment: Mapping[str, str] | None = None,
     which: Callable[[str], str | None] = shutil.which,
     execute: Callable[[str, list[str], dict[str, str]], NoReturn] = os.execvpe,
@@ -75,6 +78,9 @@ def start(
     config = resources() / "labwc"
     if not launcher.is_file() or not (config / "rc.xml").is_file():
         raise SessionError("Incomplete RiceBowl installation; reinstall the current checkout.")
+    if recipe is not None:
+        from .recipes import load
+        load(recipe)  # Fail closed before starting a compositor.
 
     env.update({
         "XDG_CURRENT_DESKTOP": DESKTOP_NAME,
@@ -83,6 +89,10 @@ def start(
         "RICEBOWL_DE_SHELL_CHILD": "1",
         "RICEBOWL_DE_NESTED": "1" if nested else "0",
     })
+    if recipe is not None:
+        env["RICEBOWL_DE_RECIPE"] = recipe
+    else:
+        env.pop("RICEBOWL_DE_RECIPE", None)
     if nested:
         # A nested compositor must never replace the active session's D-Bus/
         # systemd Wayland activation environment.
@@ -100,6 +110,8 @@ def start(
         args = [bus, "--", sys.executable, str(launcher), "de", "start"]
         if nested:
             args.append("--nested")
+        if recipe is not None:
+            args.extend(("--recipe", recipe))
         execute(bus, args, env)
         raise AssertionError("execvpe unexpectedly returned")
 
@@ -148,51 +160,66 @@ def shell(
     base = resources()
     background: list[subprocess.Popen[bytes]] = []
     panel: subprocess.Popen[bytes] | None = None
-    try:
-        swaybg = which("swaybg")
-        wallpaper = project_root() / "assets/wallpapers/aero-seven-blue.jpg"
-        if swaybg and wallpaper.is_file():
-            background.append(spawn(
-                [swaybg, "--image", str(wallpaper), "--mode", "fill"],
+    with ExitStack() as cleanup:
+        config = base / "waybar/config.jsonc"
+        style = base / "waybar/style.css"
+        selected = env.get("RICEBOWL_DE_RECIPE")
+        if selected:
+            from .recipes import load, waybar_config
+            _check_runtime_dir(env)
+            recipe = load(selected)
+            directory = Path(cleanup.enter_context(tempfile.TemporaryDirectory(
+                prefix="ricebowl-plate-", dir=env["XDG_RUNTIME_DIR"])))
+            config = directory / "config.jsonc"
+            style = directory / "style.css"
+            generated_config, generated_style = waybar_config(recipe)
+            for path, content in ((config, generated_config), (style, generated_style)):
+                fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+                with os.fdopen(fd, "w", encoding="utf-8") as output:
+                    output.write(content)
+        try:
+            swaybg = which("swaybg")
+            wallpaper = project_root() / "assets/wallpapers/aero-seven-blue.jpg"
+            if swaybg and wallpaper.is_file():
+                background.append(spawn(
+                    [swaybg, "--image", str(wallpaper), "--mode", "fill"],
+                    env=env, stdin=subprocess.DEVNULL,
+                ))
+
+            # Temporary notification host, not a replacement for RicePop.
+            mako = which("mako")
+            if mako:
+                background.append(spawn([mako], env=env, stdin=subprocess.DEVNULL))
+
+            # Authorization goes to a user polkit agent, never a root shell.
+            for name in ("lxpolkit", "mate-polkit", "polkit-gnome-authentication-agent-1"):
+                agent = which(name)
+                if agent:
+                    background.append(spawn([agent], env=env, stdin=subprocess.DEVNULL))
+                    break
+
+            idle = which("swayidle")
+            locker = which("swaylock")
+            if idle and locker and env.get("RICEBOWL_DE_NESTED") != "1":
+                lock_command = shlex.join([locker, "-f"])
+                background.append(spawn(
+                    [idle, "-w", "timeout", "600", lock_command,
+                     "before-sleep", lock_command],
+                    env=env, stdin=subprocess.DEVNULL,
+                ))
+
+            panel = spawn(
+                [waybar, "--config", str(config), "--style", str(style)],
                 env=env, stdin=subprocess.DEVNULL,
-            ))
+            )
 
-        # This is a temporary notification host, not a replacement for RicePop.
-        mako = which("mako")
-        if mako:
-            background.append(spawn([mako], env=env, stdin=subprocess.DEVNULL))
+            def terminate(_signal: int, _frame: object) -> None:
+                if panel is not None:
+                    _stop_process(panel)
 
-        # User-session polkit agents perform authorization; RiceBowl itself
-        # never becomes privileged or bypasses PolicyKit.
-        for name in ("lxpolkit", "mate-polkit", "polkit-gnome-authentication-agent-1"):
-            agent = which(name)
-            if agent:
-                background.append(spawn([agent], env=env, stdin=subprocess.DEVNULL))
-                break
-
-        idle = which("swayidle")
-        locker = which("swaylock")
-        if idle and locker and env.get("RICEBOWL_DE_NESTED") != "1":
-            lock_command = shlex.join([locker, "-f"])
-            background.append(spawn(
-                [idle, "-w", "timeout", "600", lock_command,
-                 "before-sleep", lock_command],
-                env=env, stdin=subprocess.DEVNULL,
-            ))
-
-        panel = spawn(
-            [waybar, "--config", str(base / "waybar/config.jsonc"),
-             "--style", str(base / "waybar/style.css")],
-            env=env, stdin=subprocess.DEVNULL,
-        )
-
-        def terminate(_signal: int, _frame: object) -> None:
-            if panel is not None:
-                _stop_process(panel)
-
-        signal.signal(signal.SIGTERM, terminate)
-        signal.signal(signal.SIGINT, terminate)
-        return panel.wait()
-    finally:
-        for process in reversed(background):
-            _stop_process(process)
+            signal.signal(signal.SIGTERM, terminate)
+            signal.signal(signal.SIGINT, terminate)
+            return panel.wait()
+        finally:
+            for process in reversed(background):
+                _stop_process(process)

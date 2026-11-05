@@ -51,4 +51,7 @@ jobs:
           sh scripts/build_wayland_session_deb.sh
           dpkg-deb --field dist/ricebowl-wayland-session_0.1.0~preview1_all.deb
       - name: Boot actual labwc and Waybar headlessly
-        run: timeout -k 5s 45s sh scripts/smoke_wayland_session.sh
+        run: |
+          timeout -k 5s 45s sh scripts/smoke_wayland_session.sh
+          timeout -k 5s 45s sh scripts/smoke_wayland_session.sh chrome
+          timeout -k 5s 45s sh scripts/smoke_wayland_session.sh classic

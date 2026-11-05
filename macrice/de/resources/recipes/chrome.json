@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "id": "chrome",
+  "name": "Centered minimal shelf",
+  "panel": {
+    "position": "bottom",
+    "height": 44,
+    "sections": {
+      "start": ["launcher"],
+      "center": ["tasks"],
+      "end": ["network", "audio", "battery", "clock", "tray"]
+    }
+  },
+  "colors": {
+    "background": "#28353b",
+    "foreground": "#eaf2ef",
+    "active": "#527a75"
+  }
+}

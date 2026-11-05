@@ -69,10 +69,11 @@ def parser() -> argparse.ArgumentParser:
             trace.add_argument("--trace-path", action="store_true", help="Print evidence file location without running the shell")
     commands.add_parser("session-sync", help="Reconcile active rice after XFCE autostart")
     de = commands.add_parser("de", help="Inspect experimental RiceBowl Wayland desktop prerequisites")
-    de.add_argument("action", choices=("check", "start", "shell"))
+    de.add_argument("action", choices=("check", "start", "shell", "recipes"))
     de.add_argument("--json", action="store_true", help="Read-only machine-readable preflight")
     de.add_argument("--nested", action="store_true",
                     help="Explicitly test a separate labwc session inside an active desktop")
+    de.add_argument("--recipe", help="RicePlate recipe: classic, chrome or an owner-private absolute JSON path")
     commands.add_parser("session-menu", help="Toggle the active rice's application menu")
     commands.add_parser("session-control", help="Toggle the active rice's control panel")
     commands.add_parser("session-keys-restore", help="Restore the previous Super/Right Control shortcuts")
@@ -133,12 +134,27 @@ def main(argv: list[str] | None = None) -> int:
                 if args.json:
                     raise ValueError("--json only applies to de check")
                 from .de.session import start
-                return start(nested=args.nested)
+                return start(nested=args.nested, recipe=args.recipe)
             if args.action == "shell":
-                if args.json or args.nested:
-                    raise ValueError("de shell does not accept --json or --nested")
+                if args.json or args.nested or args.recipe:
+                    raise ValueError("de shell does not accept --json, --nested or --recipe")
                 from .de.session import shell
                 return shell()
+            if args.action == "recipes":
+                if args.nested or args.recipe:
+                    raise ValueError("de recipes only accepts --json")
+                from .de.recipes import BUILTINS, load
+                recipes = [load(name) for name in BUILTINS]
+                if args.json:
+                    print(json.dumps([{"id": item.recipe_id, "name": item.name,
+                                      "position": item.position, "height": item.height}
+                                     for item in recipes], indent=2))
+                else:
+                    for item in recipes:
+                        print(f"{item.recipe_id}: {item.name} ({item.position}, {item.height}px)")
+                return 0
+            if args.recipe:
+                raise ValueError("--recipe only applies to de start")
             if args.nested:
                 raise ValueError("--nested only applies to de start")
             from .de.diagnostics import inspect

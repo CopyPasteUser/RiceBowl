@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "id": "classic",
+  "name": "Classic bottom taskbar",
+  "panel": {
+    "position": "bottom",
+    "height": 36,
+    "sections": {
+      "start": ["launcher", "tasks"],
+      "center": [],
+      "end": ["network", "audio", "battery", "clock", "tray"]
+    }
+  },
+  "colors": {
+    "background": "#203c59",
+    "foreground": "#f3f7fa",
+    "active": "#4179aa"
+  }
+}
