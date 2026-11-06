@@ -41,6 +41,7 @@ Select a rice in the Hub; installation alone does not change your desktop. Use `
 
 - [Wayland preview, installation and safety](WAYLAND_SESSION.md)
 - [AI-friendly shell recipes and components](WAYLAND_SESSION.md#schema-v5-native-desktop-icons-preview)
+- [Two real Wayland Creator example rices and reproducible captures](examples/wayland/README.md)
 - [Desktop environment development roadmap](RICEBOWL_DE_ROADMAP.md)
 - [Rice ecosystem (RiceField, Taskotto and more)](RICE_ECOSYSTEM_ROADMAP.md)
 - [Contributing](CONTRIBUTING.md) · [License](LICENSE) · [Releases](https://github.com/CopyPasteUser/Ricebowl/releases)

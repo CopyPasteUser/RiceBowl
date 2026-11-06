@@ -307,6 +307,14 @@ depend on the XFCE session.
   staged recipe changes before login. Migrate old v1 state without breaking
   existing commands. This does not switch live Wayland/XFCE or provide a
   transaction across the desktop's future settings, windows and components.
+- [x] Publish two **honest schema-v5 Creator demonstrators** under
+  `examples/wayland/`: a classic-OS-inspired workstation and a structurally
+  distinct original Orbit concept. They use only shared native primitives,
+  original bundled wallpapers and known allowlisted actions. Native CI renders
+  both at three resolutions plus fractional scaling, verifies exact recipe
+  receipts and screenshot hashes, and archives reproducible visual diagnostics.
+  This proves the limited current contract supports two styles, **not**
+  high-fidelity OS cloning or the complete 1.0 authoring acceptance below.
 - [ ] Publish a **versioned, machine-readable Creator contract** (CLI JSON
   output first; optional local IPC only if justified) for discovering
   components, creating/editing drafts, validating recipes, previewing the
