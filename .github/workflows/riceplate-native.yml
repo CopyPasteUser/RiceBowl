@@ -6,6 +6,8 @@ on:
       - '.github/workflows/riceplate-native.yml'
       - 'components/riceplate-wayland/**'
       - 'scripts/smoke_riceplate_native.sh'
+      - 'scripts/smoke_riceplate_multioutput.sh'
+      - 'scripts/check_wayland_panel_outputs.py'
       - 'scripts/compare_wayland_captures.py'
       - 'scripts/verify_wayland_creator_examples.py'
       - 'tests/test_de_visual_qa.py'
@@ -20,6 +22,8 @@ on:
       - '.github/workflows/riceplate-native.yml'
       - 'components/riceplate-wayland/**'
       - 'scripts/smoke_riceplate_native.sh'
+      - 'scripts/smoke_riceplate_multioutput.sh'
+      - 'scripts/check_wayland_panel_outputs.py'
       - 'scripts/compare_wayland_captures.py'
       - 'scripts/verify_wayland_creator_examples.py'
       - 'tests/test_de_visual_qa.py'
@@ -49,6 +53,7 @@ jobs:
           cargo test --manifest-path components/riceplate-wayland/Cargo.toml
           cargo build --release --manifest-path components/riceplate-wayland/Cargo.toml
           sh -n scripts/smoke_riceplate_native.sh
+          sh -n scripts/smoke_riceplate_multioutput.sh
       - name: Prepare native preview artifact with build provenance
         run: |
           set -eu
@@ -66,6 +71,8 @@ jobs:
         run: /usr/bin/python3 -m unittest discover -s tests -p test_de_creator_examples.py -v
       - name: Boot native Wayland layer surface
         run: timeout -k 5s 70s sh scripts/smoke_riceplate_native.sh
+      - name: Prove native panel on two outputs and secondary hotplug
+        run: timeout -k 5s 70s sh scripts/smoke_riceplate_multioutput.sh
       - name: Render validated recipe in isolated Creator compositor
         run: |
           set -eu

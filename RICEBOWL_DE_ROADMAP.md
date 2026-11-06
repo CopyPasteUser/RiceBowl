@@ -161,6 +161,13 @@ affecting XFCE, including a failed-session recovery. **Not yet signed off.**
   recovery. Includes unit-tested screenshot validation. This exercises the
   default Waybar-compatible session, **not** native Rust per-output surfaces
   or mixed-DPI device signoff; both still need implementation/QA.
+- [ ] Extend the **single native RicePlate process** with an independently
+  configured layer-shell taskbar on every non-primary Wayland output. Reuse one
+  window/task model, clock and renderer; keep per-panel page offsets and
+  event-driven redraws. Test a real two-output compositor and secondary
+  disconnect/reconnect. Native popup menus and desktop-icon ownership remain
+  primary-output-only for this first slice, and primary-monitor removal still
+  follows the conservative session recovery path.
 - [ ] Build a Wayland-native panel through `wlr-layer-shell`.
 - [ ] Populate tasks/windows through a supported foreign-toplevel protocol.
 - [ ] Implement launchers, task groups, tray, calendar, menus and keyboard

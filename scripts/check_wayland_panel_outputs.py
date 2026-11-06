@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify genuine Wayland screenshots show the expected fallback taskbar.
+"""Verify genuine Wayland screenshots show the classic RiceBowl taskbar.
 
 The smoke compositor uses the classic schema-v1 recipe and no other desktop
 background; comparing a pixel against its configured panel color detects
@@ -25,9 +25,9 @@ def validate(paths: list[Path]) -> None:
                 raise ValueError("Output screenshot has invalid PNG geometry")
             rgb = image.convert("RGB").getpixel((image.width // 2, image.height - 5))
         if any(abs(actual - base) > 6 for actual, base in zip(rgb, expected)):
-            raise ValueError(f"No classic Waybar panel on output screenshot: {path.name} ({rgb})")
+            raise ValueError(f"No classic RiceBowl panel on output screenshot: {path.name} ({rgb})")
 
 
 if __name__ == "__main__":
     validate([Path(argument) for argument in sys.argv[1:]])
-    print("Verified real classic Waybar panel pixels on requested Wayland output(s)")
+    print("Verified real classic RiceBowl panel pixels on requested Wayland output(s)")

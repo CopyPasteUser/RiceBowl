@@ -103,17 +103,17 @@ dbus-run-session -- sh -eu -c '
         sleep 1
         grim -o "$first" "$runtime/first.png"
         grim -o "$second" "$runtime/second.png"
-        /usr/bin/python3 "$project_root/scripts/check_waybar_multioutput.py" \
+        /usr/bin/python3 "$project_root/scripts/check_wayland_panel_outputs.py" \
             "$runtime/first.png" "$runtime/second.png"
         wlr-randr --output "$second" --off
         sleep 1
         grim -o "$first" "$runtime/first-after-off.png"
-        /usr/bin/python3 "$project_root/scripts/check_waybar_multioutput.py" \
+        /usr/bin/python3 "$project_root/scripts/check_wayland_panel_outputs.py" \
             "$runtime/first-after-off.png"
         wlr-randr --output "$second" --on
         sleep 1
         grim -o "$second" "$runtime/second-restored.png"
-        /usr/bin/python3 "$project_root/scripts/check_waybar_multioutput.py" \
+        /usr/bin/python3 "$project_root/scripts/check_wayland_panel_outputs.py" \
             "$runtime/second-restored.png"
         echo "Waybar fallback stayed visible across two outputs and one hotplug cycle"
     fi

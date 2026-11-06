@@ -10,7 +10,7 @@ on:
       - 'packaging/wayland/**'
       - 'scripts/build_wayland_session_deb.sh'
       - 'scripts/smoke_wayland_session.sh'
-      - 'scripts/check_waybar_multioutput.py'
+      - 'scripts/check_wayland_panel_outputs.py'
       - 'tests/test_de_*.py'
   pull_request:
     paths:
@@ -21,7 +21,7 @@ on:
       - 'packaging/wayland/**'
       - 'scripts/build_wayland_session_deb.sh'
       - 'scripts/smoke_wayland_session.sh'
-      - 'scripts/check_waybar_multioutput.py'
+      - 'scripts/check_wayland_panel_outputs.py'
       - 'tests/test_de_*.py'
 
 permissions:
