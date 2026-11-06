@@ -1,5 +1,16 @@
 # RiceBowl changelog
 
+## Unreleased — two real Creator demonstration rices (6 November 2026)
+
+- Author one classic OS-inspired and one original Wayland desktop strictly
+  through the same schema-v5 panel, menu, wallpaper, tokens and shortcut
+  contract, without copied OS imagery, custom shells or unbound fake buttons.
+- Run both through isolated native labwc CI at four output geometries; archive
+  eight actual compositor screenshots and per-capture hashes, semantic
+  fingerprints and visible-geometry diagnostics for reproducible comparison.
+- Publish an offline agent-authoring exercise and explicit unsupported-action
+  inventory; visuals alone do not certify full OS fidelity or hardware QA.
+
 ## Unreleased — reviewed next-login Creator staging (6 November 2026)
 
 - Add `de creator-status`, `de creator-stage` and `de creator-rollback` with

@@ -1,0 +1,47 @@
+{
+  "schema_version": 5,
+  "id": "orbit-atelier",
+  "name": "Orbit Atelier (original concept)",
+  "panel": {
+    "position": "top",
+    "height": 52,
+    "metrics": {"launcher_width": 112, "task_width": 196, "clock_width": 104},
+    "layout": {
+      "start": [
+        {"type": "group", "gap": 14, "children": [
+          {"type": "label", "text": "ORBIT"},
+          {"type": "widget", "id": "launcher"}
+        ]}
+      ],
+      "center": [
+        {"type": "group", "gap": 8, "children": [
+          {"type": "gap", "width": 20},
+          {"type": "widget", "id": "tasks"}
+        ]}
+      ],
+      "end": [{"type": "widget", "id": "clock"}]
+    }
+  },
+  "colors": {"background": "#172e42", "foreground": "#f0ebda", "active": "#d8896c"},
+  "menu": {"title": "Orbit Atelier", "groups": [
+    {"title": "Explore", "actions": ["applications", "terminal"]},
+    {"title": "Session", "actions": ["lock", "logout"]}
+  ]},
+  "desktop": {
+    "wallpaper": "aurora-night",
+    "icons": [
+      {"label": "Launch", "action": "applications", "x": 612, "y": 124},
+      {"label": "Console", "action": "terminal", "x": 744, "y": 124},
+      {"label": "Secure", "action": "lock", "x": 612, "y": 232}
+    ]
+  },
+  "tokens": {"label_padding": 14, "task_radius": 10},
+  "responsive": {
+    "compact_max_width": 980,
+    "compact_layout": {
+      "start": [{"type": "widget", "id": "launcher"}],
+      "center": [{"type": "widget", "id": "tasks"}],
+      "end": [{"type": "widget", "id": "clock"}]
+    }
+  }
+}

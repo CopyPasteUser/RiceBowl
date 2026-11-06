@@ -7,7 +7,10 @@ on:
       - 'components/riceplate-wayland/**'
       - 'scripts/smoke_riceplate_native.sh'
       - 'scripts/compare_wayland_captures.py'
+      - 'scripts/verify_wayland_creator_examples.py'
       - 'tests/test_de_visual_qa.py'
+      - 'tests/test_de_creator_examples.py'
+      - 'examples/wayland/**'
       - 'tests/fixtures/riceplate-desktop-v5-overflow.json'
       - 'macrice/de/capture.py'
       - 'macrice/de/render.py'
@@ -18,7 +21,10 @@ on:
       - 'components/riceplate-wayland/**'
       - 'scripts/smoke_riceplate_native.sh'
       - 'scripts/compare_wayland_captures.py'
+      - 'scripts/verify_wayland_creator_examples.py'
       - 'tests/test_de_visual_qa.py'
+      - 'tests/test_de_creator_examples.py'
+      - 'examples/wayland/**'
       - 'tests/fixtures/riceplate-desktop-v5-overflow.json'
       - 'macrice/de/capture.py'
       - 'macrice/de/render.py'
@@ -30,7 +36,7 @@ permissions:
 jobs:
   native-layer-shell:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -163,6 +169,13 @@ jobs:
           assert captures['shell-v4'] != captures['desktop-v5'], 'Icons missing from v5 framebuffer'
           (directory / 'capture-manifest.json').write_text(json.dumps(manifest, indent=2, sort_keys=True) + '\n')
           PY
+      - name: Render both Creator demonstrators at four real output geometries
+        run: |
+          set -eu
+          mkdir -p dist/riceplate-native-preview/creator-examples
+          export PATH="$PWD/components/riceplate-wayland/target/release:$PATH"
+          python3 -m scripts.verify_wayland_creator_examples \
+            --output-dir "$PWD/dist/riceplate-native-preview/creator-examples"
       - name: Archive smoke-tested native RicePlate preview binary
         uses: actions/upload-artifact@v4
         with:
