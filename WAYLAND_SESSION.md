@@ -90,7 +90,10 @@ Fuzzel command without passing any recipe data to a shell. When labwc offers
 `wlr-foreign-toplevel-management`, the prototype also displays live window
 titles and supports click-to-activate via the Wayland seat; clicking an active
 task requests minimization. The window list
-is deliberately bounded and only the visible entries accept clicks; if the
+is deliberately bounded; when there are more windows than can fit, the native
+taskbar exposes `‹`/`›` page controls to reach remaining windows, automatically
+reveals the active window, and keeps input hit areas aligned with the visible
+window labels. Only visible entries accept clicks; if the
 protocol is missing the panel keeps its launcher and reports the limitation.
 It is **not** a replacement taskbar: it still lacks grouping, a calendar
 popover, tray, notification handling or multi-output ownership. Do not start it automatically

@@ -105,6 +105,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         primary_seat: None,
         toplevel_manager,
         tasks: Vec::new(),
+        task_offset: 0,
         pool: None,
         width: 0,
         height: 0,
@@ -146,6 +147,7 @@ struct RicePlate {
     primary_seat: Option<wl_seat::WlSeat>,
     toplevel_manager: Option<ZwlrForeignToplevelManagerV1>,
     tasks: Vec<Task>,
+    task_offset: usize,
     pool: Option<SlotPool>,
     width: u32,
     height: u32,
@@ -159,6 +161,17 @@ impl RicePlate {
     fn request_redraw(&mut self, qh: &QueueHandle<Self>) {
         self.needs_redraw = true;
         if !self.frame_pending { self.redraw(qh); }
+    }
+
+    fn reveal_task(&mut self, index: usize) {
+        let Some(view) = recipe::task_view(
+            &self.recipe, self.width, self.tasks.len(), self.task_offset,
+        ) else { return };
+        if index < view.start {
+            self.task_offset = index;
+        } else if index >= view.start + view.slots {
+            self.task_offset = index + 1 - view.slots;
+        }
     }
 
     fn redraw(&mut self, qh: &QueueHandle<Self>) {
@@ -196,17 +209,38 @@ impl RicePlate {
                               "Apps", self.recipe.foreground);
                 }
                 Widget::Tasks => {
-                    let visible = (placed.width / recipe::TASK_WIDTH) as usize;
-                    for (index, task) in self.tasks.iter().take(visible).enumerate() {
+                    let Some(view) = recipe::task_view(
+                        &self.recipe, width, self.tasks.len(), self.task_offset,
+                    ) else { continue };
+                    for (index, task) in self.tasks.iter().skip(view.start)
+                        .take(view.slots).enumerate() {
                         if !task.ready { continue; }
-                        let x = placed.x + (index as u32) * recipe::TASK_WIDTH;
+                        let consumed = (index as u32) * view.cell_width;
+                        let x = placed.x + consumed;
+                        let cell_width = if index + 1 == view.slots {
+                            view.content_width - consumed
+                        } else { view.cell_width };
                         if task.active {
                             fill_rect(canvas, width, height, x, 0,
-                                      recipe::TASK_WIDTH - 2, height, self.recipe.active);
+                                      cell_width.saturating_sub(2), height,
+                                      self.recipe.active);
                         }
                         let label = task_label(&task.title, &task.app_id);
+                        let label: String = label.chars().take(
+                            (cell_width.saturating_sub(16) / 8) as usize,
+                        ).collect();
                         draw_text(canvas, width, height, x + 10, height / 2 - 4,
                                   &label, self.recipe.foreground);
+                    }
+                    if view.prev {
+                        draw_text(canvas, width, height,
+                                  placed.x + view.content_width + 8,
+                                  height / 2 - 4, "<", self.recipe.foreground);
+                    }
+                    if view.next {
+                        draw_text(canvas, width, height,
+                                  placed.x + view.content_width + 32,
+                                  height / 2 - 4, ">", self.recipe.foreground);
                     }
                 }
                 Widget::Clock => {
@@ -305,6 +339,9 @@ impl LayerShellHandler for RicePlate {
         self.width = width;
         self.height = height;
         self.configured = true;
+        if let Some(index) = self.tasks.iter().position(|task| task.active && task.ready) {
+            self.reveal_task(index);
+        }
         self.request_redraw(qh);
     }
 }
@@ -344,7 +381,7 @@ impl SeatHandler for RicePlate {
 }
 
 impl PointerHandler for RicePlate {
-    fn pointer_frame(&mut self, _: &Connection, _: &QueueHandle<Self>,
+    fn pointer_frame(&mut self, _: &Connection, qh: &QueueHandle<Self>,
                      _: &wl_pointer::WlPointer, events: &[PointerEvent]) {
         for event in events {
             if &event.surface != self.layer.wl_surface() { continue }
@@ -352,7 +389,7 @@ impl PointerHandler for RicePlate {
                 if button == BTN_LEFT && event.position.1 >= 0.0
                     && event.position.1 < f64::from(self.height) {
                     match recipe::hit(event.position.0, self.width,
-                                      self.tasks.len(), &self.recipe) {
+                                      self.tasks.len(), self.task_offset, &self.recipe) {
                         Some(Hit::Launcher) => {
                             if let Err(error) = Command::new("fuzzel").spawn() {
                                 eprintln!("RicePlate: cannot open application launcher: {error}");
@@ -365,6 +402,23 @@ impl PointerHandler for RicePlate {
                                 } else if let Some(seat) = self.primary_seat.as_ref() {
                                     self.tasks[index].handle.activate(seat);
                                 }
+                            }
+                        }
+                        Some(Hit::PreviousTasks) => {
+                            if let Some(view) = recipe::task_view(
+                                &self.recipe, self.width, self.tasks.len(), self.task_offset,
+                            ) {
+                                self.task_offset = view.start.saturating_sub(view.slots);
+                                self.request_redraw(qh);
+                            }
+                        }
+                        Some(Hit::NextTasks) => {
+                            if let Some(view) = recipe::task_view(
+                                &self.recipe, self.width, self.tasks.len(), self.task_offset,
+                            ) {
+                                self.task_offset = (view.start + view.slots)
+                                    .min(self.tasks.len().saturating_sub(view.slots));
+                                self.request_redraw(qh);
                             }
                         }
                         None => {}
@@ -395,6 +449,7 @@ impl Dispatch<ZwlrForeignToplevelManagerV1, ()> for RicePlate {
             zwlr_foreign_toplevel_manager_v1::Event::Finished => {
                 state.toplevel_manager = None;
                 state.tasks.clear();
+                state.task_offset = 0;
                 state.request_redraw(qh);
             }
             _ => {}
@@ -411,11 +466,16 @@ impl Dispatch<ZwlrForeignToplevelHandleV1, ()> for RicePlate {
         if let zwlr_foreign_toplevel_handle_v1::Event::Closed = event {
             if let Some(index) = state.tasks.iter().position(|task| task.handle == *proxy) {
                 state.tasks.remove(index).handle.destroy();
+                if index < state.task_offset {
+                    state.task_offset -= 1;
+                }
                 state.request_redraw(qh);
             }
             return;
         }
-        if let Some(task) = state.tasks.iter_mut().find(|task| task.handle == *proxy) {
+        if let Some(index) = state.tasks.iter().position(|task| task.handle == *proxy) {
+            let task = &mut state.tasks[index];
+            let mut refresh = false;
             match event {
                 zwlr_foreign_toplevel_handle_v1::Event::Title { title } =>
                     task.title = title.chars().take(256).collect(),
@@ -426,9 +486,13 @@ impl Dispatch<ZwlrForeignToplevelHandleV1, ()> for RicePlate {
                         u32::from_ne_bytes(raw.try_into().unwrap_or_default()) == 2),
                 zwlr_foreign_toplevel_handle_v1::Event::Done => {
                     task.ready = true;
-                    state.request_redraw(qh);
+                    refresh = true;
                 }
                 _ => {}
+            }
+            if refresh {
+                if state.tasks[index].active { state.reveal_task(index); }
+                state.request_redraw(qh);
             }
         }
     }
