@@ -15,6 +15,7 @@ use serde::Deserialize;
 pub const LAUNCHER_WIDTH: u32 = 104;
 pub const TASK_WIDTH: u32 = 164;
 pub const CLOCK_WIDTH: u32 = 96;
+const PAGE_BUTTON_WIDTH: u32 = 24;
 const MAX_RECIPE_BYTES: usize = 64 * 1024;
 pub const MAX_TRACKED_TASKS: usize = 128;
 
@@ -36,6 +37,18 @@ pub struct PlacedWidget {
 pub enum Hit {
     Launcher,
     Task(usize),
+    PreviousTasks,
+    NextTasks,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct TaskViewport {
+    pub start: usize,
+    pub slots: usize,
+    pub cell_width: u32,
+    pub content_width: u32,
+    pub prev: bool,
+    pub next: bool,
 }
 
 pub struct PanelStyle {
@@ -205,14 +218,46 @@ pub fn layout(style: &PanelStyle, screen_width: u32, tasks: usize) -> Vec<Placed
     result
 }
 
-pub fn hit(x: f64, screen_width: u32, tasks: usize, style: &PanelStyle) -> Option<Hit> {
+pub fn task_view(style: &PanelStyle, screen_width: u32,
+                 tasks: usize, offset: usize) -> Option<TaskViewport> {
+    let item = layout(style, screen_width, tasks).into_iter()
+        .find(|placed| placed.widget == Widget::Tasks)?;
+    let slots = (item.width / TASK_WIDTH) as usize;
+    if slots == 0 { return None; }
+    let overflowing = tasks > slots;
+    let start = if overflowing { offset.min(tasks - slots) } else { 0 };
+    let controls = if overflowing { PAGE_BUTTON_WIDTH * 2 } else { 0 };
+    let content_width = item.width.saturating_sub(controls);
+    Some(TaskViewport {
+        start, slots, cell_width: content_width / slots as u32,
+        content_width, prev: overflowing && start > 0,
+        next: overflowing && start + slots < tasks,
+    })
+}
+
+pub fn hit(x: f64, screen_width: u32, tasks: usize,
+           offset: usize, style: &PanelStyle) -> Option<Hit> {
     if !x.is_finite() || x < 0.0 || x >= f64::from(screen_width) { return None; }
     for item in layout(style, screen_width, tasks) {
         if x < f64::from(item.x) || x >= f64::from(item.x + item.width) { continue; }
         return match item.widget {
             Widget::Launcher => Some(Hit::Launcher),
-            Widget::Tasks => Some(Hit::Task(
-                ((x - f64::from(item.x)) / f64::from(TASK_WIDTH)) as usize)),
+            Widget::Tasks => {
+                let view = task_view(style, screen_width, tasks, offset)?;
+                let local = x - f64::from(item.x);
+                if local >= f64::from(view.content_width) {
+                    if local < f64::from(view.content_width + PAGE_BUTTON_WIDTH) && view.prev {
+                        Some(Hit::PreviousTasks)
+                    } else if local >= f64::from(view.content_width + PAGE_BUTTON_WIDTH)
+                        && view.next {
+                        Some(Hit::NextTasks)
+                    } else { None }
+                } else {
+                    let index = ((local / f64::from(view.cell_width)) as usize)
+                        .min(view.slots - 1);
+                    Some(Hit::Task(view.start + index))
+                }
+            }
             Widget::Clock => None,
         };
     }
@@ -229,11 +274,11 @@ mod tests {
         let b = load("chrome").unwrap();
         assert_eq!((a.height, b.height), (36, 44));
         assert_ne!(a.background, b.background);
-        assert_eq!(hit(110.0, 800, 2, &a), Some(Hit::Task(0)));
-        assert_eq!(hit(110.0, 800, 2, &b), None);
-        assert_eq!(hit(250.0, 800, 2, &b), Some(Hit::Task(0)));
-        assert_eq!(hit(760.0, 800, 2, &b), None);
-        assert_eq!(hit(150.0, 180, 20, &b), None);
+        assert_eq!(hit(110.0, 800, 2, 0, &a), Some(Hit::Task(0)));
+        assert_eq!(hit(110.0, 800, 2, 0, &b), None);
+        assert_eq!(hit(250.0, 800, 2, 0, &b), Some(Hit::Task(0)));
+        assert_eq!(hit(760.0, 800, 2, 0, &b), None);
+        assert_eq!(hit(150.0, 180, 20, 0, &b), None);
         assert!(layout(&b, 180, 20).iter().all(|item| item.widget != Widget::Clock));
     }
 
@@ -248,9 +293,38 @@ mod tests {
             "\"end\": [\"network\", \"audio\", \"battery\", \"launcher\", \"tasks\", \"tray\"]"
         );
         let style = parse(&reordered, Some("classic")).unwrap();
-        assert_eq!(hit(40.0, 800, 2, &style), None);
-        assert_eq!(hit(390.0, 800, 2, &style), Some(Hit::Launcher));
-        assert_eq!(hit(490.0, 800, 2, &style), Some(Hit::Task(0)));
+        assert_eq!(hit(40.0, 800, 2, 0, &style), None);
+        assert_eq!(hit(390.0, 800, 2, 0, &style), Some(Hit::Launcher));
+        assert_eq!(hit(490.0, 800, 2, 0, &style), Some(Hit::Task(0)));
+    }
+
+    #[test]
+    fn overflow_pages_reach_all_windows_without_overlapping_hit_areas() {
+        let style = load("classic").unwrap();
+        let view = task_view(&style, 800, 10, 0).unwrap();
+        assert_eq!((view.slots, view.start), (3, 0));
+        assert!(!view.prev && view.next);
+        let start = LAUNCHER_WIDTH as f64;
+        let nav = start + f64::from(view.content_width);
+        assert_eq!(hit(start + 10.0, 800, 10, 0, &style), Some(Hit::Task(0)));
+        assert_eq!(hit(nav + 5.0, 800, 10, 0, &style), None);
+        assert_eq!(hit(nav + 30.0, 800, 10, 0, &style), Some(Hit::NextTasks));
+        assert_eq!(hit(start + 10.0, 800, 10, 3, &style), Some(Hit::Task(3)));
+        assert_eq!(hit(nav + 5.0, 800, 10, 3, &style), Some(Hit::PreviousTasks));
+        let last = task_view(&style, 800, 10, usize::MAX).unwrap();
+        assert_eq!(last.start, 7);
+        assert!(last.prev && !last.next);
+        assert_eq!(hit(start + 10.0, 800, 10, usize::MAX, &style), Some(Hit::Task(7)));
+        assert_eq!(hit(nav + 30.0, 800, 10, usize::MAX, &style), None);
+    }
+
+    #[test]
+    fn small_panels_and_unneeded_paging_do_not_expose_fake_controls() {
+        let style = load("chrome").unwrap();
+        assert!(task_view(&style, 180, 20, 0).is_none());
+        let view = task_view(&style, 800, 2, 99).unwrap();
+        assert_eq!((view.start, view.slots), (0, 2));
+        assert!(!view.prev && !view.next);
     }
 
     #[test]

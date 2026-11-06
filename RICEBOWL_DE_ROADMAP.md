@@ -123,6 +123,9 @@ affecting XFCE, including a failed-session recovery. **Not yet signed off.**
   an isolated labwc session, and restore Waybar on failed native start/crash.
   Explicit shutdown does not restart the fallback. The login-manager default
   remains Waybar while native functional parity is incomplete.
+- [x] Page through tracked Wayland windows when the native taskbar overflows,
+  with actual clickable previous/next regions, bounded labels, and automatic
+  reveal of the active window. Grouping and keyboard access remain open.
 - [ ] Build a Wayland-native panel through `wlr-layer-shell`.
 - [ ] Populate tasks/windows through a supported foreign-toplevel protocol.
 - [ ] Implement launchers, task groups, tray, calendar, menus and keyboard
