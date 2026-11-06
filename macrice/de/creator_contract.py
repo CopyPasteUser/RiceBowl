@@ -63,6 +63,33 @@ def describe_capture() -> dict[str, object]:
     }
 
 
+def describe_render() -> dict[str, object]:
+    """Offline optional headless renderer for one validated native recipe."""
+    return {
+        "contract_version": 1,
+        "command": "de render",
+        "required_options": ["--recipe", "--output"],
+        "optional_options": ["--width", "--height", "--scale", "--json"],
+        "default_geometry": {"width": 1366, "height": 768, "scale": 1.0},
+        "width_range": [640, 4096],
+        "height_range": [480, 2160],
+        "max_pixels": 16_777_216,
+        "scales": [1.0, 1.25, 1.5, 2.0],
+        "requires_binaries": ["labwc", "wlr-randr", "grim", "riceplate-native", "swaybg"],
+        "requires_running_wayland_session": False,
+        "requires_unprivileged_user": True,
+        "source": "validated bundled/imported/owner-private recipe",
+        "backend": "headless-labwc-native-riceplate",
+        "output": "new owner-private PNG, never overwrite",
+        "creates_temporary_compositor": True,
+        "keeps_processes_after_exit": False,
+        "mutates_active_desktop": False,
+        "functional_or_perceptual_fidelity": "not_measured",
+        "error_codes": ["invalid_render_request", "render_unavailable", "render_failed"],
+        "error_exit_code": 2,
+    }
+
+
 EDITABLE_PATHS = frozenset((
     "/name", "/panel/position", "/panel/height",
     *(f"/panel/sections/{name}" for name in recipes.SECTIONS),

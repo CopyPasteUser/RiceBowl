@@ -316,6 +316,21 @@ actual dimensions and SHA-256. The legacy manual helper
 outputs JSON dimensions, mean RGB pixel error and the fraction of changed
 pixels, not a made-up fidelity percentage. The native CI also captures a
 **genuine headless labwc screenshot** in its downloadable preview artifact.
+For reproducible screenshots **without an active Wayland login** (and without
+touching any current desktop), install `labwc`, `wlr-randr`, `grim`, `swaybg`
+and the experimental `riceplate-native` binary, then run as a normal user:
+
+```bash
+ricebowl de render --recipe classic \
+  --output "$HOME/riceplate-isolated.png" \
+  --width 1024 --height 768 --scale 1.0 --json
+```
+
+This starts a temporary headless compositor (Pixman), renders the requested
+validated rice with native RicePlate and a bundled wallpaper, captures it,
+and stops the session automatically. A new private PNG is published only on
+success. `--scale` accepts 1, 1.25, 1.5 or 2. This is a rendering aid, **not**
+proof of interactive correctness, visual similarity or real-GPU compatibility.
 For schema-v5 rices the **optional region inspection** also locates the real
 panel, remaining desktop and individual icon hit areas. It identifies clipped
 icons or icons colliding with the panel; this describes geometry, not whether
