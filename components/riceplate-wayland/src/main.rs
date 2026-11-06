@@ -291,9 +291,14 @@ impl RicePlate {
         let outputs: Vec<_> = self.outputs.outputs().filter(|output|
             output != primary && self.outputs.info(output).is_some())
             .take(MAX_SECONDARY_OUTPUTS).collect();
+        let old_count = self.mirrors.len();
         self.mirrors.retain(|mirror| outputs.contains(&mirror.output));
+        if old_count != self.mirrors.len() {
+            eprintln!("RicePlate: secondary panels removed: {} -> {}", old_count, self.mirrors.len());
+        }
         for output in outputs {
             if self.mirrors.iter().any(|mirror| mirror.output == output) { continue; }
+            eprintln!("RicePlate: creating secondary panel on {output:?}");
             let surface = self.layer_shell.create_layer_surface(
                 qh, self.compositor.create_surface(qh), Layer::Top,
                 Some("riceplate-output-panel"), Some(&output),
@@ -946,6 +951,7 @@ impl CompositorHandler for RicePlate {
         output: &wl_output::WlOutput,
     ) {
         if surface == self.layer.wl_surface() {
+            eprintln!("RicePlate: primary panel entered {output:?}");
             self.primary_output = Some(output.clone());
             self.reflow_icons();
             self.sync_mirrors(qh);
@@ -968,6 +974,7 @@ impl CompositorHandler for RicePlate {
         output: &wl_output::WlOutput,
     ) {
         if surface == self.layer.wl_surface() {
+            eprintln!("RicePlate: primary panel left {output:?}");
             if self.primary_output.as_ref() == Some(output) {
                 self.primary_output = None;
             }

@@ -27,6 +27,14 @@ dbus-run-session -- sh -eu -c '
     compositor=$!
     plate=
     cleanup() {
+        status=$?
+        if [ "$status" -ne 0 ]; then
+            echo "RicePlate two-output diagnostic log:" >&2
+            sed -n "1,120p" "$runtime/plate.log" >&2 || :
+            echo "labwc two-output diagnostic log:" >&2
+            sed -n "1,100p" "$runtime/labwc.log" >&2 || :
+            wlr-randr >&2 || :
+        fi
         if [ -n "$plate" ]; then kill "$plate" 2>/dev/null || :; wait "$plate" 2>/dev/null || :; fi
         kill "$compositor" 2>/dev/null || :
         wait "$compositor" 2>/dev/null || :
