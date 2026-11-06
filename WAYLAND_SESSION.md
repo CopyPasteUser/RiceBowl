@@ -306,8 +306,33 @@ Capture refuses to overwrite existing files. Comparison requires Pillow and
 outputs JSON dimensions, mean RGB pixel error and the fraction of changed
 pixels, not a made-up fidelity percentage. The native CI also captures a
 **genuine headless labwc screenshot** in its downloadable preview artifact.
-Real hardware, several resolutions, per-region comparison, image font tolerance
-and functional keyboard/navigation testing remain separate release gates.
+For schema-v5 rices the **optional region inspection** also locates the real
+panel, remaining desktop and individual icon hit areas. It identifies clipped
+icons or icons colliding with the panel; this describes geometry, not whether
+the compositor successfully drew or activated each control. To obtain private
+no-overwrite visual diagnostics:
+
+```bash
+python3 scripts/compare_wayland_captures.py \
+  "$HOME/reference.png" "$HOME/riceplate-actual.png" \
+  --recipe "$HOME/my-desktop.json" \
+  --overlay "$HOME/compare-overlay.png" \
+  --heatmap "$HOME/compare-heatmap.png"
+```
+
+The script emits machine-readable overall and per-region RGB errors plus a
+recipe fingerprint. The overlay blends the two original captures; the red
+heatmap amplifies changed pixels. Both outputs are new, private `0600` files,
+and the source images and recipe are never modified. Reference and actual
+must have the same dimensions, be PNG and fit the 16-megapixel safety bound.
+
+Native CI now captures the *same running shell* at 1024×768, 1366×768 and
+1920×1080 plus a 1.25-scale case. The downloadable build artifact includes
+the actual compositor PNGs and a `capture-manifest.json` with hashes, recipe,
+scale and inspected geometry. A self-comparison in CI checks only geometry;
+it is **not** a similarity score or a replacement for a manually approved
+reference. Real-hardware mixed-DPI/multi-output behavior, font tolerance,
+visual baseline sign-off and functional keyboard testing remain open.
 
 #### Existing recipe creation, import/export and selection
 

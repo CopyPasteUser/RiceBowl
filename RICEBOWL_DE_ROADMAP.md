@@ -208,9 +208,11 @@ depend on the XFCE session.
 - [x] Start a **real Wayland screenshot QA path**: capture headless native
   labwc output with grim into CI artifacts, allow no-overwrite manual captures
   and report deterministic pixel-difference metrics for an offline reference.
-  This is diagnostic tooling, not a validated perceptual/functional accuracy
-  score. Real multi-resolution/fractional-scale captures and GUI acceptance
-  remain open.
+  Extended with real 1024×768, 1366×768, 1920×1080 and 1.25-scale CI capture
+  evidence, manifest hashes, panel/icon-region differences, clipping checks,
+  private overlay and heatmap diagnostics. This is diagnostic tooling, not a
+  validated perceptual/functional accuracy score. Real mixed-DPI/multi-output
+  device acceptance, approved image baselines and interaction checks remain open.
 - [ ] Extend schema-v5 desktop shortcuts with moving, keyboard accessibility,
   focus states, monitor-aware position reflow and hotplug. Add reusable native
   desktop widgets and their bounded recipe contracts. Static clickable icons
@@ -279,6 +281,9 @@ depend on the XFCE session.
   emit machine-readable diagnostics and artifacts, then support iterative
   recipe correction. Separate anti-aliasing/font tolerance from actual
   layout regressions and require functional tests alongside similarity.
+  The first per-region RGB geometry diagnostics and capture provenance are
+  implemented; perceptual/font-tolerant comparisons, reference-baseline
+  approval and automated corrective iteration are still outstanding.
 - [ ] Validate malformed/oversized recipes, missing assets, unsupported
   widgets/actions, keyboard/focus semantics and rollback before applying.
 - [ ] Port all seven styles individually while preserving names, legacy
