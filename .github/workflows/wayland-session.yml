@@ -45,11 +45,13 @@ jobs:
           # Session-specific DesktopNames is valid for display managers but
           # desktop-file-validate only knows ordinary application entries.
           sh -n scripts/build_wayland_session_deb.sh
+          sh -n scripts/test_wayland_package_reproducibility.sh
           sh -n scripts/smoke_wayland_session.sh
       - name: Build non-installed login session package
         run: |
           sh scripts/build_wayland_session_deb.sh
           dpkg-deb --field dist/ricebowl-wayland-session_0.1.0~preview1_all.deb
+          sh scripts/test_wayland_package_reproducibility.sh
       - name: Boot actual labwc and Waybar headlessly
         run: |
           timeout -k 5s 45s sh scripts/smoke_wayland_session.sh

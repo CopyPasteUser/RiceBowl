@@ -23,6 +23,12 @@ RiceBowl-specific portal preferences and a namespaced systemd user target.
 It **does not install RiceBowl itself**, overwrite `~/.config/labwc`, edit
 global XFCE configuration or set the default session.
 
+The preview `.deb` builder normalizes filesystem/archive timestamps and
+supports the standard `SOURCE_DATE_EPOCH` override. Run
+`sh scripts/test_wayland_package_reproducibility.sh` to verify that two builds
+at different wall-clock times are byte-for-byte identical. This verifies the
+small **session-entry package**, not a complete RiceBowl 1.0 application bundle.
+
 ## Build and opt in (Debian/Ubuntu/Mint)
 
 From the current RiceBowl checkout:
