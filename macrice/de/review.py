@@ -78,6 +78,14 @@ def _snapshot(token: str) -> tuple[dict[str, Any], dict[str, Any]]:
     return manifest, summary
 
 
+def semantic_changes(base: dict[str, Any], target: dict[str, Any]) -> list[dict[str, Any]]:
+    """Ordered, bounded diff shared by read-only reviews and draft authors."""
+    old_fields = _fields(base)
+    new_fields = _fields(target)
+    return [{"path": key, "before": old_fields[key], "after": new_fields[key]}
+            for key in old_fields if old_fields[key] != new_fields[key]]
+
+
 def review(recipe_token: str, compare_token: str | None = None) -> dict[str, Any]:
     """Validate a source/base and report semantic changes without side effects."""
     catalog.validate_catalog_contract()
@@ -93,10 +101,7 @@ def review(recipe_token: str, compare_token: str | None = None) -> dict[str, Any
     }
     if compare_token is not None:
         base, base_summary = _snapshot(compare_token)
-        old_fields = _fields(base)
-        new_fields = _fields(target)
-        changes = [{"path": key, "before": old_fields[key], "after": new_fields[key]}
-                   for key in old_fields if old_fields[key] != new_fields[key]]
+        changes = semantic_changes(base, target)
         result["comparison"] = {
             "base_id": base["id"],
             "base_semantic_sha256": base_summary["semantic_sha256"],

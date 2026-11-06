@@ -70,7 +70,7 @@ def parser() -> argparse.ArgumentParser:
             trace.add_argument("--trace-path", action="store_true", help="Print evidence file location without running the shell")
     commands.add_parser("session-sync", help="Reconcile active rice after XFCE autostart")
     de = commands.add_parser("de", help="Inspect experimental RiceBowl Wayland desktop prerequisites")
-    de.add_argument("action", choices=("check", "start", "shell", "catalog", "review", "recipes", "recipe-init",
+    de.add_argument("action", choices=("check", "start", "shell", "catalog", "review", "draft-edit", "recipes", "recipe-init",
                                        "recipe-import", "recipe-export", "recipe-current",
                                        "recipe-select", "recipe-restore"))
     de.add_argument("--json", action="store_true", help="Read-only machine-readable preflight")
@@ -78,6 +78,7 @@ def parser() -> argparse.ArgumentParser:
                     help="Explicitly test a separate labwc session inside an active desktop")
     de.add_argument("--recipe", help="RicePlate recipe: built-in/imported ID or an owner-private absolute JSON path")
     de.add_argument("--compare", help="Base recipe ID or owner-private absolute path for read-only de review")
+    de.add_argument("--edit", type=Path, help="Owner-controlled absolute JSON edit operations for de draft-edit")
     de.add_argument("--panel", choices=("waybar", "native"), default="waybar",
                     help="Session panel (native RicePlate is experimental and falls back to Waybar)")
     de.add_argument("--base", choices=("classic", "chrome"),
@@ -145,12 +146,14 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "de":
             if args.action != "review" and args.compare is not None:
                 raise ValueError("--compare only applies to de review")
+            if args.action != "draft-edit" and args.edit is not None:
+                raise ValueError("--edit only applies to de draft-edit")
             if args.action != "recipe-init" and any((args.base, args.id, args.name)):
                 raise ValueError("--base, --id and --name only apply to de recipe-init")
             if args.action != "recipe-init" and args.schema_version != 1:
                 raise ValueError("--schema-version only applies to de recipe-init")
-            if args.action not in ("recipe-init", "recipe-export") and args.output:
-                raise ValueError("--output only applies to de recipe-init or de recipe-export")
+            if args.action not in ("recipe-init", "recipe-export", "draft-edit") and args.output:
+                raise ValueError("--output only applies to de recipe-init, recipe-export or draft-edit")
             if args.action == "recipe-init":
                 if (args.json or args.nested or args.recipe or args.panel != "waybar"
                         or not args.id or not args.name or not args.output):
@@ -255,6 +258,26 @@ def main(argv: list[str] | None = None) -> int:
                         for change in changes:
                             print(f"  {change['path']}: {change['before']!r} -> {change['after']!r}")
                     print("Read-only review; no desktop changes. Use a nested preview to inspect it.")
+                return 0
+            if args.action == "draft-edit":
+                if (args.nested or args.panel != "waybar" or not args.recipe
+                        or not args.edit or not args.output):
+                    raise ValueError("de draft-edit requires --recipe, --edit and --output")
+                from .de.drafts import DraftError, create_edit, invalid_edit
+                try:
+                    result = create_edit(recipe_token=args.recipe, edit_source=args.edit,
+                                         destination=args.output)
+                except DraftError as exc:
+                    if not args.json:
+                        raise
+                    print(json.dumps(invalid_edit(exc), indent=2))
+                    return 2
+                if args.json:
+                    print(json.dumps(result, indent=2, ensure_ascii=False))
+                else:
+                    print(f"Created private draft for {result['recipe_id']} ({len(result['changes'])} changes)")
+                    print(f"Review/preview: ricebowl de review --recipe {shlex.quote(str(args.output))}")
+                    print("Not applied or selected; the original recipe remains unchanged")
                 return 0
             if args.action == "recipes":
                 if args.nested or args.panel != "waybar":

@@ -214,6 +214,13 @@ depend on the XFCE session.
   inventory and safe structured errors. It uses the existing restricted recipe
   loader and never changes selected rices. This is not a graphical preview,
   transactional draft editor, asset-manifest validator or full Creator API.
+- [x] Add the first **agent-authored component edit** contract to the catalog:
+  allowlisted JSON Pointer `set` operations, bounded input, immutable recipe
+  identity/schema, revalidation through the Runtime's panel parser, private
+  no-overwrite draft creation (`ricebowl de draft-edit`), stable JSON error
+  response and reviewable semantic changes. This supplies no executable
+  plugin hooks or resident Creator process. Full multi-region editing,
+  responsive rules, visual QA and live transaction/rollback are still open.
 - [ ] Publish a **versioned, machine-readable Creator contract** (CLI JSON
   output first; optional local IPC only if justified) for discovering
   components, creating/editing drafts, validating recipes, previewing the
