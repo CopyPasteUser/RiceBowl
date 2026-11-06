@@ -76,6 +76,22 @@ ricebowl de start --nested --recipe classic
 ricebowl de start --nested --recipe chrome
 ```
 
+For offline authoring agents and mockup-to-rice experiments, the **read-only,
+versioned panel component catalog** describes what the current native and
+Waybar backends actually implement:
+
+```bash
+ricebowl de catalog --json
+```
+
+The stable `catalog_version` identifies the response format, while
+`recipe.schema_versions` identifies supported panel recipe versions. Each
+component has a known ID, real backend support level, fixed behavior and
+keyboard-availability flag. Unsupported functionality is reported explicitly
+instead of presenting an imaginary action or widget. This catalog never reads
+private desktop state, invokes a model or changes a rice; it is the first
+machine-readable Creator *discovery* contract, not the full Creator API.
+
 Custom recipes use the strict JSON schema illustrated in
 `macrice/de/resources/recipes/`. Supply an **absolute path** to an owner-only,
 regular JSON file (`chmod 600 YOUR_FILE.json`). Recipes are limited to 64 KiB,

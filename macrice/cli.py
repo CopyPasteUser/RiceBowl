@@ -70,7 +70,7 @@ def parser() -> argparse.ArgumentParser:
             trace.add_argument("--trace-path", action="store_true", help="Print evidence file location without running the shell")
     commands.add_parser("session-sync", help="Reconcile active rice after XFCE autostart")
     de = commands.add_parser("de", help="Inspect experimental RiceBowl Wayland desktop prerequisites")
-    de.add_argument("action", choices=("check", "start", "shell", "recipes", "recipe-init",
+    de.add_argument("action", choices=("check", "start", "shell", "catalog", "recipes", "recipe-init",
                                        "recipe-import", "recipe-export", "recipe-current",
                                        "recipe-select", "recipe-restore"))
     de.add_argument("--json", action="store_true", help="Read-only machine-readable preflight")
@@ -210,6 +210,21 @@ def main(argv: list[str] | None = None) -> int:
                     raise ValueError("de shell does not accept --json, --nested, --recipe or --panel")
                 from .de.session import shell
                 return shell()
+            if args.action == "catalog":
+                if args.nested or args.recipe or args.panel != "waybar":
+                    raise ValueError("de catalog is read-only and accepts only --json")
+                from .de.catalog import describe, validate_catalog_contract
+                validate_catalog_contract()
+                catalog = describe()
+                if args.json:
+                    print(json.dumps(catalog, indent=2))
+                else:
+                    print(f"RiceBowl panel component catalog v{catalog['catalog_version']}")
+                    print("Supported by the experimental native panel / Waybar fallback:")
+                    for component in catalog["components"]:
+                        print(f"  {component['id']:8} {component['native']:12} / {component['waybar']}")
+                    print("Full desktop composition and screenshot-to-rice conversion: not available")
+                return 0
             if args.action == "recipes":
                 if args.nested or args.panel != "waybar":
                     raise ValueError("de recipes accepts only --recipe and --json")

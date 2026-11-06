@@ -25,6 +25,7 @@ SECTIONS = ("start", "center", "end")
 COLORS = ("background", "foreground", "active")
 METRIC_DEFAULTS = (104, 164, 96)
 METRIC_FIELDS = ("launcher_width", "task_width", "clock_width")
+METRIC_LIMITS = ((64, 256), (96, 256), (64, 256))
 BUILTINS = {
     "classic": Path(__file__).resolve().parent / "resources/recipes/classic.json",
     "chrome": Path(__file__).resolve().parent / "resources/recipes/chrome.json",
@@ -91,9 +92,8 @@ def parse(raw: bytes) -> PanelRecipe:
     metrics: tuple[int, int, int] | None = None
     if version == 2:
         sizes = _strict_keys(panel["metrics"], set(METRIC_FIELDS), "Panel metrics")
-        limits = ((64, 256), (96, 256), (64, 256))
         if any(type(sizes[key]) is not int or not lower <= sizes[key] <= upper
-               for key, (lower, upper) in zip(METRIC_FIELDS, limits)):
+               for key, (lower, upper) in zip(METRIC_FIELDS, METRIC_LIMITS)):
             raise RecipeError("Panel metrics must be bounded integer widths in pixels")
         metrics = tuple(sizes[key] for key in METRIC_FIELDS)
     sections = _strict_keys(panel["sections"], set(SECTIONS), "Panel sections")
