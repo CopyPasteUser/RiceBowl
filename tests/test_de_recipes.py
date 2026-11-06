@@ -123,6 +123,76 @@ class RecipeTests(unittest.TestCase):
                 self.assertEqual(main(command), 1)
             self.assertEqual(destination.read_bytes(), original)
 
+    def test_schema_v2_changes_waybar_widget_widths_but_preserves_v1(self):
+        source = _valid()
+        legacy = recipes.parse(json.dumps(source).encode())
+        self.assertIsNone(legacy.metrics)
+        _, legacy_css = recipes.waybar_config(legacy)
+        self.assertNotIn("min-width", legacy_css)
+
+        source["schema_version"] = 2
+        source["panel"]["metrics"] = {
+            "launcher_width": 120, "task_width": 196, "clock_width": 80,
+        }
+        authored = recipes.parse(json.dumps(source).encode())
+        self.assertEqual(authored.metrics, (120, 196, 80))
+        config, css = recipes.waybar_config(authored)
+        self.assertEqual(json.loads(config)["height"], 36)
+        self.assertIn("#custom-rice-launcher { min-width: 104px; }", css)
+        self.assertIn("#taskbar button { min-width: 182px; }", css)
+        self.assertIn("#clock { min-width: 64px; }", css)
+
+    def test_schema_v2_requires_all_metrics_and_rejects_invalid_values(self):
+        source = _valid()
+        source["schema_version"] = 2
+        with self.assertRaisesRegex(recipes.RecipeError, "exactly"):
+            recipes.parse(json.dumps(source).encode())
+        source["panel"]["metrics"] = {
+            "launcher_width": 104, "task_width": 164, "clock_width": 96,
+        }
+        for key, invalid in (("launcher_width", 63), ("launcher_width", 257),
+                             ("task_width", 95), ("task_width", True),
+                             ("clock_width", 257), ("clock_width", "96")):
+            with self.subTest(key=key, invalid=invalid):
+                broken = json.loads(json.dumps(source))
+                broken["panel"]["metrics"][key] = invalid
+                with self.assertRaisesRegex(recipes.RecipeError, "bounded integer"):
+                    recipes.parse(json.dumps(broken).encode())
+        for malformed in (dict(launcher_width=100, task_width=100),
+                          dict(launcher_width=100, task_width=100, clock_width=100,
+                               exec="anything")):
+            with self.assertRaisesRegex(recipes.RecipeError, "exactly"):
+                source["panel"]["metrics"] = malformed
+                recipes.parse(json.dumps(source).encode())
+        source = _valid()
+        source["panel"]["metrics"] = {
+            "launcher_width": 104, "task_width": 164, "clock_width": 96,
+        }
+        with self.assertRaisesRegex(recipes.RecipeError, "exactly"):
+            recipes.parse(json.dumps(source).encode())
+
+    def test_cli_schema_v2_template_roundtrip_and_flag_scope(self):
+        from macrice.cli import main
+        with tempfile.TemporaryDirectory() as directory:
+            destination = Path(directory) / "v2.json"
+            command = ["de", "recipe-init", "--schema-version", "2", "--base", "chrome",
+                       "--id", "tuned-panel", "--name", "Custom panel", "--output",
+                       str(destination)]
+            with mock.patch("builtins.print"):
+                self.assertEqual(main(command), 0)
+            authored = recipes.load(str(destination))
+            self.assertEqual(authored.recipe_id, "tuned-panel")
+            self.assertEqual(authored.metrics, recipes.METRIC_DEFAULTS)
+            self.assertEqual(json.loads(destination.read_text())["schema_version"], 2)
+            self.assertEqual(destination.stat().st_mode & 0o777, 0o600)
+            with mock.patch("sys.stderr"):
+                self.assertEqual(main(command), 1)
+                self.assertEqual(main(["de", "recipes", "--schema-version", "2"]), 1)
+            with self.assertRaisesRegex(recipes.RecipeError, "Unsupported"):
+                recipes.create_from_template(source="chrome", destination=destination,
+                                             recipe_id="valid-id", name="Valid name",
+                                             schema_version=3)
+
     def test_recipe_init_rejects_invalid_metadata_before_writing(self):
         with tempfile.TemporaryDirectory() as directory:
             destination = Path(directory) / "new.json"

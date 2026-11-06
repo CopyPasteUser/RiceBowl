@@ -54,6 +54,8 @@ pub struct TaskViewport {
 pub struct PanelStyle {
     pub height: u32,
     pub top: bool,
+    /// Launcher, per-task and clock logical widths (schema v1 uses defaults).
+    pub widths: [u32; 3],
     pub sections: [Vec<Widget>; 3],
     pub background: u32,
     pub foreground: u32,
@@ -76,6 +78,24 @@ struct Panel {
     position: String,
     height: u32,
     sections: Sections,
+    // Distinguish an absent field from an explicitly supplied JSON null.
+    #[serde(default, deserialize_with = "deserialize_metrics")]
+    metrics: Option<PanelMetrics>,
+}
+
+fn deserialize_metrics<'de, D>(deserializer: D) -> Result<Option<PanelMetrics>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    PanelMetrics::deserialize(deserializer).map(Some)
+}
+
+#[derive(Deserialize, Clone, Copy)]
+#[serde(deny_unknown_fields)]
+struct PanelMetrics {
+    launcher_width: u32,
+    task_width: u32,
+    clock_width: u32,
 }
 
 #[derive(Deserialize)]
@@ -107,7 +127,7 @@ pub fn parse(raw: &str, expected_id: Option<&str>) -> Result<PanelStyle, Box<dyn
     }
     let recipe: Recipe = serde_json::from_str(raw)?;
     let id = recipe.id.as_bytes();
-    if recipe.schema_version != 1 || id.len() < 2 || id.len() > 32
+    if ![1, 2].contains(&recipe.schema_version) || id.len() < 2 || id.len() > 32
         || !id[0].is_ascii_lowercase()
         || !id.iter().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || *b == b'-')
         || expected_id.is_some_and(|expected| expected != recipe.id.as_str())
@@ -117,6 +137,15 @@ pub fn parse(raw: &str, expected_id: Option<&str>) -> Result<PanelStyle, Box<dyn
         || !["top", "bottom"].contains(&recipe.panel.position.as_str()) {
         return Err("RicePlate recipe metadata or dimensions are invalid".into());
     }
+    let widths = match (recipe.schema_version, recipe.panel.metrics) {
+        (1, None) => [LAUNCHER_WIDTH, TASK_WIDTH, CLOCK_WIDTH],
+        (2, Some(metrics))
+            if (64..=256).contains(&metrics.launcher_width)
+                && (96..=256).contains(&metrics.task_width)
+                && (64..=256).contains(&metrics.clock_width) =>
+            [metrics.launcher_width, metrics.task_width, metrics.clock_width],
+        _ => return Err("RicePlate schema v2 requires bounded panel metrics; v1 forbids them".into()),
+    };
     let mut seen = HashSet::new();
     let mut sections: [Vec<Widget>; 3] = std::array::from_fn(|_| Vec::new());
     let source = [&recipe.panel.sections.start, &recipe.panel.sections.center,
@@ -143,6 +172,7 @@ pub fn parse(raw: &str, expected_id: Option<&str>) -> Result<PanelStyle, Box<dyn
     Ok(PanelStyle {
         height: recipe.panel.height,
         top: recipe.panel.position == "top",
+        widths,
         sections,
         background: color(&recipe.colors.background)?,
         foreground: color(&recipe.colors.foreground)?,
@@ -179,25 +209,26 @@ pub fn load(name_or_path: &str) -> Result<PanelStyle, Box<dyn Error>> {
     parse(&raw, expected)
 }
 
-fn width_for(widget: Widget, tasks: usize) -> u32 {
+fn width_for(style: &PanelStyle, widget: Widget, tasks: usize) -> u32 {
     match widget {
-        Widget::Launcher => LAUNCHER_WIDTH,
-        Widget::Clock => CLOCK_WIDTH,
-        Widget::Tasks => tasks as u32 * TASK_WIDTH,
+        Widget::Launcher => style.widths[0],
+        Widget::Clock => style.widths[2],
+        Widget::Tasks => tasks as u32 * style.widths[1],
     }
 }
 
 pub fn layout(style: &PanelStyle, screen_width: u32, tasks: usize) -> Vec<PlacedWidget> {
     let fixed_width: u32 = style.sections.iter().flatten().filter(|&&w| w != Widget::Tasks)
-        .map(|&w| width_for(w, 0)).sum();
-    let show_clock = screen_width >= fixed_width;
+        .map(|&w| width_for(style, w, 0)).sum();
+    let has_clock = style.sections.iter().flatten().any(|&w| w == Widget::Clock);
+    let show_clock = !has_clock || screen_width >= fixed_width;
     let effective_fixed = if show_clock { fixed_width }
-        else { fixed_width.saturating_sub(CLOCK_WIDTH) };
+        else { fixed_width.saturating_sub(style.widths[2]) };
     let visible = tasks.min(MAX_TRACKED_TASKS)
-        .min((screen_width.saturating_sub(effective_fixed + 8) / TASK_WIDTH) as usize);
+        .min((screen_width.saturating_sub(effective_fixed + 8) / style.widths[1]) as usize);
     let section_width = |widgets: &[Widget]| -> u32 {
         widgets.iter().filter(|&&w| w != Widget::Clock || show_clock)
-            .map(|&w| width_for(w, visible)).sum()
+            .map(|&w| width_for(style, w, visible)).sum()
     };
     let widths: [u32; 3] = std::array::from_fn(|i| section_width(&style.sections[i]));
     let end_x = screen_width.saturating_sub(widths[2]);
@@ -208,7 +239,7 @@ pub fn layout(style: &PanelStyle, screen_width: u32, tasks: usize) -> Vec<Placed
         let mut x = begin;
         for &widget in &style.sections[index] {
             if widget == Widget::Clock && !show_clock { continue; }
-            let width = width_for(widget, visible);
+            let width = width_for(style, widget, visible);
             if width > 0 {
                 result.push(PlacedWidget { widget, x, width });
                 x = x.saturating_add(width);
@@ -222,7 +253,7 @@ pub fn task_view(style: &PanelStyle, screen_width: u32,
                  tasks: usize, offset: usize) -> Option<TaskViewport> {
     let item = layout(style, screen_width, tasks).into_iter()
         .find(|placed| placed.widget == Widget::Tasks)?;
-    let slots = (item.width / TASK_WIDTH) as usize;
+    let slots = (item.width / style.widths[1]) as usize;
     if slots == 0 { return None; }
     let overflowing = tasks > slots;
     let start = if overflowing { offset.min(tasks - slots) } else { 0 };
@@ -335,5 +366,37 @@ mod tests {
                "\"schema_version\": 1, \"exec\": \"payload\""), None).is_err());
         assert!(parse(&"x".repeat(65_537), None).is_err());
         assert!(load("relative.json").is_err());
+    }
+
+    #[test]
+    fn v2_metrics_resize_real_widget_geometry_and_hit_testing() {
+        let original = include_str!("../../../macrice/de/resources/recipes/classic.json");
+        let v2 = original.replace("\"schema_version\": 1", "\"schema_version\": 2")
+            .replace("\"height\": 36,",
+                     "\"height\": 36, \"metrics\": {\"launcher_width\": 120, \"task_width\": 196, \"clock_width\": 80},");
+        let style = parse(&v2, Some("classic")).unwrap();
+        assert_eq!(style.widths, [120, 196, 80]);
+        let placed = layout(&style, 800, 2);
+        assert_eq!(placed.iter().find(|item| item.widget == Widget::Launcher).unwrap().width, 120);
+        assert_eq!(placed.iter().find(|item| item.widget == Widget::Tasks).unwrap().width, 392);
+        assert_eq!(hit(119.0, 800, 2, 0, &style), Some(Hit::Launcher));
+        assert_eq!(hit(121.0, 800, 2, 0, &style), Some(Hit::Task(0)));
+        assert_eq!(hit(320.0, 800, 2, 0, &style), Some(Hit::Task(1)));
+        assert_eq!(task_view(&style, 800, 10, 0).unwrap().slots, 3);
+    }
+
+    #[test]
+    fn v2_requires_exact_bounded_metrics_and_v1_stays_strict() {
+        let original = include_str!("../../../macrice/de/resources/recipes/classic.json");
+        let v2_without_metrics = original.replace("\"schema_version\": 1", "\"schema_version\": 2");
+        assert!(parse(&v2_without_metrics, None).is_err());
+        let with_metrics = original.replace("\"height\": 36,",
+            "\"height\": 36, \"metrics\": {\"launcher_width\": 120, \"task_width\": 196, \"clock_width\": 80},");
+        assert!(parse(&with_metrics, None).is_err());
+        let with_null = original.replace("\"height\": 36,", "\"height\": 36, \"metrics\": null,");
+        assert!(parse(&with_null, None).is_err());
+        let invalid = with_metrics.replace("\"schema_version\": 1", "\"schema_version\": 2")
+            .replace("\"task_width\": 196", "\"task_width\": 1");
+        assert!(parse(&invalid, None).is_err());
     }
 }

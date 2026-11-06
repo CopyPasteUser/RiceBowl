@@ -179,6 +179,10 @@ depend on the XFCE session.
 - [x] Provide an initial safe author entrypoint for bundled-to-private recipe
   creation and read-only custom validation through `ricebowl de recipe-init`
   and `de recipes --recipe`.
+- [x] Extend the strictly validated **panel-only** recipe contract with opt-in
+  schema-v2 launcher/task/clock widths; apply the widths to native RicePlate
+  geometry and hit testing, and expose minimum widths in the Waybar adapter.
+  Keep schema v1 as the unchanged default; a complete RicePack v2 is pending.
 - [x] Allow safe offline import/export of validated, non-executable, panel-only
   JSON recipes into a private per-user collection; preview by imported ID.
   Full multi-component RicePacks with artwork, screenshot conversion and a

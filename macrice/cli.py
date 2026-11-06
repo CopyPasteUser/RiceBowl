@@ -81,6 +81,8 @@ def parser() -> argparse.ArgumentParser:
                     help="Session panel (native RicePlate is experimental and falls back to Waybar)")
     de.add_argument("--base", choices=("classic", "chrome"),
                     help="Bundled base recipe for de recipe-init")
+    de.add_argument("--schema-version", type=int, choices=(1, 2), default=1,
+                    help="Panel recipe schema for de recipe-init (default: 1; use 2 for sizing)")
     de.add_argument("--id", help="Lowercase recipe identifier for de recipe-init")
     de.add_argument("--name", help="Human-readable recipe name for de recipe-init")
     de.add_argument("--output", type=Path, help="Absolute .json destination for de recipe-init or recipe-export")
@@ -142,6 +144,8 @@ def main(argv: list[str] | None = None) -> int:
         if args.command == "de":
             if args.action != "recipe-init" and any((args.base, args.id, args.name)):
                 raise ValueError("--base, --id and --name only apply to de recipe-init")
+            if args.action != "recipe-init" and args.schema_version != 1:
+                raise ValueError("--schema-version only applies to de recipe-init")
             if args.action not in ("recipe-init", "recipe-export") and args.output:
                 raise ValueError("--output only applies to de recipe-init or de recipe-export")
             if args.action == "recipe-init":
@@ -151,7 +155,8 @@ def main(argv: list[str] | None = None) -> int:
                 from .de.recipes import create_from_template
                 result = create_from_template(source=args.base or "classic",
                                               destination=args.output,
-                                              recipe_id=args.id, name=args.name)
+                                              recipe_id=args.id, name=args.name,
+                                              schema_version=args.schema_version)
                 print(f"Created private RicePlate recipe {result.recipe_id}: {args.output}")
                 print(f"Preview: ricebowl de start --nested --recipe {shlex.quote(str(args.output))}")
                 return 0

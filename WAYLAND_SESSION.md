@@ -135,6 +135,27 @@ no-overwrite operation. Edit its `panel.sections`, `position`, `height` and
 preview. No shell code from the recipe is executed. This is **manual assisted
 authoring**, not automatic screenshot conversion or a full layout editor.
 
+For mockup layouts that need different panel button widths, explicitly create
+a **panel-only schema v2** recipe (v1 remains the default and is unchanged):
+
+```bash
+ricebowl de recipe-init --schema-version 2 --base classic \
+  --id custom-widths --name "Custom widths" --output "$HOME/custom-widths.json"
+```
+
+Edit `panel.metrics` in that JSON file, for example:
+
+```json
+"metrics": {"launcher_width": 120, "task_width": 196, "clock_width": 80}
+```
+
+The required integer dimensions are in logical pixels: launcher **64–256**,
+per-task **96–256**, clock **64–256**. Unknown fields, missing dimensions,
+booleans and out-of-range values are rejected. Native RicePlate uses these
+widths for actual drawing and click areas; the Waybar preview translates them
+to CSS minimum widths, so long text/font metrics can yield a wider fallback
+widget. This is **not** a general RicePack v2 or automated mockup importer.
+
 This demonstrates structural composition through a shared recipe contract;
 it does **not** mean RicePlate's Rust layer-shell renderer, arbitrary mockup
 conversion or all seven native profiles are implemented yet.
@@ -186,6 +207,8 @@ accepts owner-private absolute JSON recipe files (regular files, permissions
 end section in any order, including custom top panels; their hit areas follow
 the rendered geometry and shrink on narrow displays. The clock is updated
 on minute boundaries through the Wayland event loop without a 1 Hz timer.
+Custom schema-v2 panel recipes additionally support strict per-widget widths;
+schema-v1 recipes retain their original native dimensions.
 Other indicators and the tray still need functional Rust backends. The native
 renderer deliberately omits unavailable widgets without displaying pretend
 buttons. Custom recipes cannot contain commands or arbitrary executable code.

@@ -23,6 +23,8 @@ MAX_SELECTION_BYTES = 2048
 WIDGETS = frozenset(("launcher", "tasks", "clock", "network", "audio", "battery", "tray"))
 SECTIONS = ("start", "center", "end")
 COLORS = ("background", "foreground", "active")
+METRIC_DEFAULTS = (104, 164, 96)
+METRIC_FIELDS = ("launcher_width", "task_width", "clock_width")
 BUILTINS = {
     "classic": Path(__file__).resolve().parent / "resources/recipes/classic.json",
     "chrome": Path(__file__).resolve().parent / "resources/recipes/chrome.json",
@@ -41,6 +43,7 @@ class PanelRecipe:
     height: int
     sections: tuple[tuple[str, ...], tuple[str, ...], tuple[str, ...]]
     colors: tuple[str, str, str]
+    metrics: tuple[int, int, int] | None = None
 
 
 def _object_without_duplicates(items: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -67,7 +70,7 @@ def parse(raw: bytes) -> PanelRecipe:
     except (UnicodeError, ValueError, TypeError, RecursionError) as exc:
         raise RecipeError(f"Invalid RicePlate recipe JSON: {exc}") from exc
     data = _strict_keys(data, {"schema_version", "id", "name", "panel", "colors"}, "Recipe")
-    if type(data["schema_version"]) is not int or data["schema_version"] != 1:
+    if type(data["schema_version"]) is not int or data["schema_version"] not in (1, 2):
         raise RecipeError("Unsupported RicePlate recipe schema version")
     recipe_id = data["id"]
     if not isinstance(recipe_id, str) or not re.fullmatch(r"[a-z][a-z0-9-]{1,31}", recipe_id):
@@ -76,11 +79,23 @@ def parse(raw: bytes) -> PanelRecipe:
     if (not isinstance(name, str) or not 1 <= len(name) <= 60
             or any(unicodedata.category(character) == "Cc" for character in name)):
         raise RecipeError("Recipe name must be 1-60 printable characters")
-    panel = _strict_keys(data["panel"], {"position", "height", "sections"}, "Panel")
+    version = data["schema_version"]
+    panel_keys = {"position", "height", "sections"}
+    if version == 2:
+        panel_keys.add("metrics")
+    panel = _strict_keys(data["panel"], panel_keys, "Panel")
     if panel["position"] not in ("top", "bottom"):
         raise RecipeError("Panel position must be top or bottom")
     if type(panel["height"]) is not int or not 28 <= panel["height"] <= 64:
         raise RecipeError("Panel height must be an integer between 28 and 64")
+    metrics: tuple[int, int, int] | None = None
+    if version == 2:
+        sizes = _strict_keys(panel["metrics"], set(METRIC_FIELDS), "Panel metrics")
+        limits = ((64, 256), (96, 256), (64, 256))
+        if any(type(sizes[key]) is not int or not lower <= sizes[key] <= upper
+               for key, (lower, upper) in zip(METRIC_FIELDS, limits)):
+            raise RecipeError("Panel metrics must be bounded integer widths in pixels")
+        metrics = tuple(sizes[key] for key in METRIC_FIELDS)
     sections = _strict_keys(panel["sections"], set(SECTIONS), "Panel sections")
     selected: list[tuple[str, ...]] = []
     all_widgets: list[str] = []
@@ -102,7 +117,7 @@ def parse(raw: bytes) -> PanelRecipe:
             raise RecipeError(f"Invalid six-digit hexadecimal color: {color}")
     return PanelRecipe(recipe_id, name, panel["position"], panel["height"],
                        (selected[0], selected[1], selected[2]),
-                       (colors["background"], colors["foreground"], colors["active"]))
+                       (colors["background"], colors["foreground"], colors["active"]), metrics)
 
 
 def load(token: str) -> PanelRecipe:
@@ -353,6 +368,7 @@ def change_selection(token: str | None = None, *, restore: bool = False) -> tupl
 
 def create_from_template(
     *, source: str, destination: Path, recipe_id: str, name: str,
+    schema_version: int = 1,
 ) -> PanelRecipe:
     """Create one private editable recipe atomically, never replacing a file.
 
@@ -365,6 +381,11 @@ def create_from_template(
     if not destination.is_absolute() or destination.suffix != ".json":
         raise RecipeError("New recipe output must be an absolute .json file path")
     data = json.loads(BUILTINS[source].read_text(encoding="utf-8"))
+    if schema_version == 2:
+        data["schema_version"] = 2
+        data["panel"]["metrics"] = dict(zip(METRIC_FIELDS, METRIC_DEFAULTS))
+    elif schema_version != 1:
+        raise RecipeError("Unsupported RicePlate template schema version")
     data["id"] = recipe_id
     data["name"] = name
     payload = (json.dumps(data, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
@@ -404,4 +425,12 @@ def waybar_config(recipe: PanelRecipe) -> tuple[str, str]:
         "#clock, #network, #pulseaudio, #battery, #tray, #custom-rice-launcher "
         "{ padding: 0 8px; }\n"
     )
+    if recipe.metrics is not None:
+        launcher_width, task_width, clock_width = recipe.metrics
+        css += (
+            # GTK min-width excludes padding; account for padding already set above.
+            f"#custom-rice-launcher {{ min-width: {launcher_width - 16}px; }}\n"
+            f"#taskbar button {{ min-width: {task_width - 14}px; }}\n"
+            f"#clock {{ min-width: {clock_width - 16}px; }}\n"
+        )
     return json.dumps(config, ensure_ascii=False, indent=2), css
