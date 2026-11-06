@@ -45,6 +45,25 @@ explicitly implemented behavior. Packs must never execute arbitrary generated
 scripts. Third-party GTK/Qt application decorations and Wayland protocol
 limits remain real constraints on cross-app fidelity.
 
+### Runtime and Creator boundary (target, not yet implemented)
+
+- **RiceBowl Runtime** owns the lightweight Wayland session, rendering,
+  shared Linux capability adapters, application integration and safe rice
+  switching. A completed rice must run offline without an AI model, Creator
+  process, cloud dependency or per-rice interpreter left resident.
+- **RiceBowl Creator** is an optional, on-demand authoring/tooling layer for
+  editable recipes, asset inspection, component discovery, previews, visual
+  comparisons and safe export. It uses the **same renderer and schemas** as
+  Runtime; preview-only implementations must not diverge from real-shell
+  behavior. Creator does not require its own repository or daemon.
+- **One source of truth:** the validated versioned RicePack schema defines
+  structural composition, responsive rules, visual tokens, supported states
+  and explicit action bindings. Neither human editors nor AI agents may write
+  arbitrary executable hooks into a pack.
+- Runtime remains independently installable and efficient; Creator is not
+  automatically launched at login. Reuse existing Linux services and the
+  upstream labwc compositor rather than creating replacement daemons.
+
 ### Repository and process ownership
 
 | Owner | Responsibility | Boundary |
@@ -174,6 +193,29 @@ depend on the XFCE session.
 - [ ] Provide a documented mockup-to-rice authoring workflow, editable
   templates, isolated preview and safe pack import/export. An AI-generated
   reference must be usable without any required AI/cloud runtime.
+- [ ] Define an **agent-readable component catalog**: stable IDs, capabilities,
+  configurable properties, allowed actions, accessibility semantics, examples,
+  schema versions and explicitly reported unsupported components/states.
+- [ ] Publish a **versioned, machine-readable Creator contract** (CLI JSON
+  output first; optional local IPC only if justified) for discovering
+  components, creating/editing drafts, validating recipes, previewing the
+  real shell, capturing screenshots, comparing to references, exporting packs,
+  and explicitly requested apply/restore. Document exit codes, diagnostics,
+  feature negotiation and stable failure responses; exact command names are
+  to be finalized during implementation, not assumed to exist today.
+- [ ] Make agent-driven changes reviewable and reproducible: immutable source
+  references, local/private draft workspace, deterministic validation,
+  per-asset license/provenance metadata, clear diff/preview before apply,
+  explicit user authorization for active desktop changes and transactional
+  rollback. No arbitrary generated scripts, remote asset execution or
+  privileged Creator daemon.
+- [ ] Implement an **isolated visual QA loop** using real nested labwc /
+  RicePlate rendering (not synthetic mockup-only previews): capture
+  deterministic multi-resolution and scaling screenshots, compare them
+  with reference images via region/geometry and perceptual differences,
+  emit machine-readable diagnostics and artifacts, then support iterative
+  recipe correction. Separate anti-aliasing/font tolerance from actual
+  layout regressions and require functional tests alongside similarity.
 - [ ] Validate malformed/oversized recipes, missing assets, unsupported
   widgets/actions, keyboard/focus semantics and rollback before applying.
 - [ ] Port all seven styles individually while preserving names, legacy
@@ -198,6 +240,28 @@ component, and incompatible clients degrade gracefully.
 - [ ] Confirm the authoring and daily-use path works entirely offline once
   the required packages/assets are present and does not load unused rices.
 
+**Creator / agent / visual QA acceptance (not yet implemented):**
+
+- [ ] Using only the published catalog, schemas and documented interface,
+  create two distinctly structured draft rices from (a) an OS-inspired
+  screenshot and (b) an original or AI-generated mockup. The agent may
+  request a new reusable primitive when needed, but may not silently
+  invent working actions or bypass validation.
+- [ ] Produce actual nested-shell captures at 1024x768, 1366x768 and
+  1920x1080, plus a fractional-scaling case where supported; store recipe
+  version, render inputs and capture environment for reproduction.
+- [ ] Report visual differences with a reviewable image overlay/heatmap and
+  structured per-region diagnostics. Establish tolerances on a stable
+  reference baseline, flag unsupported/unknown elements honestly and do not
+  advertise pixel-perfect fidelity from a similarity score alone.
+- [ ] Prove every interactive control in both example rices has a supported,
+  tested Linux action or an explicit disabled/unsupported state. Cover focus,
+  keyboard navigation, window interactions, permission/error states and
+  multi-monitor behavior; screenshot similarity alone never passes QA.
+- [ ] Demonstrate offline Runtime startup, profile switching and rollback
+  after Creator exits; confirm no AI service, authoring process, duplicate
+  panel or unused rice remains resident. Record PSS/CPU measurements.
+
 ### 5 — Efficient, testable 1.0
 
 - [x] Extend the existing opt-in PSS/CPU inventory to recognize labwc,
@@ -219,7 +283,8 @@ component, and incompatible clients degrade gracefully.
 - [ ] Ship reproducible packages, uninstall/rollback, docs, CI and device QA.
 - [ ] Test fresh login, corrupted config, missing backend, locked screen,
   sleeping/waking, low-memory and disconnected network cases.
-- [ ] Gate 1.0 authoring claims on the two demonstrator rices and validated
+- [ ] Gate 1.0 authoring claims on the two demonstrator rices, the published
+  Creator/agent contract, reproducible visual QA evidence and validated
   recipe migration, recovery, responsiveness and runtime resource measurements.
 
 **Done when:** RiceBowl is independently installable, fully usable and
