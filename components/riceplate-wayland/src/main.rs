@@ -6,7 +6,9 @@ use std::{error::Error, process::Command, time::Duration};
 use chrono::{Local, Timelike};
 use font8x8::{UnicodeFonts, BASIC_FONTS};
 mod recipe;
+mod task_groups;
 use recipe::{Hit, PanelStyle, Widget};
+use task_groups::{TaskGroup, WindowInfo};
 use smithay_client_toolkit::{
     compositor::{CompositorHandler, CompositorState, FrameCallbackData},
     delegate_registry,
@@ -158,19 +160,31 @@ struct RicePlate {
 }
 
 impl RicePlate {
+    fn grouped_tasks(&self) -> Vec<TaskGroup> {
+        task_groups::group_windows(self.tasks.iter().enumerate().map(|(index, task)| {
+            WindowInfo {
+                index, app_id: &task.app_id, title: &task.title,
+                active: task.active, ready: task.ready,
+            }
+        }))
+    }
+
     fn request_redraw(&mut self, qh: &QueueHandle<Self>) {
         self.needs_redraw = true;
         if !self.frame_pending { self.redraw(qh); }
     }
 
     fn reveal_task(&mut self, index: usize) {
+        let groups = self.grouped_tasks();
+        let Some(group_index) = groups.iter().position(|group| group.members.contains(&index))
+            else { return };
         let Some(view) = recipe::task_view(
-            &self.recipe, self.width, self.tasks.len(), self.task_offset,
+            &self.recipe, self.width, groups.len(), self.task_offset,
         ) else { return };
-        if index < view.start {
-            self.task_offset = index;
-        } else if index >= view.start + view.slots {
-            self.task_offset = index + 1 - view.slots;
+        if group_index < view.start {
+            self.task_offset = group_index;
+        } else if group_index >= view.start + view.slots {
+            self.task_offset = group_index + 1 - view.slots;
         }
     }
 
@@ -180,6 +194,7 @@ impl RicePlate {
         }
         let width = self.width;
         let height = self.height;
+        let groups = self.grouped_tasks();
         let surface = self.layer.wl_surface();
         let stride = (width * 4) as i32;
         let pool = self.pool.as_mut().expect("configured surface has a memory pool");
@@ -200,7 +215,7 @@ impl RicePlate {
         for pixel in canvas.chunks_exact_mut(4) {
             pixel.copy_from_slice(&self.recipe.background.to_le_bytes());
         }
-        for placed in recipe::layout(&self.recipe, width, self.tasks.len()) {
+        for placed in recipe::layout(&self.recipe, width, groups.len()) {
             match placed.widget {
                 Widget::Launcher => {
                     fill_rect(canvas, width, height, placed.x, 0, placed.width, height,
@@ -210,25 +225,21 @@ impl RicePlate {
                 }
                 Widget::Tasks => {
                     let Some(view) = recipe::task_view(
-                        &self.recipe, width, self.tasks.len(), self.task_offset,
+                        &self.recipe, width, groups.len(), self.task_offset,
                     ) else { continue };
-                    for (index, task) in self.tasks.iter().skip(view.start)
+                    for (index, group) in groups.iter().skip(view.start)
                         .take(view.slots).enumerate() {
-                        if !task.ready { continue; }
                         let consumed = (index as u32) * view.cell_width;
                         let x = placed.x + consumed;
                         let cell_width = if index + 1 == view.slots {
                             view.content_width - consumed
                         } else { view.cell_width };
-                        if task.active {
+                        if group.active {
                             fill_rect(canvas, width, height, x, 0,
                                       cell_width.saturating_sub(2), height,
                                       self.recipe.active);
                         }
-                        let label = task_label(&task.title, &task.app_id);
-                        let label: String = label.chars().take(
-                            (cell_width.saturating_sub(16) / 8) as usize,
-                        ).collect();
+                        let label = task_groups::visible_label(group, cell_width);
                         draw_text(canvas, width, height, x + 10, height / 2 - 4,
                                   &label, self.recipe.foreground);
                     }
@@ -260,12 +271,6 @@ impl RicePlate {
         self.needs_redraw = false;
         self.layer.commit();
     }
-}
-
-fn task_label(title: &str, app_id: &str) -> String {
-    let label = if title.trim().is_empty() { app_id } else { title };
-    let label = if label.trim().is_empty() { "Window" } else { label };
-    label.chars().take(18).collect()
 }
 
 fn fill_rect(canvas: &mut [u8], width: u32, height: u32,
@@ -388,25 +393,30 @@ impl PointerHandler for RicePlate {
             if let PointerEventKind::Press { button, .. } = event.kind {
                 if button == BTN_LEFT && event.position.1 >= 0.0
                     && event.position.1 < f64::from(self.height) {
+                    let groups = self.grouped_tasks();
                     match recipe::hit(event.position.0, self.width,
-                                      self.tasks.len(), self.task_offset, &self.recipe) {
+                                      groups.len(), self.task_offset, &self.recipe) {
                         Some(Hit::Launcher) => {
                             if let Err(error) = Command::new("fuzzel").spawn() {
                                 eprintln!("RicePlate: cannot open application launcher: {error}");
                             }
                         }
                         Some(Hit::Task(index)) => {
-                            if self.tasks[index].ready {
-                                if self.tasks[index].active {
-                                    self.tasks[index].handle.set_minimized();
+                            if let Some(group) = groups.get(index) {
+                                let active_index = group.members.iter().copied()
+                                    .find(|&member| self.tasks[member].active);
+                                let (target, minimize) =
+                                    task_groups::click_target(group, active_index);
+                                if minimize {
+                                    self.tasks[target].handle.set_minimized();
                                 } else if let Some(seat) = self.primary_seat.as_ref() {
-                                    self.tasks[index].handle.activate(seat);
+                                    self.tasks[target].handle.activate(seat);
                                 }
                             }
                         }
                         Some(Hit::PreviousTasks) => {
                             if let Some(view) = recipe::task_view(
-                                &self.recipe, self.width, self.tasks.len(), self.task_offset,
+                                &self.recipe, self.width, groups.len(), self.task_offset,
                             ) {
                                 self.task_offset = view.start.saturating_sub(view.slots);
                                 self.request_redraw(qh);
@@ -414,10 +424,10 @@ impl PointerHandler for RicePlate {
                         }
                         Some(Hit::NextTasks) => {
                             if let Some(view) = recipe::task_view(
-                                &self.recipe, self.width, self.tasks.len(), self.task_offset,
+                                &self.recipe, self.width, groups.len(), self.task_offset,
                             ) {
                                 self.task_offset = (view.start + view.slots)
-                                    .min(self.tasks.len().saturating_sub(view.slots));
+                                    .min(groups.len().saturating_sub(view.slots));
                                 self.request_redraw(qh);
                             }
                         }
@@ -466,8 +476,10 @@ impl Dispatch<ZwlrForeignToplevelHandleV1, ()> for RicePlate {
         if let zwlr_foreign_toplevel_handle_v1::Event::Closed = event {
             if let Some(index) = state.tasks.iter().position(|task| task.handle == *proxy) {
                 state.tasks.remove(index).handle.destroy();
-                if index < state.task_offset {
-                    state.task_offset -= 1;
+                state.task_offset = state.task_offset
+                    .min(state.grouped_tasks().len().saturating_sub(1));
+                if let Some(active) = state.tasks.iter().position(|task| task.active && task.ready) {
+                    state.reveal_task(active);
                 }
                 state.request_redraw(qh);
             }
@@ -531,9 +543,9 @@ mod tests {
 
     #[test]
     fn labels_are_bounded_and_have_fallbacks() {
-        assert_eq!(task_label("", "org.example.Terminal"), "org.example.Termin");
-        assert_eq!(task_label("", ""), "Window");
-        assert_eq!(task_label("Readme", "org.example"), "Readme");
+        assert_eq!(task_groups::task_label("", "org.example.Terminal"), "org.example.Termin");
+        assert_eq!(task_groups::task_label("", ""), "Window");
+        assert_eq!(task_groups::task_label("Readme", "org.example"), "Readme");
     }
 
     #[test]
