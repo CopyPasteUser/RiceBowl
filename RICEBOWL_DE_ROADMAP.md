@@ -155,6 +155,12 @@ affecting XFCE, including a failed-session recovery. **Not yet signed off.**
   screenshot and pure state/painting tests. The labwc fallback root menu
   remains available. Search, pins, desktop-icon keyboard navigation and
   multi-output menu ownership are not delivered by this slice.
+- [x] Add a **two-output labwc/Waybar fallback acceptance smoke** that captures
+  genuine panel pixels separately on both headless monitors, disconnects one
+  output, verifies the remaining panel, re-enables it and verifies panel
+  recovery. Includes unit-tested screenshot validation. This exercises the
+  default Waybar-compatible session, **not** native Rust per-output surfaces
+  or mixed-DPI device signoff; both still need implementation/QA.
 - [ ] Build a Wayland-native panel through `wlr-layer-shell`.
 - [ ] Populate tasks/windows through a supported foreign-toplevel protocol.
 - [ ] Implement launchers, task groups, tray, calendar, menus and keyboard

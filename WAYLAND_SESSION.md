@@ -297,6 +297,12 @@ outside the output when no safe, non-overlapping hit area exists. This placement
 fractional-scale visual quality and multi-monitor hotplug still need device
 acceptance. Do not treat it as a finished desktop.
 
+The default **Waybar-backed** Wayland session is separately checked in CI
+with two genuine labwc headless outputs. The smoke captures the bar on each,
+turns one output off, checks the remaining bar and reconnects the second.
+This verifies fallback display/hotplug behavior, **not** multi-monitor native
+RicePlate parity or physical mixed-DPI hardware acceptance.
+
 #### Native start menu and keyboard preview
 
 For schema-v4/v5 recipes the experimental native panel now draws its **own
