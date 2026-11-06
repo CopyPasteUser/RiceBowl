@@ -127,13 +127,13 @@ affecting XFCE, including a failed-session recovery. **Not yet signed off.**
   It is independently testable and does not replace Waybar until parity.
 - [x] Add experimental protocol-backed native window discovery and activation
   with bounded task labels and click hit-testing; full taskbar parity remains
-  open (grouping, minimize, outputs, keyboard interactions).
+  open (tray, outputs, keyboard interactions).
 - [x] Consume the two bundled schema-v1 panel recipes from native Rust for
   geometry, placement and visual tokens, without pretending unimplemented
   system indicators are functional native widgets.
 - [x] Add a real local-time clock with minute-boundary event-loop wakeups,
   non-clickable until a calendar exists, plus activate/minimize task clicks.
-  A complete taskbar (grouping, tray, keyboard controls) remains outstanding.
+  A complete taskbar (tray, keyboard controls) remains outstanding.
 - [x] Support owner-private, bounded custom schema-v1 JSON recipes in native
   RicePlate, and position implemented widgets from ordered start/center/end
   sections with matching hit testing and small-display overflow behavior.
@@ -144,7 +144,10 @@ affecting XFCE, including a failed-session recovery. **Not yet signed off.**
   remains Waybar while native functional parity is incomplete.
 - [x] Page through tracked Wayland windows when the native taskbar overflows,
   with actual clickable previous/next regions, bounded labels, and automatic
-  reveal of the active window. Grouping and keyboard access remain open.
+  reveal of the active window. Keyboard access remains open.
+- [x] Group native Wayland windows with the same nonempty app ID, show bounded
+  window counts, cycle active grouped windows and page/reveal by group; unknown
+  IDs are always independent. Keyboard access remains open.
 - [ ] Build a Wayland-native panel through `wlr-layer-shell`.
 - [ ] Populate tasks/windows through a supported foreign-toplevel protocol.
 - [ ] Implement launchers, task groups, tray, calendar, menus and keyboard

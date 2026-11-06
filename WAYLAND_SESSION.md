@@ -164,14 +164,16 @@ simple labelled surface with a fixed `Apps` button that launches the installed
 Fuzzel command without passing any recipe data to a shell. When labwc offers
 `wlr-foreign-toplevel-management`, the prototype also displays live window
 titles and supports click-to-activate via the Wayland seat; clicking an active
-task requests minimization. The window list
-is deliberately bounded; when there are more windows than can fit, the native
-taskbar exposes `‹`/`›` page controls to reach remaining windows, automatically
-reveals the active window, and keeps input hit areas aligned with the visible
-window labels. Only visible entries accept clicks; if the
+single-window task requests minimization. Windows with the same nonempty
+Wayland app ID share a labelled task group with a visible count; clicking the
+active group cycles through its windows. Windows with unknown IDs remain
+separate. The window list is deliberately bounded; when there are more groups
+than can fit, the native taskbar exposes previous/next page controls to reach
+remaining groups, automatically reveals the active group, and keeps input hit
+areas aligned with the visible labels. Only visible entries accept clicks; if the
 protocol is missing the panel keeps its launcher and reports the limitation.
-It is **not** a replacement taskbar: it still lacks grouping, a calendar
-popover, tray, notification handling or multi-output ownership. Do not start it automatically
+It is **not** a replacement taskbar: it still lacks a calendar
+popover, tray, keyboard task navigation, notification handling or multi-output ownership. Do not start it automatically
 alongside Waybar.
 
 The native prototype understands two *bundled* schema-v1 RicePlate recipes:
