@@ -35,6 +35,14 @@ XFCE_ROLES = {
     "xfce4-panel": "replaceable",
 }
 
+# Existing upstream labwc session components are counted on demand. This is
+# an ownership inventory, never permission to kill or disable a service.
+WAYLAND_ROLES = {
+    "labwc": "compositor", "waybar": "panel", "riceplate-native": "panel",
+    "swaybg": "wallpaper", "mako": "notifications", "swayidle": "idle",
+    "swaylock": "lock", "fuzzel": "launcher",
+}
+
 
 PROFILES = {
     "light": {
@@ -74,7 +82,7 @@ def _desktop_component(argv: list[str]) -> tuple[str, str] | None:
     if not argv:
         return None
     name = Path(argv[0]).name
-    role = XFCE_ROLES.get(name)
+    role = XFCE_ROLES.get(name) or WAYLAND_ROLES.get(name)
     return (name, role) if role else None
 
 
@@ -191,22 +199,30 @@ def summarize_samples(samples: list[list[dict]]) -> dict:
 
 
 def desktop_session_report(samples: list[list[dict]]) -> dict:
-    """Read-only XFCE + RiceBowl footprint with conservative overlap hints."""
+    """Read-only XFCE/Wayland footprint; never claim per-session attribution."""
     report = summarize_samples(samples)
     roles = {(item["name"], item["pid"]): item["role"]
              for sample in samples for item in sample if "role" in item}
     for item in report["components"]:
         item["role"] = roles.get((item["name"], item["pid"]), "unknown")
 
-    xfce_totals = []
-    for sample in samples:
-        xfce = [item for item in sample if item["name"] in XFCE_ROLES]
-        if xfce and all(item["pss_kib"] is not None for item in xfce):
-            xfce_totals.append(sum(item["pss_kib"] for item in xfce))
-        elif xfce:
-            xfce_totals.clear()
-            break
-    report["xfce_pss_kib"] = round(statistics.median(xfce_totals), 1) if xfce_totals else None
+    def role_pss(names: dict[str, str]) -> float | None:
+        totals = []
+        for sample in samples:
+            matching = [item for item in sample if item["name"] in names]
+            if matching and any(item["pss_kib"] is None for item in matching):
+                return None
+            if matching:
+                totals.append(sum(item["pss_kib"] for item in matching
+                                  if item["pss_kib"] is not None))
+        return round(statistics.median(totals), 1) if totals else None
+
+    report["xfce_pss_kib"] = role_pss(XFCE_ROLES)
+    report["wayland_pss_kib"] = role_pss(WAYLAND_ROLES)
+    report["scope_note"] = (
+        "All matching user-owned processes, potentially across nested/other sessions; "
+        "not an isolated single-session memory benchmark."
+    )
 
     names = {item["name"] for item in report["components"]}
     active_rices = names.intersection(RICEBOWL_NAMES.values())
@@ -220,6 +236,9 @@ def desktop_session_report(samples: list[list[dict]]) -> dict:
         warnings.append("Plank is still running alongside a non-macOS RiceBowl taskbar.")
     if active_rices and "MacBar" in names:
         warnings.append("MacBar is still running alongside a non-macOS RiceBowl taskbar.")
+    if "waybar" in names and "riceplate-native" in names:
+        warnings.append("Waybar and native RicePlate coexist; check for duplicate panels "
+                        "within one session (nested previews may be intentional).")
     report["warnings"] = warnings
     return report
 

@@ -194,6 +194,10 @@ component, and incompatible clients degrade gracefully.
 
 ### 5 — Efficient, testable 1.0
 
+- [x] Extend the existing opt-in PSS/CPU inventory to recognize labwc,
+  Waybar, native RicePlate and selected session helpers, without a resident
+  monitor or duplicate shell process. Scope is explicitly all matching
+  user-owned processes, not one isolated Wayland login benchmark.
 - [x] Add a read-only package/CLI version consistency check and a candidate
   source-artifact gate; do not publish stable 1.0 without explicit device QA
   evidence (see `RELEASE_1_0_GATES.md`). Binary packaging remains open.

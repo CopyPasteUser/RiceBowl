@@ -189,6 +189,19 @@ The temporary shell does not use XFCE's panel or XFDesktop.
 
 ## Session boundaries and recovery
 
+An on-demand, read-only process snapshot can now include recognized labwc,
+Waybar, native RicePlate and associated upstream services alongside XFCE:
+
+```bash
+ricebowl performance desktop --samples 3 --json
+```
+
+The report distinguishes XFCE and Wayland PSS totals, marks unreadable
+measurements unknown and warns if both Waybar and native RicePlate are seen.
+It includes **all matching user-owned processes**, potentially across nested
+sessions, so it is not by itself evidence of one session's idle RAM or CPU.
+Use isolated login/hardware acceptance for the 1.0 benchmark.
+
 - Labwc reads **only** the bundled `macrice/de/resources/labwc` configuration
   through `--config-dir`. The user's own labwc setup is left untouched.
 - The session launcher rejects root execution, missing core dependencies,
