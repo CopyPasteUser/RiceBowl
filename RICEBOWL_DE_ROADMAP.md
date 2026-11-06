@@ -203,6 +203,11 @@ depend on the XFCE session.
 - [ ] Define an **agent-readable component catalog**: stable IDs, capabilities,
   configurable properties, allowed actions, accessibility semantics, examples,
   schema versions and explicitly reported unsupported components/states.
+- [x] Publish the first **read-only, versioned panel-component inventory**
+  (`ricebowl de catalog --json`), with stable IDs, true native/Waybar support,
+  strict recipe limits, known fixed behaviors, and missing keyboard controls.
+  Full menu/desktop/settings component discovery, richer accessibility semantics,
+  Creator draft commands and examples remain open under the catalog gate above.
 - [ ] Publish a **versioned, machine-readable Creator contract** (CLI JSON
   output first; optional local IPC only if justified) for discovering
   components, creating/editing drafts, validating recipes, previewing the

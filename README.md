@@ -26,7 +26,7 @@ A collection of deeply customizable, OS-inspired desktop experiences — growing
 The [1.0 release gates](RELEASE_1_0_GATES.md) track outstanding desktop functionality, installer evidence and physical-device checks before a stable release can be tagged.
 
 The optional Wayland preview also supports two early data-driven panel layouts (`ricebowl de recipes`) and an opt-in, crash-recoverable native RicePlate panel for developers (`ricebowl de start --nested --panel native`). The native shell remains incomplete.
-An isolated [native Rust layer-shell experiment](WAYLAND_SESSION.md#native-riceplate-layer-shell-experiment-developers-only) now includes live task controls, a local-time clock and safely validated custom panel layouts; it does not yet replace the functional Waybar panel.
+An isolated [native Rust layer-shell experiment](WAYLAND_SESSION.md#native-riceplate-layer-shell-experiment-developers-only) now includes live task controls, a local-time clock, customizable panel widths and a [read-only component catalog](WAYLAND_SESSION.md#riceplate-layout-recipes-first-data-only-contract) for AI-assisted rice authoring; it does not yet replace the functional Waybar panel.
 
 ## Seven desktop experiences
 
