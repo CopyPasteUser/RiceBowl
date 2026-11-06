@@ -112,7 +112,9 @@ dbus-run-session -- sh -eu -c '
         if [ "$label" = desktop-v5 ]; then
             # Exercise output reconfiguration while the SAME native shell is
             # running. These are actual compositor screenshots, not mockups.
-            output=$(WAYLAND_DISPLAY=wayland-0 wlr-randr | sed -n '/^[^[:space:]]/ { s/[[:space:]].*$//; p; q; }')
+            # The surrounding sh -c payload is single-quoted: use only
+            # double quotes here so no part is evaluated by the parent shell.
+            output=$(WAYLAND_DISPLAY=wayland-0 wlr-randr | sed -n "1s/[[:space:]].*//p")
             if [ -z "$output" ]; then
                 echo "No headless output found for multi-size Wayland capture" >&2
                 exit 1

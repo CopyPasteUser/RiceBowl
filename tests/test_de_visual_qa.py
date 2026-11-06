@@ -15,6 +15,14 @@ from scripts.compare_wayland_captures import compare, main
 
 @unittest.skipIf(Image is None, "Optional Pillow is not installed in this runtime")
 class WaylandVisualQaTests(unittest.TestCase):
+    def test_native_smoke_embedded_shell_remains_literal(self):
+        """Prevent quotes from prematurely closing the `sh -c` payload."""
+        source = (Path(__file__).parent.parent /
+                  "scripts/smoke_riceplate_native.sh").read_text(encoding="utf-8")
+        embedded = source.split("dbus-run-session -- sh -eu -c '", 1)[1].split(
+            "' sh \"$source_root\"", 1)[0]
+        self.assertNotIn("'", embedded)
+
     def _private_recipe(self, directory: Path, *, bottom: bool = False) -> Path:
         source = Path(__file__).parent / "fixtures/riceplate-desktop-v5.json"
         data = json.loads(source.read_text(encoding="utf-8"))
