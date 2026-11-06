@@ -84,13 +84,13 @@ Waybar backends actually implement:
 ricebowl de catalog --json
 ```
 
-The versioned `catalog_version` (currently **3**) identifies the response format, while
-`recipe.schema_versions` (currently **1, 2, 3, 4**) identifies supported recipe versions. Each
+The versioned `catalog_version` (currently **5**) identifies the response format, while
+`recipe.schema_versions` (currently **1, 2, 3, 4, 5**) identifies supported recipe versions. Each
 component has a known ID, real backend support level, fixed behavior and
 keyboard-availability flag. Unsupported functionality is reported explicitly
 instead of presenting an imaginary action or widget. This catalog never reads
-private desktop state, invokes a model or changes a rice; it is the first
-machine-readable Creator *discovery* contract, not the full Creator API.
+private desktop state, invokes a model or changes a rice. The cross-command
+Creator inventory is available through `ricebowl de creator-api --json`.
 
 The next read-only Creator building block validates one recipe and optionally
 compares it with a bundled, imported or owner-private base recipe:
@@ -362,6 +362,60 @@ it is **not** a similarity score or a replacement for a manually approved
 reference. Real-hardware mixed-DPI/multi-output behavior, font tolerance,
 visual baseline sign-off and functional keyboard testing remain open.
 
+#### Portable Wayland RicePacks and Creator API (experimental)
+
+Discover the implemented authoring operations, required flags, safe effects,
+versioned output and their limits without launching a model or a daemon:
+
+```bash
+ricebowl de creator-api --json
+ricebowl de catalog --json
+```
+
+The **Wayland RicePack v1** is a reproducible, local `.ricepack` ZIP with exactly
+`ricepack.json` (format version, recipe identity, SHA-256 checksums and declared
+provenance) and `recipe.json` (canonical schema-v1–v5 recipe). There is no
+unpacking arbitrary archive paths, executing commands or importing new runtime
+assets. Existing *bundled* wallpapers are referenced by known IDs only.
+
+```bash
+ricebowl de pack-export --recipe /absolute/path/my-rice.json \
+  --output /absolute/path/my-rice.ricepack --json
+ricebowl de pack-inspect --package /absolute/path/my-rice.ricepack --json
+ricebowl de pack-import --package /absolute/path/my-rice.ricepack --json
+ricebowl de review --recipe my-rice --json
+```
+
+Export optionally accepts `--metadata /absolute/path/provenance.json` with
+this exact, owner-controlled JSON object:
+
+```json
+{
+  "author": "Your name",
+  "license": "CC0-1.0",
+  "origin": "ai-assisted",
+  "source_reference": "My original local design"
+}
+```
+
+Accepted licenses are `unspecified`, `CC0-1.0`, `CC-BY-4.0`, `MIT` and
+`custom`; origins are `unspecified`, `original`, `ai-assisted` and `adapted`.
+These are *user declarations*, not license or authorship verification. Without
+explicit metadata, the package says `unspecified`; it never fabricates a
+license or creator. The format has no third-party image/icon assets or rendered
+preview yet, and is distinct from the earlier **XFCE Riceware v2 `.zip`**
+format documented in [RICEPACK_SPEC.md](RICEPACK_SPEC.md).
+
+The archive limit is 256 KiB, recipes stay within 64 KiB and JSON is strictly
+validated. Import refuses unknown archive entries, symlinks, compression,
+corruption, duplicate names, hash mismatches, executable fields, reserved IDs
+and collisions with previously imported recipes. It installs **only** an
+owner-private `0600` JSON recipe, without selecting it for the next login or
+changing the active desktop. Export never overwrites files; the archive bytes
+are deterministic for the same recipe and metadata. Invalid pack input returns
+JSON with `ok: false`, a path-free error code and exit status `2` when
+`--json` is supplied; invalid flags exit `1`. All commands work offline.
+
 #### Existing recipe creation, import/export and selection
 
 Custom recipes use the strict JSON schema illustrated in
@@ -434,7 +488,9 @@ duplicate names, and store the result privately in
 `$XDG_CONFIG_HOME/ricebowl/recipes/` (or `~/.config/ricebowl/recipes/`).
 Exported files are `0600` and existing files are never overwritten. Share
 the exported JSON using your normal file-transfer tool; it contains no
-executables or assets. This is **not** yet a complete, visual RicePack format.
+executables or assets. The experimental Wayland `.ricepack` above adds portable
+integrity/provenance metadata, **not** full cross-component composition,
+licensed custom artwork or live transaction/rollback.
 
 The initializer creates a fully validated `0600` file through an atomic,
 no-overwrite operation. Edit its `panel.sections`, `position`, `height` and

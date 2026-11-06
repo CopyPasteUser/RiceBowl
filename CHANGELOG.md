@@ -1,5 +1,18 @@
 # RiceBowl changelog
 
+## Unreleased — portable Wayland Creator recipes (6 November 2026)
+
+- Publish a versioned, offline `de creator-api --json` registry for implemented
+  component discovery, safe editing, semantic review, native headless capture,
+  visual comparison and package transfer, including honest capability gaps.
+- Build reproducible `.ricepack` archives with canonical validated schema-v1–v5
+  recipes, exact byte and semantic fingerprints and optional user-declared
+  authorship/license provenance. Add safe, bounded inspect and import commands
+  that reject malformed ZIP entries, symlinks, collisions and hash mismatches.
+- Keep new packs entirely declarative, using only bundled Wayland wallpapers.
+  Import does not change active or next-session appearance; existing XFCE
+  Riceware ZIP packs and legacy JSON recipes remain supported independently.
+
 ## Unreleased — native desktop shortcuts (6 November 2026)
 
 - Add opt-in schema-v5 desktop-icon recipes: bounded labels, safe action IDs,
