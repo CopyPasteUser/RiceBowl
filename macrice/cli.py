@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -69,13 +70,18 @@ def parser() -> argparse.ArgumentParser:
             trace.add_argument("--trace-path", action="store_true", help="Print evidence file location without running the shell")
     commands.add_parser("session-sync", help="Reconcile active rice after XFCE autostart")
     de = commands.add_parser("de", help="Inspect experimental RiceBowl Wayland desktop prerequisites")
-    de.add_argument("action", choices=("check", "start", "shell", "recipes"))
+    de.add_argument("action", choices=("check", "start", "shell", "recipes", "recipe-init"))
     de.add_argument("--json", action="store_true", help="Read-only machine-readable preflight")
     de.add_argument("--nested", action="store_true",
                     help="Explicitly test a separate labwc session inside an active desktop")
     de.add_argument("--recipe", help="RicePlate recipe: classic, chrome or an owner-private absolute JSON path")
     de.add_argument("--panel", choices=("waybar", "native"), default="waybar",
                     help="Session panel (native RicePlate is experimental and falls back to Waybar)")
+    de.add_argument("--base", choices=("classic", "chrome"),
+                    help="Bundled base recipe for de recipe-init")
+    de.add_argument("--id", help="Lowercase recipe identifier for de recipe-init")
+    de.add_argument("--name", help="Human-readable recipe name for de recipe-init")
+    de.add_argument("--output", type=Path, help="Absolute .json destination for de recipe-init")
     commands.add_parser("session-menu", help="Toggle the active rice's application menu")
     commands.add_parser("session-control", help="Toggle the active rice's control panel")
     commands.add_parser("session-keys-restore", help="Restore the previous Super/Right Control shortcuts")
@@ -132,6 +138,19 @@ def main(argv: list[str] | None = None) -> int:
             from .riceware_cli import run as run_riceware
             return run_riceware(args)
         if args.command == "de":
+            if args.action != "recipe-init" and any((args.base, args.id, args.name, args.output)):
+                raise ValueError("--base, --id, --name and --output only apply to de recipe-init")
+            if args.action == "recipe-init":
+                if (args.json or args.nested or args.recipe or args.panel != "waybar"
+                        or not args.id or not args.name or not args.output):
+                    raise ValueError("de recipe-init needs --id, --name and --output; optionally --base")
+                from .de.recipes import create_from_template
+                result = create_from_template(source=args.base or "classic",
+                                              destination=args.output,
+                                              recipe_id=args.id, name=args.name)
+                print(f"Created private RicePlate recipe {result.recipe_id}: {args.output}")
+                print(f"Preview: ricebowl de start --nested --recipe {shlex.quote(str(args.output))}")
+                return 0
             if args.action == "start":
                 if args.json:
                     raise ValueError("--json only applies to de check")
@@ -143,10 +162,10 @@ def main(argv: list[str] | None = None) -> int:
                 from .de.session import shell
                 return shell()
             if args.action == "recipes":
-                if args.nested or args.recipe or args.panel != "waybar":
-                    raise ValueError("de recipes only accepts --json")
+                if args.nested or args.panel != "waybar":
+                    raise ValueError("de recipes accepts only --recipe and --json")
                 from .de.recipes import BUILTINS, load
-                recipes = [load(name) for name in BUILTINS]
+                recipes = [load(args.recipe)] if args.recipe else [load(name) for name in BUILTINS]
                 if args.json:
                     print(json.dumps([{"id": item.recipe_id, "name": item.name,
                                       "position": item.position, "height": item.height}

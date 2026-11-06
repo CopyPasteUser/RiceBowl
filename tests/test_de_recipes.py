@@ -91,6 +91,66 @@ class RecipeTests(unittest.TestCase):
             self.assertTrue(any("classic" in str(call) for call in printed.call_args_list))
             self.assertTrue(any("chrome" in str(call) for call in printed.call_args_list))
 
+    def test_cli_validates_an_authored_recipe_without_starting_wayland(self):
+        from macrice.cli import main
+        with tempfile.TemporaryDirectory() as directory:
+            file = Path(directory) / "authored.json"
+            file.write_bytes(recipes.BUILTINS["classic"].read_bytes())
+            file.chmod(0o600)
+            with mock.patch("builtins.print") as printed:
+                self.assertEqual(main(["de", "recipes", "--recipe", str(file), "--json"]), 0)
+            result = json.loads(printed.call_args.args[0])
+            self.assertEqual([item["id"] for item in result], ["classic"])
+            file.chmod(0o644)
+            with mock.patch("sys.stderr"):
+                self.assertEqual(main(["de", "recipes", "--recipe", str(file)]), 1)
+
+    def test_recipe_init_creates_private_editable_template_without_overwrite(self):
+        from macrice.cli import main
+        with tempfile.TemporaryDirectory() as directory:
+            destination = Path(directory) / "my chrome rice.json"
+            command = ["de", "recipe-init", "--base", "chrome", "--id", "my-rice",
+                       "--name", "My Chrome Rice", "--output", str(destination)]
+            with mock.patch("builtins.print") as printed:
+                self.assertEqual(main(command), 0)
+                self.assertTrue(any("--nested" in str(call) for call in printed.call_args_list))
+            self.assertEqual(destination.stat().st_mode & 0o777, 0o600)
+            self.assertEqual(recipes.load(str(destination)).recipe_id, "my-rice")
+            self.assertEqual(recipes.load(str(destination)).sections,
+                             recipes.load("chrome").sections)
+            original = destination.read_bytes()
+            with mock.patch("sys.stderr"):
+                self.assertEqual(main(command), 1)
+            self.assertEqual(destination.read_bytes(), original)
+
+    def test_recipe_init_rejects_invalid_metadata_before_writing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            destination = Path(directory) / "new.json"
+            for recipe_id, name in (("Invalid_ID", "Good name"),
+                                    ("safe-id", "Has\x00control"),
+                                    ("safe-id", "Hidden\x7fdelete"),
+                                    ("safe-id", "Hidden\u0085separator")):
+                with self.subTest(recipe_id=recipe_id):
+                    with self.assertRaises(recipes.RecipeError):
+                        recipes.create_from_template(source="classic", destination=destination,
+                                                     recipe_id=recipe_id, name=name)
+                    self.assertFalse(destination.exists())
+            with self.assertRaisesRegex(recipes.RecipeError, "absolute"):
+                recipes.create_from_template(source="classic", destination=Path("relative.json"),
+                                             recipe_id="valid-id", name="Good name")
+
+    def test_recipe_init_does_not_follow_existing_destination_symlink(self):
+        with tempfile.TemporaryDirectory() as directory:
+            important = Path(directory) / "keep.json"
+            important.write_text("must not be replaced", encoding="utf-8")
+            destination = Path(directory) / "authored.json"
+            destination.symlink_to(important)
+            with self.assertRaises(FileExistsError):
+                recipes.create_from_template(source="classic", destination=destination,
+                                             recipe_id="safe-id", name="Good name")
+            self.assertEqual(important.read_text(encoding="utf-8"), "must not be replaced")
+            self.assertTrue(destination.is_symlink())
+
     def test_nested_shell_generates_private_files_then_removes_them(self):
         with tempfile.TemporaryDirectory() as directory:
             os.chmod(directory, 0o700)

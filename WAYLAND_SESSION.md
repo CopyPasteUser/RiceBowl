@@ -77,6 +77,22 @@ known panel widgets and six-digit colors. They cannot run commands, import CSS,
 load assets or define new system actions. Temporary Waybar configurations are
 created under the private `XDG_RUNTIME_DIR` and removed at session exit.
 
+To create a rice without editing an installed/bundled recipe, choose your own
+absolute JSON location (in an existing directory):
+
+```bash
+ricebowl de recipe-init --base chrome --id my-rice --name "My Rice" \
+  --output "$HOME/my-rice.json"
+ricebowl de recipes --recipe "$HOME/my-rice.json" --json
+ricebowl de start --nested --recipe "$HOME/my-rice.json"
+```
+
+The initializer creates a fully validated `0600` file through an atomic,
+no-overwrite operation. Edit its `panel.sections`, `position`, `height` and
+`colors` to map a reference/mockup to known widgets; validate again before
+preview. No shell code from the recipe is executed. This is **manual assisted
+authoring**, not automatic screenshot conversion or a full layout editor.
+
 This demonstrates structural composition through a shared recipe contract;
 it does **not** mean RicePlate's Rust layer-shell renderer, arbitrary mockup
 conversion or all seven native profiles are implemented yet.
