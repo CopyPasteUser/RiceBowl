@@ -93,6 +93,25 @@ ricebowl de recipes --recipe "$HOME/my-rice.json" --json
 ricebowl de start --nested --recipe "$HOME/my-rice.json"
 ```
 
+To exchange this **panel-only** recipe offline, import its JSON into the
+user-private collection (without changing your active desktop), then use its
+ID in either panel preview mode:
+
+```bash
+ricebowl de recipe-import --recipe "$HOME/my-rice.json"
+ricebowl de recipes --json
+ricebowl de start --nested --panel native --recipe my-rice
+ricebowl de recipe-export --recipe my-rice --output "$HOME/my-rice-share.json"
+```
+
+Imports accept owner-controlled `0600` or `0644` regular `.json` files,
+reject symlinks, unsafe directories, invalid schemas, reserved IDs and
+duplicate names, and store the result privately in
+`$XDG_CONFIG_HOME/ricebowl/recipes/` (or `~/.config/ricebowl/recipes/`).
+Exported files are `0600` and existing files are never overwritten. Share
+the exported JSON using your normal file-transfer tool; it contains no
+executables or assets. This is **not** yet a complete, visual RicePack format.
+
 The initializer creates a fully validated `0600` file through an atomic,
 no-overwrite operation. Edit its `panel.sections`, `position`, `height` and
 `colors` to map a reference/mockup to known widgets; validate again before

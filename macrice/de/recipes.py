@@ -111,7 +111,8 @@ def load(token: str) -> PanelRecipe:
         if result.recipe_id != token:
             raise RecipeError("Bundled recipe ID does not match its name")
         return result
-    path = Path(token)
+    installed_id = bool(re.fullmatch(r"[a-z][a-z0-9-]{1,31}", token))
+    path = _private_recipe_dir(create=False) / f"{token}.json" if installed_id else Path(token)
     if not path.is_absolute():
         raise RecipeError("Use a bundled recipe name or an absolute JSON file path")
     try:
@@ -126,7 +127,131 @@ def load(token: str) -> PanelRecipe:
             raw = file.read(MAX_RECIPE_BYTES + 1)
     except OSError as exc:
         raise RecipeError("Custom recipe could not be opened safely") from exc
-    return parse(raw)
+    result = parse(raw)
+    if installed_id and result.recipe_id != token:
+        raise RecipeError("Imported recipe ID does not match its filename")
+    return result
+
+
+def _read_import_source(source: Path) -> bytes:
+    """Read a bounded, owner-controlled data file once, without following links.
+
+    Unlike an active recipe, an offline import may be world-readable (0644).
+    Group/world-writable files and files owned by another user are rejected.
+    """
+    if not source.is_absolute() or source.suffix != ".json":
+        raise RecipeError("Import requires an absolute .json file path")
+    try:
+        fd = os.open(source, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
+        with os.fdopen(fd, "rb") as file:
+            meta = os.fstat(file.fileno())
+            if (not stat.S_ISREG(meta.st_mode) or meta.st_uid != os.geteuid()
+                    or meta.st_mode & 0o022):
+                raise RecipeError("Import source must be an owner-controlled regular file")
+            if meta.st_size > MAX_RECIPE_BYTES:
+                raise RecipeError("RicePlate recipe exceeds the 64 KiB limit")
+            return file.read(MAX_RECIPE_BYTES + 1)
+    except OSError as exc:
+        raise RecipeError("Import source could not be opened safely") from exc
+
+
+def _write_private_new(destination: Path, payload: bytes) -> None:
+    """Publish a complete 0600 file atomically, refusing any existing target."""
+    if not destination.is_absolute() or destination.suffix != ".json":
+        raise RecipeError("Output must be an absolute .json file path")
+    descriptor, temporary = tempfile.mkstemp(prefix=".ricebowl-recipe-",
+                                              dir=destination.parent)
+    try:
+        with os.fdopen(descriptor, "wb") as output:
+            os.fchmod(output.fileno(), 0o600)
+            output.write(payload)
+            output.flush()
+            os.fsync(output.fileno())
+        os.link(temporary, destination)
+    finally:
+        os.unlink(temporary)
+
+
+def _private_recipe_dir(*, create: bool) -> Path:
+    """Find the dedicated user-owned collection, never changing its permissions."""
+    configured = os.environ.get("XDG_CONFIG_HOME")
+    root = Path(configured) if configured else Path.home() / ".config"
+    if not root.is_absolute():
+        raise RecipeError("XDG_CONFIG_HOME must be an absolute directory")
+    directory = root / "ricebowl" / "recipes"
+    for path in (root, root / "ricebowl", directory):
+        if create and not path.exists() and not path.is_symlink():
+            path.mkdir(mode=0o700)
+        try:
+            meta = path.lstat()
+        except FileNotFoundError:
+            if not create:
+                return directory
+            raise RecipeError(f"Recipe directory is unavailable: {path}") from None
+        if (not stat.S_ISDIR(meta.st_mode) or meta.st_uid != os.geteuid()
+                or meta.st_mode & 0o022):
+            raise RecipeError(f"Unsafe recipe configuration directory: {path}")
+        # The collection itself must be private. An existing ~/.config/ricebowl
+        # (created by older releases) may legitimately be 0755: it is safe as
+        # long as others cannot WRITE it and the recipes subdir is 0700.
+        if path == directory and meta.st_mode & 0o077:
+            raise RecipeError(f"Recipe directory must be owner-only: {path}")
+    return directory
+
+
+def import_recipe(source: Path) -> tuple[PanelRecipe, Path]:
+    """Import validated offline JSON into the user collection, without applying it."""
+    payload = _read_import_source(source)
+    recipe = parse(payload)
+    if recipe.recipe_id in BUILTINS:
+        raise RecipeError("Cannot import a recipe with a reserved built-in ID")
+    destination = _private_recipe_dir(create=True) / f"{recipe.recipe_id}.json"
+    _write_private_new(destination, payload)
+    return recipe, destination
+
+
+def export_recipe(token: str, destination: Path) -> PanelRecipe:
+    """Export a validated recipe as owner-private portable JSON; never overwrite."""
+    if token in BUILTINS:
+        payload = BUILTINS[token].read_bytes()
+    else:
+        installed_id = bool(re.fullmatch(r"[a-z][a-z0-9-]{1,31}", token))
+        source = (_private_recipe_dir(create=False) / f"{token}.json"
+                  if installed_id else Path(token))
+        payload = _read_import_source(source)
+    recipe = parse(payload)
+    if token not in BUILTINS and installed_id and recipe.recipe_id != token:
+        raise RecipeError("Imported recipe ID does not match its filename")
+    _write_private_new(destination, payload)
+    return recipe
+
+
+def imported_recipes() -> list[tuple[PanelRecipe, Path]]:
+    """Discover installed private recipes without creating files or directories."""
+    directory = _private_recipe_dir(create=False)
+    if not directory.exists():
+        return []
+    entries = sorted(directory.iterdir())
+    if len(entries) > 128:
+        raise RecipeError("Too many imported recipes (limit 128)")
+    found = []
+    for path in entries:
+        if path.suffix != ".json":
+            continue
+        recipe = load(str(path))
+        if recipe.recipe_id != path.stem or recipe.recipe_id in BUILTINS:
+            raise RecipeError(f"Imported recipe ID does not match its filename: {path.name}")
+        found.append((recipe, path))
+    return found
+
+
+def native_token(token: str) -> str:
+    """Resolve an imported ID for native Rust, which accepts private abs paths."""
+    if token in BUILTINS:
+        return token
+    if re.fullmatch(r"[a-z][a-z0-9-]{1,31}", token):
+        return str(_private_recipe_dir(create=False) / f"{token}.json")
+    return token
 
 
 def create_from_template(
@@ -151,17 +276,7 @@ def create_from_template(
     # The temp file and destination share a directory/filesystem; os.link()
     # publishes a fully written file only when its final name is still free.
     # This does not overwrite existing files or follow a destination symlink.
-    descriptor, temporary = tempfile.mkstemp(prefix=".ricebowl-recipe-",
-                                              dir=destination.parent)
-    try:
-        with os.fdopen(descriptor, "wb") as output:
-            os.fchmod(output.fileno(), 0o600)
-            output.write(payload)
-            output.flush()
-            os.fsync(output.fileno())
-        os.link(temporary, destination)
-    finally:
-        os.unlink(temporary)
+    _write_private_new(destination, payload)
     return result
 
 

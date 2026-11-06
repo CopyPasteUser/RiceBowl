@@ -70,18 +70,19 @@ def parser() -> argparse.ArgumentParser:
             trace.add_argument("--trace-path", action="store_true", help="Print evidence file location without running the shell")
     commands.add_parser("session-sync", help="Reconcile active rice after XFCE autostart")
     de = commands.add_parser("de", help="Inspect experimental RiceBowl Wayland desktop prerequisites")
-    de.add_argument("action", choices=("check", "start", "shell", "recipes", "recipe-init"))
+    de.add_argument("action", choices=("check", "start", "shell", "recipes", "recipe-init",
+                                       "recipe-import", "recipe-export"))
     de.add_argument("--json", action="store_true", help="Read-only machine-readable preflight")
     de.add_argument("--nested", action="store_true",
                     help="Explicitly test a separate labwc session inside an active desktop")
-    de.add_argument("--recipe", help="RicePlate recipe: classic, chrome or an owner-private absolute JSON path")
+    de.add_argument("--recipe", help="RicePlate recipe: built-in/imported ID or an owner-private absolute JSON path")
     de.add_argument("--panel", choices=("waybar", "native"), default="waybar",
                     help="Session panel (native RicePlate is experimental and falls back to Waybar)")
     de.add_argument("--base", choices=("classic", "chrome"),
                     help="Bundled base recipe for de recipe-init")
     de.add_argument("--id", help="Lowercase recipe identifier for de recipe-init")
     de.add_argument("--name", help="Human-readable recipe name for de recipe-init")
-    de.add_argument("--output", type=Path, help="Absolute .json destination for de recipe-init")
+    de.add_argument("--output", type=Path, help="Absolute .json destination for de recipe-init or recipe-export")
     commands.add_parser("session-menu", help="Toggle the active rice's application menu")
     commands.add_parser("session-control", help="Toggle the active rice's control panel")
     commands.add_parser("session-keys-restore", help="Restore the previous Super/Right Control shortcuts")
@@ -138,8 +139,10 @@ def main(argv: list[str] | None = None) -> int:
             from .riceware_cli import run as run_riceware
             return run_riceware(args)
         if args.command == "de":
-            if args.action != "recipe-init" and any((args.base, args.id, args.name, args.output)):
-                raise ValueError("--base, --id, --name and --output only apply to de recipe-init")
+            if args.action != "recipe-init" and any((args.base, args.id, args.name)):
+                raise ValueError("--base, --id and --name only apply to de recipe-init")
+            if args.action not in ("recipe-init", "recipe-export") and args.output:
+                raise ValueError("--output only applies to de recipe-init or de recipe-export")
             if args.action == "recipe-init":
                 if (args.json or args.nested or args.recipe or args.panel != "waybar"
                         or not args.id or not args.name or not args.output):
@@ -150,6 +153,22 @@ def main(argv: list[str] | None = None) -> int:
                                               recipe_id=args.id, name=args.name)
                 print(f"Created private RicePlate recipe {result.recipe_id}: {args.output}")
                 print(f"Preview: ricebowl de start --nested --recipe {shlex.quote(str(args.output))}")
+                return 0
+            if args.action == "recipe-import":
+                if (args.json or args.nested or args.panel != "waybar" or not args.recipe):
+                    raise ValueError("de recipe-import requires --recipe /absolute/file.json")
+                from .de.recipes import import_recipe
+                result, path = import_recipe(Path(args.recipe))
+                print(f"Imported {result.recipe_id} into {path} (not applied)")
+                print(f"Preview: ricebowl de start --nested --recipe {result.recipe_id}")
+                return 0
+            if args.action == "recipe-export":
+                if (args.json or args.nested or args.panel != "waybar"
+                        or not args.recipe or not args.output):
+                    raise ValueError("de recipe-export requires --recipe ID and --output /absolute/file.json")
+                from .de.recipes import export_recipe
+                result = export_recipe(args.recipe, args.output)
+                print(f"Exported {result.recipe_id} to {args.output} (not applied)")
                 return 0
             if args.action == "start":
                 if args.json:
@@ -164,8 +183,10 @@ def main(argv: list[str] | None = None) -> int:
             if args.action == "recipes":
                 if args.nested or args.panel != "waybar":
                     raise ValueError("de recipes accepts only --recipe and --json")
-                from .de.recipes import BUILTINS, load
-                recipes = [load(args.recipe)] if args.recipe else [load(name) for name in BUILTINS]
+                from .de.recipes import BUILTINS, imported_recipes, load
+                recipes = ([load(args.recipe)] if args.recipe else
+                           [load(name) for name in BUILTINS]
+                           + [item for item, _ in imported_recipes()])
                 if args.json:
                     print(json.dumps([{"id": item.recipe_id, "name": item.name,
                                       "position": item.position, "height": item.height}
