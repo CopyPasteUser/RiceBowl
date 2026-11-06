@@ -109,6 +109,31 @@ dbus-run-session -- sh -eu -c '
             cp "$runtime/$label.png" "$source_root/dist/riceplate-native-preview/$label.png"
             echo "Captured real native RicePlate $label framebuffer"
         fi
+        if [ "$label" = desktop-v5 ]; then
+            # Exercise output reconfiguration while the SAME native shell is
+            # running. These are actual compositor screenshots, not mockups.
+            # The surrounding sh -c payload is single-quoted: use only
+            # double quotes here so no part is evaluated by the parent shell.
+            output=$(WAYLAND_DISPLAY=wayland-0 wlr-randr | sed -n "1s/[[:space:]].*//p")
+            if [ -z "$output" ]; then
+                echo "No headless output found for multi-size Wayland capture" >&2
+                exit 1
+            fi
+            for mode in 1024x768 1366x768 1920x1080; do
+                WAYLAND_DISPLAY=wayland-0 wlr-randr --output "$output" --custom-mode "${mode}@60Hz" --scale 1
+                sleep 0.5
+                WAYLAND_DISPLAY=wayland-0 grim - > "$runtime/desktop-v5-$mode.png"
+                cp "$runtime/desktop-v5-$mode.png" \
+                   "$source_root/dist/riceplate-native-preview/desktop-v5-$mode.png"
+                echo "Captured native desktop-v5 at $mode"
+            done
+            WAYLAND_DISPLAY=wayland-0 wlr-randr --output "$output" --custom-mode 1366x768@60Hz --scale 1.25
+            sleep 0.5
+            WAYLAND_DISPLAY=wayland-0 grim - > "$runtime/desktop-v5-scale-125.png"
+            cp "$runtime/desktop-v5-scale-125.png" \
+               "$source_root/dist/riceplate-native-preview/desktop-v5-scale-125.png"
+            echo "Captured native desktop-v5 at fractional scale 1.25"
+        fi
         kill "$plate"
         wait "$plate" 2>/dev/null || :
         plate=

@@ -6,11 +6,15 @@ on:
       - '.github/workflows/riceplate-native.yml'
       - 'components/riceplate-wayland/**'
       - 'scripts/smoke_riceplate_native.sh'
+      - 'scripts/compare_wayland_captures.py'
+      - 'tests/test_de_visual_qa.py'
   pull_request:
     paths:
       - '.github/workflows/riceplate-native.yml'
       - 'components/riceplate-wayland/**'
       - 'scripts/smoke_riceplate_native.sh'
+      - 'scripts/compare_wayland_captures.py'
+      - 'tests/test_de_visual_qa.py'
 
 permissions:
   contents: read
@@ -43,25 +47,63 @@ jobs:
       - name: Install headless labwc
         run: |
           sudo apt-get update
-          sudo apt-get install -y labwc grim dbus-user-session dbus-x11
+          sudo apt-get install -y labwc grim wlr-randr python3-pil dbus-user-session dbus-x11
       - name: Boot native Wayland layer surface
-        run: timeout -k 5s 50s sh scripts/smoke_riceplate_native.sh
-      - name: Validate genuine headless Wayland screenshot
+        run: timeout -k 5s 70s sh scripts/smoke_riceplate_native.sh
+      - name: Validate and record real multi-resolution captures
         run: |
           python3 - <<'PY'
+          import hashlib
+          import json
+          import subprocess
           from pathlib import Path
           import struct
+          from scripts.compare_wayland_captures import compare
+
+          directory = Path('dist/riceplate-native-preview')
+          private_recipe = directory / 'desktop-v5-recipe.json'
+          private_recipe.write_bytes(Path('tests/fixtures/riceplate-desktop-v5.json').read_bytes())
+          private_recipe.chmod(0o600)
+          manifest = {
+              'manifest_version': 1,
+              'source_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
+              'environment': {'compositor': 'labwc', 'backend': 'headless',
+                              'renderer': 'pixman', 'native_surface': 'riceplate'},
+              'recipe_sha256': hashlib.sha256(private_recipe.read_bytes()).hexdigest(),
+              'captures': [],
+          }
+          expected = {
+              'desktop-v5-1024x768': (1024, 768, 1),
+              'desktop-v5-1366x768': (1366, 768, 1),
+              'desktop-v5-1920x1080': (1920, 1080, 1),
+              'desktop-v5-scale-125': (1366, 768, 1.25),
+          }
           captures = {}
-          for label in ('shell-v4', 'desktop-v5'):
+          for label in ('shell-v4', 'desktop-v5', *expected):
               screenshot = Path(f'dist/riceplate-native-preview/{label}.png')
               data = screenshot.read_bytes()
               assert data[:8] == bytes.fromhex('89504e470d0a1a0a'), f'{label}: not a PNG capture'
               width, height = struct.unpack('>II', data[16:24])
               assert width >= 640 and height >= 480, (label, width, height)
               assert len(data) >= 512, f'{label}: missing screenshot pixels'
+              if label in expected:
+                  target_width, target_height, scale = expected[label]
+                  assert (width, height) == (target_width, target_height), (label, width, height)
+                  # Comparing a capture with itself is ONLY an honest geometry
+                  # preflight; it is never a fidelity or interaction score.
+                  report = compare(screenshot, screenshot, recipe_token=str(private_recipe.resolve()))
+                  assert not report['layout_issues'], (label, report['layout_issues'])
+                  manifest['captures'].append({
+                      'file': screenshot.name,
+                      'width': width, 'height': height, 'scale': scale,
+                      'sha256': hashlib.sha256(data).hexdigest(),
+                      'regions': [{key: region[key] for key in ('id', 'expected_rect', 'visible_fraction')}
+                                  for region in report['regions']],
+                  })
               print(f'Captured real native labwc {label}: {width}x{height}, {len(data)} bytes')
               captures[label] = data
           assert captures['shell-v4'] != captures['desktop-v5'], 'Icons missing from v5 framebuffer'
+          (directory / 'capture-manifest.json').write_text(json.dumps(manifest, indent=2, sort_keys=True) + '\n')
           PY
       - name: Archive smoke-tested native RicePlate preview binary
         uses: actions/upload-artifact@v4
