@@ -4,6 +4,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 try:
     from PIL import Image
@@ -11,10 +12,14 @@ except ImportError:
     Image = None
 
 from scripts.compare_wayland_captures import compare, main
+from macrice.de.visual_qa import compare as installed_compare
 
 
 @unittest.skipIf(Image is None, "Optional Pillow is not installed in this runtime")
 class WaylandVisualQaTests(unittest.TestCase):
+    def test_script_and_installed_cli_share_exact_same_engine(self):
+        self.assertIs(compare, installed_compare)
+
     def test_native_smoke_embedded_shell_remains_literal(self):
         """Prevent quotes from prematurely closing the `sh -c` payload."""
         source = (Path(__file__).parent.parent /
@@ -160,6 +165,80 @@ class WaylandVisualQaTests(unittest.TestCase):
             self.assertEqual(report["recipe"]["schema_version"], 5)
             self.assertEqual(report["overlay"], str(overlay))
             self.assertEqual(report["layout_issues"], [])
+
+    def test_installed_creator_cli_reports_versioned_real_capture_diagnostics(self):
+        from macrice.cli import main as cli
+        from macrice.de.creator_contract import describe_visual_qa
+
+        with tempfile.TemporaryDirectory() as folder:
+            directory = Path(folder)
+            source = self._private_recipe(directory)
+            before = source.read_bytes()
+            ref, actual = directory / "reference.png", directory / "actual.png"
+            overlay, heatmap = directory / "overlay.png", directory / "heatmap.png"
+            Image.new("RGB", (1024, 768), "#000000").save(ref)
+            Image.new("RGB", (1024, 768), "#121212").save(actual)
+            args = ["de", "visual-compare", "--reference", str(ref),
+                    "--actual", str(actual), "--recipe", str(source),
+                    "--overlay", str(overlay), "--heatmap", str(heatmap), "--json"]
+            with mock.patch("macrice.de.session.start") as start, \
+                 mock.patch("macrice.de.recipes.change_selection") as selection, \
+                 mock.patch("builtins.print") as printer:
+                self.assertEqual(cli(args), 0)
+            payload = json.loads(printer.call_args.args[0])
+            self.assertEqual(payload["creator_contract_version"],
+                             describe_visual_qa()["contract_version"])
+            self.assertTrue(payload["ok"])
+            self.assertFalse(payload["applied"])
+            self.assertEqual(payload["visual_qa"]["comparison_version"], 2)
+            self.assertEqual(payload["visual_qa"]["layout_issues"], [])
+            self.assertEqual(payload["visual_qa"]["size"], {"width": 1024, "height": 768})
+            self.assertEqual(source.read_bytes(), before)
+            self.assertEqual(overlay.stat().st_mode & 0o777, 0o600)
+            self.assertEqual(heatmap.stat().st_mode & 0o777, 0o600)
+            start.assert_not_called()
+            selection.assert_not_called()
+
+    def test_installed_creator_cli_fails_closed_without_leaking_private_paths(self):
+        from macrice.cli import main as cli
+
+        with tempfile.TemporaryDirectory() as folder:
+            directory = Path(folder)
+            ref = directory / "private-reference.png"
+            actual = directory / "private-secret-capture.png"
+            target = directory / "unwanted-overlay.png"
+            Image.new("RGB", (10, 10)).save(ref)
+            actual.write_text("not a PNG")
+            args = ["de", "visual-compare", "--reference", str(ref),
+                    "--actual", str(actual), "--overlay", str(target), "--json"]
+            with mock.patch("builtins.print") as printer:
+                self.assertEqual(cli(args), 2)
+            failed = json.loads(printer.call_args.args[0])
+            self.assertEqual(failed["error"]["code"], "invalid_visual_input")
+            self.assertFalse(failed["ok"])
+            self.assertFalse(failed["applied"])
+            self.assertNotIn(folder, json.dumps(failed))
+            self.assertFalse(target.exists())
+            for invalid in (["--threshold", "256"], ["--threshold", "-1"]):
+                with self.subTest(invalid=invalid), mock.patch("builtins.print") as printer:
+                    self.assertEqual(cli(["de", "visual-compare", "--reference", str(ref),
+                                          "--actual", str(ref), "--json", *invalid]), 2)
+                    self.assertEqual(json.loads(printer.call_args.args[0])["error"]["code"],
+                                     "invalid_visual_input")
+
+    def test_visual_flags_are_isolated_from_other_de_actions(self):
+        from macrice.cli import main as cli
+
+        for arguments in (["de", "catalog", "--reference", "/tmp/not-used.png"],
+                          ["de", "check", "--heatmap", "/tmp/not-used.png"],
+                          ["de", "review", "--recipe", "classic", "--threshold", "10"],
+                          ["de", "visual-compare", "--actual", "/tmp/a.png"],
+                          ["de", "visual-compare", "--reference", "/tmp/a.png",
+                           "--actual", "/tmp/b.png", "--nested"],
+                          ["de", "visual-compare", "--reference", "/tmp/a.png",
+                           "--actual", "/tmp/b.png", "--panel", "native"]):
+            with self.subTest(arguments=arguments), mock.patch("sys.stderr"):
+                self.assertEqual(cli(arguments), 1)
 
 
 if __name__ == "__main__":

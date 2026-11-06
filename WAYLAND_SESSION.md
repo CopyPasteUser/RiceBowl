@@ -313,15 +313,18 @@ the compositor successfully drew or activated each control. To obtain private
 no-overwrite visual diagnostics:
 
 ```bash
-python3 scripts/compare_wayland_captures.py \
-  "$HOME/reference.png" "$HOME/riceplate-actual.png" \
+ricebowl de visual-compare \
+  --reference "$HOME/reference.png" \
+  --actual "$HOME/riceplate-actual.png" \
   --recipe "$HOME/my-desktop.json" \
   --overlay "$HOME/compare-overlay.png" \
-  --heatmap "$HOME/compare-heatmap.png"
+  --heatmap "$HOME/compare-heatmap.png" --json
 ```
 
-The script emits machine-readable overall and per-region RGB errors plus a
-recipe fingerprint. The overlay blends the two original captures; the red
+The on-demand Creator CLI emits a versioned machine-readable result with
+overall and per-region RGB errors plus a recipe fingerprint. The legacy
+`scripts/compare_wayland_captures.py` standalone command remains available
+and uses **the same comparison engine**. The overlay blends the original captures; the red
 heatmap amplifies changed pixels. Both outputs are new, private `0600` files,
 and the source images and recipe are never modified. Reference and actual
 must have the same dimensions, be PNG and fit the 16-megapixel safety bound.
