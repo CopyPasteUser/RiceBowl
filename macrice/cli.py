@@ -70,13 +70,14 @@ def parser() -> argparse.ArgumentParser:
             trace.add_argument("--trace-path", action="store_true", help="Print evidence file location without running the shell")
     commands.add_parser("session-sync", help="Reconcile active rice after XFCE autostart")
     de = commands.add_parser("de", help="Inspect experimental RiceBowl Wayland desktop prerequisites")
-    de.add_argument("action", choices=("check", "start", "shell", "catalog", "recipes", "recipe-init",
+    de.add_argument("action", choices=("check", "start", "shell", "catalog", "review", "recipes", "recipe-init",
                                        "recipe-import", "recipe-export", "recipe-current",
                                        "recipe-select", "recipe-restore"))
     de.add_argument("--json", action="store_true", help="Read-only machine-readable preflight")
     de.add_argument("--nested", action="store_true",
                     help="Explicitly test a separate labwc session inside an active desktop")
     de.add_argument("--recipe", help="RicePlate recipe: built-in/imported ID or an owner-private absolute JSON path")
+    de.add_argument("--compare", help="Base recipe ID or owner-private absolute path for read-only de review")
     de.add_argument("--panel", choices=("waybar", "native"), default="waybar",
                     help="Session panel (native RicePlate is experimental and falls back to Waybar)")
     de.add_argument("--base", choices=("classic", "chrome"),
@@ -142,6 +143,8 @@ def main(argv: list[str] | None = None) -> int:
             from .riceware_cli import run as run_riceware
             return run_riceware(args)
         if args.command == "de":
+            if args.action != "review" and args.compare is not None:
+                raise ValueError("--compare only applies to de review")
             if args.action != "recipe-init" and any((args.base, args.id, args.name)):
                 raise ValueError("--base, --id and --name only apply to de recipe-init")
             if args.action != "recipe-init" and args.schema_version != 1:
@@ -224,6 +227,34 @@ def main(argv: list[str] | None = None) -> int:
                     for component in catalog["components"]:
                         print(f"  {component['id']:8} {component['native']:12} / {component['waybar']}")
                     print("Full desktop composition and screenshot-to-rice conversion: not available")
+                return 0
+            if args.action == "review":
+                if args.nested or args.panel != "waybar" or not args.recipe:
+                    raise ValueError("de review requires --recipe and accepts only --compare and --json")
+                from .de.review import invalid_review, review
+                from .de.recipes import RecipeError
+                try:
+                    report = review(args.recipe, args.compare)
+                except RecipeError:
+                    if not args.json:
+                        raise
+                    print(json.dumps(invalid_review(), indent=2))
+                    return 2
+                if args.json:
+                    print(json.dumps(report, indent=2, ensure_ascii=False))
+                else:
+                    summary = report["summary"]
+                    print(f"Valid panel recipe: {summary['id']} (schema v{summary['schema_version']})")
+                    print(f"Semantic SHA256: {summary['semantic_sha256']}")
+                    missing = summary["native_unavailable_widgets"]
+                    if missing:
+                        print("Still requires Waybar for: " + ", ".join(missing))
+                    if report["comparison"] is not None:
+                        changes = report["comparison"]["changes"]
+                        print(f"Changes from {report['comparison']['base_id']}: {len(changes)}")
+                        for change in changes:
+                            print(f"  {change['path']}: {change['before']!r} -> {change['after']!r}")
+                    print("Read-only review; no desktop changes. Use a nested preview to inspect it.")
                 return 0
             if args.action == "recipes":
                 if args.nested or args.panel != "waybar":
