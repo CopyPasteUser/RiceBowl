@@ -71,7 +71,8 @@ def parser() -> argparse.ArgumentParser:
     commands.add_parser("session-sync", help="Reconcile active rice after XFCE autostart")
     de = commands.add_parser("de", help="Inspect experimental RiceBowl Wayland desktop prerequisites")
     de.add_argument("action", choices=(
-        "check", "start", "shell", "catalog", "review", "draft-edit", "visual-compare", "capture",
+        "check", "start", "shell", "catalog", "review", "draft-edit", "visual-compare",
+        "capture", "render",
         "recipes", "recipe-init", "recipe-import", "recipe-export", "recipe-current",
         "recipe-select", "recipe-restore"))
     de.add_argument("--json", action="store_true", help="Read-only machine-readable preflight")
@@ -94,6 +95,10 @@ def parser() -> argparse.ArgumentParser:
     de.add_argument("--id", help="Lowercase recipe identifier for de recipe-init")
     de.add_argument("--name", help="Human-readable recipe name for de recipe-init")
     de.add_argument("--output", type=Path, help="New absolute .json draft/export or .png capture destination")
+    de.add_argument("--width", type=int, help="Headless de render capture width (640–4096)")
+    de.add_argument("--height", type=int, help="Headless de render capture height (480–2160)")
+    de.add_argument("--scale", type=float, choices=(1, 1.25, 1.5, 2),
+                    help="Headless de render scale factor")
     commands.add_parser("session-menu", help="Toggle the active rice's application menu")
     commands.add_parser("session-control", help="Toggle the active rice's control panel")
     commands.add_parser("session-keys-restore", help="Restore the previous Super/Right Control shortcuts")
@@ -157,12 +162,15 @@ def main(argv: list[str] | None = None) -> int:
             if args.action != "visual-compare" and any(value is not None for value in
                     (args.reference, args.actual, args.overlay, args.heatmap, args.threshold)):
                 raise ValueError("Visual comparison options only apply to de visual-compare")
+            if args.action != "render" and any(value is not None for value in
+                    (args.width, args.height, args.scale)):
+                raise ValueError("--width, --height and --scale only apply to de render")
             if args.action != "recipe-init" and any((args.base, args.id, args.name)):
                 raise ValueError("--base, --id and --name only apply to de recipe-init")
             if args.action != "recipe-init" and args.schema_version != 1:
                 raise ValueError("--schema-version only applies to de recipe-init")
-            if args.action not in ("recipe-init", "recipe-export", "draft-edit", "capture") and args.output:
-                raise ValueError("--output only applies to de recipe-init, recipe-export, draft-edit or capture")
+            if args.action not in ("recipe-init", "recipe-export", "draft-edit", "capture", "render") and args.output:
+                raise ValueError("--output only applies to recipe-init, recipe-export, draft-edit, capture or render")
             if args.action == "recipe-init":
                 if (args.json or args.nested or args.recipe or args.panel != "waybar"
                         or not args.id or not args.name or not args.output):
@@ -320,6 +328,29 @@ def main(argv: list[str] | None = None) -> int:
                     print(f"Captured current Wayland display: {report['path']} "
                           f"({report['width']}x{report['height']})")
                     print("The capture may contain private screen data; no desktop change was made")
+                return 0
+            if args.action == "render":
+                if args.nested or args.panel != "waybar":
+                    raise ValueError("de render accepts --recipe, --output, --width, --height, --scale and --json")
+                from .de.render import DEFAULT_HEIGHT, DEFAULT_WIDTH, RenderError, render
+                try:
+                    report = render(args.recipe, args.output,
+                                    width=DEFAULT_WIDTH if args.width is None else args.width,
+                                    height=DEFAULT_HEIGHT if args.height is None else args.height,
+                                    scale=1.0 if args.scale is None else args.scale)
+                except RenderError as exc:
+                    if not args.json:
+                        raise
+                    print(json.dumps({"creator_contract_version": 1, "ok": False,
+                                      "error": {"code": exc.code, "message": str(exc)}},
+                                     indent=2))
+                    return 2
+                if args.json:
+                    print(json.dumps({"creator_contract_version": 1, "ok": True,
+                                      "render": report}, indent=2))
+                else:
+                    print(f"Rendered {report['recipe']['id']} in isolated labwc: {report['output']['path']}")
+                    print("No active desktop changes; visual and interaction fidelity are not certified")
                 return 0
             if args.action == "draft-edit":
                 if (args.nested or args.panel != "waybar" or not args.recipe

@@ -280,6 +280,14 @@ depend on the XFCE session.
   no overwrite of files or symlinks, bound size and runtime, report content hash
   and stable machine errors. Never automatically capture private windows or
   claim that this creates/isolates a nested compositor session.
+- [x] Provide a **first isolated, native headless Creator render** endpoint
+  (`de render --recipe ... --output /absolute/new.png [--width ... --height ...
+  --scale ...] --json`): validate the recipe, start a private labwc/pixman
+  compositor, render original bundled wallpaper and native RicePlate surfaces,
+  capture via the existing Creator CLI, publish a verified PNG without
+  overwriting, then terminate all render children. Its CI uses real native
+  pixels and content hashes. Not yet an editable preview GUI, Waybar render,
+  perceptual test, active apply/rollback, or complete multi-output harness.
 - [ ] Publish a **versioned, machine-readable Creator contract** (CLI JSON
   output first; optional local IPC only if justified) for discovering
   components, creating/editing drafts, validating recipes, previewing the

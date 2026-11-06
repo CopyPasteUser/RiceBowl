@@ -10,6 +10,7 @@ on:
       - 'tests/test_de_visual_qa.py'
       - 'tests/fixtures/riceplate-desktop-v5-overflow.json'
       - 'macrice/de/capture.py'
+      - 'macrice/de/render.py'
       - 'macrice/cli.py'
   pull_request:
     paths:
@@ -20,6 +21,7 @@ on:
       - 'tests/test_de_visual_qa.py'
       - 'tests/fixtures/riceplate-desktop-v5-overflow.json'
       - 'macrice/de/capture.py'
+      - 'macrice/de/render.py'
       - 'macrice/cli.py'
 
 permissions:
@@ -53,9 +55,23 @@ jobs:
       - name: Install headless labwc
         run: |
           sudo apt-get update
-          sudo apt-get install -y labwc grim wlr-randr python3-pil dbus-user-session dbus-x11
+          sudo apt-get install -y labwc grim wlr-randr swaybg python3-pil dbus-user-session dbus-x11
       - name: Boot native Wayland layer surface
         run: timeout -k 5s 70s sh scripts/smoke_riceplate_native.sh
+      - name: Render validated recipe in isolated Creator compositor
+        run: |
+          set -eu
+          private_recipe=$(mktemp -d -t riceplate-headless-recipe-XXXXXXXX)
+          trap 'rm -r -- "$private_recipe"' EXIT
+          chmod 0700 "$private_recipe"
+          cp tests/fixtures/riceplate-desktop-v5.json "$private_recipe/recipe.json"
+          chmod 0600 "$private_recipe/recipe.json"
+          export PATH="$PWD/components/riceplate-wayland/target/release:$PATH"
+          dbus-run-session -- /usr/bin/python3 launcher.py de render \
+            --recipe "$private_recipe/recipe.json" \
+            --output "$PWD/dist/riceplate-native-preview/isolated-v5.png" \
+            --width 1024 --height 768 --json \
+            > dist/riceplate-native-preview/isolated-v5.json
       - name: Validate and record real multi-resolution captures
         run: |
           python3 - <<'PY'
@@ -86,6 +102,7 @@ jobs:
               'desktop-v5-scale-125': (1366, 768, 1.25),
               'overflow-v5': (1024, 768, 1),
               'creator-v1': (1024, 768, 1),
+              'isolated-v5': (1024, 768, 1),
           }
           captures = {}
           for label in ('shell-v4', 'desktop-v5', *expected):
@@ -119,6 +136,19 @@ jobs:
                           assert receipt['capture']['sha256'] == record['sha256']
                           assert receipt['capture']['width'] == width
                           assert receipt['capture']['height'] == height
+                  elif label == 'isolated-v5':
+                      receipt = json.loads((directory / 'isolated-v5.json').read_text())
+                      assert receipt['ok'] and receipt['creator_contract_version'] == 1
+                      assert receipt['render']['source'] == 'isolated-headless-labwc-native-riceplate'
+                      assert receipt['render']['recipe']['id'] == 'mockup-desktop'
+                      assert receipt['render']['output']['sha256'] == record['sha256']
+                      assert receipt['render']['geometry'] == {
+                          'width': 1024, 'height': 768, 'scale': 1.0}
+                      with Image.open(screenshot) as image:
+                          rgb = image.convert('RGB').getpixel((64, 112))
+                      assert all(abs(actual - expected_color) <= 2 for actual, expected_color in
+                                 zip(rgb, (65, 121, 170))), f'native icon missing: {rgb}'
+                      record['native_icon_pixel'] = {'x': 64, 'y': 112, 'rgb': rgb}
                   else:
                       # Self-comparison is solely a geometry preflight, not
                       # an assessment of visual fidelity or interaction.
