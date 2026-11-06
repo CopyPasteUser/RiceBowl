@@ -88,19 +88,21 @@ event-driven Rust/Smithay Client Toolkit layer-shell prototype. It paints a
 simple labelled surface with a fixed `Apps` button that launches the installed
 Fuzzel command without passing any recipe data to a shell. When labwc offers
 `wlr-foreign-toplevel-management`, the prototype also displays live window
-titles and supports click-to-activate via the Wayland seat. The window list
+titles and supports click-to-activate via the Wayland seat; clicking an active
+task requests minimization. The window list
 is deliberately bounded and only the visible entries accept clicks; if the
 protocol is missing the panel keeps its launcher and reports the limitation.
-It is **not** a replacement taskbar: it still lacks grouping, clocks, tray,
-notification handling or multi-output ownership. Do not start it automatically
+It is **not** a replacement taskbar: it still lacks grouping, a calendar
+popover, tray, notification handling or multi-output ownership. Do not start it automatically
 alongside Waybar.
 
 The native prototype understands two *bundled* schema-v1 RicePlate recipes:
 `classic` (left-aligned bottom taskbar) and `chrome` (centered task list and
 taller shelf). Both are parsed from the same recipe JSON files as the
 temporary Waybar adapter, with strict schema/widget/color checks. Currently
-only the launcher and tasks widgets render natively; indicators, clock and
-tray still need functional Rust backends. Arbitrary custom recipe file paths
+the launcher, tasks and local-time clock render natively. The clock is updated
+on minute boundaries through the Wayland event loop without a 1 Hz timer.
+Other indicators and the tray still need functional Rust backends. Arbitrary custom recipe file paths
 are not accepted by the native binary yet.
 
 In a *disposable/nested* labwc session, developers with Rust 1.86+ can try:

@@ -1,14 +1,19 @@
 //! Native RicePlate experiment: an input-capable, idle event-driven layer surface.
 //! No session takeover: launch only inside an already running Wayland session.
 
-use std::{error::Error, process::Command};
+use std::{error::Error, process::Command, time::Duration};
 
+use chrono::{Local, Timelike};
 use font8x8::{UnicodeFonts, BASIC_FONTS};
 use serde::Deserialize;
 use smithay_client_toolkit::{
     compositor::{CompositorHandler, CompositorState, FrameCallbackData},
     delegate_registry,
     output::{OutputHandler, OutputState},
+    reexports::{
+        calloop::EventLoop,
+        calloop_wayland_source::WaylandSource,
+    },
     registry::{ProvidesRegistryState, RegistryState},
     registry_handlers,
     seat::{
@@ -36,6 +41,7 @@ const MAX_WIDTH: u32 = 16384;
 const MAX_HEIGHT: u32 = 256;
 const LAUNCHER_WIDTH: u32 = 104;
 const TASK_WIDTH: u32 = 164;
+const CLOCK_AREA_WIDTH: u32 = 96;
 const MAX_TRACKED_TASKS: usize = 128;
 const BTN_LEFT: u32 = 0x110;
 
@@ -78,6 +84,7 @@ struct PanelStyle {
     top: bool,
     tasks_centered: bool,
     launcher: bool,
+    clock: bool,
     background: u32,
     foreground: u32,
     active: u32,
@@ -119,6 +126,7 @@ fn parse_recipe(raw: &str, expected_id: &str) -> Result<PanelStyle, Box<dyn Erro
         top: recipe.panel.position == "top",
         tasks_centered: recipe.panel.sections.center.iter().any(|w| w == "tasks"),
         launcher: sections.iter().any(|widgets| widgets.iter().any(|w| w == "launcher")),
+        clock: sections.iter().any(|widgets| widgets.iter().any(|w| w == "clock")),
         background: color(&recipe.colors.background)?,
         foreground: color(&recipe.colors.foreground)?,
         active: color(&recipe.colors.active)?,
@@ -132,6 +140,17 @@ fn load_builtin_recipe(name: &str) -> Result<PanelStyle, Box<dyn Error>> {
         _ => return Err("Unknown RicePlate recipe; choose classic or chrome".into()),
     };
     parse_recipe(raw, name)
+}
+
+fn clock_now() -> String {
+    Local::now().format("%H:%M").to_string()
+}
+
+fn next_clock_timeout() -> Duration {
+    let now = Local::now();
+    let milliseconds = u64::from(60 - now.second()) * 1000
+        - u64::from(now.nanosecond() / 1_000_000);
+    Duration::from_millis(milliseconds.max(50))
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
@@ -152,8 +171,10 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
     let recipe = load_builtin_recipe(recipe_name)?;
     let conn = Connection::connect_to_env()?;
-    let (globals, mut event_queue) = registry_queue_init(&conn)?;
+    let (globals, event_queue) = registry_queue_init(&conn)?;
     let qh = event_queue.handle();
+    let mut event_loop: EventLoop<RicePlate> = EventLoop::try_new()?;
+    WaylandSource::new(conn.clone(), event_queue).insert(event_loop.handle())?;
     let compositor = CompositorState::bind(&globals, &qh)?;
     let layer_shell = LayerShell::bind(&globals, &qh)?;
     let shm = Shm::bind(&globals, &qh)?;
@@ -179,6 +200,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         shm,
         layer,
         recipe,
+        clock: clock_now(),
         pointer: None,
         primary_seat: None,
         toplevel_manager,
@@ -192,7 +214,14 @@ fn main() -> Result<(), Box<dyn Error>> {
         needs_redraw: false,
     };
     while !app.closed {
-        event_queue.blocking_dispatch(&mut app)?;
+        // Calloop sleeps on Wayland's fd and wakes at the next minute,
+        // so the clock updates without any resident 1 Hz poll/frame loop.
+        event_loop.dispatch(Some(next_clock_timeout()), &mut app)?;
+        let current = clock_now();
+        if app.clock != current {
+            app.clock = current;
+            app.request_redraw(&qh);
+        }
     }
     Ok(())
 }
@@ -212,6 +241,7 @@ struct RicePlate {
     shm: Shm,
     layer: LayerSurface,
     recipe: PanelStyle,
+    clock: String,
     pointer: Option<wl_pointer::WlPointer>,
     primary_seat: Option<wl_seat::WlSeat>,
     toplevel_manager: Option<ZwlrForeignToplevelManagerV1>,
@@ -262,7 +292,7 @@ impl RicePlate {
             draw_text(canvas, width, height, 27, height / 2 - 4,
                       "Apps", self.recipe.foreground);
         }
-        let visible = visible_task_count(width, self.tasks.len());
+        let visible = visible_task_count(width, self.tasks.len(), self.recipe.clock);
         let start = task_strip_start(width, visible, self.recipe.tasks_centered);
         if visible == 0 {
             draw_text(canvas, width, height, LAUNCHER_WIDTH + 16, height / 2 - 4,
@@ -279,6 +309,10 @@ impl RicePlate {
             draw_text(canvas, width, height, x + 10, height / 2 - 4,
                       &label, self.recipe.foreground);
         }
+        if self.recipe.clock && width >= CLOCK_AREA_WIDTH {
+            draw_text(canvas, width, height, width - CLOCK_AREA_WIDTH + 26,
+                      height / 2 - 4, &self.clock, self.recipe.foreground);
+        }
         surface.damage_buffer(0, 0, width as i32, height as i32);
         if let Err(error) = buffer.attach_to(surface) {
             eprintln!("RicePlate: failed to attach Wayland buffer: {error}");
@@ -292,8 +326,9 @@ impl RicePlate {
     }
 }
 
-fn visible_task_count(width: u32, tasks: usize) -> usize {
-    (width.saturating_sub(LAUNCHER_WIDTH + 24) / TASK_WIDTH)
+fn visible_task_count(width: u32, tasks: usize, clock: bool) -> usize {
+    let end_reservation = if clock { CLOCK_AREA_WIDTH + 12 } else { 24 };
+    (width.saturating_sub(LAUNCHER_WIDTH + end_reservation) / TASK_WIDTH)
         .min(MAX_TRACKED_TASKS as u32).min(tasks as u32) as usize
 }
 
@@ -312,11 +347,12 @@ fn task_label(title: &str, app_id: &str) -> String {
     label.chars().take(18).collect()
 }
 
-fn task_at(x: f64, width: u32, tasks: usize, centered: bool) -> Option<usize> {
-    let start = f64::from(task_strip_start(width, visible_task_count(width, tasks), centered));
+fn task_at(x: f64, width: u32, tasks: usize, centered: bool, clock: bool) -> Option<usize> {
+    let start = f64::from(task_strip_start(width,
+        visible_task_count(width, tasks, clock), centered));
     if !x.is_finite() || x < start { return None; }
     let index = ((x - start) / f64::from(TASK_WIDTH)) as usize;
-    (index < visible_task_count(width, tasks)).then_some(index)
+    (index < visible_task_count(width, tasks, clock)).then_some(index)
 }
 
 fn fill_rect(canvas: &mut [u8], width: u32, height: u32,
@@ -441,13 +477,16 @@ impl PointerHandler for RicePlate {
                         if let Err(error) = Command::new("fuzzel").spawn() {
                             eprintln!("RicePlate: cannot open application launcher: {error}");
                         }
-                    } else if let (Some(index), Some(seat)) = (
-                        task_at(event.position.0, self.width, self.tasks.len(),
-                                self.recipe.tasks_centered),
-                        self.primary_seat.as_ref()
+                    } else if let Some(index) = task_at(
+                        event.position.0, self.width, self.tasks.len(),
+                        self.recipe.tasks_centered, self.recipe.clock,
                     ) {
                         if self.tasks[index].ready {
-                            self.tasks[index].handle.activate(seat);
+                            if self.tasks[index].active {
+                                self.tasks[index].handle.set_minimized();
+                            } else if let Some(seat) = self.primary_seat.as_ref() {
+                                self.tasks[index].handle.activate(seat);
+                            }
                         }
                     }
                 }
@@ -548,12 +587,14 @@ mod tests {
 
     #[test]
     fn task_hit_testing_never_targets_hidden_windows() {
-        assert_eq!(visible_task_count(500, 50), 2);
-        assert_eq!(task_at(104.0, 500, 50, false), Some(0));
-        assert_eq!(task_at(270.0, 500, 50, false), Some(1));
-        assert_eq!(task_at(440.0, 500, 50, false), None);
-        assert_eq!(task_at(f64::NAN, 500, 50, false), None);
-        assert_eq!(task_at(245.0, 800, 2, true), Some(0));
+        assert_eq!(visible_task_count(500, 50, false), 2);
+        assert_eq!(visible_task_count(500, 50, true), 1);
+        assert_eq!(task_at(104.0, 500, 50, false, false), Some(0));
+        assert_eq!(task_at(270.0, 500, 50, false, false), Some(1));
+        assert_eq!(task_at(440.0, 500, 50, false, false), None);
+        assert_eq!(task_at(f64::NAN, 500, 50, false, false), None);
+        assert_eq!(task_at(245.0, 800, 2, true, true), Some(0));
+        assert_eq!(task_at(700.0, 800, 2, true, true), None);
     }
 
     #[test]
@@ -572,6 +613,15 @@ mod tests {
         assert!(!classic.tasks_centered);
         assert!(chrome.tasks_centered);
         assert_ne!(classic.background, chrome.background);
+        assert!(classic.clock && chrome.clock);
+    }
+
+    #[test]
+    fn clock_format_is_fixed_width_and_minute_sized() {
+        let time = chrono::NaiveTime::from_hms_opt(2, 3, 59).unwrap();
+        assert_eq!(time.format("%H:%M").to_string(), "02:03");
+        assert!(next_clock_timeout() <= Duration::from_secs(60));
+        assert!(!clock_now().is_empty());
     }
 
     #[test]
