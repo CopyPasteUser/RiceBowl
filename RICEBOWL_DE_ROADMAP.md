@@ -109,6 +109,9 @@ affecting XFCE, including a failed-session recovery. **Not yet signed off.**
 - [x] Add experimental protocol-backed native window discovery and activation
   with bounded task labels and click hit-testing; full taskbar parity remains
   open (grouping, minimize, outputs, keyboard interactions).
+- [x] Consume the two bundled schema-v1 panel recipes from native Rust for
+  geometry, placement and visual tokens, without pretending unimplemented
+  system indicators are functional native widgets.
 - [ ] Build a Wayland-native panel through `wlr-layer-shell`.
 - [ ] Populate tasks/windows through a supported foreign-toplevel protocol.
 - [ ] Implement launchers, task groups, tray, calendar, menus and keyboard
