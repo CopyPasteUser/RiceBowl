@@ -124,6 +124,23 @@ conversion or all seven native profiles are implemented yet.
 
 ### Native RicePlate layer-shell experiment (developers only)
 
+The GitHub Actions **Native RicePlate prototype** workflow now attaches a
+14-day downloadable `riceplate-native-preview-<commit>` build artifact for
+each Rust/workflow change. Its folder contains the Ubuntu 24.04 x86_64
+experimental binary, the exact Cargo dependency resolution used by CI,
+`BUILDINFO.txt` and `SHA256SUMS`. Verify after downloading:
+
+```bash
+cd riceplate-native-preview
+sha256sum -c SHA256SUMS
+chmod +x riceplate-native  # GitHub ZIP download may discard executable bits
+./riceplate-native --version
+```
+
+This is a short-lived **QA artifact**, not a signed release, portable Linux
+installer, or complete RiceBowl session. Use the existing `--nested` preview
+instructions and do not replace your login desktop with the binary.
+
 The repository additionally includes `components/riceplate-wayland`, an
 event-driven Rust/Smithay Client Toolkit layer-shell prototype. It paints a
 simple labelled surface with a fixed `Apps` button that launches the installed

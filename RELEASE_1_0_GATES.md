@@ -17,6 +17,9 @@ physical-device compatibility.
   and native RicePlate Rust/headless labwc tests, is green for the release SHA.
 - [ ] Rust application builds and the complete Wayland desktop package use
   tracked lock/version metadata; final binary/install artifacts reproduce.
+- [x] Native RicePlate CI emits an explicitly experimental, checksummed
+  Ubuntu 24.04 preview binary plus its resolved Cargo.lock for QA download;
+  this is **not** a reproducible or signed 1.0 distribution.
 - [ ] Installation, upgrade, uninstall and rollback pass from clean systems.
 - [ ] Native RicePlate/RiceSpice/RicePop feature parity and mockup-to-rice
   authoring gates from `RICEBOWL_DE_ROADMAP.md` are satisfied.

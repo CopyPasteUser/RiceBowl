@@ -27,9 +27,29 @@ jobs:
           cargo test --manifest-path components/riceplate-wayland/Cargo.toml
           cargo build --release --manifest-path components/riceplate-wayland/Cargo.toml
           sh -n scripts/smoke_riceplate_native.sh
+      - name: Prepare native preview artifact with build provenance
+        run: |
+          set -eu
+          mkdir -p dist/riceplate-native-preview
+          install -m 0755 components/riceplate-wayland/target/release/riceplate-native \
+            dist/riceplate-native-preview/riceplate-native
+          cp components/riceplate-wayland/Cargo.lock \
+            dist/riceplate-native-preview/Cargo.lock
+          dist/riceplate-native-preview/riceplate-native --version
+          printf 'Git commit: %s\nToolchain: %s\nBuild host: Ubuntu 24.04 x86_64\nStatus: experimental native panel, not a full desktop release\n' \
+            "$GITHUB_SHA" "$(rustc --version)" > dist/riceplate-native-preview/BUILDINFO.txt
+          (cd dist/riceplate-native-preview && sha256sum riceplate-native Cargo.lock > SHA256SUMS)
+          (cd dist/riceplate-native-preview && sha256sum -c SHA256SUMS)
       - name: Install headless labwc
         run: |
           sudo apt-get update
           sudo apt-get install -y labwc dbus-user-session dbus-x11
       - name: Boot native Wayland layer surface
         run: timeout -k 5s 50s sh scripts/smoke_riceplate_native.sh
+      - name: Archive smoke-tested native RicePlate preview binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: riceplate-native-preview-${{ github.sha }}
+          path: dist/riceplate-native-preview/
+          if-no-files-found: error
+          retention-days: 14
