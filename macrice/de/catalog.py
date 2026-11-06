@@ -71,6 +71,7 @@ def describe() -> dict[str, object]:
                                       "max_count": MAX_DESKTOP_ICONS,
                                       "hit_width": ICON_WIDTH, "hit_height": ICON_HEIGHT,
                                       "coordinate_max": 4096,
+                                      "native_placement": "single-output-logical-bounds-reflow",
                                       "keyboard_navigation": False},
                             "widgets": "not_implemented"},
                 "tokens": {"label_padding": [0, 16], "task_radius": [0, 12]},
@@ -118,7 +119,7 @@ def describe() -> dict[str, object]:
         ],
         "limits": [
             "Schema-v5 desktop icons are native-only; no Waybar icon layer yet",
-            "Native desktop icons use fixed coordinates, no dragging or keyboard navigation yet",
+            "Native desktop icons reflow within one output; no dragging, saved placement or keyboard navigation yet",
             "Desktop widgets are not implemented",
             "Native panel handles responsive compact layout live; Waybar requires width-specific generation",
             "Schema-v3 groups are horizontal panel-only; no full desktop composition yet",

@@ -290,8 +290,12 @@ transparent Wayland Bottom-layer surface in its **existing process**; it does
 not cover the desktop with a giant input window. The ordinary Waybar fallback
 still renders the panel, menu and wallpaper but **does not show icons**. This
 first slice has mouse clicks only: drag/reposition, keyboard focus, desktop
-widgets, multi-output bounds/reflow, fractional-scale handling and real-GPU
-acceptance remain open. Do not treat it as a finished desktop.
+widgets, independent multi-output ownership and real-GPU acceptance remain
+open. Native RicePlate now **reflows shortcuts within its selected logical
+output** on mode/scale changes, preserving valid positions and parking icons
+outside the output when no safe, non-overlapping hit area exists. This placement is not persisted;
+fractional-scale visual quality and multi-monitor hotplug still need device
+acceptance. Do not treat it as a finished desktop.
 
 For **real** Wayland screenshots, install the `grim` command and, inside an
 opt-in RiceBowl Wayland session, run:

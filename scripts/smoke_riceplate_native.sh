@@ -20,10 +20,12 @@ cp "$source_root/macrice/de/resources/recipes/classic.json" "$runtime/custom.jso
 cp "$source_root/tests/fixtures/riceplate-nested-v3.json" "$runtime/nested.json"
 cp "$source_root/tests/fixtures/riceplate-shell-v4.json" "$runtime/shell-v4.json"
 cp "$source_root/tests/fixtures/riceplate-desktop-v5.json" "$runtime/desktop-v5.json"
+cp "$source_root/tests/fixtures/riceplate-desktop-v5-overflow.json" "$runtime/overflow-v5.json"
 chmod 0600 "$runtime/custom.json"
 chmod 0600 "$runtime/nested.json"
 chmod 0600 "$runtime/shell-v4.json"
 chmod 0600 "$runtime/desktop-v5.json"
+chmod 0600 "$runtime/overflow-v5.json"
 ln -s "$runtime/custom.json" "$runtime/symlink.json"
 if "$native" --recipe "$runtime/symlink.json" >"$runtime/rejected.log" 2>&1; then
     echo "Native RicePlate accepted a symlinked recipe" >&2
@@ -84,8 +86,9 @@ dbus-run-session -- sh -eu -c '
         sed -n "1,70p" "$runtime/labwc.log" >&2
         exit 1
     fi
-    for recipe in classic chrome "$runtime/custom.json" "$runtime/nested.json" "$runtime/shell-v4.json" "$runtime/desktop-v5.json"; do
+    for recipe in classic chrome "$runtime/custom.json" "$runtime/nested.json" "$runtime/shell-v4.json" "$runtime/desktop-v5.json" "$runtime/overflow-v5.json"; do
         case "$recipe" in
+            */overflow-v5.json) label=overflow-v5 ;;
             */desktop-v5.json) label=desktop-v5 ;;
             */shell-v4.json) label=shell-v4 ;;
             */nested.json) label=nested-v3 ;;
@@ -133,6 +136,15 @@ dbus-run-session -- sh -eu -c '
             cp "$runtime/desktop-v5-scale-125.png" \
                "$source_root/dist/riceplate-native-preview/desktop-v5-scale-125.png"
             echo "Captured native desktop-v5 at fractional scale 1.25"
+        fi
+        if [ "$label" = overflow-v5 ]; then
+            # Separate recipe deliberately requests x=4090 on a 1024px output.
+            # This capture verifies that compositor-facing native layout reflows it.
+            WAYLAND_DISPLAY=wayland-0 wlr-randr --output "$output" --custom-mode 1024x768@60Hz --scale 1
+            sleep 0.5
+            WAYLAND_DISPLAY=wayland-0 grim - > "$runtime/overflow-v5.png"
+            cp "$runtime/overflow-v5.png" "$source_root/dist/riceplate-native-preview/overflow-v5.png"
+            echo "Captured reflowed icon on 1024x768 headless output"
         fi
         kill "$plate"
         wait "$plate" 2>/dev/null || :

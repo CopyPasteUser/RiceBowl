@@ -205,6 +205,12 @@ depend on the XFCE session.
   desktop remains clickable by labwc. Native headless CI captures the result.
   Schema v1–v4 and the Waybar fallback remain valid; the fallback does not
   display desktop icons. This is not yet a full desktop widget/input engine.
+- [x] Add **single-output native shortcut reflow**: use compositor logical
+  dimensions (including fractional scale where advertised), reserve the panel
+  workarea, preserve valid positions and park icons outside the output when no
+  safe hit region fits (without destroying their layer-shell role). Rust
+  geometry tests cover normal, compact and insufficient workspaces.
+  Dragging, saved placement and true multi-output ownership remain open.
 - [x] Start a **real Wayland screenshot QA path**: capture headless native
   labwc output with grim into CI artifacts, allow no-overwrite manual captures
   and report deterministic pixel-difference metrics for an offline reference.
@@ -216,7 +222,8 @@ depend on the XFCE session.
 - [ ] Extend schema-v5 desktop shortcuts with moving, keyboard accessibility,
   focus states, monitor-aware position reflow and hotplug. Add reusable native
   desktop widgets and their bounded recipe contracts. Static clickable icons
-  are implemented, but these interaction and lifecycle requirements remain.
+  and single-output reflow are implemented, but the remaining interaction and
+  multi-output lifecycle requirements are still open.
 - [ ] Implement visually configurable, truly interactive native start menus
   (beyond the initial functional labwc fallback menu), including navigation,
   searching, pinning and the per-rice layout variants required by XP/7/etc.
