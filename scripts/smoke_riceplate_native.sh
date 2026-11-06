@@ -18,8 +18,10 @@ runtime=$(mktemp -d)
 chmod 0700 "$runtime"
 cp "$source_root/macrice/de/resources/recipes/classic.json" "$runtime/custom.json"
 cp "$source_root/tests/fixtures/riceplate-nested-v3.json" "$runtime/nested.json"
+cp "$source_root/tests/fixtures/riceplate-shell-v4.json" "$runtime/shell-v4.json"
 chmod 0600 "$runtime/custom.json"
 chmod 0600 "$runtime/nested.json"
+chmod 0600 "$runtime/shell-v4.json"
 ln -s "$runtime/custom.json" "$runtime/symlink.json"
 if "$native" --recipe "$runtime/symlink.json" >"$runtime/rejected.log" 2>&1; then
     echo "Native RicePlate accepted a symlinked recipe" >&2
@@ -80,8 +82,9 @@ dbus-run-session -- sh -eu -c '
         sed -n "1,70p" "$runtime/labwc.log" >&2
         exit 1
     fi
-    for recipe in classic chrome "$runtime/custom.json" "$runtime/nested.json"; do
+    for recipe in classic chrome "$runtime/custom.json" "$runtime/nested.json" "$runtime/shell-v4.json"; do
         case "$recipe" in
+            */shell-v4.json) label=shell-v4 ;;
             */nested.json) label=nested-v3 ;;
             /*) label=custom ;;
             *) label=$recipe ;;
@@ -98,6 +101,11 @@ dbus-run-session -- sh -eu -c '
                 exit 1 ;;
         esac
         echo "Native RicePlate $label layer surface remained alive"
+        if [ "$label" = shell-v4 ]; then
+            WAYLAND_DISPLAY=wayland-0 grim - > "$runtime/shell-v4.png"
+            cp "$runtime/shell-v4.png" "$source_root/dist/riceplate-native-preview/shell-v4.png"
+            echo "Captured real native RicePlate v4 framebuffer"
+        fi
         kill "$plate"
         wait "$plate" 2>/dev/null || :
         plate=

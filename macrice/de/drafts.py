@@ -32,7 +32,7 @@ def _allowed_value(path: str, value: Any) -> bool:
     if path.startswith("/panel/sections/"):
         return (type(value) is list and len(value) <= 7
                 and all(type(item) is str and item in recipes.WIDGETS for item in value))
-    if path.startswith("/panel/layout/"):
+    if path.startswith(("/panel/layout/", "/responsive/compact_layout/")):
         if type(value) is not list or len(value) > recipes.MAX_LAYOUT_ROOTS:
             return False
         try:
@@ -43,6 +43,21 @@ def _allowed_value(path: str, value: Any) -> bool:
         except recipes.RecipeError:
             return False
         return True
+    if path == "/menu/groups":
+        try:
+            recipes._parse_menu({"title": "Safe", "groups": value})
+        except recipes.RecipeError:
+            return False
+        return True
+    if path == "/menu/title":
+        return recipes._safe_label(value, 32)
+    if path == "/desktop/wallpaper":
+        return type(value) is str and value in recipes.WALLPAPERS
+    if path == "/responsive/compact_max_width":
+        return type(value) is int and 480 <= value <= 1440
+    if path in ("/tokens/label_padding", "/tokens/task_radius"):
+        maximum = 16 if path.endswith("label_padding") else 12
+        return type(value) is int and 0 <= value <= maximum
     if path == "/panel/height":
         return type(value) is int and 28 <= value <= 64
     if path.startswith("/panel/metrics/"):
@@ -110,14 +125,18 @@ def create_edit(*, recipe_token: str, edit_source: Path, destination: Path) -> d
     before = review._manifest(original)
     modified = json.loads(json.dumps(before))
     for path, value in operations:
-        if path.startswith("/panel/layout/") and modified["schema_version"] != 3:
-            raise DraftError("Nested layout requires a schema-v3 source recipe",
+        if path.startswith("/panel/layout/") and modified["schema_version"] not in (3, 4):
+            raise DraftError("Nested layout requires a schema-v3/v4 source recipe",
                              code="unsupported_property_for_schema", path=path)
-        if path.startswith("/panel/sections/") and modified["schema_version"] == 3:
-            raise DraftError("Schema-v3 uses panel layout, not legacy sections",
+        if path.startswith("/panel/sections/") and modified["schema_version"] in (3, 4):
+            raise DraftError("Schema-v3/v4 uses panel layout, not legacy sections",
                              code="unsupported_property_for_schema", path=path)
-        if path.startswith("/panel/metrics/") and modified["schema_version"] not in (2, 3):
-            raise DraftError("Panel metrics require a schema-v2/v3 source recipe",
+        if path.startswith("/panel/metrics/") and modified["schema_version"] not in (2, 3, 4):
+            raise DraftError("Panel metrics require a schema-v2/v3/v4 source recipe",
+                             code="unsupported_property_for_schema", path=path)
+        if path.startswith(("/menu/", "/desktop/", "/tokens/", "/responsive/")) \
+                and modified["schema_version"] != 4:
+            raise DraftError("Shell components require a schema-v4 source recipe",
                              code="unsupported_property_for_schema", path=path)
         parts = path.lstrip("/").split("/")
         current = modified

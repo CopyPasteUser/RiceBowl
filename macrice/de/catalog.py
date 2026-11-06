@@ -7,7 +7,7 @@ It grants no ability to execute actions or change a running desktop.
 from __future__ import annotations
 
 from .creator_contract import describe as draft_edit_contract
-from .recipes import (MAX_LAYOUT_CHILDREN, MAX_LAYOUT_DEPTH, MAX_LAYOUT_LABELS,
+from .recipes import (MENU_ACTIONS, WALLPAPERS, MAX_LAYOUT_CHILDREN, MAX_LAYOUT_DEPTH, MAX_LAYOUT_LABELS,
                       MAX_LAYOUT_NODES, MAX_LAYOUT_ROOTS, MAX_RECIPE_BYTES,
                       METRIC_DEFAULTS, METRIC_FIELDS, METRIC_LIMITS, WIDGETS)
 
@@ -15,11 +15,11 @@ from .recipes import (MAX_LAYOUT_CHILDREN, MAX_LAYOUT_DEPTH, MAX_LAYOUT_LABELS,
 def describe() -> dict[str, object]:
     """Describe the currently supported *panel-only* recipe contract."""
     return {
-        "catalog_version": 2,
-        "scope": "wayland-panel-preview",
+        "catalog_version": 3,
+        "scope": "wayland-shell-preview",
         "complete_desktop_environment": False,
         "recipe": {
-            "schema_versions": [1, 2, 3],
+            "schema_versions": [1, 2, 3, 4],
             "maximum_bytes": MAX_RECIPE_BYTES,
             "sections": ["start", "center", "end"],
             "unique_widgets": True,
@@ -56,6 +56,18 @@ def describe() -> dict[str, object]:
                     "label": {"fields": ["type", "text"], "safe_ascii": True,
                               "max_characters": 24, "interactive": False},
                 },
+            },
+            "shell_extensions": {
+                "since_schema": 4,
+                "menu": {"renderer": "labwc-root-menu", "actions": sorted(MENU_ACTIONS),
+                         "max_groups": 4, "max_actions_per_group": 4},
+                "desktop": {"rendered": ["wallpaper"],
+                            "wallpapers": sorted(WALLPAPERS),
+                            "icons_and_widgets": "not_implemented"},
+                "tokens": {"label_padding": [0, 16], "task_radius": [0, 12]},
+                "responsive": {"compact_max_width": [480, 1440],
+                               "native": "live-panel-layout-switch",
+                               "waybar": "offline-width-specific-compilation-only"},
             },
             "custom_commands": False,
             "custom_actions": False,
@@ -95,6 +107,8 @@ def describe() -> dict[str, object]:
              "interactive": False},
         ],
         "limits": [
+            "Schema-v4 root menu is functional; desktop icons/widgets are not rendered yet",
+            "Native panel handles responsive compact layout live; Waybar requires width-specific generation",
             "Schema-v3 groups are horizontal panel-only; no full desktop composition yet",
             "Panel-only recipes; no arbitrary OS or screenshot conversion",
             "No runtime configurable action bindings or custom scripts",

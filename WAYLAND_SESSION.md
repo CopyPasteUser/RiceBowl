@@ -84,8 +84,8 @@ Waybar backends actually implement:
 ricebowl de catalog --json
 ```
 
-The versioned `catalog_version` (currently **2**) identifies the response format, while
-`recipe.schema_versions` (currently **1, 2, 3**) identifies supported panel recipe versions. Each
+The versioned `catalog_version` (currently **3**) identifies the response format, while
+`recipe.schema_versions` (currently **1, 2, 3, 4**) identifies supported recipe versions. Each
 component has a known ID, real backend support level, fixed behavior and
 keyboard-availability flag. Unsupported functionality is reported explicitly
 instead of presenting an imaginary action or widget. This catalog never reads
@@ -100,7 +100,8 @@ ricebowl de review --recipe classic --json
 ricebowl de review --recipe /absolute/path/to/my-rice.json --compare chrome --json
 ```
 
-`review_version: 1` describes a **panel-only** JSON response with `ok`,
+`review_version: 1` describes a versioned JSON response (panel-only for v1–v3,
+initial shell components for v4) with `ok`,
 `applied: false`, a normalized `recipe`, a `summary`, and an optional
 `comparison`. The summary includes an SHA-256 of the **normalized recipe
 semantics** (not of the source file's bytes), native-unavailable widgets and
@@ -152,9 +153,11 @@ ricebowl de start --nested --recipe /absolute/path/my-panel-draft.json
 
 The editor supports only validated panel property changes: name, panel edge,
 height, schema-v1/v2 `start`/`center`/`end` widget lists, schema-v3 typed
-`panel.layout` regions, hex colors and schema-v2/v3 widget widths.
+`panel.layout` regions, hex colors and schema-v2/v3/v4 widget widths. Schema
+v4 additionally offers explicit menu, wallpaper, design-token and responsive
+editing paths.
 IDs/schema versions are immutable; use `recipe-init` to create
-a fresh identity or v2/v3 template. A draft made directly from `classic` remains
+a fresh identity or v2/v3/v4 template. A draft made directly from `classic` remains
 identified as `classic` and can be previewed by absolute path, but cannot be
 imported over the reserved built-in ID. At most 16 `set` operations and 16 KiB of
 edit data are accepted; duplicate paths, unknown components, scripts, external
@@ -225,6 +228,59 @@ The shared real-backend example is
 The native Rust tests assert geometry and click behavior for it, and the native
 CI exercises its start inside headless labwc. A physical GPU/display and
 multi-resolution visual QA still require separate acceptance.
+
+#### Schema-v4 shell composition preview
+
+For the first **multi-region** mockup-to-desktop authoring slice, use the v4
+template rather than writing scripts or altering labwc/Waybar files yourself:
+
+```bash
+ricebowl de recipe-init --schema-version 4 --base classic \
+  --id my-shell --name "My Shell" --output "$HOME/my-shell.json"
+ricebowl de review --recipe "$HOME/my-shell.json" --json
+ricebowl de start --nested --recipe "$HOME/my-shell.json"
+```
+
+Schema v4 retains v3 `panel.layout`, widths and colors, and adds four strictly
+required, typed objects:
+
+| Section | Runtime behavior | Bounds / limits |
+| --- | --- | --- |
+| `menu` | Generates a genuine **labwc root context menu** in an isolated private per-session config; action IDs map to fixed `fuzzel`, `foot`, `swaylock -f` or labwc Exit | 1–4 groups, 1–4 unique actions each, short ASCII labels; no commands in recipes |
+| `desktop.wallpaper` | Selects an existing **original bundled** wallpaper for `swaybg` | Only catalog-listed wallpaper IDs; no arbitrary asset paths |
+| `tokens` | `label_padding` changes native text geometry / Waybar CSS; `task_radius` changes native active task backgrounds / Waybar CSS | Integer 0–16 and 0–12 logical px respectively |
+| `responsive` | `compact_layout` replaces the full panel layout at or below `compact_max_width` **live in native Rust** | Breakpoint 480–1440, same strict nested node limits; Waybar only supports explicit width-dependent offline generation |
+
+All fields can be edited through the existing safe `de draft-edit` workflow,
+with `/menu/title`, `/menu/groups`, `/desktop/wallpaper`, `/tokens/...` and
+`/responsive/...` JSON Pointer paths. `de catalog --json` advertises exact
+supported actions, wallpapers and backend limitations. The canonical example
+[`tests/fixtures/riceplate-shell-v4.json`](tests/fixtures/riceplate-shell-v4.json)
+is consumed by Python and the native Rust renderer's geometry tests and is
+started in headless labwc CI. The existing login and XFCE defaults are never
+replaced; temporary compositor menu files are removed on normal shutdown.
+
+**Honest boundary:** This is a functional context menu and background, not
+yet a visually configurable Windows-style Start menu or desktop icon/widget
+layer. Original mockups cannot be automatically converted into working
+control backends. Waybar does not currently recompile its compact variant
+when the display is resized; the native panel selects it during layout.
+
+For **real** Wayland screenshots, install the `grim` command and, inside an
+opt-in RiceBowl Wayland session, run:
+
+```bash
+sh scripts/capture_wayland_panel.sh "$HOME/riceplate-actual.png"
+python3 scripts/compare_wayland_captures.py \
+  "$HOME/reference.png" "$HOME/riceplate-actual.png"
+```
+
+Capture refuses to overwrite existing files. Comparison requires Pillow and
+outputs JSON dimensions, mean RGB pixel error and the fraction of changed
+pixels, not a made-up fidelity percentage. The native CI also captures a
+**genuine headless labwc screenshot** in its downloadable preview artifact.
+Real hardware, several resolutions, per-region comparison, image font tolerance
+and functional keyboard/navigation testing remain separate release gates.
 
 #### Existing recipe creation, import/export and selection
 

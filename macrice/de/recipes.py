@@ -13,6 +13,7 @@ import re
 import stat
 import tempfile
 import unicodedata
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -31,6 +32,10 @@ MAX_LAYOUT_LABELS = 8
 MAX_LAYOUT_DEPTH = 3
 MAX_LAYOUT_ROOTS = 8
 MAX_LAYOUT_CHILDREN = 6
+MENU_ACTIONS = frozenset(("applications", "terminal", "lock", "logout"))
+WALLPAPERS = frozenset(("aero-seven-blue", "aero-seven-night", "luna-hills",
+                        "classic-teal", "ten-blue", "ten-midnight", "chrome-pastel",
+                        "frutiger-future", "aurora-day", "aurora-night"))
 BUILTINS = {
     "classic": Path(__file__).resolve().parent / "resources/recipes/classic.json",
     "chrome": Path(__file__).resolve().parent / "resources/recipes/chrome.json",
@@ -52,6 +57,12 @@ class LayoutNode:
 
 
 @dataclass(frozen=True)
+class MenuGroup:
+    title: str
+    actions: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class PanelRecipe:
     recipe_id: str
     name: str
@@ -62,6 +73,37 @@ class PanelRecipe:
     metrics: tuple[int, int, int] | None = None
     layout: tuple[tuple[LayoutNode, ...], ...] | None = None
     schema_version: int = 1
+    menu: tuple[str, tuple[MenuGroup, ...]] | None = None
+    wallpaper: str | None = None
+    tokens: tuple[int, int] | None = None
+    compact: tuple[int, tuple[tuple[LayoutNode, ...], ...]] | None = None
+
+
+def _safe_label(value: Any, limit: int = 24) -> bool:
+    return type(value) is str and re.fullmatch(
+        rf"[A-Za-z0-9 ._:+-]{{1,{limit}}}", value) is not None
+
+
+def _parse_menu(value: Any) -> tuple[str, tuple[MenuGroup, ...]]:
+    data = _strict_keys(value, {"title", "groups"}, "Menu")
+    if not _safe_label(data["title"], 32):
+        raise RecipeError("Menu title must be safe printable ASCII")
+    groups = data["groups"]
+    if not isinstance(groups, list) or not 1 <= len(groups) <= 4:
+        raise RecipeError("Menu requires 1-4 groups")
+    result: list[MenuGroup] = []
+    seen: set[str] = set()
+    for value in groups:
+        group = _strict_keys(value, {"title", "actions"}, "Menu group")
+        actions = group["actions"]
+        if (not _safe_label(group["title"]) or not isinstance(actions, list)
+                or not 1 <= len(actions) <= 4 or any(type(action) is not str
+                or action not in MENU_ACTIONS or action in seen for action in actions)
+                or len(actions) != len(set(actions))):
+            raise RecipeError("Menu group uses unsupported or duplicate actions")
+        seen.update(actions)
+        result.append(MenuGroup(group["title"], tuple(actions)))
+    return data["title"], tuple(result)
 
 
 def _object_without_duplicates(items: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -152,9 +194,15 @@ def parse(raw: bytes) -> PanelRecipe:
         data = json.loads(raw.decode("utf-8"), object_pairs_hook=_object_without_duplicates)
     except (UnicodeError, ValueError, TypeError, RecursionError) as exc:
         raise RecipeError(f"Invalid RicePlate recipe JSON: {exc}") from exc
-    data = _strict_keys(data, {"schema_version", "id", "name", "panel", "colors"}, "Recipe")
-    if type(data["schema_version"]) is not int or data["schema_version"] not in (1, 2, 3):
+    if not isinstance(data, dict):
+        raise RecipeError("Recipe must be a JSON object")
+    version = data.get("schema_version")
+    if type(version) is not int or version not in (1, 2, 3, 4):
         raise RecipeError("Unsupported RicePlate recipe schema version")
+    expected = {"schema_version", "id", "name", "panel", "colors"}
+    if version == 4:
+        expected.update(("menu", "desktop", "tokens", "responsive"))
+    data = _strict_keys(data, expected, "Recipe")
     recipe_id = data["id"]
     if not isinstance(recipe_id, str) or not re.fullmatch(r"[a-z][a-z0-9-]{1,31}", recipe_id):
         raise RecipeError("Recipe ID must contain 2-32 lowercase ASCII characters")
@@ -162,9 +210,8 @@ def parse(raw: bytes) -> PanelRecipe:
     if (not isinstance(name, str) or not 1 <= len(name) <= 60
             or any(unicodedata.category(character) == "Cc" for character in name)):
         raise RecipeError("Recipe name must be 1-60 printable characters")
-    version = data["schema_version"]
-    panel_keys = {"position", "height", "layout" if version == 3 else "sections"}
-    if version in (2, 3):
+    panel_keys = {"position", "height", "layout" if version in (3, 4) else "sections"}
+    if version in (2, 3, 4):
         panel_keys.add("metrics")
     panel = _strict_keys(data["panel"], panel_keys, "Panel")
     if panel["position"] not in ("top", "bottom"):
@@ -172,7 +219,7 @@ def parse(raw: bytes) -> PanelRecipe:
     if type(panel["height"]) is not int or not 28 <= panel["height"] <= 64:
         raise RecipeError("Panel height must be an integer between 28 and 64")
     metrics: tuple[int, int, int] | None = None
-    if version in (2, 3):
+    if version in (2, 3, 4):
         sizes = _strict_keys(panel["metrics"], set(METRIC_FIELDS), "Panel metrics")
         if any(type(sizes[key]) is not int or not lower <= sizes[key] <= upper
                for key, (lower, upper) in zip(METRIC_FIELDS, METRIC_LIMITS)):
@@ -181,7 +228,7 @@ def parse(raw: bytes) -> PanelRecipe:
     selected: list[tuple[str, ...]] = []
     all_widgets: list[str] = []
     layout_nodes = None
-    if version == 3:
+    if version in (3, 4):
         layout_nodes, all_widgets = _parse_layout(panel["layout"])
         def widget_ids(nodes: tuple[LayoutNode, ...]) -> tuple[str, ...]:
             return tuple(item for node in nodes for item in (
@@ -206,10 +253,37 @@ def parse(raw: bytes) -> PanelRecipe:
     for color in COLORS:
         if not isinstance(colors[color], str) or not re.fullmatch(r"#[0-9a-fA-F]{6}", colors[color]):
             raise RecipeError(f"Invalid six-digit hexadecimal color: {color}")
+    menu = None
+    wallpaper = None
+    tokens = None
+    compact = None
+    if version == 4:
+        menu = _parse_menu(data["menu"])
+        desktop = _strict_keys(data["desktop"], {"wallpaper"}, "Desktop")
+        if type(desktop["wallpaper"]) is not str or desktop["wallpaper"] not in WALLPAPERS:
+            raise RecipeError("Desktop wallpaper must name a bundled original asset")
+        wallpaper = desktop["wallpaper"]
+        visual = _strict_keys(data["tokens"], {"label_padding", "task_radius"}, "Tokens")
+        if (type(visual["label_padding"]) is not int
+                or not 0 <= visual["label_padding"] <= 16
+                or type(visual["task_radius"]) is not int
+                or not 0 <= visual["task_radius"] <= 12):
+            raise RecipeError("Visual tokens must be bounded integer pixel values")
+        tokens = visual["label_padding"], visual["task_radius"]
+        responsive = _strict_keys(data["responsive"], {"compact_max_width", "compact_layout"},
+                                  "Responsive layout")
+        threshold = responsive["compact_max_width"]
+        if type(threshold) is not int or not 480 <= threshold <= 1440:
+            raise RecipeError("Compact breakpoint must be 480-1440 logical pixels")
+        alternate, alternate_widgets = _parse_layout(responsive["compact_layout"])
+        if (len(alternate_widgets) != len(set(alternate_widgets))
+                or not {"tasks", "launcher"} & set(alternate_widgets)):
+            raise RecipeError("Compact layout requires unique widgets and launcher/tasks")
+        compact = threshold, alternate
     return PanelRecipe(recipe_id, name, panel["position"], panel["height"],
                        (selected[0], selected[1], selected[2]),
                        (colors["background"], colors["foreground"], colors["active"]),
-                       metrics, layout_nodes, version)
+                       metrics, layout_nodes, version, menu, wallpaper, tokens, compact)
 
 
 def load(token: str) -> PanelRecipe:
@@ -473,14 +547,27 @@ def create_from_template(
     if not destination.is_absolute() or destination.suffix != ".json":
         raise RecipeError("New recipe output must be an absolute .json file path")
     data = json.loads(BUILTINS[source].read_text(encoding="utf-8"))
-    if schema_version in (2, 3):
+    if schema_version in (2, 3, 4):
         data["schema_version"] = schema_version
         data["panel"]["metrics"] = dict(zip(METRIC_FIELDS, METRIC_DEFAULTS))
-        if schema_version == 3:
+        if schema_version in (3, 4):
             sections = data["panel"].pop("sections")
             data["panel"]["layout"] = {
                 section: [{"type": "widget", "id": widget} for widget in sections[section]]
                 for section in SECTIONS
+            }
+        if schema_version == 4:
+            data["menu"] = {"title": "RiceBowl", "groups": [
+                {"title": "Applications", "actions": ["applications", "terminal"]},
+                {"title": "Session", "actions": ["lock", "logout"]},
+            ]}
+            data["desktop"] = {"wallpaper": "aero-seven-blue"}
+            data["tokens"] = {"label_padding": 8, "task_radius": 4}
+            data["responsive"] = {
+                "compact_max_width": 720,
+                "compact_layout": {"start": [{"type": "widget", "id": "launcher"}],
+                                   "center": [{"type": "widget", "id": "tasks"}],
+                                   "end": [{"type": "widget", "id": "clock"}]},
             }
     elif schema_version != 1:
         raise RecipeError("Unsupported RicePlate template schema version")
@@ -496,7 +583,7 @@ def create_from_template(
     return result
 
 
-def waybar_config(recipe: PanelRecipe) -> tuple[str, str]:
+def waybar_config(recipe: PanelRecipe, *, screen_width: int | None = None) -> tuple[str, str]:
     """Translate safe UI structure into Waybar's temporary JSON/CSS backend."""
     module_names = {
         "launcher": "custom/rice-launcher", "tasks": "wlr/taskbar",
@@ -505,7 +592,12 @@ def waybar_config(recipe: PanelRecipe) -> tuple[str, str]:
     }
     generated_modules: dict[str, Any] = {}
     generated_css: list[str] = []
-    if recipe.layout is None:
+    layout = recipe.layout
+    if (recipe.compact is not None and screen_width is not None
+            and screen_width <= recipe.compact[0]):
+        layout = recipe.compact[1]
+    padding, radius = recipe.tokens if recipe.tokens is not None else (8, 4)
+    if layout is None:
         section_modules = [[module_names[widget] for widget in widgets]
                            for widgets in recipe.sections]
     else:
@@ -530,14 +622,14 @@ def waybar_config(recipe: PanelRecipe) -> tuple[str, str]:
             else:
                 key = f"custom/rice-label-{index}"
                 generated_modules[key] = {"format": str(node.value), "tooltip": False}
-                generated_css.append(f"#custom-rice-label-{index} {{ min-width: {len(str(node.value)) * 8}px; padding: 0 8px; }}")
+                generated_css.append(f"#custom-rice-label-{index} {{ min-width: {len(str(node.value)) * 8}px; padding: 0 {padding}px; }}")
             return [key]
 
         section_modules = [[name for node in nodes for name in generate_node(node)]
-                           for nodes in recipe.layout]
+                           for nodes in layout]
     config: dict[str, Any] = {
         "layer": "top", "position": recipe.position, "height": recipe.height,
-        "spacing": 0 if recipe.layout is not None else 8,
+        "spacing": 0 if layout is not None else 8,
         **{f"modules-{side}": names
            for side, names in zip(("left", "center", "right"), section_modules)},
         "wlr/taskbar": {"format": "{icon}", "icon-size": 22,
@@ -551,7 +643,7 @@ def waybar_config(recipe: PanelRecipe) -> tuple[str, str]:
     css = (
         "* { font-family: sans-serif; font-size: 12px; }\n"
         f"window#waybar {{ background: {background}; color: {foreground}; }}\n"
-        "#taskbar button { border-radius: 4px; padding: 2px 7px; }\n"
+        f"#taskbar button {{ border-radius: {radius}px; padding: 2px 7px; }}\n"
         f"#taskbar button.active {{ background: {active}; }}\n"
         "#clock, #network, #pulseaudio, #battery, #tray, #custom-rice-launcher "
         "{ padding: 0 8px; }\n"
@@ -567,3 +659,48 @@ def waybar_config(recipe: PanelRecipe) -> tuple[str, str]:
     if generated_css:
         css += "\n".join(generated_css) + "\n"
     return json.dumps(config, ensure_ascii=False, indent=2), css
+
+
+def wallpaper_path(recipe: PanelRecipe) -> Path:
+    """Resolve only pre-bundled original wallpapers; never a recipe-supplied path."""
+    name = recipe.wallpaper or "aero-seven-blue"
+    if name not in WALLPAPERS:
+        raise RecipeError("Unknown bundled wallpaper")
+    return Path(__file__).resolve().parents[2] / "assets" / "wallpapers" / f"{name}.jpg"
+
+
+def labwc_menu(recipe: PanelRecipe) -> str:
+    """Compile the restricted menu vocabulary into real labwc root-menu XML.
+
+    No string from a rice is ever interpreted as a command or XML markup.
+    """
+    if recipe.menu is None:
+        raise RecipeError("Legacy panel recipe has no custom labwc menu")
+    title, groups = recipe.menu
+    root = ET.Element("openbox_menu")
+    menu = ET.SubElement(root, "menu", {"id": "root-menu", "label": title})
+    action_specs = {
+        "applications": ("Applications", "Execute", "fuzzel"),
+        "terminal": ("Terminal", "Execute", "foot"),
+        "lock": ("Lock screen", "Execute", "swaylock -f"),
+        "logout": ("Log out of RiceBowl", "Exit", None),
+    }
+    for index, group in enumerate(groups):
+        if index:
+            ET.SubElement(menu, "separator")
+        submenu = ET.SubElement(menu, "menu", {"id": f"rice-group-{index}",
+                                                 "label": group.title})
+        for action_id in group.actions:
+            label, action, command = action_specs[action_id]
+            item = ET.SubElement(submenu, "item", {"label": label})
+            attributes = {"name": action}
+            if command is not None:
+                attributes["command"] = command
+            ET.SubElement(item, "action", attributes)
+    if not any("logout" in group.actions for group in groups):
+        # A broken/mockup menu must never remove the only visible safe exit.
+        ET.SubElement(menu, "separator")
+        emergency = ET.SubElement(menu, "item", {"label": "Log out of RiceBowl"})
+        ET.SubElement(emergency, "action", {"name": "Exit"})
+    return '<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(
+        root, encoding="unicode", short_empty_elements=True) + "\n"
