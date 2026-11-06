@@ -183,6 +183,14 @@ depend on the XFCE session.
   schema-v2 launcher/task/clock widths; apply the widths to native RicePlate
   geometry and hit testing, and expose minimum widths in the Waybar adapter.
   Keep schema v1 as the unchanged default; a complete RicePack v2 is pending.
+- [x] Add **schema-v3 hierarchical panel composition** to the shared contract:
+  bounded horizontal `group` trees, `gap`, static safe-ASCII `label`, and known
+  `widget` leaves; native Rust geometry/drawing/hit testing and the temporary
+  Waybar adapter interpret the same data-only recipe. Expose primitives, exact
+  property limits, draft-edit paths and semantic review in the AI Creator catalog.
+  Cover both renderers with a common fixture and real headless labwc smoke.
+  This milestone is **panel-only**: full desktop regions, responsive layout
+  constraints, tokenized visual states and source-image conversion remain open.
 - [x] Allow safe offline import/export of validated, non-executable, panel-only
   JSON recipes into a private per-user collection; preview by imported ID.
   Full multi-component RicePacks with artwork, screenshot conversion and a

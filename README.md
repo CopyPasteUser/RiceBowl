@@ -25,8 +25,7 @@ A collection of deeply customizable, OS-inspired desktop experiences — growing
 
 The [1.0 release gates](RELEASE_1_0_GATES.md) track outstanding desktop functionality, installer evidence and physical-device checks before a stable release can be tagged.
 
-The optional Wayland preview also supports two early data-driven panel layouts (`ricebowl de recipes`) and an opt-in, crash-recoverable native RicePlate panel for developers (`ricebowl de start --nested --panel native`). The native shell remains incomplete.
-An isolated [native Rust layer-shell experiment](WAYLAND_SESSION.md#native-riceplate-layer-shell-experiment-developers-only) now includes live task controls, a local-time clock, customizable panel widths and a [read-only component catalog](WAYLAND_SESSION.md#riceplate-layout-recipes-first-data-only-contract) for AI-assisted rice authoring; it does not yet replace the functional Waybar panel.
+The optional Wayland preview supports data-driven panel layouts and an opt-in, crash-recoverable native RicePlate panel (`ricebowl de start --nested --panel native`). Experimental **schema-v3 recipes** compose nested panel groups, spacers, labels and real widgets through a [validated AI-readable contract](WAYLAND_SESSION.md#nested-panel-layouts-schema-v3); both the Waybar fallback and native Rust renderer consume it. The native shell remains incomplete and does not yet replace the functional Waybar panel.
 
 ## Seven desktop experiences
 
@@ -62,7 +61,7 @@ Choose a rice in the Hub. Switching requires confirmation and saves recovery sta
 
 ## From ricing suite to desktop environment
 
-The long-term goal is a **desktop-creation framework**: recreate OS-inspired interfaces or turn AI-generated UI mockups into functioning rices using shared components and validated profiles, without building a new shell for each design. Early offline panel-recipe import/export, next-login selection/undo and [AI-friendly component edits with validation/diff review](WAYLAND_SESSION.md#offline-creator-component-edits-experimental) are available; full desktop composition and screenshot conversion are [still in development](RICEBOWL_DE_ROADMAP.md).
+The long-term goal is a **desktop-creation framework**: recreate OS-inspired interfaces or turn AI-generated UI mockups into functioning rices using shared components and validated profiles, without building a new shell for each design. Offline panel-recipe import/export, next-login selection/undo, [AI-friendly component edits with validation/diff review](WAYLAND_SESSION.md#offline-creator-component-edits-experimental) and bounded nested panel layouts are available; full desktop composition and screenshot conversion are [still in development](RICEBOWL_DE_ROADMAP.md).
 
 RiceBowl will keep the existing styles while replacing XFCE-specific desktop responsibilities incrementally:
 

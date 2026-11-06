@@ -15,6 +15,7 @@ MAX_OPERATIONS = 16
 EDITABLE_PATHS = frozenset((
     "/name", "/panel/position", "/panel/height",
     *(f"/panel/sections/{name}" for name in recipes.SECTIONS),
+    *(f"/panel/layout/{name}" for name in recipes.SECTIONS),
     *(f"/panel/metrics/{name}" for name in recipes.METRIC_FIELDS),
     *(f"/colors/{name}" for name in recipes.COLORS),
 ))

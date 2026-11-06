@@ -12,10 +12,10 @@ class ComponentCatalogTests(unittest.TestCase):
     def test_catalog_is_complete_truthful_and_declarative(self):
         info = catalog.describe()
         catalog.validate_catalog_contract()
-        self.assertEqual(info["catalog_version"], 1)
+        self.assertEqual(info["catalog_version"], 2)
         self.assertEqual(info["scope"], "wayland-panel-preview")
         self.assertFalse(info["complete_desktop_environment"])
-        self.assertEqual(info["recipe"]["schema_versions"], [1, 2])
+        self.assertEqual(info["recipe"]["schema_versions"], [1, 2, 3])
         self.assertFalse(info["recipe"]["custom_commands"])
         self.assertFalse(info["recipe"]["custom_actions"])
         self.assertFalse(info["recipe"]["external_assets"])

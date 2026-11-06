@@ -84,8 +84,8 @@ Waybar backends actually implement:
 ricebowl de catalog --json
 ```
 
-The stable `catalog_version` identifies the response format, while
-`recipe.schema_versions` identifies supported panel recipe versions. Each
+The versioned `catalog_version` (currently **2**) identifies the response format, while
+`recipe.schema_versions` (currently **1, 2, 3**) identifies supported panel recipe versions. Each
 component has a known ID, real backend support level, fixed behavior and
 keyboard-availability flag. Unsupported functionality is reported explicitly
 instead of presenting an imaginary action or widget. This catalog never reads
@@ -151,9 +151,10 @@ ricebowl de start --nested --recipe /absolute/path/my-panel-draft.json
 ```
 
 The editor supports only validated panel property changes: name, panel edge,
-height, `start`/`center`/`end` widget arrangements, hex colors and schema-v2
-widget widths. IDs/schema versions are immutable; use `recipe-init` to create
-a fresh identity or v2 template. A draft made directly from `classic` remains
+height, schema-v1/v2 `start`/`center`/`end` widget lists, schema-v3 typed
+`panel.layout` regions, hex colors and schema-v2/v3 widget widths.
+IDs/schema versions are immutable; use `recipe-init` to create
+a fresh identity or v2/v3 template. A draft made directly from `classic` remains
 identified as `classic` and can be previewed by absolute path, but cannot be
 imported over the reserved built-in ID. At most 16 `set` operations and 16 KiB of
 edit data are accepted; duplicate paths, unknown components, scripts, external
@@ -168,6 +169,62 @@ Neither the active session nor its next-login selection changes; actual visual
 inspection is still a separate nested labwc step. These are reusable **panel
 components only**. Menu, desktop, notification, settings and full RicePack
 composition still need their respective native components and schemas.
+
+#### Nested panel layouts (schema v3)
+
+For AI-assisted building from an OS screenshot or generated mockup, schema v3
+adds genuine **horizontal nested composition** to the panel recipe instead of
+only rearranging a flat widget list. It is opt-in; existing v1/v2 recipes are
+still accepted unchanged. Start with a private template:
+
+```bash
+ricebowl de recipe-init --schema-version 3 --base classic \
+  --id y2k-panel --name "Y2K panel" --output "$HOME/y2k-panel.json"
+ricebowl de catalog --json
+```
+
+Replace `panel.layout` in the new JSON with the example below (preserve the
+generated `id`, `name`, `colors` and `panel.metrics`):
+
+```json
+"layout": {
+  "start": [{"type": "group", "gap": 8, "children": [
+    {"type": "widget", "id": "launcher"},
+    {"type": "label", "text": "Y2K"},
+    {"type": "gap", "width": 20},
+    {"type": "widget", "id": "tasks"}
+  ]}],
+  "center": [],
+  "end": [{"type": "widget", "id": "clock"}]
+}
+```
+
+Run `ricebowl de review --recipe "$HOME/y2k-panel.json" --json` to validate
+and inspect its normalized structure, then `ricebowl de start --nested
+--recipe "$HOME/y2k-panel.json"` for Waybar or add `--panel native` for the
+experimental native Rust panel. For agent edits, the `draft-edit` operation
+`set /panel/layout/start` (or `center`/`end`) accepts a replacement list of
+typed nodes; edits are validated, saved to a **new private file** and never
+automatically applied.
+
+Every node has an exact type and fields, with no CSS, commands, action strings
+or remote assets. `widget` uses a unique existing ID from the catalog. `group`
+has 1–6 children, gap 0–32 logical pixels and can nest at most three levels
+total. A `gap` has width 4–64; a noninteractive `label` allows 1–24 safe ASCII
+characters (`A–Z`, `a–z`, digits, spaces, `._:+-`). Limits are 24 typed nodes,
+8 labels and 8 root nodes per panel region. Widget IDs cannot be duplicated,
+and either a launcher or task list is required. The native panel currently
+renders only launcher, tasks, clock, labels and spacing; network, audio,
+battery and tray remain **Waybar-only**. Waybar uses GTK/CSS minimum widths,
+so the visual pixel result can differ from Rust's fixed geometry. Grouping is
+horizontal and panel-only, without flex/grid, responsiveness, generic content
+containers, custom actions or AI running inside the desktop.
+
+The shared real-backend example is
+[`tests/fixtures/riceplate-nested-v3.json`](tests/fixtures/riceplate-nested-v3.json).
+The native Rust tests assert geometry and click behavior for it, and the native
+CI exercises its start inside headless labwc. A physical GPU/display and
+multi-resolution visual QA still require separate acceptance.
 
 #### Existing recipe creation, import/export and selection
 
@@ -302,8 +359,9 @@ accepts owner-private absolute JSON recipe files (regular files, permissions
 end section in any order, including custom top panels; their hit areas follow
 the rendered geometry and shrink on narrow displays. The clock is updated
 on minute boundaries through the Wayland event loop without a 1 Hz timer.
-Custom schema-v2 panel recipes additionally support strict per-widget widths;
-schema-v1 recipes retain their original native dimensions.
+Custom schema-v2/v3 panel recipes additionally support strict per-widget widths;
+schema-v3 adds validated nested groups, static text and spacers with real native
+geometry/hit areas; schema-v1 recipes retain their original native dimensions.
 Other indicators and the tray still need functional Rust backends. The native
 renderer deliberately omits unavailable widgets without displaying pretend
 buttons. Custom recipes cannot contain commands or arbitrary executable code.

@@ -17,7 +17,9 @@ fi
 runtime=$(mktemp -d)
 chmod 0700 "$runtime"
 cp "$source_root/macrice/de/resources/recipes/classic.json" "$runtime/custom.json"
+cp "$source_root/tests/fixtures/riceplate-nested-v3.json" "$runtime/nested.json"
 chmod 0600 "$runtime/custom.json"
+chmod 0600 "$runtime/nested.json"
 ln -s "$runtime/custom.json" "$runtime/symlink.json"
 if "$native" --recipe "$runtime/symlink.json" >"$runtime/rejected.log" 2>&1; then
     echo "Native RicePlate accepted a symlinked recipe" >&2
@@ -78,8 +80,9 @@ dbus-run-session -- sh -eu -c '
         sed -n "1,70p" "$runtime/labwc.log" >&2
         exit 1
     fi
-    for recipe in classic chrome "$runtime/custom.json"; do
+    for recipe in classic chrome "$runtime/custom.json" "$runtime/nested.json"; do
         case "$recipe" in
+            */nested.json) label=nested-v3 ;;
             /*) label=custom ;;
             *) label=$recipe ;;
         esac

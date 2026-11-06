@@ -260,6 +260,13 @@ impl RicePlate {
                               placed.x + placed.width.saturating_sub(40) / 2,
                               height / 2 - 4, &self.clock, self.recipe.foreground);
                 }
+                Widget::Gap(_) => {}
+                Widget::Label(index) => {
+                    if let Some(label) = self.recipe.labels.get(index as usize) {
+                        draw_text(canvas, width, height, placed.x + 8,
+                                  height / 2 - 4, label, self.recipe.foreground);
+                    }
+                }
             }
         }
         surface.damage_buffer(0, 0, width as i32, height as i32);

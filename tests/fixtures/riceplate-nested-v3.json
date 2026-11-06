@@ -1,0 +1,23 @@
+{
+  "schema_version": 3,
+  "id": "my-layout",
+  "name": "Nested layout",
+  "panel": {
+    "position": "top",
+    "height": 40,
+    "metrics": {"launcher_width": 104, "task_width": 164, "clock_width": 96},
+    "layout": {
+      "start": [
+        {"type": "group", "gap": 8, "children": [
+          {"type": "widget", "id": "launcher"},
+          {"type": "label", "text": "Y2K"},
+          {"type": "gap", "width": 20},
+          {"type": "widget", "id": "tasks"}
+        ]}
+      ],
+      "center": [],
+      "end": [{"type": "widget", "id": "clock"}]
+    }
+  },
+  "colors": {"background": "#203c59", "foreground": "#f3f7fa", "active": "#4179aa"}
+}
