@@ -119,6 +119,10 @@ affecting XFCE, including a failed-session recovery. **Not yet signed off.**
   RicePlate, and position implemented widgets from ordered start/center/end
   sections with matching hit testing and small-display overflow behavior.
   Full arbitrary mockup conversion and missing widget backends remain open.
+- [x] Provide a CLI-only opt-in to run native RicePlate as the single panel in
+  an isolated labwc session, and restore Waybar on failed native start/crash.
+  Explicit shutdown does not restart the fallback. The login-manager default
+  remains Waybar while native functional parity is incomplete.
 - [ ] Build a Wayland-native panel through `wlr-layer-shell`.
 - [ ] Populate tasks/windows through a supported foreign-toplevel protocol.
 - [ ] Implement launchers, task groups, tray, calendar, menus and keyboard

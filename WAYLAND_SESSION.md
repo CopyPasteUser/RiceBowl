@@ -116,6 +116,23 @@ In a *disposable/nested* labwc session, developers with Rust 1.86+ can try:
 cargo run --manifest-path components/riceplate-wayland/Cargo.toml -- --recipe chrome
 ```
 
+To exercise RicePlate as the **only** panel within RiceBowl's isolated labwc
+session, first install the experimental binary into your user-local PATH:
+
+```bash
+cargo install --path components/riceplate-wayland --locked
+ricebowl de start --nested --panel native --recipe chrome
+```
+
+This is an explicit developer opt-in, **not** the login-manager default. The
+temporary Waybar dependency remains installed and available for recovery: if
+RicePlate crashes or cannot start after session preflight, the session logs
+the problem and restores Waybar automatically. A deliberate clean panel exit
+or an external session shutdown does not restart Waybar. If the native binary
+is absent before startup, the CLI refuses the request without touching the
+current desktop. The native panel deliberately omits system widgets not yet
+implemented; use ordinary `ricebowl de start --nested` for a fuller preview.
+
 To preview a private recipe without changing any desktop settings:
 
 ```bash
@@ -128,8 +145,9 @@ rm -- "$recipe_copy"
 
 The dedicated CI workflow compiles it and checks that both bundled recipes and
 a private custom recipe remain alive on a real headless labwc compositor.
-Nothing changes the XFCE path,
-Waybar default or the optional session package.
+The Python session tests additionally verify native launch, crash fallback,
+D-Bus restart argument preservation and intentional shutdown behavior.
+Nothing changes the XFCE path, Waybar default or the optional session package.
 
 ## First-session controls
 

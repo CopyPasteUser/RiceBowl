@@ -74,6 +74,8 @@ def parser() -> argparse.ArgumentParser:
     de.add_argument("--nested", action="store_true",
                     help="Explicitly test a separate labwc session inside an active desktop")
     de.add_argument("--recipe", help="RicePlate recipe: classic, chrome or an owner-private absolute JSON path")
+    de.add_argument("--panel", choices=("waybar", "native"), default="waybar",
+                    help="Session panel (native RicePlate is experimental and falls back to Waybar)")
     commands.add_parser("session-menu", help="Toggle the active rice's application menu")
     commands.add_parser("session-control", help="Toggle the active rice's control panel")
     commands.add_parser("session-keys-restore", help="Restore the previous Super/Right Control shortcuts")
@@ -134,14 +136,14 @@ def main(argv: list[str] | None = None) -> int:
                 if args.json:
                     raise ValueError("--json only applies to de check")
                 from .de.session import start
-                return start(nested=args.nested, recipe=args.recipe)
+                return start(nested=args.nested, recipe=args.recipe, panel=args.panel)
             if args.action == "shell":
-                if args.json or args.nested or args.recipe:
-                    raise ValueError("de shell does not accept --json, --nested or --recipe")
+                if args.json or args.nested or args.recipe or args.panel != "waybar":
+                    raise ValueError("de shell does not accept --json, --nested, --recipe or --panel")
                 from .de.session import shell
                 return shell()
             if args.action == "recipes":
-                if args.nested or args.recipe:
+                if args.nested or args.recipe or args.panel != "waybar":
                     raise ValueError("de recipes only accepts --json")
                 from .de.recipes import BUILTINS, load
                 recipes = [load(name) for name in BUILTINS]
@@ -153,8 +155,8 @@ def main(argv: list[str] | None = None) -> int:
                     for item in recipes:
                         print(f"{item.recipe_id}: {item.name} ({item.position}, {item.height}px)")
                 return 0
-            if args.recipe:
-                raise ValueError("--recipe only applies to de start")
+            if args.recipe or args.panel != "waybar":
+                raise ValueError("--recipe and --panel only apply to de start")
             if args.nested:
                 raise ValueError("--nested only applies to de start")
             from .de.diagnostics import inspect

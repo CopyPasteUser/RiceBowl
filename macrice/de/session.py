@@ -49,6 +49,7 @@ def start(
     *,
     nested: bool = False,
     recipe: str | None = None,
+    panel: str = "waybar",
     environment: Mapping[str, str] | None = None,
     which: Callable[[str], str | None] = shutil.which,
     execute: Callable[[str, list[str], dict[str, str]], NoReturn] = os.execvpe,
@@ -56,6 +57,8 @@ def start(
     """Replace the current session launcher with labwc; no files are changed."""
     if os.geteuid() == 0:
         raise SessionError("RiceBowl Wayland sessions must run as an unprivileged user.")
+    if panel not in ("waybar", "native"):
+        raise SessionError("Unsupported RiceBowl panel mode.")
     env = dict(os.environ if environment is None else environment)
     if not nested and not env.get("RICEBOWL_DM_SESSION") and (
         env.get("WAYLAND_DISPLAY") or env.get("DISPLAY")
@@ -72,6 +75,8 @@ def start(
     missing = [name for name, path in binaries.items() if not path]
     if missing:
         raise SessionError("Missing Wayland preview dependencies: " + ", ".join(missing))
+    if panel == "native" and not which("riceplate-native"):
+        raise SessionError("Native RicePlate is not installed in PATH; Waybar remains available.")
 
     source = project_root()
     launcher = source / "launcher.py"
@@ -88,6 +93,7 @@ def start(
         "XDG_SESSION_TYPE": "wayland",
         "RICEBOWL_DE_SHELL_CHILD": "1",
         "RICEBOWL_DE_NESTED": "1" if nested else "0",
+        "RICEBOWL_DE_PANEL": panel,
     })
     if recipe is not None:
         env["RICEBOWL_DE_RECIPE"] = recipe
@@ -112,6 +118,8 @@ def start(
             args.append("--nested")
         if recipe is not None:
             args.extend(("--recipe", recipe))
+        if panel == "native":
+            args.extend(("--panel", "native"))
         execute(bus, args, env)
         raise AssertionError("execvpe unexpectedly returned")
 
@@ -156,6 +164,9 @@ def shell(
     waybar = which("waybar")
     if not waybar:
         raise SessionError("Waybar is required until RicePlate's native panel is ready.")
+    panel_mode = env.get("RICEBOWL_DE_PANEL", "waybar")
+    if panel_mode not in ("waybar", "native"):
+        raise SessionError("Unsupported RiceBowl panel mode.")
 
     base = resources()
     background: list[subprocess.Popen[bytes]] = []
@@ -208,18 +219,57 @@ def shell(
                     env=env, stdin=subprocess.DEVNULL,
                 ))
 
-            panel = spawn(
-                [waybar, "--config", str(config), "--style", str(style)],
-                env=env, stdin=subprocess.DEVNULL,
-            )
+            shutting_down = False
+            shutdown_signal = signal.SIGTERM
 
             def terminate(_signal: int, _frame: object) -> None:
+                nonlocal shutting_down, shutdown_signal
+                shutting_down = True
+                shutdown_signal = _signal
                 if panel is not None:
                     _stop_process(panel)
 
             signal.signal(signal.SIGTERM, terminate)
             signal.signal(signal.SIGINT, terminate)
+            if shutting_down:
+                return 128 + shutdown_signal
+            if panel_mode == "native":
+                native = which("riceplate-native")
+                if native:
+                    try:
+                        panel = spawn(
+                            [native, "--recipe", selected or "classic"],
+                            env=env, stdin=subprocess.DEVNULL,
+                        )
+                        if shutting_down:
+                            _stop_process(panel)
+                            return 128 + shutdown_signal
+                        status = panel.wait()
+                        if status == 0 or shutting_down:
+                            return status
+                        print(f"RicePlate native exited with status {status}; restoring Waybar.",
+                              file=sys.stderr)
+                    except OSError as exc:
+                        if shutting_down:
+                            return 1
+                        print(f"RicePlate native could not start ({exc}); restoring Waybar.",
+                              file=sys.stderr)
+                else:
+                    print("RicePlate native disappeared from PATH; restoring Waybar.",
+                          file=sys.stderr)
+
+            if shutting_down:
+                return 128 + shutdown_signal
+            panel = spawn(
+                [waybar, "--config", str(config), "--style", str(style)],
+                env=env, stdin=subprocess.DEVNULL,
+            )
+            if shutting_down:
+                _stop_process(panel)
+                return 128 + shutdown_signal
             return panel.wait()
         finally:
+            if panel is not None:
+                _stop_process(panel)
             for process in reversed(background):
                 _stop_process(process)
