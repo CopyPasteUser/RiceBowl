@@ -1,0 +1,13 @@
+{
+  "status": "pending",
+  "device": "",
+  "date_utc": "",
+  "evidence": {
+    "login_and_recovery": "",
+    "xfce_rollback": "",
+    "xwayland_and_portals": "",
+    "shell_and_hardware": "",
+    "authoring_and_switch": "",
+    "performance": ""
+  }
+}
