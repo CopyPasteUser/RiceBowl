@@ -71,6 +71,47 @@ class HeadlessRenderTests(unittest.TestCase):
             with self.assertRaises(render.RenderError):
                 render._output_name("/usr/bin/wlr-randr", dict(os.environ))
 
+    def test_stop_terminates_owned_group_and_reaps(self):
+        process = mock.Mock()
+        process.pid = 12345
+        process.poll.return_value = None
+        process.wait.return_value = 0
+        with mock.patch("macrice.de.render.os.killpg") as kill:
+            render._stop(process)
+        kill.assert_called_once_with(12345, render.signal.SIGTERM)
+        process.wait.assert_called_once_with(timeout=3)
+
+    def test_stop_escalates_after_timeout(self):
+        process = mock.Mock()
+        process.pid = 12345
+        process.poll.return_value = None
+        process.wait.side_effect = [subprocess.TimeoutExpired("labwc", 3), 0]
+        with mock.patch("macrice.de.render.os.killpg") as kill:
+            render._stop(process)
+        self.assertEqual(kill.call_args_list, [
+            mock.call(12345, render.signal.SIGTERM),
+            mock.call(12345, render.signal.SIGKILL),
+        ])
+        self.assertEqual(process.wait.call_count, 2)
+
+    def test_cleanup_continues_after_child_failure(self):
+        children = [mock.Mock(), mock.Mock(), mock.Mock()]
+        with mock.patch("macrice.de.render._stop",
+                        side_effect=[OSError("injected"), None, None]) as stop:
+            with self.assertRaises(render.RenderError) as raised:
+                render._cleanup_children(children)
+        self.assertEqual(raised.exception.code, "render_failed")
+        self.assertEqual([call.args[0] for call in stop.call_args_list],
+                         list(reversed(children)))
+
+    def test_stop_does_not_signal_reaped_pid(self):
+        process = mock.Mock()
+        process.poll.return_value = 0
+        with mock.patch("macrice.de.render.os.killpg") as kill:
+            render._stop(process)
+        kill.assert_not_called()
+        process.wait.assert_called_once_with()
+
     def test_json_cli_failure_is_stable_and_does_not_expose_paths(self):
         with tempfile.TemporaryDirectory() as folder:
             target = Path(folder) / "private.png"
