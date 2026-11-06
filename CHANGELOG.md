@@ -1,5 +1,12 @@
 # RiceBowl changelog
 
+## Unreleased — two-output Waybar fallback verification (6 November 2026)
+
+- Extend the real labwc/Waybar session smoke with two independently captured
+  Wayland outputs, a disconnect/reconnect cycle and visible panel verification.
+- Keep the native Rust panel's single-output limitation explicit; a green
+  fallback monitor test is not native per-monitor or physical-device QA.
+
 ## Unreleased — first native Wayland start menu (6 November 2026)
 
 - Replace the schema-v4/v5 native launcher fallback with an actually rendered,
