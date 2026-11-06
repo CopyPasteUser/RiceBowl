@@ -45,7 +45,7 @@ use wayland_protocols_wlr::foreign_toplevel::v1::client::{
 
 const MAX_WIDTH: u32 = 16384;
 const MAX_HEIGHT: u32 = 256;
-const MAX_SECONDARY_OUTPUTS: usize = 7;
+const MAX_OUTPUT_PANELS: usize = 8;
 const BTN_LEFT: u32 = 0x110;
 
 fn clock_now() -> String {
@@ -195,6 +195,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         menu_focused: false,
         primary_seat: None,
         primary_output: None,
+        primary_output_seen: false,
         toplevel_manager,
         tasks: Vec::new(),
         task_offset: 0,
@@ -273,6 +274,7 @@ struct RicePlate {
     menu_focused: bool,
     primary_seat: Option<wl_seat::WlSeat>,
     primary_output: Option<wl_output::WlOutput>,
+    primary_output_seen: bool,
     toplevel_manager: Option<ZwlrForeignToplevelManagerV1>,
     tasks: Vec<Task>,
     task_offset: usize,
@@ -287,10 +289,16 @@ struct RicePlate {
 
 impl RicePlate {
     fn sync_mirrors(&mut self, qh: &QueueHandle<Self>) {
-        let Some(primary) = self.primary_output.as_ref() else { return };
-        let outputs: Vec<_> = self.outputs.outputs().filter(|output|
-            output != primary && self.outputs.info(output).is_some())
-            .take(MAX_SECONDARY_OUTPUTS).collect();
+        // An output can disappear between wl_surface.leave and its eventual
+        // enter on another output. Never leave the remaining display blank
+        // while the compositor is deciding where the unbound primary goes.
+        // Before the very first enter, defer to the compositor's initial
+        // placement to avoid redundant startup panels.
+        if !self.primary_output_seen { return; }
+        let outputs: Vec<_> = self.outputs.outputs()
+            .filter(|output| self.primary_output.as_ref() != Some(output))
+            .filter(|output| self.logical_output_size(output).is_some())
+            .take(MAX_OUTPUT_PANELS).collect();
         let old_count = self.mirrors.len();
         self.mirrors.retain(|mirror| outputs.contains(&mirror.output));
         if old_count != self.mirrors.len() {
@@ -953,6 +961,7 @@ impl CompositorHandler for RicePlate {
         if surface == self.layer.wl_surface() {
             eprintln!("RicePlate: primary panel entered {output:?}");
             self.primary_output = Some(output.clone());
+            self.primary_output_seen = true;
             self.reflow_icons();
             self.sync_mirrors(qh);
             return;
