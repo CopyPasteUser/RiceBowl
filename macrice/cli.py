@@ -71,7 +71,8 @@ def parser() -> argparse.ArgumentParser:
     commands.add_parser("session-sync", help="Reconcile active rice after XFCE autostart")
     de = commands.add_parser("de", help="Inspect experimental RiceBowl Wayland desktop prerequisites")
     de.add_argument("action", choices=("check", "start", "shell", "recipes", "recipe-init",
-                                       "recipe-import", "recipe-export"))
+                                       "recipe-import", "recipe-export", "recipe-current",
+                                       "recipe-select", "recipe-restore"))
     de.add_argument("--json", action="store_true", help="Read-only machine-readable preflight")
     de.add_argument("--nested", action="store_true",
                     help="Explicitly test a separate labwc session inside an active desktop")
@@ -169,6 +170,30 @@ def main(argv: list[str] | None = None) -> int:
                 from .de.recipes import export_recipe
                 result = export_recipe(args.recipe, args.output)
                 print(f"Exported {result.recipe_id} to {args.output} (not applied)")
+                return 0
+            if args.action in ("recipe-current", "recipe-select", "recipe-restore"):
+                if (args.nested or args.panel != "waybar"
+                        or (args.action != "recipe-current" and args.json)):
+                    raise ValueError("Recipe selection accepts only --recipe (select) or --json (current)")
+                from .de.recipes import change_selection, current_selection
+                if args.action == "recipe-current":
+                    if args.recipe:
+                        raise ValueError("de recipe-current is read-only and takes no --recipe")
+                    active, previous = current_selection()
+                    if args.json:
+                        print(json.dumps({"active": active, "previous": previous}, indent=2))
+                    else:
+                        print(f"Next Wayland rice: {active} (previous: {previous or 'none'})")
+                elif args.action == "recipe-select":
+                    if not args.recipe:
+                        raise ValueError("de recipe-select requires --recipe ID")
+                    active, previous = change_selection(args.recipe)
+                    print(f"Next Wayland rice: {active} (was: {previous}); current session unchanged")
+                else:
+                    if args.recipe:
+                        raise ValueError("de recipe-restore accepts no --recipe")
+                    active, previous = change_selection(restore=True)
+                    print(f"Restored next Wayland rice: {active} (was: {previous})")
                 return 0
             if args.action == "start":
                 if args.json:

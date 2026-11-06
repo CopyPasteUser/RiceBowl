@@ -104,6 +104,23 @@ ricebowl de start --nested --panel native --recipe my-rice
 ricebowl de recipe-export --recipe my-rice --output "$HOME/my-rice-share.json"
 ```
 
+Choose which validated panel recipe the **next opt-in Wayland login** uses,
+without restarting or changing the current desktop:
+
+```bash
+ricebowl de recipe-select --recipe my-rice
+ricebowl de recipe-current --json
+ricebowl de recipe-restore   # One-level undo for the next login
+```
+
+The selection is an atomic `0600` preference inside the owner-private recipe
+directory. Repeating the same selection preserves the last undo target; the
+selection lock serializes parallel updates. The default is `classic`. A
+corrupted selection or subsequently deleted recipe is reported and ignored
+at login so the built-in classic panel can start. An **explicitly** requested
+invalid recipe still fails before launching labwc. This selects only the
+Wayland panel layout; full live desktop rice switching is not implemented.
+
 Imports accept owner-controlled `0600` or `0644` regular `.json` files,
 reject symlinks, unsafe directories, invalid schemas, reserved IDs and
 duplicate names, and store the result privately in

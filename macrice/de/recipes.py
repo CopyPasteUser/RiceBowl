@@ -7,6 +7,7 @@ is independent of Waybar so a future native RicePlate renderer can consume it.
 from __future__ import annotations
 
 import json
+import fcntl
 import os
 import re
 import stat
@@ -18,6 +19,7 @@ from typing import Any
 
 
 MAX_RECIPE_BYTES = 64 * 1024
+MAX_SELECTION_BYTES = 2048
 WIDGETS = frozenset(("launcher", "tasks", "clock", "network", "audio", "battery", "tray"))
 SECTIONS = ("start", "center", "end")
 COLORS = ("background", "foreground", "active")
@@ -252,6 +254,101 @@ def native_token(token: str) -> str:
     if re.fullmatch(r"[a-z][a-z0-9-]{1,31}", token):
         return str(_private_recipe_dir(create=False) / f"{token}.json")
     return token
+
+
+def _read_selection(directory: Path) -> dict[str, Any] | None:
+    path = directory / ".active-recipe"
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
+    except FileNotFoundError:
+        return None
+    except OSError as exc:
+        raise RecipeError("Cannot safely read the selected RicePlate recipe") from exc
+    with os.fdopen(fd, "rb") as stream:
+        meta = os.fstat(stream.fileno())
+        if (not stat.S_ISREG(meta.st_mode) or meta.st_uid != os.geteuid()
+                or meta.st_mode & 0o077 or meta.st_size > MAX_SELECTION_BYTES):
+            raise RecipeError("Selected recipe state is not an owner-private bounded file")
+        raw = stream.read(MAX_SELECTION_BYTES + 1)
+    try:
+        data = json.loads(raw, object_pairs_hook=_object_without_duplicates)
+        _strict_keys(data, {"schema_version", "active", "previous"}, "Selection")
+    except (UnicodeError, ValueError, TypeError, RecursionError) as exc:
+        raise RecipeError("Invalid selected recipe state") from exc
+    if type(data["schema_version"]) is not int or data["schema_version"] != 1:
+        raise RecipeError("Unsupported recipe selection version")
+    for field in ("active", "previous"):
+        if (not isinstance(data[field], str)
+                or not re.fullmatch(r"[a-z][a-z0-9-]{1,31}", data[field])):
+            raise RecipeError("Recipe selection must contain only built-in/imported IDs")
+    return data
+
+
+def current_selection() -> tuple[str, str | None]:
+    """Read the next Wayland session's preference without any filesystem writes."""
+    directory = _private_recipe_dir(create=False)
+    if not directory.exists():
+        return "classic", None
+    state = _read_selection(directory)
+    return (state["active"], state["previous"]) if state else ("classic", None)
+
+
+def selected_recipe() -> str | None:
+    """Return None for the unchanged default session, or a saved recipe ID."""
+    active, previous = current_selection()
+    return active if previous is not None else None
+
+
+def change_selection(token: str | None = None, *, restore: bool = False) -> tuple[str, str]:
+    """Change only the *next* Wayland session's recipe, with one-level undo.
+
+    The active compositor and every XFCE setting remain untouched. The
+    collection lock serializes concurrent authors before reading/writing.
+    """
+    if (restore and token is not None) or (not restore and token is None):
+        raise RecipeError("Provide exactly one of a recipe ID or restore")
+    directory = _private_recipe_dir(create=True)
+    lock = directory / ".active-recipe.lock"
+    descriptor = os.open(lock, os.O_WRONLY | os.O_CREAT | os.O_NOFOLLOW | os.O_CLOEXEC, 0o600)
+    with os.fdopen(descriptor, "wb") as locked:
+        meta = os.fstat(locked.fileno())
+        if (not stat.S_ISREG(meta.st_mode) or meta.st_uid != os.geteuid()
+                or meta.st_mode & 0o077):
+            raise RecipeError("Selected recipe lock is not owner-private")
+        fcntl.flock(locked.fileno(), fcntl.LOCK_EX)
+        state = _read_selection(directory)
+        active = state["active"] if state else "classic"
+        if restore:
+            if not state:
+                raise RecipeError("No previous RicePlate recipe selection to restore")
+            target = state["previous"]
+        else:
+            assert token is not None
+            target = token
+        if not re.fullmatch(r"[a-z][a-z0-9-]{1,31}", target):
+            raise RecipeError("Select a built-in or imported recipe ID, not a file path")
+        load(target)  # Refuse a missing or corrupted recipe before changing state.
+        if target == active:
+            return target, active
+        new_state = {"schema_version": 1, "active": target, "previous": active}
+        payload = (json.dumps(new_state, separators=(",", ":")) + "\n").encode("utf-8")
+        descriptor, temporary = tempfile.mkstemp(prefix=".ricebowl-selection-", dir=directory)
+        try:
+            with os.fdopen(descriptor, "wb") as output:
+                os.fchmod(output.fileno(), 0o600)
+                output.write(payload)
+                output.flush()
+                os.fsync(output.fileno())
+            os.replace(temporary, directory / ".active-recipe")
+            dirfd = os.open(directory, os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC)
+            try:
+                os.fsync(dirfd)
+            finally:
+                os.close(dirfd)
+        finally:
+            if os.path.exists(temporary):
+                os.unlink(temporary)
+    return target, active
 
 
 def create_from_template(

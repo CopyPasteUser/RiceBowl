@@ -26,6 +26,9 @@ physical-device compatibility.
 - [x] Panel-only v1 recipes can be validated, imported and exported offline
   with bounded files and no desktop mutation; full RicePack compatibility
   remains an independent 1.0 gate.
+- [x] A selected Wayland panel recipe persists across sessions and can be
+  restored one step, with safe classic fallback after missing/corrupt state;
+  no claim of live multi-component rice switching.
 
 ## Real-hardware acceptance (not done)
 
