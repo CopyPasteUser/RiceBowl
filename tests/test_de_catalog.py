@@ -5,6 +5,7 @@ import unittest
 from unittest import mock
 
 from macrice.de import catalog, recipes
+from macrice.de import creator_contract
 
 
 class ComponentCatalogTests(unittest.TestCase):
@@ -19,6 +20,9 @@ class ComponentCatalogTests(unittest.TestCase):
         self.assertFalse(info["recipe"]["custom_actions"])
         self.assertFalse(info["recipe"]["external_assets"])
         self.assertEqual(info["recipe"]["maximum_bytes"], recipes.MAX_RECIPE_BYTES)
+        self.assertEqual(info["authoring"]["draft_edit"], creator_contract.describe())
+        self.assertEqual(info["authoring"]["draft_edit"]["operation"], "set")
+        self.assertFalse(info["authoring"]["draft_edit"]["mutates_active_desktop"])
         self.assertEqual(info["recipe"]["sections"], ["start", "center", "end"])
         self.assertEqual(info["recipe"]["panel_positions"], ["top", "bottom"])
         self.assertEqual({part["id"] for part in info["components"]}, recipes.WIDGETS)

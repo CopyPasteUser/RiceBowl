@@ -6,6 +6,7 @@ It grants no ability to execute actions or change a running desktop.
 
 from __future__ import annotations
 
+from .creator_contract import describe as draft_edit_contract
 from .recipes import MAX_RECIPE_BYTES, METRIC_DEFAULTS, METRIC_FIELDS, METRIC_LIMITS, WIDGETS
 
 
@@ -43,6 +44,7 @@ def describe() -> dict[str, object]:
             "native": "experimental-rust-layer-shell",
             "waybar": "fallback-adapter",
         },
+        "authoring": {"draft_edit": draft_edit_contract()},
         "components": [
             {"id": "launcher", "native": "interactive", "waybar": "interactive",
              "behavior": "open-fuzzel", "keyboard_navigation": False,

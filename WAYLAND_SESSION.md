@@ -116,6 +116,61 @@ The review never launches labwc, probes live hardware, writes a draft or
 changes an active/next-login rice. It is **not** a rendered preview, image
 comparison, complete RicePack validator or guarantee of functional parity.
 
+#### Offline Creator component edits (experimental)
+
+Agents can now read `ricebowl de catalog --json` and use the
+`authoring.draft_edit` contract to build a **new panel draft** from actual
+supported components. The contract publishes editable JSON Pointer paths,
+limits, an explicit `set` operation and an example against `classic`.
+
+For example, save this data as `/absolute/path/panel-edits.json` (an
+owner-controlled regular `.json` file, not group/world writable):
+
+```json
+{
+  "edit_version": 1,
+  "operations": [
+    {"op": "set", "path": "/panel/height", "value": 44},
+    {"op": "set", "path": "/panel/sections/start", "value": ["launcher"]},
+    {"op": "set", "path": "/panel/sections/center", "value": ["tasks"]}
+  ]
+}
+```
+
+Then validate and create a **new** private runtime-compatible JSON recipe:
+
+```bash
+ricebowl de recipe-init --base classic --id my-panel --name "My Panel" \
+  --output /absolute/path/my-panel-base.json
+ricebowl de draft-edit --recipe /absolute/path/my-panel-base.json \
+  --edit /absolute/path/panel-edits.json \
+  --output /absolute/path/my-panel-draft.json --json
+ricebowl de review --recipe /absolute/path/my-panel-draft.json \
+  --compare /absolute/path/my-panel-base.json --json
+ricebowl de start --nested --recipe /absolute/path/my-panel-draft.json
+```
+
+The editor supports only validated panel property changes: name, panel edge,
+height, `start`/`center`/`end` widget arrangements, hex colors and schema-v2
+widget widths. IDs/schema versions are immutable; use `recipe-init` to create
+a fresh identity or v2 template. A draft made directly from `classic` remains
+identified as `classic` and can be previewed by absolute path, but cannot be
+imported over the reserved built-in ID. At most 16 `set` operations and 16 KiB of
+edit data are accepted; duplicate paths, unknown components, scripts, external
+assets, unsupported actions and no-op edits are rejected. The destination
+must not exist; the new file is created with mode `0600` without overwriting
+the source. `--json` uses exit `0` for success, `2` for validation/creation
+failure with a structured error code and (only for allowlisted properties)
+a JSON Pointer diagnostic, and `1` for invalid flags. Errors never echo
+private source/output paths, arbitrary edit values or executable content.
+
+Neither the active session nor its next-login selection changes; actual visual
+inspection is still a separate nested labwc step. These are reusable **panel
+components only**. Menu, desktop, notification, settings and full RicePack
+composition still need their respective native components and schemas.
+
+#### Existing recipe creation, import/export and selection
+
 Custom recipes use the strict JSON schema illustrated in
 `macrice/de/resources/recipes/`. Supply an **absolute path** to an owner-only,
 regular JSON file (`chmod 600 YOUR_FILE.json`). Recipes are limited to 64 KiB,
