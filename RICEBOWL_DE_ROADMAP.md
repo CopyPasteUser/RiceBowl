@@ -239,6 +239,10 @@ depend on the XFCE session.
   Live shell switching and cross-component transactions remain open.
 - [ ] Define a small versioned profile contract between RiceBowl, RiceField
   and Taskotto. External applications work without RiceBowl installed.
+  - [x] RicePlate recipe → Taskotto v1 data-only TOML export and fixture,
+    with validated color/theme mapping and no-overwrite private output.
+  - [ ] Add auto-discovery/coordination for RiceField and full session-wide
+    multi-app pack transactions only after their independent contracts settle.
 - [ ] Support rice-specific structure, spacing, colors and components with
   validated settings, not an unsafe arbitrary runtime plugin mechanism.
 - [ ] Specify a versioned, schema-validated rice recipe format for composable
