@@ -6,7 +6,7 @@ It grants no ability to execute actions or change a running desktop.
 
 from __future__ import annotations
 
-from .creator_contract import describe as draft_edit_contract
+from .creator_contract import describe as draft_edit_contract, describe_visual_qa
 from .recipes import (ICON_ACTIONS, ICON_HEIGHT, ICON_WIDTH, MAX_DESKTOP_ICONS,
                       MENU_ACTIONS, WALLPAPERS, MAX_LAYOUT_CHILDREN, MAX_LAYOUT_DEPTH, MAX_LAYOUT_LABELS,
                       MAX_LAYOUT_NODES, MAX_LAYOUT_ROOTS, MAX_RECIPE_BYTES,
@@ -16,7 +16,7 @@ from .recipes import (ICON_ACTIONS, ICON_HEIGHT, ICON_WIDTH, MAX_DESKTOP_ICONS,
 def describe() -> dict[str, object]:
     """Describe exactly which panel and early shell primitives are implemented."""
     return {
-        "catalog_version": 4,
+        "catalog_version": 5,
         "scope": "wayland-shell-preview",
         "complete_desktop_environment": False,
         "recipe": {
@@ -86,7 +86,8 @@ def describe() -> dict[str, object]:
             "native": "experimental-rust-layer-shell",
             "waybar": "fallback-adapter",
         },
-        "authoring": {"draft_edit": draft_edit_contract()},
+        "authoring": {"draft_edit": draft_edit_contract(),
+                      "visual_compare": describe_visual_qa()},
         "components": [
             {"id": "launcher", "native": "interactive", "waybar": "interactive",
              "behavior": "open-fuzzel", "keyboard_navigation": False,

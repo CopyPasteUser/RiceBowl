@@ -261,6 +261,12 @@ depend on the XFCE session.
   response and reviewable semantic changes. This supplies no executable
   plugin hooks or resident Creator process. Full multi-region editing,
   responsive rules, visual QA and live transaction/rollback are still open.
+- [x] Expose the **real offline visual comparator through RiceBowl's installed
+  Creator CLI** (`de visual-compare --reference ... --actual ... [--recipe ...]
+  --json`), sharing the standalone script's engine with stable versioned
+  results, path-free machine errors, explicit artifact flags and honest
+  unsupported fidelity semantics. This is comparison of supplied captures,
+  not an automated screenshot capture, active desktop mutation or GUI preview.
 - [ ] Publish a **versioned, machine-readable Creator contract** (CLI JSON
   output first; optional local IPC only if justified) for discovering
   components, creating/editing drafts, validating recipes, previewing the

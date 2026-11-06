@@ -12,6 +12,32 @@ EDIT_VERSION = 1
 MAX_EDIT_BYTES = 16 * 1024
 MAX_OPERATIONS = 16
 
+
+def describe_visual_qa() -> dict[str, object]:
+    """Published on-demand Creator CLI contract, never a resident process."""
+    return {
+        "contract_version": 1,
+        "command": "de visual-compare",
+        "mode": "offline-real-capture-comparison",
+        "required_options": ["--reference", "--actual"],
+        "optional_options": ["--recipe", "--threshold", "--overlay", "--heatmap", "--json"],
+        "capture_format": "PNG",
+        "image_limit_megapixels": 16,
+        "pixel_threshold": {"default": 24, "min": 0, "max": 255},
+        "regions": ["panel", "desktop", "desktop-icon-*"],
+        "region_semantics": "recipe-coordinates, may be clipped or unavailable",
+        "artifact_behavior": "new absolute owner-private PNGs, never overwrite",
+        "success_exit_code": 0,
+        "invalid_input_exit_code": 2,
+        "invalid_options_exit_code": 1,
+        "error_code": "invalid_visual_input",
+        "requires_running_wayland_session": False,
+        "captures_live_desktop": False,
+        "mutates_active_desktop": False,
+        "perceptual_or_functional_accuracy": "not_measured",
+    }
+
+
 EDITABLE_PATHS = frozenset((
     "/name", "/panel/position", "/panel/height",
     *(f"/panel/sections/{name}" for name in recipes.SECTIONS),

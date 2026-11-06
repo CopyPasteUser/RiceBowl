@@ -12,7 +12,7 @@ class ComponentCatalogTests(unittest.TestCase):
     def test_catalog_is_complete_truthful_and_declarative(self):
         info = catalog.describe()
         catalog.validate_catalog_contract()
-        self.assertEqual(info["catalog_version"], 4)
+        self.assertEqual(info["catalog_version"], 5)
         self.assertEqual(info["scope"], "wayland-shell-preview")
         self.assertFalse(info["complete_desktop_environment"])
         self.assertEqual(info["recipe"]["schema_versions"], [1, 2, 3, 4, 5])
@@ -23,6 +23,9 @@ class ComponentCatalogTests(unittest.TestCase):
         self.assertEqual(info["authoring"]["draft_edit"], creator_contract.describe())
         self.assertEqual(info["authoring"]["draft_edit"]["operation"], "set")
         self.assertFalse(info["authoring"]["draft_edit"]["mutates_active_desktop"])
+        self.assertEqual(info["authoring"]["visual_compare"],
+                         creator_contract.describe_visual_qa())
+        self.assertFalse(info["authoring"]["visual_compare"]["captures_live_desktop"])
         self.assertEqual(info["recipe"]["sections"], ["start", "center", "end"])
         self.assertEqual(info["recipe"]["panel_positions"], ["top", "bottom"])
         self.assertEqual({part["id"] for part in info["components"]}, recipes.WIDGETS)
