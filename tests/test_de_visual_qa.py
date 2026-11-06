@@ -4,11 +4,15 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from PIL import Image
+try:
+    from PIL import Image
+except ImportError:
+    Image = None
 
 from scripts.compare_wayland_captures import compare, main
 
 
+@unittest.skipIf(Image is None, "Optional Pillow is not installed in this runtime")
 class WaylandVisualQaTests(unittest.TestCase):
     def test_identical_real_pngs_are_reported_as_identical(self):
         with tempfile.TemporaryDirectory() as folder:

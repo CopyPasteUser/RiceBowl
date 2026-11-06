@@ -15,7 +15,10 @@ from pathlib import Path
 
 def compare(reference: Path, actual: Path, *, threshold: int = 24) -> dict:
     """Return stable, transparent per-pixel metrics without writing either image."""
-    from PIL import Image, ImageChops, UnidentifiedImageError
+    try:
+        from PIL import Image, ImageChops, UnidentifiedImageError
+    except ImportError as exc:
+        raise ValueError("Optional Pillow package is required for image comparison") from exc
 
     if not 0 <= threshold <= 255:
         raise ValueError("Threshold must be between 0 and 255")
