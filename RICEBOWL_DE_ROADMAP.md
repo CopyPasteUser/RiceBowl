@@ -274,6 +274,12 @@ depend on the XFCE session.
   results, path-free machine errors, explicit artifact flags and honest
   unsupported fidelity semantics. This is comparison of supplied captures,
   not an automated screenshot capture, active desktop mutation or GUI preview.
+- [x] Expose an explicit **real Wayland Creator capture** endpoint (`de capture
+  --output /absolute/new.png [--json]`), reusing `grim` only on user invocation
+  inside the current Wayland session. Require new owner-private output with
+  no overwrite of files or symlinks, bound size and runtime, report content hash
+  and stable machine errors. Never automatically capture private windows or
+  claim that this creates/isolates a nested compositor session.
 - [ ] Publish a **versioned, machine-readable Creator contract** (CLI JSON
   output first; optional local IPC only if justified) for discovering
   components, creating/editing drafts, validating recipes, previewing the

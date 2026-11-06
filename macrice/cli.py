@@ -71,7 +71,7 @@ def parser() -> argparse.ArgumentParser:
     commands.add_parser("session-sync", help="Reconcile active rice after XFCE autostart")
     de = commands.add_parser("de", help="Inspect experimental RiceBowl Wayland desktop prerequisites")
     de.add_argument("action", choices=(
-        "check", "start", "shell", "catalog", "review", "draft-edit", "visual-compare",
+        "check", "start", "shell", "catalog", "review", "draft-edit", "visual-compare", "capture",
         "recipes", "recipe-init", "recipe-import", "recipe-export", "recipe-current",
         "recipe-select", "recipe-restore"))
     de.add_argument("--json", action="store_true", help="Read-only machine-readable preflight")
@@ -93,7 +93,7 @@ def parser() -> argparse.ArgumentParser:
                     help="Recipe schema for de recipe-init (1 flat, 2 widths, 3 nested, 4 shell, 5 icons)")
     de.add_argument("--id", help="Lowercase recipe identifier for de recipe-init")
     de.add_argument("--name", help="Human-readable recipe name for de recipe-init")
-    de.add_argument("--output", type=Path, help="Absolute .json destination for de recipe-init or recipe-export")
+    de.add_argument("--output", type=Path, help="New absolute .json draft/export or .png capture destination")
     commands.add_parser("session-menu", help="Toggle the active rice's application menu")
     commands.add_parser("session-control", help="Toggle the active rice's control panel")
     commands.add_parser("session-keys-restore", help="Restore the previous Super/Right Control shortcuts")
@@ -161,8 +161,8 @@ def main(argv: list[str] | None = None) -> int:
                 raise ValueError("--base, --id and --name only apply to de recipe-init")
             if args.action != "recipe-init" and args.schema_version != 1:
                 raise ValueError("--schema-version only applies to de recipe-init")
-            if args.action not in ("recipe-init", "recipe-export", "draft-edit") and args.output:
-                raise ValueError("--output only applies to de recipe-init, recipe-export or draft-edit")
+            if args.action not in ("recipe-init", "recipe-export", "draft-edit", "capture") and args.output:
+                raise ValueError("--output only applies to de recipe-init, recipe-export, draft-edit or capture")
             if args.action == "recipe-init":
                 if (args.json or args.nested or args.recipe or args.panel != "waybar"
                         or not args.id or not args.name or not args.output):
@@ -299,6 +299,27 @@ def main(argv: list[str] | None = None) -> int:
                         if artifact in report:
                             print(f"Created private {artifact}: {report[artifact]}")
                     print("Read-only comparison; no desktop change or fidelity certification")
+                return 0
+            if args.action == "capture":
+                if args.nested or args.panel != "waybar" or args.recipe:
+                    raise ValueError("de capture accepts only --output and --json")
+                from .de.capture import CaptureError, capture
+                try:
+                    report = capture(args.output)
+                except CaptureError as exc:
+                    if not args.json:
+                        raise
+                    print(json.dumps({"creator_contract_version": 1, "ok": False,
+                                      "error": {"code": exc.code, "message": str(exc)}},
+                                     indent=2))
+                    return 2
+                if args.json:
+                    print(json.dumps({"creator_contract_version": 1, "ok": True,
+                                      "capture": report}, indent=2))
+                else:
+                    print(f"Captured current Wayland display: {report['path']} "
+                          f"({report['width']}x{report['height']})")
+                    print("The capture may contain private screen data; no desktop change was made")
                 return 0
             if args.action == "draft-edit":
                 if (args.nested or args.panel != "waybar" or not args.recipe

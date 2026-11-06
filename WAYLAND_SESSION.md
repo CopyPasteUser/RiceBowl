@@ -297,16 +297,22 @@ outside the output when no safe, non-overlapping hit area exists. This placement
 fractional-scale visual quality and multi-monitor hotplug still need device
 acceptance. Do not treat it as a finished desktop.
 
-For **real** Wayland screenshots, install the `grim` command and, inside an
-opt-in RiceBowl Wayland session, run:
+For **real** Wayland screenshots, install `grim` and explicitly invoke the
+Creator capture command **inside the Wayland compositor you want to inspect**:
 
 ```bash
-sh scripts/capture_wayland_panel.sh "$HOME/riceplate-actual.png"
-python3 scripts/compare_wayland_captures.py \
-  "$HOME/reference.png" "$HOME/riceplate-actual.png"
+ricebowl de capture --output "$HOME/riceplate-actual.png" --json
+ricebowl de visual-compare \
+  --reference "$HOME/reference.png" --actual "$HOME/riceplate-actual.png" --json
 ```
 
-Capture refuses to overwrite existing files. Comparison requires Pillow and
+`de capture` is a versioned, on-demand Creator endpoint (discoverable via
+`de catalog --json`) which captures the **current** Wayland desktop, not a
+newly launched or automatically isolated preview. Its screenshot can include
+private windows; never share captures without reviewing them. It writes a
+new owner-private PNG, refuses to overwrite files or symlinks and reports
+actual dimensions and SHA-256. The legacy manual helper
+`scripts/capture_wayland_panel.sh` also remains available. Comparison requires Pillow and
 outputs JSON dimensions, mean RGB pixel error and the fraction of changed
 pixels, not a made-up fidelity percentage. The native CI also captures a
 **genuine headless labwc screenshot** in its downloadable preview artifact.
