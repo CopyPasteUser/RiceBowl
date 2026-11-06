@@ -87,6 +87,15 @@ class PerformanceTests(unittest.TestCase):
                          ("xfce4-panel", "replaceable"))
         self.assertIsNone(_desktop_component(["/usr/bin/python3", "/tmp/xfce4-panel.py"]))
 
+    def test_wayland_role_classifier_tracks_real_executables_only(self):
+        self.assertEqual(_desktop_component(["/usr/bin/labwc", "--config-dir", "/tmp/config"]),
+                         ("labwc", "compositor"))
+        self.assertEqual(_desktop_component(["/usr/bin/waybar"]), ("waybar", "panel"))
+        self.assertEqual(_desktop_component(["/home/user/.cargo/bin/riceplate-native"]),
+                         ("riceplate-native", "panel"))
+        self.assertEqual(_desktop_component(["/usr/bin/swaybg"]), ("swaybg", "wallpaper"))
+        self.assertIsNone(_desktop_component(["/usr/bin/python3", "--recipe", "labwc"]))
+
     def test_desktop_inventory_requires_explicit_opt_in(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -124,6 +133,32 @@ class PerformanceTests(unittest.TestCase):
                                           "cpu_percent": None, "threads": None}]])
         self.assertIsNone(report["xfce_pss_kib"])
         self.assertEqual(report["warnings"], [])
+
+    def test_wayland_totals_are_partial_when_counters_are_missing(self):
+        def process(name, pid, pss):
+            return {"name": name, "pid": pid, "role": "panel",
+                    "pss_kib": pss, "cpu_percent": 0, "threads": 1}
+
+        report = desktop_session_report([[process("labwc", 1, 1000),
+                                          process("waybar", 2, 2000),
+                                          process("xfwm4", 3, 3000)]])
+        self.assertEqual(report["wayland_pss_kib"], 3000)
+        self.assertEqual(report["xfce_pss_kib"], 3000)
+        self.assertIn("not an isolated single-session", report["scope_note"])
+
+        report = desktop_session_report([[process("labwc", 1, None),
+                                          process("waybar", 2, 2000)]])
+        self.assertIsNone(report["wayland_pss_kib"])
+        self.assertIsNone(report["xfce_pss_kib"])
+
+    def test_simultaneous_native_and_waybar_panels_are_only_warned_about(self):
+        rows = [{"name": name, "pid": index, "role": "panel", "pss_kib": 100,
+                 "cpu_percent": 0, "threads": 1} for index, name in enumerate(
+                     ("labwc", "waybar", "riceplate-native"), 1)]
+        report = desktop_session_report([rows])
+        self.assertEqual(report["wayland_pss_kib"], 300)
+        self.assertEqual(len(report["warnings"]), 1)
+        self.assertIn("nested previews may be intentional", report["warnings"][0])
 
     def test_duplicate_instances_of_one_rice_are_reported(self):
         row = {"name": "RiceBowl Windows 7", "role": "ricebowl",

@@ -303,7 +303,7 @@ def main(argv: list[str] | None = None) -> int:
                     print(json.dumps(result, indent=2))
                     return 0
                 if not result["components"]:
-                    print("No recognized XFCE/RiceBowl processes found for this user." if desktop else
+                    print("No recognized XFCE/Wayland/RiceBowl processes found for this user." if desktop else
                           "No RiceBowl components or Plank processes found for this user.")
                 for item in result["components"]:
                     pss = f"{item['pss_kib'] / 1024:.1f} MiB" if item["pss_kib"] is not None else "unavailable"
@@ -318,9 +318,13 @@ def main(argv: list[str] | None = None) -> int:
                     total = result["xfce_pss_kib"]
                     print("XFCE sampled PSS: " + (f"{total / 1024:.1f} MiB" if total is not None
                                                    else "unavailable"))
+                    wayland = result["wayland_pss_kib"]
+                    print("Wayland sampled PSS: " + (
+                        f"{wayland / 1024:.1f} MiB" if wayland is not None else "unavailable"))
                     for warning in result["warnings"]:
                         print("Overlap warning:", warning)
                     print("Read-only inventory: core/shared services were not stopped.")
+                    print(result["scope_note"])
             else:
                 if args.json or args.samples != 3:
                     raise ValueError("--json and --samples apply only to performance report/desktop")
