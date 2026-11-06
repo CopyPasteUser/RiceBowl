@@ -145,6 +145,13 @@ dbus-run-session -- sh -eu -c '
             WAYLAND_DISPLAY=wayland-0 grim - > "$runtime/overflow-v5.png"
             cp "$runtime/overflow-v5.png" "$source_root/dist/riceplate-native-preview/overflow-v5.png"
             echo "Captured reflowed icon on 1024x768 headless output"
+            # Exercise the installed Creator command against a REAL Wayland
+            # framebuffer as well as its isolated unit-test fake-grim path.
+            WAYLAND_DISPLAY=wayland-0 /usr/bin/python3 "$source_root/launcher.py" \
+                de capture --output "$runtime/creator-v1.png" --json > "$runtime/creator-v1.json"
+            cp "$runtime/creator-v1.png" "$source_root/dist/riceplate-native-preview/creator-v1.png"
+            cp "$runtime/creator-v1.json" "$source_root/dist/riceplate-native-preview/creator-v1.json"
+            echo "Captured real headless Wayland frame via Creator CLI"
         fi
         kill "$plate"
         wait "$plate" 2>/dev/null || :
