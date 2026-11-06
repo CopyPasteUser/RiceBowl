@@ -191,6 +191,28 @@ depend on the XFCE session.
   Cover both renderers with a common fixture and real headless labwc smoke.
   This milestone is **panel-only**: full desktop regions, responsive layout
   constraints, tokenized visual states and source-image conversion remain open.
+- [x] Introduce **opt-in schema-v4 shell composition** as a vertical slice:
+  validated grouped root-menu actions compiled to a private labwc menu,
+  allowlisted bundled wallpaper applied through swaybg, actual native task
+  radius/label padding tokens, and a live compact panel breakpoint (Waybar
+  supports offline width-specific compilation, not live reflow yet). Extend
+  read-only Creator discovery/review and safe draft edits across these fields.
+  Never permit arbitrary generated commands, image paths or XML fragments.
+- [x] Start a **real Wayland screenshot QA path**: capture headless native
+  labwc output with grim into CI artifacts, allow no-overwrite manual captures
+  and report deterministic pixel-difference metrics for an offline reference.
+  This is diagnostic tooling, not a validated perceptual/functional accuracy
+  score. Real multi-resolution/fractional-scale captures and GUI acceptance
+  remain open.
+- [ ] Render desktop shortcuts, movable icons and widgets in RicePlate's
+  own background layer with true focus/hit testing, keyboard accessibility,
+  output hotplug and the same versioned recipe contract.
+- [ ] Implement visually configurable, truly interactive native start menus
+  (beyond the initial functional labwc fallback menu), including navigation,
+  searching, pinning and the per-rice layout variants required by XP/7/etc.
+- [ ] Make responsive shell layouts live across every backend and surface,
+  including Waybar fallback and multi-monitor hotplug; expand reusable design
+  tokens to typography, states, iconography, spacing and motion.
 - [x] Allow safe offline import/export of validated, non-executable, panel-only
   JSON recipes into a private per-user collection; preview by imported ID.
   Full multi-component RicePacks with artwork, screenshot conversion and a

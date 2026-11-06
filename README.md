@@ -1,47 +1,30 @@
 <div align="center">
 
-<img src="assets/ricebowl-symbolic.svg" alt="RiceBowl" width="88">
+<img src="assets/ricebowl-symbolic.svg" alt="RiceBowl" width="80">
 
 # RiceBowl
 
-**Seven personalities. One Linux desktop.**
+**Build a desktop, not just a theme.**
 
-A collection of deeply customizable, OS-inspired desktop experiences — growing into a lightweight, modular desktop environment powered by **Wayland + labwc**.
+A lightweight, modular Linux desktop project for recreating classic OS experiences and building original **AI-assisted rices** from reusable components.
 
-[See the desktops](#seven-desktop-experiences) · [Install today](#try-ricebowl) · [Wayland roadmap](RICEBOWL_DE_ROADMAP.md) · [Screenshot gallery](screenshots/current/README.md)
+[Desktop gallery](screenshots/current/README.md) · [Wayland roadmap](RICEBOWL_DE_ROADMAP.md) · [Get started](#try-it)
 
 </div>
 
-<p align="center">
-  <a href="screenshots/current/aero-start.webp"><img src="screenshots/current/aero-start.webp" width="48%" alt="Aero Seven desktop and Start menu"></a>
-  <a href="screenshots/current/frutiger-start.webp"><img src="screenshots/current/frutiger-start.webp" width="48%" alt="Frutiger Aero launcher"></a>
-  <a href="screenshots/current/winxp-start.webp"><img src="screenshots/current/winxp-start.webp" width="48%" alt="XP Luna taskbar and Start menu"></a>
-  <a href="screenshots/current/windows10-start.webp"><img src="screenshots/current/windows10-start.webp" width="48%" alt="Windows 10-inspired Start menu"></a>
-</p>
+![RiceBowl XP Luna desktop](screenshots/current/winxp-start.webp)
 
-<p align="center"><sub>Real GTK/X11 project captures. <a href="screenshots/current/README.md">Explore the full gallery.</a></sub></p>
+## What is RiceBowl?
 
-> **Status:** RiceBowl **0.9.x remains an XFCE/X11 development preview**. An optional, independently selectable [labwc/Wayland session preview](WAYLAND_SESSION.md) is now available for testing; it still uses a temporary Waybar shell. RicePlate and the complete standalone DE are not finished. Real-hardware acceptance is required.
+Today, RiceBowl is a **seven-style XFCE/X11 ricing suite**: Windows 98, XP Luna, Windows 7, Windows 10, Frutiger Aero, ChromeOS and macOS-inspired experiences. Each has its own menus, panels and controls, using original artwork and real Linux integrations.
 
-The [1.0 release gates](RELEASE_1_0_GATES.md) track outstanding desktop functionality, installer evidence and physical-device checks before a stable release can be tagged.
+It is also becoming an independent, floating **Wayland desktop environment based on labwc**. Its long-term goal is a *desktop construction kit*: give an AI a reference screenshot or an original mockup, and use validated layout recipes and shared functional components to build a usable rice—without writing a new desktop shell for each design.
 
-The optional Wayland preview supports data-driven panel layouts and an opt-in, crash-recoverable native RicePlate panel (`ricebowl de start --nested --panel native`). Experimental **schema-v3 recipes** compose nested panel groups, spacers, labels and real widgets through a [validated AI-readable contract](WAYLAND_SESSION.md#nested-panel-layouts-schema-v3); both the Waybar fallback and native Rust renderer consume it. The native shell remains incomplete and does not yet replace the functional Waybar panel.
+The optional Wayland preview already has declarative nested panels, a configurable real labwc root menu and wallpaper, visual tokens, compact panel layouts, offline recipe editing and an experimental native Rust RicePlate panel. **Desktop icons/widgets, automated mockup conversion and the 1.0 release are not ready yet.** The established XFCE session remains available.
 
-## Seven desktop experiences
+## Try it
 
-- **Windows 98 / Classic:** compact menus, classic taskbar and Control Panel.
-- **XP Luna:** cobalt taskbar, two-column Start and Luna-style settings.
-- **Windows 7 Aero:** glass-inspired Superbar, Start menu and desktop controls.
-- **Windows 10:** Start tiles, Task View, action center and native-style settings.
-- **Frutiger Aero:** bright, organic dashboards and interactive controls.
-- **ChromeOS:** launcher, shelf and quick settings.
-- **macOS Aurora:** menu bar, dock integration and macOS-inspired controls.
-
-Every rice has its own layout and identity, backed by real Linux status and actions. The artwork is original, not copied from other operating systems.
-
-## Try RiceBowl
-
-Currently for **Linux Mint XFCE or a compatible XFCE/X11 session**:
+On Linux Mint XFCE or a compatible XFCE/X11 session:
 
 ```bash
 sudo apt install -y git python3-gi python3-cairo python3-gi-cairo gir1.2-gtk-3.0 gir1.2-wnck-3.0
@@ -52,33 +35,14 @@ bash install.sh
 "$HOME/.local/bin/ricebowl"
 ```
 
-Choose a rice in the Hub. Switching requires confirmation and saves recovery state; installation alone does not apply a theme.
+Select a rice in the Hub; installation alone does not change your desktop. Use `ricebowl update` to check for updates or `macrice rice restore` to undo a rice switch.
 
-- **Update:** use the Hub's update action or `ricebowl update`.
-- **Check requirements:** `macrice doctor --style aero-meadow`.
-- **Restore:** `macrice rice restore`.
-- **Customize:** [Rice packs and profiles](RICEPACK_SPEC.md).
+## Explore
 
-## From ricing suite to desktop environment
+- [Wayland preview, installation and safety](WAYLAND_SESSION.md)
+- [AI-friendly shell recipes and components](WAYLAND_SESSION.md#schema-v4-shell-composition-preview)
+- [Desktop environment development roadmap](RICEBOWL_DE_ROADMAP.md)
+- [Rice ecosystem (RiceField, Taskotto and more)](RICE_ECOSYSTEM_ROADMAP.md)
+- [Contributing](CONTRIBUTING.md) · [License](LICENSE) · [Releases](https://github.com/CopyPasteUser/Ricebowl/releases)
 
-The long-term goal is a **desktop-creation framework**: recreate OS-inspired interfaces or turn AI-generated UI mockups into functioning rices using shared components and validated profiles, without building a new shell for each design. Offline panel-recipe import/export, next-login selection/undo, [AI-friendly component edits with validation/diff review](WAYLAND_SESSION.md#offline-creator-component-edits-experimental) and bounded nested panel layouts are available; full desktop composition and screenshot conversion are [still in development](RICEBOWL_DE_ROADMAP.md).
-
-RiceBowl will keep the existing styles while replacing XFCE-specific desktop responsibilities incrementally:
-
-1. **RiceSession + labwc:** an optional, independently selectable Wayland session.
-2. **RicePlate:** panels, taskbars, desktop icons, wallpapers and launchers.
-3. **RiceSpice + RicePop:** Linux settings, quick controls, notifications and OSD.
-4. **RiceField + Taskotto:** independent, themeable file manager and task manager.
-5. **Stability and efficiency:** cross-session compatibility, measured memory use, hardware testing and recovery.
-
-The XFCE/X11 workflow remains available while the Wayland path matures. We reuse Linux services such as NetworkManager, PipeWire and UPower instead of duplicating them.
-
-[Full DE development roadmap](RICEBOWL_DE_ROADMAP.md) · [Current XFCE resource boundaries](XFCE_RESOURCE_BOUNDARIES.md) · [Rice ecosystem](RICE_ECOSYSTEM_ROADMAP.md)
-
-**Try the experimental session:** [setup, limitations and recovery](WAYLAND_SESSION.md). Installation is a separate, explicit choice; the normal RiceBowl installer does not modify your login sessions.
-
-## Project links
-
-[Releases](https://github.com/CopyPasteUser/Ricebowl/releases) · [Roadmap](ROADMAP.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md) · [MIT License](LICENSE)
-
-RiceBowl is not affiliated with Microsoft, Apple or Google. [RiceField](https://github.com/CopyPasteUser/Ricefield) remains a separate release candidate and does not replace Thunar automatically.
+RiceBowl is independent of Microsoft, Apple and Google; no proprietary operating-system artwork is included. Real-hardware acceptance is required before a stable release.

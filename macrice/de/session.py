@@ -18,6 +18,7 @@ from typing import NoReturn
 
 REQUIRED_TOOLS = ("labwc", "waybar", "foot", "fuzzel", "swaylock")
 DESKTOP_NAME = "RiceBowl:labwc:wlroots"
+_CONFIG_PREFIX = "ricebowl-labwc-"
 
 
 class SessionError(RuntimeError):
@@ -43,6 +44,43 @@ def _check_runtime_dir(environment: Mapping[str, str]) -> None:
     if (not stat.S_ISDIR(mode.st_mode) or mode.st_uid != os.geteuid()
             or mode.st_mode & 0o077):
         raise SessionError("XDG_RUNTIME_DIR must be an owner-only directory.")
+
+
+def _custom_labwc_config(recipe: object, runtime: str) -> Path:
+    """Build a private compositor menu without touching installed labwc config."""
+    from .recipes import labwc_menu
+    directory = Path(tempfile.mkdtemp(prefix=_CONFIG_PREFIX, dir=runtime))
+    try:
+        source = resources() / "labwc"
+        for name in ("rc.xml", "autostart", "shutdown"):
+            shutil.copyfile(source / name, directory / name)
+        (directory / "menu.xml").write_text(labwc_menu(recipe), encoding="utf-8")
+        (directory / ".ricebowl-managed").touch(mode=0o600)
+        return directory
+    except BaseException:
+        shutil.rmtree(directory)
+        raise
+
+
+def _cleanup_labwc_config(env: Mapping[str, str]) -> None:
+    """Remove only a marked private session directory under XDG_RUNTIME_DIR."""
+    candidate = env.get("RICEBOWL_DE_SESSION_CONFIG")
+    runtime = env.get("XDG_RUNTIME_DIR")
+    if not candidate or not runtime:
+        return
+    directory = Path(candidate)
+    if (directory.parent != Path(runtime) or not directory.name.startswith(_CONFIG_PREFIX)
+            or directory.is_symlink()):
+        return
+    try:
+        info = directory.stat()
+        marker = directory / ".ricebowl-managed"
+        if (info.st_uid != os.geteuid() or info.st_mode & 0o077
+                or not marker.is_file() or marker.is_symlink()):
+            return
+    except OSError:
+        return
+    shutil.rmtree(directory)
 
 
 def start(
@@ -85,6 +123,7 @@ def start(
         raise SessionError("Incomplete RiceBowl installation; reinstall the current checkout.")
     from .recipes import RecipeError, load, native_token, selected_recipe
     explicit_recipe = recipe is not None
+    loaded_recipe = None
     if recipe is None:
         try:
             recipe = selected_recipe()
@@ -92,7 +131,7 @@ def start(
             print(f"RiceBowl: ignoring invalid saved recipe selection: {error}", file=sys.stderr)
     if recipe is not None:
         try:
-            load(recipe)  # Fail closed for explicit user-chosen recipes.
+            loaded_recipe = load(recipe)  # Fail closed for explicitly chosen recipes.
         except RecipeError as error:
             if explicit_recipe:
                 raise
@@ -148,7 +187,16 @@ def start(
         "sh", "-c", f'{shell_command}; status=$?; {shlex.quote(labwc)} --exit '
                     '>/dev/null 2>&1; exit "$status"',
     ])
-    execute(labwc, [labwc, "--config-dir", str(config), "--startup", session_command], env)
+    if loaded_recipe is not None and loaded_recipe.menu is not None:
+        config = _custom_labwc_config(loaded_recipe, env["XDG_RUNTIME_DIR"])
+        env["RICEBOWL_DE_SESSION_CONFIG"] = str(config)
+    else:
+        env.pop("RICEBOWL_DE_SESSION_CONFIG", None)
+    try:
+        execute(labwc, [labwc, "--config-dir", str(config), "--startup", session_command], env)
+    except OSError:
+        _cleanup_labwc_config(env)
+        raise
     raise AssertionError("execvpe unexpectedly returned")
 
 
@@ -186,6 +234,7 @@ def shell(
     background: list[subprocess.Popen[bytes]] = []
     panel: subprocess.Popen[bytes] | None = None
     with ExitStack() as cleanup:
+        cleanup.callback(_cleanup_labwc_config, env)
         config = base / "waybar/config.jsonc"
         style = base / "waybar/style.css"
         selected = env.get("RICEBOWL_DE_RECIPE")
@@ -204,7 +253,8 @@ def shell(
                     output.write(content)
         try:
             swaybg = which("swaybg")
-            wallpaper = project_root() / "assets/wallpapers/aero-seven-blue.jpg"
+            from .recipes import load, wallpaper_path
+            wallpaper = wallpaper_path(load(selected or "classic"))
             if swaybg and wallpaper.is_file():
                 background.append(spawn(
                     [swaybg, "--image", str(wallpaper), "--mode", "fill"],

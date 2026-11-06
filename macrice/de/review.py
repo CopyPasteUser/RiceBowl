@@ -30,13 +30,28 @@ def _manifest(recipe: recipes.PanelRecipe) -> dict[str, Any]:
                                     for part in recipe.layout)))
     if recipe.metrics is not None:
         panel["metrics"] = dict(zip(recipes.METRIC_FIELDS, recipe.metrics))
-    return {
+    result = {
         "schema_version": recipe.schema_version,
         "id": recipe.recipe_id,
         "name": recipe.name,
         "panel": panel,
         "colors": dict(zip(recipes.COLORS, recipe.colors)),
     }
+    if recipe.schema_version == 4:
+        assert recipe.menu is not None and recipe.tokens is not None
+        assert recipe.compact is not None and recipe.wallpaper is not None
+        result["menu"] = {"title": recipe.menu[0], "groups": [
+            {"title": group.title, "actions": list(group.actions)}
+            for group in recipe.menu[1]]}
+        result["desktop"] = {"wallpaper": recipe.wallpaper}
+        result["tokens"] = dict(zip(("label_padding", "task_radius"), recipe.tokens))
+        result["responsive"] = {
+            "compact_max_width": recipe.compact[0],
+            "compact_layout": dict(zip(recipes.SECTIONS,
+                ([recipes.layout_node_json(node) for node in nodes]
+                 for nodes in recipe.compact[1]))),
+        }
+    return result
 
 
 def _semantic_hash(manifest: dict[str, Any]) -> str:
@@ -63,6 +78,16 @@ def _fields(manifest: dict[str, Any]) -> dict[str, Any]:
         result[f"/panel/metrics/{field}"] = panel.get("metrics", {}).get(field)
     for color in recipes.COLORS:
         result[f"/colors/{color}"] = manifest["colors"][color]
+    result["/menu/title"] = manifest.get("menu", {}).get("title")
+    result["/menu/groups"] = manifest.get("menu", {}).get("groups")
+    result["/desktop/wallpaper"] = manifest.get("desktop", {}).get("wallpaper")
+    for token in ("label_padding", "task_radius"):
+        result[f"/tokens/{token}"] = manifest.get("tokens", {}).get(token)
+    result["/responsive/compact_max_width"] = manifest.get("responsive", {}).get(
+        "compact_max_width")
+    for section in recipes.SECTIONS:
+        result[f"/responsive/compact_layout/{section}"] = manifest.get(
+            "responsive", {}).get("compact_layout", {}).get(section)
     return result
 
 
@@ -100,7 +125,8 @@ def review(recipe_token: str, compare_token: str | None = None) -> dict[str, Any
     target, target_summary = _snapshot(recipe_token)
     result: dict[str, Any] = {
         "review_version": REVIEW_VERSION,
-        "scope": "wayland-panel-preview",
+        "scope": "wayland-shell-preview" if target["schema_version"] == 4
+                 else "wayland-panel-preview",
         "ok": True,
         "applied": False,
         "recipe": target,

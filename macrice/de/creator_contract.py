@@ -16,6 +16,10 @@ EDITABLE_PATHS = frozenset((
     "/name", "/panel/position", "/panel/height",
     *(f"/panel/sections/{name}" for name in recipes.SECTIONS),
     *(f"/panel/layout/{name}" for name in recipes.SECTIONS),
+    "/menu/title", "/menu/groups", "/desktop/wallpaper",
+    "/tokens/label_padding", "/tokens/task_radius",
+    "/responsive/compact_max_width",
+    *(f"/responsive/compact_layout/{name}" for name in recipes.SECTIONS),
     *(f"/panel/metrics/{name}" for name in recipes.METRIC_FIELDS),
     *(f"/colors/{name}" for name in recipes.COLORS),
 ))
@@ -26,7 +30,7 @@ def describe() -> dict[str, object]:
     return {
         "edit_version": EDIT_VERSION,
         "command": "de draft-edit",
-        "scope": "panel-only",
+        "scope": "wayland-shell-preview",
         "operation": "set",
         "editable_paths": sorted(EDITABLE_PATHS),
         "max_edit_bytes": MAX_EDIT_BYTES,

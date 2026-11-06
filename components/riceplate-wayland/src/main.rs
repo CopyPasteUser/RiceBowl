@@ -236,9 +236,9 @@ impl RicePlate {
                             view.content_width - consumed
                         } else { view.cell_width };
                         if group.active {
-                            fill_rect(canvas, width, height, x, 0,
-                                      cell_width.saturating_sub(2), height,
-                                      self.recipe.active);
+                            fill_rounded_rect(canvas, width, height, x, 0,
+                                              cell_width.saturating_sub(2), height,
+                                              self.recipe.task_radius, self.recipe.active);
                         }
                         let label = task_groups::visible_label(group, cell_width);
                         draw_text(canvas, width, height, x + 10, height / 2 - 4,
@@ -263,7 +263,8 @@ impl RicePlate {
                 Widget::Gap(_) => {}
                 Widget::Label(index) => {
                     if let Some(label) = self.recipe.labels.get(index as usize) {
-                        draw_text(canvas, width, height, placed.x + 8,
+                        draw_text(canvas, width, height,
+                                  placed.x + self.recipe.label_padding,
                                   height / 2 - 4, label, self.recipe.foreground);
                     }
                 }
@@ -288,6 +289,23 @@ fn fill_rect(canvas: &mut [u8], width: u32, height: u32,
         for column in x..x.saturating_add(w).min(width) {
             let index = ((row * width + column) * 4) as usize;
             canvas[index..index + 4].copy_from_slice(&color.to_le_bytes());
+        }
+    }
+}
+
+fn fill_rounded_rect(canvas: &mut [u8], width: u32, height: u32,
+                     x: u32, y: u32, w: u32, h: u32, radius: u32, color: u32) {
+    let r = radius.min(w / 2).min(h / 2);
+    if r == 0 { fill_rect(canvas, width, height, x, y, w, h, color); return; }
+    let corner = (r as i64 - 1).pow(2);
+    for py in 0..h.min(height.saturating_sub(y)) {
+        for px in 0..w.min(width.saturating_sub(x)) {
+            let dx = if px < r { r - 1 - px } else { px.saturating_sub(w - r) };
+            let dy = if py < r { r - 1 - py } else { py.saturating_sub(h - r) };
+            if (dx as i64).pow(2) + (dy as i64).pow(2) <= corner {
+                let index = (((y + py) * width + x + px) * 4) as usize;
+                canvas[index..index + 4].copy_from_slice(&color.to_le_bytes());
+            }
         }
     }
 }

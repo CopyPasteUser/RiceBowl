@@ -1,5 +1,20 @@
 # RiceBowl changelog
 
+## Unreleased — RiceBowl shell composition and genuine Wayland visual QA (6 November 2026)
+
+- Add optional strict schema-v4 shell recipes: a generated labwc root menu
+  with fixed safe actions, bundled original desktop wallpapers, shared label
+  padding/corner radius tokens and compact layout variants.
+- Render compact panel variants live in native Rust, and compile a specified
+  width through the Waybar fallback; keep schemas v1–v3 and XFCE unchanged.
+- Extend Creator discovery, draft editing and semantic diffs to the new shell
+  regions. Validate untrusted data before any session files are written.
+- Add genuine compositor-framebuffer capture via `grim`, a small offline PNG
+  difference analyzer and CI artifact. Neither synthetic mockups nor a pixel
+  error ratio are presented as proof of 95% visual fidelity.
+- Desktop icons/widgets, hotplug-aware Waybar adaptation, real-device checks
+  and complete multi-region RicePack composition remain open.
+
 ## Unreleased — RicePlate nested panel composition (6 November 2026)
 
 - Add opt-in, strict schema-v3 horizontal panel trees: typed groups, bounded
