@@ -95,12 +95,30 @@ fn main() -> Result<(), Box<dyn Error>> {
     layer.set_keyboard_interactivity(KeyboardInteractivity::None);
     layer.commit();
 
+    // One small Bottom-layer surface per icon: transparent desktop space is
+    // never covered by a full-screen input-catching window.
+    let mut icon_layers = Vec::new();
+    for icon in &recipe.desktop_icons {
+        let surface = layer_shell.create_layer_surface(
+            &qh, compositor.create_surface(&qh), Layer::Bottom,
+            Some("riceplate-desktop-icon"), None,
+        );
+        surface.set_anchor(Anchor::TOP | Anchor::LEFT);
+        surface.set_size(recipe::ICON_WIDTH, recipe::ICON_HEIGHT);
+        surface.set_margin(icon.y as i32, 0, 0, icon.x as i32);
+        surface.set_exclusive_zone(-1);
+        surface.set_keyboard_interactivity(KeyboardInteractivity::None);
+        surface.commit();
+        icon_layers.push(IconLayer { surface, pool: None, configured: false });
+    }
+
     let mut app = RicePlate {
         registry: RegistryState::new(&globals),
         outputs: OutputState::new(&globals, &qh),
         seats: SeatState::new(&globals, &qh),
         shm,
         layer,
+        icon_layers,
         recipe,
         clock: clock_now(),
         pointer: None,
@@ -137,12 +155,19 @@ struct Task {
     ready: bool,
 }
 
+struct IconLayer {
+    surface: LayerSurface,
+    pool: Option<SlotPool>,
+    configured: bool,
+}
+
 struct RicePlate {
     registry: RegistryState,
     outputs: OutputState,
     seats: SeatState,
     shm: Shm,
     layer: LayerSurface,
+    icon_layers: Vec<IconLayer>,
     recipe: PanelStyle,
     clock: String,
     pointer: Option<wl_pointer::WlPointer>,
@@ -160,6 +185,33 @@ struct RicePlate {
 }
 
 impl RicePlate {
+    fn redraw_icon(&mut self, index: usize) {
+        let Some(layer) = self.icon_layers.get_mut(index) else { return };
+        if !layer.configured { return; }
+        let width = recipe::ICON_WIDTH;
+        let height = recipe::ICON_HEIGHT;
+        let surface = layer.surface.wl_surface();
+        let pool = layer.pool.as_mut().expect("configured icon has pool");
+        let (buffer, canvas) = match pool.create_buffer(
+            width as i32, height as i32, (width * 4) as i32, wl_shm::Format::Argb8888,
+        ) {
+            Ok(result) => result,
+            Err(error) => {
+                eprintln!("RicePlate: desktop icon buffer unavailable: {error}");
+                return;
+            }
+        };
+        let icon = &self.recipe.desktop_icons[index];
+        paint_icon(canvas, icon, self.recipe.active, self.recipe.foreground);
+        surface.damage_buffer(0, 0, width as i32, height as i32);
+        if let Err(error) = buffer.attach_to(surface) {
+            eprintln!("RicePlate: desktop icon attach failed: {error}");
+            self.closed = true;
+            return;
+        }
+        layer.surface.commit();
+    }
+
     fn grouped_tasks(&self) -> Vec<TaskGroup> {
         task_groups::group_windows(self.tasks.iter().enumerate().map(|(index, task)| {
             WindowInfo {
@@ -283,6 +335,22 @@ impl RicePlate {
     }
 }
 
+fn paint_icon(canvas: &mut [u8], icon: &recipe::DesktopIcon, active: u32, foreground: u32) {
+    let width = recipe::ICON_WIDTH;
+    let height = recipe::ICON_HEIGHT;
+    canvas.fill(0); // Leave the surrounding desktop visible.
+    let glyph = match icon.action.as_str() {
+        "applications" => "Apps", "terminal" => ">_", "lock" => "Lock", _ => return,
+    };
+    fill_rounded_rect(canvas, width, height, 24, 4, 56, 48, 10, active);
+    // Contrast backplate prevents white labels from vanishing on bright rices.
+    fill_rounded_rect(canvas, width, height, 2, 58, 100, 26, 6, 0xb020_2c36);
+    draw_text(canvas, width, height, 52 - (glyph.len() as u32 * 4), 24,
+              glyph, foreground);
+    draw_text(canvas, width, height, (width - icon.label.len() as u32 * 8) / 2,
+              66, &icon.label, foreground);
+}
+
 fn fill_rect(canvas: &mut [u8], width: u32, height: u32,
              x: u32, y: u32, w: u32, h: u32, color: u32) {
     for row in y..y.saturating_add(h).min(height) {
@@ -332,7 +400,8 @@ impl CompositorHandler for RicePlate {
     fn transform_changed(&mut self, _: &Connection, _: &QueueHandle<Self>,
                          _: &wl_surface::WlSurface, _: wl_output::Transform) {}
     fn frame(&mut self, _: &Connection, qh: &QueueHandle<Self>,
-             _: &wl_surface::WlSurface, _: u32) {
+             surface: &wl_surface::WlSurface, _: u32) {
+        if surface != self.layer.wl_surface() { return; }
         self.frame_pending = false;
         if self.needs_redraw { self.redraw(qh); }
     }
@@ -343,11 +412,39 @@ impl CompositorHandler for RicePlate {
 }
 
 impl LayerShellHandler for RicePlate {
-    fn closed(&mut self, _: &Connection, _: &QueueHandle<Self>, _: &LayerSurface) {
-        self.closed = true;
+    fn closed(&mut self, _: &Connection, _: &QueueHandle<Self>, layer: &LayerSurface) {
+        if layer.wl_surface() == self.layer.wl_surface() {
+            self.closed = true;
+        } else if let Some(icon) = self.icon_layers.iter_mut().find(|icon|
+            icon.surface.wl_surface() == layer.wl_surface()) {
+            icon.configured = false;
+        }
     }
-    fn configure(&mut self, _: &Connection, qh: &QueueHandle<Self>, _: &LayerSurface,
+    fn configure(&mut self, _: &Connection, qh: &QueueHandle<Self>, layer: &LayerSurface,
                  config: LayerSurfaceConfigure, _: u32) {
+        if let Some(index) = self.icon_layers.iter().position(|icon|
+            icon.surface.wl_surface() == layer.wl_surface()) {
+            if config.new_size != (recipe::ICON_WIDTH, recipe::ICON_HEIGHT) {
+                eprintln!("RicePlate: compositor proposed unexpected desktop icon size");
+                return;
+            }
+            let icon = &mut self.icon_layers[index];
+            if icon.pool.is_none() {
+                let bytes = recipe::ICON_WIDTH as usize * recipe::ICON_HEIGHT as usize * 4 * 2;
+                match SlotPool::new(bytes, &self.shm) {
+                    Ok(pool) => icon.pool = Some(pool),
+                    Err(error) => {
+                        eprintln!("RicePlate: cannot allocate icon memory: {error}");
+                        self.closed = true;
+                        return;
+                    }
+                }
+            }
+            icon.configured = true;
+            self.redraw_icon(index);
+            return;
+        }
+        if layer.wl_surface() != self.layer.wl_surface() { return; }
         let width = config.new_size.0;
         let height = config.new_size.1;
         if width == 0 || width > MAX_WIDTH || height == 0 || height > MAX_HEIGHT {
@@ -416,6 +513,22 @@ impl PointerHandler for RicePlate {
     fn pointer_frame(&mut self, _: &Connection, qh: &QueueHandle<Self>,
                      _: &wl_pointer::WlPointer, events: &[PointerEvent]) {
         for event in events {
+            if let Some(index) = self.icon_layers.iter().position(|icon|
+                &event.surface == icon.surface.wl_surface()) {
+                if let PointerEventKind::Press { button: BTN_LEFT, .. } = event.kind {
+                    let icon = &self.recipe.desktop_icons[index];
+                    let (program, args): (&str, &[&str]) = match icon.action.as_str() {
+                        "applications" => ("fuzzel", &[]),
+                        "terminal" => ("foot", &[]),
+                        "lock" => ("swaylock", &["-f"]),
+                        _ => continue,
+                    };
+                    if let Err(error) = Command::new(program).args(args).spawn() {
+                        eprintln!("RicePlate: cannot run desktop action {program}: {error}");
+                    }
+                }
+                continue;
+            }
             if &event.surface != self.layer.wl_surface() { continue }
             if let PointerEventKind::Press { button, .. } = event.kind {
                 if button == BTN_LEFT && event.position.1 >= 0.0
@@ -551,6 +664,18 @@ smithay_client_toolkit::delegate_dispatch2!(RicePlate);
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn desktop_icon_paint_preserves_transparent_background() {
+        let icon = recipe::DesktopIcon {
+            label: "Terminal".into(), action: "terminal".into(), x: 32, y: 112,
+        };
+        let mut pixels = vec![255; (recipe::ICON_WIDTH * recipe::ICON_HEIGHT * 4) as usize];
+        paint_icon(&mut pixels, &icon, 0xff4179aa, 0xfff3f7fa);
+        assert_eq!(&pixels[0..4], &[0, 0, 0, 0]);
+        assert!(pixels.chunks_exact(4).any(|pixel| pixel == 0xff4179aa_u32.to_le_bytes()));
+        assert!(pixels.chunks_exact(4).any(|pixel| pixel == 0xfff3f7fa_u32.to_le_bytes()));
+    }
 
     #[test]
     fn draw_clips_to_surface_bounds() {

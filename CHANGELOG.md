@@ -1,5 +1,16 @@
 # RiceBowl changelog
 
+## Unreleased — native desktop shortcuts (6 November 2026)
+
+- Add opt-in schema-v5 desktop-icon recipes: bounded labels, safe action IDs,
+  non-overlapping positions and strict Rust/Python validation.
+- Draw clickable transparent Bottom-layer icon surfaces in the existing native
+  RicePlate process without an extra desktop daemon. Keep unused desktop areas
+  available to labwc and maintain schema-v1–v4 behavior.
+- Extend AI Creator catalog, no-apply draft edits, semantic review, templates,
+  shared test fixtures and real headless labwc CI capture to v5.
+- Waybar cannot render icons; keyboard, drag, hotplug and widgets remain open.
+
 ## Unreleased — RiceBowl shell composition and genuine Wayland visual QA (6 November 2026)
 
 - Add optional strict schema-v4 shell recipes: a generated labwc root menu
@@ -12,7 +23,7 @@
 - Add genuine compositor-framebuffer capture via `grim`, a small offline PNG
   difference analyzer and CI artifact. Neither synthetic mockups nor a pixel
   error ratio are presented as proof of 95% visual fidelity.
-- Desktop icons/widgets, hotplug-aware Waybar adaptation, real-device checks
+- Movable icons/widgets, hotplug-aware Waybar adaptation, real-device checks
   and complete multi-region RicePack composition remain open.
 
 ## Unreleased — RicePlate nested panel composition (6 November 2026)

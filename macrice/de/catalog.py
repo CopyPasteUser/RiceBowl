@@ -7,19 +7,20 @@ It grants no ability to execute actions or change a running desktop.
 from __future__ import annotations
 
 from .creator_contract import describe as draft_edit_contract
-from .recipes import (MENU_ACTIONS, WALLPAPERS, MAX_LAYOUT_CHILDREN, MAX_LAYOUT_DEPTH, MAX_LAYOUT_LABELS,
+from .recipes import (ICON_ACTIONS, ICON_HEIGHT, ICON_WIDTH, MAX_DESKTOP_ICONS,
+                      MENU_ACTIONS, WALLPAPERS, MAX_LAYOUT_CHILDREN, MAX_LAYOUT_DEPTH, MAX_LAYOUT_LABELS,
                       MAX_LAYOUT_NODES, MAX_LAYOUT_ROOTS, MAX_RECIPE_BYTES,
                       METRIC_DEFAULTS, METRIC_FIELDS, METRIC_LIMITS, WIDGETS)
 
 
 def describe() -> dict[str, object]:
-    """Describe the currently supported *panel-only* recipe contract."""
+    """Describe exactly which panel and early shell primitives are implemented."""
     return {
-        "catalog_version": 3,
+        "catalog_version": 4,
         "scope": "wayland-shell-preview",
         "complete_desktop_environment": False,
         "recipe": {
-            "schema_versions": [1, 2, 3, 4],
+            "schema_versions": [1, 2, 3, 4, 5],
             "maximum_bytes": MAX_RECIPE_BYTES,
             "sections": ["start", "center", "end"],
             "unique_widgets": True,
@@ -63,7 +64,15 @@ def describe() -> dict[str, object]:
                          "max_groups": 4, "max_actions_per_group": 4},
                 "desktop": {"rendered": ["wallpaper"],
                             "wallpapers": sorted(WALLPAPERS),
-                            "icons_and_widgets": "not_implemented"},
+                            "icons": {"since_schema": 5,
+                                      "native": "interactive-layer-surfaces",
+                                      "waybar": "not_available",
+                                      "actions": sorted(ICON_ACTIONS),
+                                      "max_count": MAX_DESKTOP_ICONS,
+                                      "hit_width": ICON_WIDTH, "hit_height": ICON_HEIGHT,
+                                      "coordinate_max": 4096,
+                                      "keyboard_navigation": False},
+                            "widgets": "not_implemented"},
                 "tokens": {"label_padding": [0, 16], "task_radius": [0, 12]},
                 "responsive": {"compact_max_width": [480, 1440],
                                "native": "live-panel-layout-switch",
@@ -107,7 +116,9 @@ def describe() -> dict[str, object]:
              "interactive": False},
         ],
         "limits": [
-            "Schema-v4 root menu is functional; desktop icons/widgets are not rendered yet",
+            "Schema-v5 desktop icons are native-only; no Waybar icon layer yet",
+            "Native desktop icons use fixed coordinates, no dragging or keyboard navigation yet",
+            "Desktop widgets are not implemented",
             "Native panel handles responsive compact layout live; Waybar requires width-specific generation",
             "Schema-v3 groups are horizontal panel-only; no full desktop composition yet",
             "Panel-only recipes; no arbitrary OS or screenshot conversion",

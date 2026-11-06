@@ -32,6 +32,10 @@ MAX_LAYOUT_LABELS = 8
 MAX_LAYOUT_DEPTH = 3
 MAX_LAYOUT_ROOTS = 8
 MAX_LAYOUT_CHILDREN = 6
+MAX_DESKTOP_ICONS = 8
+ICON_WIDTH = 104
+ICON_HEIGHT = 88
+ICON_ACTIONS = frozenset(("applications", "terminal", "lock"))
 MENU_ACTIONS = frozenset(("applications", "terminal", "lock", "logout"))
 WALLPAPERS = frozenset(("aero-seven-blue", "aero-seven-night", "luna-hills",
                         "classic-teal", "ten-blue", "ten-midnight", "chrome-pastel",
@@ -63,6 +67,14 @@ class MenuGroup:
 
 
 @dataclass(frozen=True)
+class DesktopIcon:
+    label: str
+    action: str
+    x: int
+    y: int
+
+
+@dataclass(frozen=True)
 class PanelRecipe:
     recipe_id: str
     name: str
@@ -77,6 +89,7 @@ class PanelRecipe:
     wallpaper: str | None = None
     tokens: tuple[int, int] | None = None
     compact: tuple[int, tuple[tuple[LayoutNode, ...], ...]] | None = None
+    desktop_icons: tuple[DesktopIcon, ...] | None = None
 
 
 def _safe_label(value: Any, limit: int = 24) -> bool:
@@ -104,6 +117,26 @@ def _parse_menu(value: Any) -> tuple[str, tuple[MenuGroup, ...]]:
         seen.update(actions)
         result.append(MenuGroup(group["title"], tuple(actions)))
     return data["title"], tuple(result)
+
+
+def _parse_desktop_icons(value: Any) -> tuple[DesktopIcon, ...]:
+    """Only known actions and bounded, non-overlapping 104x88 icon regions."""
+    if not isinstance(value, list) or not 1 <= len(value) <= MAX_DESKTOP_ICONS:
+        raise RecipeError("Desktop icon list must have 1-8 entries")
+    result: list[DesktopIcon] = []
+    for raw in value:
+        icon = _strict_keys(raw, {"label", "action", "x", "y"}, "Desktop icon")
+        if (not _safe_label(icon["label"], 12)
+                or type(icon["action"]) is not str or icon["action"] not in ICON_ACTIONS
+                or type(icon["x"]) is not int or not 0 <= icon["x"] <= 4096
+                or type(icon["y"]) is not int or not 72 <= icon["y"] <= 4096):
+            raise RecipeError("Unsupported desktop icon action, label or position")
+        item = DesktopIcon(icon["label"], icon["action"], icon["x"], icon["y"])
+        if any(abs(other.x - item.x) < ICON_WIDTH
+               and abs(other.y - item.y) < ICON_HEIGHT for other in result):
+            raise RecipeError("Desktop icon hit regions overlap")
+        result.append(item)
+    return tuple(result)
 
 
 def _object_without_duplicates(items: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -197,10 +230,10 @@ def parse(raw: bytes) -> PanelRecipe:
     if not isinstance(data, dict):
         raise RecipeError("Recipe must be a JSON object")
     version = data.get("schema_version")
-    if type(version) is not int or version not in (1, 2, 3, 4):
+    if type(version) is not int or version not in (1, 2, 3, 4, 5):
         raise RecipeError("Unsupported RicePlate recipe schema version")
     expected = {"schema_version", "id", "name", "panel", "colors"}
-    if version == 4:
+    if version in (4, 5):
         expected.update(("menu", "desktop", "tokens", "responsive"))
     data = _strict_keys(data, expected, "Recipe")
     recipe_id = data["id"]
@@ -210,8 +243,8 @@ def parse(raw: bytes) -> PanelRecipe:
     if (not isinstance(name, str) or not 1 <= len(name) <= 60
             or any(unicodedata.category(character) == "Cc" for character in name)):
         raise RecipeError("Recipe name must be 1-60 printable characters")
-    panel_keys = {"position", "height", "layout" if version in (3, 4) else "sections"}
-    if version in (2, 3, 4):
+    panel_keys = {"position", "height", "layout" if version in (3, 4, 5) else "sections"}
+    if version in (2, 3, 4, 5):
         panel_keys.add("metrics")
     panel = _strict_keys(data["panel"], panel_keys, "Panel")
     if panel["position"] not in ("top", "bottom"):
@@ -219,7 +252,7 @@ def parse(raw: bytes) -> PanelRecipe:
     if type(panel["height"]) is not int or not 28 <= panel["height"] <= 64:
         raise RecipeError("Panel height must be an integer between 28 and 64")
     metrics: tuple[int, int, int] | None = None
-    if version in (2, 3, 4):
+    if version in (2, 3, 4, 5):
         sizes = _strict_keys(panel["metrics"], set(METRIC_FIELDS), "Panel metrics")
         if any(type(sizes[key]) is not int or not lower <= sizes[key] <= upper
                for key, (lower, upper) in zip(METRIC_FIELDS, METRIC_LIMITS)):
@@ -228,7 +261,7 @@ def parse(raw: bytes) -> PanelRecipe:
     selected: list[tuple[str, ...]] = []
     all_widgets: list[str] = []
     layout_nodes = None
-    if version in (3, 4):
+    if version in (3, 4, 5):
         layout_nodes, all_widgets = _parse_layout(panel["layout"])
         def widget_ids(nodes: tuple[LayoutNode, ...]) -> tuple[str, ...]:
             return tuple(item for node in nodes for item in (
@@ -257,12 +290,17 @@ def parse(raw: bytes) -> PanelRecipe:
     wallpaper = None
     tokens = None
     compact = None
-    if version == 4:
+    desktop_icons = None
+    if version in (4, 5):
         menu = _parse_menu(data["menu"])
-        desktop = _strict_keys(data["desktop"], {"wallpaper"}, "Desktop")
+        desktop = _strict_keys(data["desktop"],
+                               {"wallpaper", "icons"} if version == 5 else {"wallpaper"},
+                               "Desktop")
         if type(desktop["wallpaper"]) is not str or desktop["wallpaper"] not in WALLPAPERS:
             raise RecipeError("Desktop wallpaper must name a bundled original asset")
         wallpaper = desktop["wallpaper"]
+        if version == 5:
+            desktop_icons = _parse_desktop_icons(desktop["icons"])
         visual = _strict_keys(data["tokens"], {"label_padding", "task_radius"}, "Tokens")
         if (type(visual["label_padding"]) is not int
                 or not 0 <= visual["label_padding"] <= 16
@@ -283,7 +321,8 @@ def parse(raw: bytes) -> PanelRecipe:
     return PanelRecipe(recipe_id, name, panel["position"], panel["height"],
                        (selected[0], selected[1], selected[2]),
                        (colors["background"], colors["foreground"], colors["active"]),
-                       metrics, layout_nodes, version, menu, wallpaper, tokens, compact)
+                       metrics, layout_nodes, version, menu, wallpaper, tokens, compact,
+                       desktop_icons)
 
 
 def load(token: str) -> PanelRecipe:
@@ -547,21 +586,26 @@ def create_from_template(
     if not destination.is_absolute() or destination.suffix != ".json":
         raise RecipeError("New recipe output must be an absolute .json file path")
     data = json.loads(BUILTINS[source].read_text(encoding="utf-8"))
-    if schema_version in (2, 3, 4):
+    if schema_version in (2, 3, 4, 5):
         data["schema_version"] = schema_version
         data["panel"]["metrics"] = dict(zip(METRIC_FIELDS, METRIC_DEFAULTS))
-        if schema_version in (3, 4):
+        if schema_version in (3, 4, 5):
             sections = data["panel"].pop("sections")
             data["panel"]["layout"] = {
                 section: [{"type": "widget", "id": widget} for widget in sections[section]]
                 for section in SECTIONS
             }
-        if schema_version == 4:
+        if schema_version in (4, 5):
             data["menu"] = {"title": "RiceBowl", "groups": [
                 {"title": "Applications", "actions": ["applications", "terminal"]},
                 {"title": "Session", "actions": ["lock", "logout"]},
             ]}
             data["desktop"] = {"wallpaper": "aero-seven-blue"}
+            if schema_version == 5:
+                data["desktop"]["icons"] = [
+                    {"label": "Applications", "action": "applications", "x": 32, "y": 96},
+                    {"label": "Terminal", "action": "terminal", "x": 32, "y": 208},
+                ]
             data["tokens"] = {"label_padding": 8, "task_radius": 4}
             data["responsive"] = {
                 "compact_max_width": 720,

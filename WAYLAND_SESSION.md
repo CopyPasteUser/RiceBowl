@@ -101,7 +101,7 @@ ricebowl de review --recipe /absolute/path/to/my-rice.json --compare chrome --js
 ```
 
 `review_version: 1` describes a versioned JSON response (panel-only for v1–v3,
-initial shell components for v4) with `ok`,
+initial shell components for v4 and opt-in desktop icons for v5) with `ok`,
 `applied: false`, a normalized `recipe`, a `summary`, and an optional
 `comparison`. The summary includes an SHA-256 of the **normalized recipe
 semantics** (not of the source file's bytes), native-unavailable widgets and
@@ -261,10 +261,37 @@ started in headless labwc CI. The existing login and XFCE defaults are never
 replaced; temporary compositor menu files are removed on normal shutdown.
 
 **Honest boundary:** This is a functional context menu and background, not
-yet a visually configurable Windows-style Start menu or desktop icon/widget
-layer. Original mockups cannot be automatically converted into working
-control backends. Waybar does not currently recompile its compact variant
-when the display is resized; the native panel selects it during layout.
+yet a visually configurable Windows-style Start menu. Original mockups cannot
+be automatically converted into working control backends. Waybar does not
+currently recompile its compact variant when the display is resized; the
+native panel selects it during layout.
+
+#### Schema-v5 native desktop icons preview
+
+Schema v5 adds an optional *preview feature*, required when using that schema:
+`desktop.icons`. Each entry contains only `label`, `action`, `x` and `y`.
+There are 1–8 icons, labels contain 1–12 safe ASCII characters, coordinates
+are bounded (`x`: 0–4096, `y`: 72–4096), and their 104×88 logical-pixel hit
+areas must not overlap. Actions are fixed IDs: `applications`, `terminal`,
+`lock` (mapped respectively to `fuzzel`, `foot`, `swaylock -f`). No arbitrary
+commands or filesystem links are accepted.
+
+```bash
+ricebowl de recipe-init --schema-version 5 --base classic \
+  --id my-desktop --name "My Desktop" --output "$HOME/my-desktop.json"
+ricebowl de review --recipe "$HOME/my-desktop.json" --json
+ricebowl de start --nested --panel native --recipe "$HOME/my-desktop.json"
+```
+
+The [shared fixture](tests/fixtures/riceplate-desktop-v5.json) shows the exact
+JSON shape. `/desktop/icons` is available for `de draft-edit` and visible in
+semantic `de review` comparisons. RicePlate draws each icon as a small
+transparent Wayland Bottom-layer surface in its **existing process**; it does
+not cover the desktop with a giant input window. The ordinary Waybar fallback
+still renders the panel, menu and wallpaper but **does not show icons**. This
+first slice has mouse clicks only: drag/reposition, keyboard focus, desktop
+widgets, multi-output bounds/reflow, fractional-scale handling and real-GPU
+acceptance remain open. Do not treat it as a finished desktop.
 
 For **real** Wayland screenshots, install the `grim` command and, inside an
 opt-in RiceBowl Wayland session, run:

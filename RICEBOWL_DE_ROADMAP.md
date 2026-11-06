@@ -198,15 +198,23 @@ depend on the XFCE session.
   supports offline width-specific compilation, not live reflow yet). Extend
   read-only Creator discovery/review and safe draft edits across these fields.
   Never permit arbitrary generated commands, image paths or XML fragments.
+- [x] Add **opt-in schema-v5 native desktop shortcuts** as a bounded first slice:
+  1–8 clickable icons at validated, non-overlapping fixed coordinates, each
+  bound to one of three safe action IDs. RicePlate draws small transparent
+  Bottom-layer surfaces inside its existing Rust process; the rest of the
+  desktop remains clickable by labwc. Native headless CI captures the result.
+  Schema v1–v4 and the Waybar fallback remain valid; the fallback does not
+  display desktop icons. This is not yet a full desktop widget/input engine.
 - [x] Start a **real Wayland screenshot QA path**: capture headless native
   labwc output with grim into CI artifacts, allow no-overwrite manual captures
   and report deterministic pixel-difference metrics for an offline reference.
   This is diagnostic tooling, not a validated perceptual/functional accuracy
   score. Real multi-resolution/fractional-scale captures and GUI acceptance
   remain open.
-- [ ] Render desktop shortcuts, movable icons and widgets in RicePlate's
-  own background layer with true focus/hit testing, keyboard accessibility,
-  output hotplug and the same versioned recipe contract.
+- [ ] Extend schema-v5 desktop shortcuts with moving, keyboard accessibility,
+  focus states, monitor-aware position reflow and hotplug. Add reusable native
+  desktop widgets and their bounded recipe contracts. Static clickable icons
+  are implemented, but these interaction and lifecycle requirements remain.
 - [ ] Implement visually configurable, truly interactive native start menus
   (beyond the initial functional labwc fallback menu), including navigation,
   searching, pinning and the per-rice layout variants required by XP/7/etc.
