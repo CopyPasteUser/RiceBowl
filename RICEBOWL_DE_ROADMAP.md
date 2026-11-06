@@ -45,7 +45,7 @@ explicitly implemented behavior. Packs must never execute arbitrary generated
 scripts. Third-party GTK/Qt application decorations and Wayland protocol
 limits remain real constraints on cross-app fidelity.
 
-### Runtime and Creator boundary (target, not yet implemented)
+### Runtime and Creator boundary (partially implemented; 1.0 gates open)
 
 - **RiceBowl Runtime** owns the lightweight Wayland session, rendering,
   shared Linux capability adapters, application integration and safe rice
@@ -288,13 +288,27 @@ depend on the XFCE session.
   overwriting, then terminate all render children. Its CI uses real native
   pixels and content hashes. Not yet an editable preview GUI, Waybar render,
   perceptual test, active apply/rollback, or complete multi-output harness.
+- [x] Add an on-demand **Creator API v1 command inventory** (`de creator-api
+  --json`) with stable implemented command names, true side-effect boundaries,
+  version/flag/exit-code discovery and an explicit limitations list. No
+  resident Creator service or invented live apply endpoint.
+- [x] Implement **Wayland RicePack v1 recipe exchange** (`de pack-export`,
+  `de pack-inspect`, `de pack-import`): reproducible owner-private `.ricepack`
+  archives, canonical schema-v1–v5 recipe, SHA-256 byte/semantic validation,
+  optional user-declared provenance, strict two-entry ZIP allowlist, safe
+  no-overwrite import and stable JSON errors. Imported recipes are not
+  selected or applied. This **recipe-only** format references bundled assets;
+  full visual asset manifests, preview evidence and multi-component apply
+  transactions remain open.
 - [ ] Publish a **versioned, machine-readable Creator contract** (CLI JSON
   output first; optional local IPC only if justified) for discovering
   components, creating/editing drafts, validating recipes, previewing the
   real shell, capturing screenshots, comparing to references, exporting packs,
   and explicitly requested apply/restore. Document exit codes, diagnostics,
   feature negotiation and stable failure responses; exact command names are
-  to be finalized during implementation, not assumed to exist today.
+  to be finalized during implementation, not assumed to exist today. The v1
+  inventory and recipe-only archive now exist; active transaction/apply/restore,
+  broader component schemas and full feature negotiation are still missing.
 - [ ] Make agent-driven changes reviewable and reproducible: immutable source
   references, local/private draft workspace, deterministic validation,
   per-asset license/provenance metadata, clear diff/preview before apply,
