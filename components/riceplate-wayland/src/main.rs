@@ -6,6 +6,7 @@ use std::{error::Error, process::Command, time::Duration};
 use chrono::{Local, Timelike};
 use font8x8::{UnicodeFonts, BASIC_FONTS};
 mod recipe;
+mod desktop_layout;
 mod task_groups;
 use recipe::{Hit, PanelStyle, Widget};
 use task_groups::{TaskGroup, WindowInfo};
@@ -109,7 +110,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         surface.set_exclusive_zone(-1);
         surface.set_keyboard_interactivity(KeyboardInteractivity::None);
         surface.commit();
-        icon_layers.push(IconLayer { surface, pool: None, configured: false });
+        icon_layers.push(IconLayer {
+            surface, pool: None, configured: false, output: None,
+            placed: Some((icon.x, icon.y)),
+        });
     }
 
     let mut app = RicePlate {
@@ -123,6 +127,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         clock: clock_now(),
         pointer: None,
         primary_seat: None,
+        primary_output: None,
         toplevel_manager,
         tasks: Vec::new(),
         task_offset: 0,
@@ -159,6 +164,8 @@ struct IconLayer {
     surface: LayerSurface,
     pool: Option<SlotPool>,
     configured: bool,
+    output: Option<wl_output::WlOutput>,
+    placed: Option<(u32, u32)>,
 }
 
 struct RicePlate {
@@ -172,6 +179,7 @@ struct RicePlate {
     clock: String,
     pointer: Option<wl_pointer::WlPointer>,
     primary_seat: Option<wl_seat::WlSeat>,
+    primary_output: Option<wl_output::WlOutput>,
     toplevel_manager: Option<ZwlrForeignToplevelManagerV1>,
     tasks: Vec<Task>,
     task_offset: usize,
@@ -187,7 +195,7 @@ struct RicePlate {
 impl RicePlate {
     fn redraw_icon(&mut self, index: usize) {
         let Some(layer) = self.icon_layers.get_mut(index) else { return };
-        if !layer.configured { return; }
+        if !layer.configured || layer.placed.is_none() { return; }
         let width = recipe::ICON_WIDTH;
         let height = recipe::ICON_HEIGHT;
         let surface = layer.surface.wl_surface();
@@ -210,6 +218,53 @@ impl RicePlate {
             return;
         }
         layer.surface.commit();
+    }
+
+    fn logical_output_size(&self, output: &wl_output::WlOutput) -> Option<(u32, u32)> {
+        let info = self.outputs.info(output)?;
+        // xdg-output logical dimensions include fractional scale and rotation.
+        // Old compositors may expose only physical mode and integer scale.
+        let (width, height) = info.logical_size.or_else(|| {
+            info.modes.iter().find(|mode| mode.current).map(|mode| {
+                let scale = info.scale_factor.max(1);
+                (mode.dimensions.0 / scale, mode.dimensions.1 / scale)
+            })
+        })?;
+        if width <= 0 || height <= 0 { return None; }
+        Some((width as u32, height as u32))
+    }
+
+    fn reflow_icons(&mut self) {
+        // The current preview creates one set of layer surfaces, owned by the
+        // compositing output to which they were assigned. Full multi-output
+        // desktop replication is a separate, gated milestone.
+        let Some(output) = self.primary_output.clone().or_else(||
+                self.icon_layers.iter().find_map(|icon| icon.output.clone())) else {
+            return;
+        };
+        let Some((width, height)) = self.logical_output_size(&output) else { return; };
+        let placements = desktop_layout::place(&self.recipe.desktop_icons, width, height,
+                                                self.recipe.top, self.recipe.height);
+        for (index, placement) in placements.into_iter().enumerate() {
+            let restored = {
+                let layer = &mut self.icon_layers[index];
+                if layer.placed == placement { continue; }
+                let restored = layer.placed.is_none() && placement.is_some();
+                layer.placed = placement;
+                if let Some((x, y)) = placement {
+                    layer.surface.set_margin(y as i32, 0, 0, x as i32);
+                } else {
+                    // Keep the layer-shell role mapped: a null-buffer commit
+                    // would permanently destroy it under the protocol. Park
+                    // the icon beyond the output until room is available.
+                    layer.surface.set_margin(height as i32 + recipe::ICON_HEIGHT as i32,
+                                             0, 0, width as i32 + recipe::ICON_WIDTH as i32);
+                }
+                layer.surface.commit();
+                restored && layer.configured
+            };
+            if restored { self.redraw_icon(index); }
+        }
     }
 
     fn grouped_tasks(&self) -> Vec<TaskGroup> {
@@ -406,9 +461,29 @@ impl CompositorHandler for RicePlate {
         if self.needs_redraw { self.redraw(qh); }
     }
     fn surface_enter(&mut self, _: &Connection, _: &QueueHandle<Self>,
-                     _: &wl_surface::WlSurface, _: &wl_output::WlOutput) {}
+                     surface: &wl_surface::WlSurface, output: &wl_output::WlOutput) {
+        if surface == self.layer.wl_surface() {
+            self.primary_output = Some(output.clone());
+            self.reflow_icons();
+            return;
+        }
+        if let Some(layer) = self.icon_layers.iter_mut().find(|icon|
+                icon.surface.wl_surface() == surface) {
+            layer.output = Some(output.clone());
+            self.reflow_icons();
+        }
+    }
     fn surface_leave(&mut self, _: &Connection, _: &QueueHandle<Self>,
-                     _: &wl_surface::WlSurface, _: &wl_output::WlOutput) {}
+                     surface: &wl_surface::WlSurface, output: &wl_output::WlOutput) {
+        if surface == self.layer.wl_surface() {
+            if self.primary_output.as_ref() == Some(output) { self.primary_output = None; }
+            return;
+        }
+        if let Some(layer) = self.icon_layers.iter_mut().find(|icon|
+                icon.surface.wl_surface() == surface) {
+            if layer.output.as_ref() == Some(output) { layer.output = None; }
+        }
+    }
 }
 
 impl LayerShellHandler for RicePlate {
@@ -477,9 +552,19 @@ impl LayerShellHandler for RicePlate {
 
 impl OutputHandler for RicePlate {
     fn output_state(&mut self) -> &mut OutputState { &mut self.outputs }
-    fn new_output(&mut self, _: &Connection, _: &QueueHandle<Self>, _: wl_output::WlOutput) {}
-    fn update_output(&mut self, _: &Connection, _: &QueueHandle<Self>, _: wl_output::WlOutput) {}
-    fn output_destroyed(&mut self, _: &Connection, _: &QueueHandle<Self>, _: wl_output::WlOutput) {}
+    fn new_output(&mut self, _: &Connection, _: &QueueHandle<Self>, _: wl_output::WlOutput) {
+        self.reflow_icons();
+    }
+    fn update_output(&mut self, _: &Connection, _: &QueueHandle<Self>, _: wl_output::WlOutput) {
+        self.reflow_icons();
+    }
+    fn output_destroyed(&mut self, _: &Connection, _: &QueueHandle<Self>, output: wl_output::WlOutput) {
+        if self.primary_output.as_ref() == Some(&output) { self.primary_output = None; }
+        for icon in &mut self.icon_layers {
+            if icon.output.as_ref() == Some(&output) { icon.output = None; }
+        }
+        self.reflow_icons();
+    }
 }
 
 impl SeatHandler for RicePlate {
@@ -515,6 +600,7 @@ impl PointerHandler for RicePlate {
         for event in events {
             if let Some(index) = self.icon_layers.iter().position(|icon|
                 &event.surface == icon.surface.wl_surface()) {
+                if self.icon_layers[index].placed.is_none() { continue; }
                 if let PointerEventKind::Press { button: BTN_LEFT, .. } = event.kind {
                     let icon = &self.recipe.desktop_icons[index];
                     let (program, args): (&str, &[&str]) = match icon.action.as_str() {

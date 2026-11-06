@@ -8,6 +8,7 @@ on:
       - 'scripts/smoke_riceplate_native.sh'
       - 'scripts/compare_wayland_captures.py'
       - 'tests/test_de_visual_qa.py'
+      - 'tests/fixtures/riceplate-desktop-v5-overflow.json'
   pull_request:
     paths:
       - '.github/workflows/riceplate-native.yml'
@@ -15,6 +16,7 @@ on:
       - 'scripts/smoke_riceplate_native.sh'
       - 'scripts/compare_wayland_captures.py'
       - 'tests/test_de_visual_qa.py'
+      - 'tests/fixtures/riceplate-desktop-v5-overflow.json'
 
 permissions:
   contents: read
@@ -58,6 +60,7 @@ jobs:
           import subprocess
           from pathlib import Path
           import struct
+          from PIL import Image
           from scripts.compare_wayland_captures import compare
 
           directory = Path('dist/riceplate-native-preview')
@@ -77,6 +80,7 @@ jobs:
               'desktop-v5-1366x768': (1366, 768, 1),
               'desktop-v5-1920x1080': (1920, 1080, 1),
               'desktop-v5-scale-125': (1366, 768, 1.25),
+              'overflow-v5': (1024, 768, 1),
           }
           captures = {}
           for label in ('shell-v4', 'desktop-v5', *expected):
@@ -89,17 +93,29 @@ jobs:
               if label in expected:
                   target_width, target_height, scale = expected[label]
                   assert (width, height) == (target_width, target_height), (label, width, height)
-                  # Comparing a capture with itself is ONLY an honest geometry
-                  # preflight; it is never a fidelity or interaction score.
-                  report = compare(screenshot, screenshot, recipe_token=str(private_recipe.resolve()))
-                  assert not report['layout_issues'], (label, report['layout_issues'])
-                  manifest['captures'].append({
+                  record = {
                       'file': screenshot.name,
                       'width': width, 'height': height, 'scale': scale,
                       'sha256': hashlib.sha256(data).hexdigest(),
-                      'regions': [{key: region[key] for key in ('id', 'expected_rect', 'visible_fraction')}
-                                  for region in report['regions']],
-                  })
+                  }
+                  if label == 'overflow-v5':
+                      # A requested x=4090 icon is intentionally invisible
+                      # without native output-aware reflow. With 1024x768
+                      # logical bounds it must be clamped to (920, 672).
+                      with Image.open(screenshot) as image:
+                          rgb = image.convert('RGB').getpixel((950, 690))
+                      assert all(abs(actual - expected_color) <= 2 for actual, expected_color in
+                                 zip(rgb, (65, 121, 170))), f'icon was not reflowed: {rgb}'
+                      record['reflow_pixel'] = {'x': 950, 'y': 690, 'rgb': rgb}
+                  else:
+                      # Self-comparison is solely a geometry preflight, not
+                      # an assessment of visual fidelity or interaction.
+                      report = compare(screenshot, screenshot, recipe_token=str(private_recipe.resolve()))
+                      assert not report['layout_issues'], (label, report['layout_issues'])
+                      record['regions'] = [
+                          {key: region[key] for key in ('id', 'expected_rect', 'visible_fraction')}
+                          for region in report['regions']]
+                  manifest['captures'].append(record)
               print(f'Captured real native labwc {label}: {width}x{height}, {len(data)} bytes')
               captures[label] = data
           assert captures['shell-v4'] != captures['desktop-v5'], 'Icons missing from v5 framebuffer'

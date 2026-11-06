@@ -29,6 +29,8 @@ class DesktopV5Tests(unittest.TestCase):
                          json.loads(recipes.waybar_config(legacy)[0])["modules-left"])
         self.assertEqual(catalog.describe()["recipe"]["shell_extensions"]["desktop"]["icons"]["native"],
                          "interactive-layer-surfaces")
+        self.assertEqual(catalog.describe()["recipe"]["shell_extensions"]["desktop"]["icons"]["native_placement"],
+                         "single-output-logical-bounds-reflow")
 
     def test_template_edit_review_preserves_source_and_private_output(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -54,6 +56,15 @@ class DesktopV5Tests(unittest.TestCase):
             self.assertEqual(output.stat().st_mode & 0o777, 0o600)
             changes = review.review(str(output), str(source))["comparison"]["changes"]
             self.assertEqual([change["path"] for change in changes], ["/desktop/icons"])
+
+    def test_out_of_output_bounds_recipe_is_valid_for_runtime_reflow(self):
+        # The schema bounds author intent (<=4096), not a specific display.
+        # Real compositor geometry determines placement at runtime.
+        fixture = FIXTURE.parent / "riceplate-desktop-v5-overflow.json"
+        parsed = recipes.parse(fixture.read_bytes())
+        self.assertEqual(parsed.desktop_icons[0].x, 4090)
+        self.assertEqual(parsed.desktop_icons[0].y, 700)
+        self.assertEqual(len(parsed.desktop_icons), 3)
 
     def test_invalid_icon_lists_are_rejected_with_no_implicit_commands(self):
         good = sample()
