@@ -122,7 +122,7 @@ class WaylandSessionTests(unittest.TestCase):
         self.assertEqual(caught.exception.program, "/usr/bin/dbus-run-session")
         self.assertEqual(caught.exception.argv[-2:], ["--recipe", "chrome"])
 
-    @mock.patch("macrice.de.session.os.geteuid", return_value=1000)
+    @mock.patch("macrice.de.session.os.geteuid", return_value=os.getuid())
     @mock.patch("macrice.de.session._check_runtime_dir")
     def test_imported_recipe_id_is_resolved_for_native_and_dbus_reexec(self, _runtime, _uid):
         from macrice.de import recipes
@@ -168,7 +168,7 @@ class WaylandSessionTests(unittest.TestCase):
                           which=self.which, execute=_record_exec)
         self.assertEqual(caught.exception.env["RICEBOWL_DE_PANEL"], "waybar")
 
-    @mock.patch("macrice.de.session.os.geteuid", return_value=1000)
+    @mock.patch("macrice.de.session.os.geteuid", return_value=os.getuid())
     @mock.patch("macrice.de.session._check_runtime_dir")
     def test_bad_recipe_fails_before_labwc_exec(self, _runtime, _uid):
         # Bare imported IDs are now valid tokens, but an unknown ID must be
