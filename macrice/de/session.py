@@ -220,15 +220,19 @@ def shell(
                 ))
 
             shutting_down = False
+            shutdown_signal = signal.SIGTERM
 
             def terminate(_signal: int, _frame: object) -> None:
-                nonlocal shutting_down
+                nonlocal shutting_down, shutdown_signal
                 shutting_down = True
+                shutdown_signal = _signal
                 if panel is not None:
                     _stop_process(panel)
 
             signal.signal(signal.SIGTERM, terminate)
             signal.signal(signal.SIGINT, terminate)
+            if shutting_down:
+                return 128 + shutdown_signal
             if panel_mode == "native":
                 native = which("riceplate-native")
                 if native:
@@ -237,6 +241,9 @@ def shell(
                             [native, "--recipe", selected or "classic"],
                             env=env, stdin=subprocess.DEVNULL,
                         )
+                        if shutting_down:
+                            _stop_process(panel)
+                            return 128 + shutdown_signal
                         status = panel.wait()
                         if status == 0 or shutting_down:
                             return status
@@ -251,11 +258,18 @@ def shell(
                     print("RicePlate native disappeared from PATH; restoring Waybar.",
                           file=sys.stderr)
 
+            if shutting_down:
+                return 128 + shutdown_signal
             panel = spawn(
                 [waybar, "--config", str(config), "--style", str(style)],
                 env=env, stdin=subprocess.DEVNULL,
             )
+            if shutting_down:
+                _stop_process(panel)
+                return 128 + shutdown_signal
             return panel.wait()
         finally:
+            if panel is not None:
+                _stop_process(panel)
             for process in reversed(background):
                 _stop_process(process)

@@ -262,6 +262,24 @@ class WaylandSessionTests(unittest.TestCase):
             self.assertEqual(session.shell(environment=env, which=tools.get, spawn=spawn), -15)
         self.assertEqual(len(commands), 1)
 
+    def test_shutdown_during_native_spawn_cleans_up_without_starting_waybar(self):
+        handlers = {}
+        commands = []
+        process = _FakeProcess()
+
+        def spawn(command, **_kwargs):
+            commands.append(command)
+            handlers[signal.SIGINT](signal.SIGINT, None)
+            return process
+
+        env = {"RICEBOWL_DE_SHELL_CHILD": "1", "RICEBOWL_DE_NESTED": "1",
+               "RICEBOWL_DE_PANEL": "native", "WAYLAND_DISPLAY": "wayland-0"}
+        tools = {**self.tools, "riceplate-native": "/usr/bin/riceplate-native"}
+        with mock.patch("macrice.de.session.signal.signal", side_effect=handlers.__setitem__):
+            self.assertEqual(session.shell(environment=env, which=tools.get, spawn=spawn), 130)
+        self.assertEqual(len(commands), 1)
+        self.assertTrue(process.terminated)
+
     def test_failed_panel_start_cleans_up_background_services(self):
         processes = []
 
