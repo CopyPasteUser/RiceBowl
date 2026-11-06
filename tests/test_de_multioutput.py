@@ -6,7 +6,7 @@ import unittest
 
 from PIL import Image
 
-from scripts.check_waybar_multioutput import validate
+from scripts.check_wayland_panel_outputs import validate
 
 
 class MultioutputCaptureChecks(unittest.TestCase):
@@ -23,7 +23,7 @@ class MultioutputCaptureChecks(unittest.TestCase):
                 sources.append(path)
             validate(sources)
             Image.new("RGB", (640, 480), (15, 22, 28)).save(sources[1])
-            with self.assertRaisesRegex(ValueError, "No classic Waybar panel"):
+            with self.assertRaisesRegex(ValueError, "No classic RiceBowl panel"):
                 validate(sources)
 
     def test_invalid_geometry_and_input_count_fail_closed(self):

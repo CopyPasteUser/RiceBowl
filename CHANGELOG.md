@@ -1,5 +1,17 @@
 # RiceBowl changelog
 
+## Unreleased — experimental native secondary Wayland panels (6 November 2026)
+
+- Draw a separate output-bound layer-shell panel for each secondary display
+  without starting another RicePlate process or window-discovery backend.
+- Share the same validated recipe/renderer, task groups and clock, but maintain
+  independent task paging and framebuffer state for each panel.
+- Add a genuine two-output native screenshot and secondary hotplug CI gate;
+  save four genuine output captures in the native preview workflow artifact.
+  Recover when a compositor temporarily leaves the primary Wayland surface
+  unassigned during a display transition. Full per-output native menus/icons
+  and primary-monitor failover remain open.
+
 ## Unreleased — two-output Waybar fallback verification (6 November 2026)
 
 - Extend the real labwc/Waybar session smoke with two independently captured

@@ -45,6 +45,7 @@ use wayland_protocols_wlr::foreign_toplevel::v1::client::{
 
 const MAX_WIDTH: u32 = 16384;
 const MAX_HEIGHT: u32 = 256;
+const MAX_OUTPUT_PANELS: usize = 8;
 const BTN_LEFT: u32 = 0x110;
 
 fn clock_now() -> String {
@@ -176,11 +177,14 @@ fn main() -> Result<(), Box<dyn Error>> {
     });
 
     let mut app = RicePlate {
+        compositor,
+        layer_shell,
         registry: RegistryState::new(&globals),
         outputs: OutputState::new(&globals, &qh),
         seats: SeatState::new(&globals, &qh),
         shm,
         layer,
+        mirrors: Vec::new(),
         icon_layers,
         menu_layer,
         menu_state: MenuState::default(),
@@ -191,6 +195,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         menu_focused: false,
         primary_seat: None,
         primary_output: None,
+        primary_output_seen: false,
         toplevel_manager,
         tasks: Vec::new(),
         task_offset: 0,
@@ -238,12 +243,27 @@ struct MenuLayer {
     configured: bool,
 }
 
+struct PanelMirror {
+    output: wl_output::WlOutput,
+    surface: LayerSurface,
+    pool: Option<SlotPool>,
+    width: u32,
+    height: u32,
+    configured: bool,
+    frame_pending: bool,
+    needs_redraw: bool,
+    task_offset: usize,
+}
+
 struct RicePlate {
+    compositor: CompositorState,
+    layer_shell: LayerShell,
     registry: RegistryState,
     outputs: OutputState,
     seats: SeatState,
     shm: Shm,
     layer: LayerSurface,
+    mirrors: Vec<PanelMirror>,
     icon_layers: Vec<IconLayer>,
     menu_layer: Option<MenuLayer>,
     menu_state: MenuState,
@@ -254,6 +274,7 @@ struct RicePlate {
     menu_focused: bool,
     primary_seat: Option<wl_seat::WlSeat>,
     primary_output: Option<wl_output::WlOutput>,
+    primary_output_seen: bool,
     toplevel_manager: Option<ZwlrForeignToplevelManagerV1>,
     tasks: Vec<Task>,
     task_offset: usize,
@@ -267,6 +288,75 @@ struct RicePlate {
 }
 
 impl RicePlate {
+    fn sync_mirrors(&mut self, qh: &QueueHandle<Self>) {
+        // An output can disappear between wl_surface.leave and its eventual
+        // enter on another output. Never leave the remaining display blank
+        // while the compositor is deciding where the unbound primary goes.
+        // Before the very first enter, defer to the compositor's initial
+        // placement to avoid redundant startup panels.
+        if !self.primary_output_seen { return; }
+        let outputs: Vec<_> = self.outputs.outputs()
+            .filter(|output| self.primary_output.as_ref() != Some(output))
+            .filter(|output| self.logical_output_size(output).is_some())
+            .take(MAX_OUTPUT_PANELS).collect();
+        let old_count = self.mirrors.len();
+        self.mirrors.retain(|mirror| outputs.contains(&mirror.output));
+        if old_count != self.mirrors.len() {
+            eprintln!("RicePlate: secondary panels removed: {} -> {}", old_count, self.mirrors.len());
+        }
+        for output in outputs {
+            if self.mirrors.iter().any(|mirror| mirror.output == output) { continue; }
+            eprintln!("RicePlate: creating secondary panel on {output:?}");
+            let surface = self.layer_shell.create_layer_surface(
+                qh, self.compositor.create_surface(qh), Layer::Top,
+                Some("riceplate-output-panel"), Some(&output),
+            );
+            let edge = if self.recipe.top { Anchor::TOP } else { Anchor::BOTTOM };
+            surface.set_anchor(edge | Anchor::LEFT | Anchor::RIGHT);
+            surface.set_size(0, self.recipe.height);
+            surface.set_exclusive_zone(self.recipe.height as i32);
+            surface.set_keyboard_interactivity(KeyboardInteractivity::None);
+            surface.commit();
+            self.mirrors.push(PanelMirror {
+                output, surface, pool: None, width: 0, height: 0,
+                configured: false, frame_pending: false, needs_redraw: false,
+                task_offset: 0,
+            });
+        }
+    }
+
+    fn redraw_mirror(&mut self, index: usize, qh: &QueueHandle<Self>) {
+        let groups = self.grouped_tasks();
+        let Some(mirror) = self.mirrors.get_mut(index) else { return };
+        if !mirror.configured || mirror.width == 0 || mirror.height == 0 { return; }
+        let surface = mirror.surface.wl_surface();
+        let Some(pool) = mirror.pool.as_mut() else { return };
+        let (buffer, canvas) = match pool.create_buffer(
+            mirror.width as i32, mirror.height as i32,
+            (mirror.width * 4) as i32, wl_shm::Format::Argb8888,
+        ) {
+            Ok(value) => value,
+            Err(error) => {
+                eprintln!("RicePlate: deferring busy output panel buffer: {error}");
+                surface.frame(qh, FrameCallbackData(surface.clone()));
+                mirror.frame_pending = true;
+                mirror.surface.commit();
+                return;
+            }
+        };
+        paint_panel(canvas, mirror.width, mirror.height, &self.recipe, &groups,
+                    &self.clock, mirror.task_offset);
+        surface.damage_buffer(0, 0, mirror.width as i32, mirror.height as i32);
+        if let Err(error) = buffer.attach_to(surface) {
+            eprintln!("RicePlate: cannot attach output panel: {error}");
+            return;
+        }
+        surface.frame(qh, FrameCallbackData(surface.clone()));
+        mirror.frame_pending = true;
+        mirror.needs_redraw = false;
+        mirror.surface.commit();
+    }
+
     fn set_menu_visible(&mut self, visible: bool, qh: &QueueHandle<Self>) {
         let Some(layer) = self.menu_layer.as_ref() else {
             return;
@@ -476,6 +566,10 @@ impl RicePlate {
         if !self.frame_pending {
             self.redraw(qh);
         }
+        for index in 0..self.mirrors.len() {
+            self.mirrors[index].needs_redraw = true;
+            if !self.mirrors[index].frame_pending { self.redraw_mirror(index, qh); }
+        }
     }
 
     fn reveal_task(&mut self, index: usize) {
@@ -495,6 +589,16 @@ impl RicePlate {
             self.task_offset = group_index;
         } else if group_index >= view.start + view.slots {
             self.task_offset = group_index + 1 - view.slots;
+        }
+        for mirror in &mut self.mirrors {
+            if let Some(view) = recipe::task_view(
+                &self.recipe, mirror.width, groups.len(), mirror.task_offset,
+            ) {
+                if group_index < view.start { mirror.task_offset = group_index; }
+                else if group_index >= view.start + view.slots {
+                    mirror.task_offset = group_index + 1 - view.slots;
+                }
+            }
         }
     }
 
@@ -528,122 +632,8 @@ impl RicePlate {
                 return;
             }
         };
-        for pixel in canvas.chunks_exact_mut(4) {
-            pixel.copy_from_slice(&self.recipe.background.to_le_bytes());
-        }
-        for placed in recipe::layout(&self.recipe, width, groups.len()) {
-            match placed.widget {
-                Widget::Launcher => {
-                    fill_rect(
-                        canvas,
-                        width,
-                        height,
-                        placed.x,
-                        0,
-                        placed.width,
-                        height,
-                        self.recipe.active,
-                    );
-                    draw_text(
-                        canvas,
-                        width,
-                        height,
-                        placed.x + placed.width.saturating_sub(32) / 2,
-                        height / 2 - 4,
-                        "Apps",
-                        self.recipe.foreground,
-                    );
-                }
-                Widget::Tasks => {
-                    let Some(view) =
-                        recipe::task_view(&self.recipe, width, groups.len(), self.task_offset)
-                    else {
-                        continue;
-                    };
-                    for (index, group) in
-                        groups.iter().skip(view.start).take(view.slots).enumerate()
-                    {
-                        let consumed = (index as u32) * view.cell_width;
-                        let x = placed.x + consumed;
-                        let cell_width = if index + 1 == view.slots {
-                            view.content_width - consumed
-                        } else {
-                            view.cell_width
-                        };
-                        if group.active {
-                            fill_rounded_rect(
-                                canvas,
-                                width,
-                                height,
-                                x,
-                                0,
-                                cell_width.saturating_sub(2),
-                                height,
-                                self.recipe.task_radius,
-                                self.recipe.active,
-                            );
-                        }
-                        let label = task_groups::visible_label(group, cell_width);
-                        draw_text(
-                            canvas,
-                            width,
-                            height,
-                            x + 10,
-                            height / 2 - 4,
-                            &label,
-                            self.recipe.foreground,
-                        );
-                    }
-                    if view.prev {
-                        draw_text(
-                            canvas,
-                            width,
-                            height,
-                            placed.x + view.content_width + 8,
-                            height / 2 - 4,
-                            "<",
-                            self.recipe.foreground,
-                        );
-                    }
-                    if view.next {
-                        draw_text(
-                            canvas,
-                            width,
-                            height,
-                            placed.x + view.content_width + 32,
-                            height / 2 - 4,
-                            ">",
-                            self.recipe.foreground,
-                        );
-                    }
-                }
-                Widget::Clock => {
-                    draw_text(
-                        canvas,
-                        width,
-                        height,
-                        placed.x + placed.width.saturating_sub(40) / 2,
-                        height / 2 - 4,
-                        &self.clock,
-                        self.recipe.foreground,
-                    );
-                }
-                Widget::Gap(_) => {}
-                Widget::Label(index) => {
-                    if let Some(label) = self.recipe.labels.get(index as usize) {
-                        draw_text(
-                            canvas,
-                            width,
-                            height,
-                            placed.x + self.recipe.label_padding,
-                            height / 2 - 4,
-                            label,
-                            self.recipe.foreground,
-                        );
-                    }
-                }
-            }
-        }
+        paint_panel(canvas, width, height, &self.recipe, &groups,
+                    &self.clock, self.task_offset);
         surface.damage_buffer(0, 0, width as i32, height as i32);
         if let Err(error) = buffer.attach_to(surface) {
             eprintln!("RicePlate: failed to attach Wayland buffer: {error}");
@@ -654,6 +644,66 @@ impl RicePlate {
         self.frame_pending = true;
         self.needs_redraw = false;
         self.layer.commit();
+    }
+}
+
+fn paint_panel(canvas: &mut [u8], width: u32, height: u32,
+               style: &PanelStyle, groups: &[TaskGroup], clock: &str, offset: usize) {
+    for pixel in canvas.chunks_exact_mut(4) {
+        pixel.copy_from_slice(&style.background.to_le_bytes());
+    }
+    for placed in recipe::layout(style, width, groups.len()) {
+        match placed.widget {
+            Widget::Launcher => {
+                fill_rect(canvas, width, height, placed.x, 0, placed.width, height,
+                          style.active);
+                draw_text(canvas, width, height,
+                          placed.x + placed.width.saturating_sub(32) / 2,
+                          height / 2 - 4, "Apps", style.foreground);
+            }
+            Widget::Tasks => {
+                let Some(view) = recipe::task_view(style, width, groups.len(), offset) else {
+                    continue;
+                };
+                for (index, group) in groups.iter().skip(view.start).take(view.slots).enumerate() {
+                    let consumed = (index as u32) * view.cell_width;
+                    let x = placed.x + consumed;
+                    let cell_width = if index + 1 == view.slots {
+                        view.content_width - consumed
+                    } else {
+                        view.cell_width
+                    };
+                    if group.active {
+                        fill_rounded_rect(canvas, width, height, x, 0,
+                                          cell_width.saturating_sub(2), height,
+                                          style.task_radius, style.active);
+                    }
+                    let label = task_groups::visible_label(group, cell_width);
+                    draw_text(canvas, width, height, x + 10, height / 2 - 4,
+                              &label, style.foreground);
+                }
+                if view.prev {
+                    draw_text(canvas, width, height, placed.x + view.content_width + 8,
+                              height / 2 - 4, "<", style.foreground);
+                }
+                if view.next {
+                    draw_text(canvas, width, height, placed.x + view.content_width + 32,
+                              height / 2 - 4, ">", style.foreground);
+                }
+            }
+            Widget::Clock => {
+                draw_text(canvas, width, height,
+                          placed.x + placed.width.saturating_sub(40) / 2,
+                          height / 2 - 4, clock, style.foreground);
+            }
+            Widget::Gap(_) => {}
+            Widget::Label(index) => {
+                if let Some(label) = style.labels.get(index as usize) {
+                    draw_text(canvas, width, height, placed.x + style.label_padding,
+                              height / 2 - 4, label, style.foreground);
+                }
+            }
+        }
     }
 }
 
@@ -889,6 +939,11 @@ impl CompositorHandler for RicePlate {
         _: u32,
     ) {
         if surface != self.layer.wl_surface() {
+            if let Some(index) = self.mirrors.iter().position(|mirror|
+                    mirror.surface.wl_surface() == surface) {
+                self.mirrors[index].frame_pending = false;
+                if self.mirrors[index].needs_redraw { self.redraw_mirror(index, qh); }
+            }
             return;
         }
         self.frame_pending = false;
@@ -899,13 +954,16 @@ impl CompositorHandler for RicePlate {
     fn surface_enter(
         &mut self,
         _: &Connection,
-        _: &QueueHandle<Self>,
+        qh: &QueueHandle<Self>,
         surface: &wl_surface::WlSurface,
         output: &wl_output::WlOutput,
     ) {
         if surface == self.layer.wl_surface() {
+            eprintln!("RicePlate: primary panel entered {output:?}");
             self.primary_output = Some(output.clone());
+            self.primary_output_seen = true;
             self.reflow_icons();
+            self.sync_mirrors(qh);
             return;
         }
         if let Some(layer) = self
@@ -920,14 +978,16 @@ impl CompositorHandler for RicePlate {
     fn surface_leave(
         &mut self,
         _: &Connection,
-        _: &QueueHandle<Self>,
+        qh: &QueueHandle<Self>,
         surface: &wl_surface::WlSurface,
         output: &wl_output::WlOutput,
     ) {
         if surface == self.layer.wl_surface() {
+            eprintln!("RicePlate: primary panel left {output:?}");
             if self.primary_output.as_ref() == Some(output) {
                 self.primary_output = None;
             }
+            self.sync_mirrors(qh);
             return;
         }
         if let Some(layer) = self
@@ -946,6 +1006,9 @@ impl LayerShellHandler for RicePlate {
     fn closed(&mut self, _: &Connection, _: &QueueHandle<Self>, layer: &LayerSurface) {
         if layer.wl_surface() == self.layer.wl_surface() {
             self.closed = true;
+        } else if let Some(index) = self.mirrors.iter().position(|mirror|
+                mirror.surface.wl_surface() == layer.wl_surface()) {
+            self.mirrors.remove(index);
         } else if self
             .menu_layer
             .as_ref()
@@ -969,6 +1032,33 @@ impl LayerShellHandler for RicePlate {
         config: LayerSurfaceConfigure,
         _: u32,
     ) {
+        if let Some(index) = self.mirrors.iter().position(|mirror|
+                mirror.surface.wl_surface() == layer.wl_surface()) {
+            let width = config.new_size.0;
+            let height = config.new_size.1;
+            if width == 0 || width > MAX_WIDTH || height == 0 || height > MAX_HEIGHT {
+                eprintln!("RicePlate: invalid extra-output panel geometry");
+                self.mirrors.remove(index);
+                return;
+            }
+            let mirror = &mut self.mirrors[index];
+            if (width, height) != (mirror.width, mirror.height) {
+                let byte_count = width as usize * height as usize * 4 * 3;
+                match SlotPool::new(byte_count, &self.shm) {
+                    Ok(pool) => mirror.pool = Some(pool),
+                    Err(error) => {
+                        eprintln!("RicePlate: cannot allocate extra-output panel: {error}");
+                        self.mirrors.remove(index);
+                        return;
+                    }
+                }
+            }
+            mirror.width = width;
+            mirror.height = height;
+            mirror.configured = true;
+            self.redraw_mirror(index, qh);
+            return;
+        }
         if let Some(menu_layer) = self
             .menu_layer
             .as_mut()
@@ -1058,16 +1148,18 @@ impl OutputHandler for RicePlate {
     fn output_state(&mut self) -> &mut OutputState {
         &mut self.outputs
     }
-    fn new_output(&mut self, _: &Connection, _: &QueueHandle<Self>, _: wl_output::WlOutput) {
+    fn new_output(&mut self, _: &Connection, qh: &QueueHandle<Self>, _: wl_output::WlOutput) {
         self.reflow_icons();
+        self.sync_mirrors(qh);
     }
-    fn update_output(&mut self, _: &Connection, _: &QueueHandle<Self>, _: wl_output::WlOutput) {
+    fn update_output(&mut self, _: &Connection, qh: &QueueHandle<Self>, _: wl_output::WlOutput) {
         self.reflow_icons();
+        self.sync_mirrors(qh);
     }
     fn output_destroyed(
         &mut self,
         _: &Connection,
-        _: &QueueHandle<Self>,
+        qh: &QueueHandle<Self>,
         output: wl_output::WlOutput,
     ) {
         if self.primary_output.as_ref() == Some(&output) {
@@ -1079,6 +1171,7 @@ impl OutputHandler for RicePlate {
             }
         }
         self.reflow_icons();
+        self.sync_mirrors(qh);
     }
 }
 
@@ -1315,24 +1408,34 @@ impl PointerHandler for RicePlate {
                 }
                 continue;
             }
-            if &event.surface != self.layer.wl_surface() {
-                continue;
-            }
+            let mirror_index = self.mirrors.iter().position(|mirror|
+                &event.surface == mirror.surface.wl_surface());
+            let (panel_width, panel_height, panel_offset) = if let Some(index) = mirror_index {
+                let mirror = &self.mirrors[index];
+                (mirror.width, mirror.height, mirror.task_offset)
+            } else if &event.surface == self.layer.wl_surface() {
+                (self.width, self.height, self.task_offset)
+            } else { continue; };
             if let PointerEventKind::Press { button, .. } = event.kind {
                 if button == BTN_LEFT
                     && event.position.1 >= 0.0
-                    && event.position.1 < f64::from(self.height)
+                    && event.position.1 < f64::from(panel_height)
                 {
                     let groups = self.grouped_tasks();
                     match recipe::hit(
                         event.position.0,
-                        self.width,
+                        panel_width,
                         groups.len(),
-                        self.task_offset,
+                        panel_offset,
                         &self.recipe,
                     ) {
                         Some(Hit::Launcher) => {
-                            if self.menu_layer.is_some() {
+                            if mirror_index.is_some() {
+                                // The existing fuzzel picker opens on the
+                                // focused output; a native menu per output
+                                // remains part of the parity roadmap.
+                                self.activate_action("applications", qh);
+                            } else if self.menu_layer.is_some() {
                                 self.set_menu_visible(!self.menu_state.visible, qh);
                             } else {
                                 self.activate_action("applications", qh);
@@ -1357,23 +1460,29 @@ impl PointerHandler for RicePlate {
                         Some(Hit::PreviousTasks) => {
                             if let Some(view) = recipe::task_view(
                                 &self.recipe,
-                                self.width,
+                                panel_width,
                                 groups.len(),
-                                self.task_offset,
+                                panel_offset,
                             ) {
-                                self.task_offset = view.start.saturating_sub(view.slots);
+                                let next = view.start.saturating_sub(view.slots);
+                                if let Some(index) = mirror_index {
+                                    self.mirrors[index].task_offset = next;
+                                } else { self.task_offset = next; }
                                 self.request_redraw(qh);
                             }
                         }
                         Some(Hit::NextTasks) => {
                             if let Some(view) = recipe::task_view(
                                 &self.recipe,
-                                self.width,
+                                panel_width,
                                 groups.len(),
-                                self.task_offset,
+                                panel_offset,
                             ) {
-                                self.task_offset = (view.start + view.slots)
+                                let next = (view.start + view.slots)
                                     .min(groups.len().saturating_sub(view.slots));
+                                if let Some(index) = mirror_index {
+                                    self.mirrors[index].task_offset = next;
+                                } else { self.task_offset = next; }
                                 self.request_redraw(qh);
                             }
                         }
@@ -1494,6 +1603,25 @@ smithay_client_toolkit::delegate_dispatch2!(RicePlate);
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn shared_panel_painter_renders_on_independent_output_buffers() {
+        let style = recipe::parse(
+            include_str!("../../../tests/fixtures/riceplate-desktop-v5.json"),
+            Some("mockup-desktop"),
+        ).unwrap();
+        let width = 800;
+        let height = style.height;
+        let mut first = vec![0_u8; (width * height * 4) as usize];
+        let mut second = vec![0_u8; (width * height * 4) as usize];
+        paint_panel(&mut first, width, height, &style, &[], "12:00", 0);
+        paint_panel(&mut second, width, height, &style, &[], "12:00", 0);
+        assert_eq!(first, second);
+        assert_eq!(&first[(width * (height / 2) + 400) as usize * 4..][..4],
+                   &style.background.to_le_bytes());
+        assert!(first.chunks_exact(4).any(|pixel|
+            pixel == style.active.to_le_bytes()));
+    }
 
     #[test]
     fn desktop_icon_paint_preserves_transparent_background() {
