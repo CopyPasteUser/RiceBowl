@@ -303,14 +303,16 @@ turns one output off, checks the remaining bar and reconnects the second.
 This verifies fallback display/hotplug behavior, **not** multi-monitor native
 RicePlate parity or physical mixed-DPI hardware acceptance.
 
-An additional experimental native RicePlate track now attempts to draw a
+An additional experimental native RicePlate track now draws a
 separate taskbar layer on each connected output **inside the same process**,
 while sharing window discovery and the event-driven clock. Secondary panels
 use independent task paging. Native menu and desktop icons still belong to the
 primary output: the secondary launcher opens the accessible fuzzel picker.
-The `smoke_riceplate_multioutput.sh` CI test checks two native panel frames
-and a secondary disconnect/reconnect; actual mixed-DPI/primary-output removal
-and keyboard/menu parity are still open acceptance items.
+The `smoke_riceplate_multioutput.sh` CI test verifies two native panel frames
+and a secondary disconnect/reconnect, with four genuine compositor screenshots
+included in the `riceplate-native-preview` workflow artifact. Actual mixed-DPI,
+primary-output removal, and keyboard/menu parity on secondary screens remain
+open acceptance items.
 
 #### Native start menu and keyboard preview
 

@@ -79,5 +79,14 @@ dbus-run-session -- sh -eu -c '
     /usr/bin/python3 "$source_root/scripts/check_wayland_panel_outputs.py" \
         "$runtime/second-after-on.png"
     kill -0 "$plate" 2>/dev/null || { echo "Native panel exited after hotplug" >&2; exit 1; }
+    # These are real grim captures from two actual compositor outputs. Keep
+    # them in the workflow artifact for inspection rather than discarding
+    # all evidence with the private runtime directory.
+    captures="$source_root/dist/riceplate-native-preview/multioutput"
+    mkdir -p "$captures"
+    cp "$runtime/first.png" "$captures/first.png"
+    cp "$runtime/second.png" "$captures/second.png"
+    cp "$runtime/first-after-off.png" "$captures/first-after-off.png"
+    cp "$runtime/second-after-on.png" "$captures/second-after-on.png"
     echo "One native RicePlate process painted two outputs and survived secondary hotplug"
 ' sh "$source_root" "$runtime" "$native"
