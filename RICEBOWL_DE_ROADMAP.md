@@ -300,6 +300,13 @@ depend on the XFCE session.
   selected or applied. This **recipe-only** format references bundled assets;
   full visual asset manifests, preview evidence and multi-component apply
   transactions remain open.
+- [x] Add **explicit Creator next-login staging** (`de creator-status`,
+  `de creator-stage`, `de creator-rollback`) with a required reviewed semantic
+  SHA-256, optional compare-and-swap current-selection guard, one-level undo,
+  private v2 selection-state fingerprint and fail-safe classic fallback when a
+  staged recipe changes before login. Migrate old v1 state without breaking
+  existing commands. This does not switch live Wayland/XFCE or provide a
+  transaction across the desktop's future settings, windows and components.
 - [ ] Publish a **versioned, machine-readable Creator contract** (CLI JSON
   output first; optional local IPC only if justified) for discovering
   components, creating/editing drafts, validating recipes, previewing the

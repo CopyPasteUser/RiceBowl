@@ -1,5 +1,15 @@
 # RiceBowl changelog
 
+## Unreleased — reviewed next-login Creator staging (6 November 2026)
+
+- Add `de creator-status`, `de creator-stage` and `de creator-rollback` with
+  machine-readable stage v1 responses, semantic SHA-256 preconditions,
+  optional concurrent-selection guards and explicit one-step restore.
+- Persist reviewed recipe fingerprints in backward-compatible owner-private
+  v2 next-login selection state. A recipe changed after review cannot silently
+  be loaded as the staged design; the next Wayland session uses classic
+  fallback and leaves XFCE untouched. No live desktop mutation is implied.
+
 ## Unreleased — portable Wayland Creator recipes (6 November 2026)
 
 - Publish a versioned, offline `de creator-api --json` registry for implemented

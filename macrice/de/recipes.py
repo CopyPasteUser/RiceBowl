@@ -50,6 +50,14 @@ class RecipeError(ValueError):
     """Invalid or unsupported RicePlate recipe; no desktop changes made."""
 
 
+class SelectionConflict(RecipeError):
+    """Next-login selection changed since the caller last inspected it."""
+
+
+class RecipeFingerprintMismatch(RecipeError):
+    """Recipe changed since Creator's semantic review."""
+
+
 @dataclass(frozen=True)
 class LayoutNode:
     """A bounded, typed, non-executable horizontal panel composition node."""
@@ -492,15 +500,28 @@ def _read_selection(directory: Path) -> dict[str, Any] | None:
         raw = stream.read(MAX_SELECTION_BYTES + 1)
     try:
         data = json.loads(raw, object_pairs_hook=_object_without_duplicates)
-        _strict_keys(data, {"schema_version", "active", "previous"}, "Selection")
     except (UnicodeError, ValueError, TypeError, RecursionError) as exc:
         raise RecipeError("Invalid selected recipe state") from exc
-    if type(data["schema_version"]) is not int or data["schema_version"] != 1:
+    if type(data) is not dict or type(data.get("schema_version")) is not int:
         raise RecipeError("Unsupported recipe selection version")
+    version = data["schema_version"]
+    if version == 1:
+        fields = {"schema_version", "active", "previous"}
+    elif version == 2:
+        fields = {"schema_version", "active", "previous", "active_sha256", "previous_sha256"}
+    else:
+        raise RecipeError("Unsupported recipe selection version")
+    _strict_keys(data, fields, "Selection")
     for field in ("active", "previous"):
         if (not isinstance(data[field], str)
                 or not re.fullmatch(r"[a-z][a-z0-9-]{1,31}", data[field])):
             raise RecipeError("Recipe selection must contain only built-in/imported IDs")
+    if version == 2:
+        for field in ("active_sha256", "previous_sha256"):
+            value = data[field]
+            if value is not None and (type(value) is not str or
+                                      not re.fullmatch(r"[0-9a-f]{64}", value)):
+                raise RecipeError("Invalid pinned recipe selection fingerprint")
     return data
 
 
@@ -515,11 +536,23 @@ def current_selection() -> tuple[str, str | None]:
 
 def selected_recipe() -> str | None:
     """Return None for the unchanged default session, or a saved recipe ID."""
-    active, previous = current_selection()
-    return active if previous is not None else None
+    directory = _private_recipe_dir(create=False)
+    if not directory.exists():
+        return None
+    state = _read_selection(directory)
+    if state is None:
+        return None
+    if state["schema_version"] == 2 and state["active_sha256"] is not None:
+        from . import review
+        actual = review._semantic_hash(review._manifest(load(state["active"])))
+        if actual != state["active_sha256"]:
+            raise RecipeFingerprintMismatch("Saved recipe changed since Creator review")
+    return state["active"]
 
 
-def change_selection(token: str | None = None, *, restore: bool = False) -> tuple[str, str]:
+def change_selection(token: str | None = None, *, restore: bool = False,
+                     expected_active: str | None = None,
+                     expected_semantic_sha256: str | None = None) -> tuple[str, str]:
     """Change only the *next* Wayland session's recipe, with one-level undo.
 
     The active compositor and every XFCE setting remain untouched. The
@@ -527,6 +560,14 @@ def change_selection(token: str | None = None, *, restore: bool = False) -> tupl
     """
     if (restore and token is not None) or (not restore and token is None):
         raise RecipeError("Provide exactly one of a recipe ID or restore")
+    if (expected_active is not None and
+            (type(expected_active) is not str or
+             not re.fullmatch(r"[a-z][a-z0-9-]{1,31}", expected_active))):
+        raise RecipeError("Expected active selection must be a valid recipe ID")
+    if (expected_semantic_sha256 is not None and
+            (restore or type(expected_semantic_sha256) is not str or
+             not re.fullmatch(r"[0-9a-f]{64}", expected_semantic_sha256))):
+        raise RecipeError("Expected recipe fingerprint must be a lowercase SHA-256")
     directory = _private_recipe_dir(create=True)
     lock = directory / ".active-recipe.lock"
     descriptor = os.open(lock, os.O_WRONLY | os.O_CREAT | os.O_NOFOLLOW | os.O_CLOEXEC, 0o600)
@@ -538,6 +579,8 @@ def change_selection(token: str | None = None, *, restore: bool = False) -> tupl
         fcntl.flock(locked.fileno(), fcntl.LOCK_EX)
         state = _read_selection(directory)
         active = state["active"] if state else "classic"
+        if expected_active is not None and active != expected_active:
+            raise SelectionConflict("Next-login rice selection changed; review the current state")
         if restore:
             if not state:
                 raise RecipeError("No previous RicePlate recipe selection to restore")
@@ -547,10 +590,34 @@ def change_selection(token: str | None = None, *, restore: bool = False) -> tupl
             target = token
         if not re.fullmatch(r"[a-z][a-z0-9-]{1,31}", target):
             raise RecipeError("Select a built-in or imported recipe ID, not a file path")
-        load(target)  # Refuse a missing or corrupted recipe before changing state.
-        if target == active:
+        target_recipe = load(target)  # Refuse missing/corrupt recipes before changing state.
+        expected_target_hash = expected_semantic_sha256
+        if restore and state and state["schema_version"] == 2:
+            expected_target_hash = state["previous_sha256"]
+        if expected_target_hash is not None:
+            # Check under the same selection lock as the write. This prevents
+            # racing Creator stages from silently using a stale review.
+            from . import review
+            actual = review._semantic_hash(review._manifest(target_recipe))
+            if actual != expected_target_hash:
+                raise RecipeFingerprintMismatch("Recipe differs from the reviewed fingerprint")
+        if target == active and (expected_semantic_sha256 is None or
+                                state and state.get("active_sha256") == expected_semantic_sha256):
             return target, active
-        new_state = {"schema_version": 1, "active": target, "previous": active}
+        if expected_semantic_sha256 is not None or (restore and state and
+                                                      state["schema_version"] == 2):
+            if restore:
+                next_hash = state["previous_sha256"]
+                previous_hash = state["active_sha256"]
+            else:
+                next_hash = expected_semantic_sha256
+                previous_hash = (state.get("active_sha256") if state and target != active
+                                 else state.get("previous_sha256") if state else None)
+            previous = (state["previous"] if target == active and state else active)
+            new_state = {"schema_version": 2, "active": target, "previous": previous,
+                         "active_sha256": next_hash, "previous_sha256": previous_hash}
+        else:
+            new_state = {"schema_version": 1, "active": target, "previous": active}
         payload = (json.dumps(new_state, separators=(",", ":")) + "\n").encode("utf-8")
         descriptor, temporary = tempfile.mkstemp(prefix=".ricebowl-selection-", dir=directory)
         try:

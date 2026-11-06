@@ -72,7 +72,7 @@ def parser() -> argparse.ArgumentParser:
     de = commands.add_parser("de", help="Inspect experimental RiceBowl Wayland desktop prerequisites")
     de.add_argument("action", choices=(
         "check", "start", "shell", "catalog", "creator-api", "review", "draft-edit", "visual-compare",
-        "capture", "render",
+        "capture", "render", "creator-status", "creator-stage", "creator-rollback",
         "pack-export", "pack-inspect", "pack-import",
         "recipes", "recipe-init", "recipe-import", "recipe-export", "recipe-current",
         "recipe-select", "recipe-restore"))
@@ -89,6 +89,8 @@ def parser() -> argparse.ArgumentParser:
     de.add_argument("--edit", type=Path, help="Owner-controlled absolute JSON edit operations for de draft-edit")
     de.add_argument("--metadata", type=Path, help="Optional provenance JSON for de pack-export")
     de.add_argument("--package", type=Path, help="Absolute .ricepack file for de pack-inspect/import")
+    de.add_argument("--expect-sha256", help="Reviewed recipe semantic SHA-256 for de creator-stage")
+    de.add_argument("--expect-active", help="Optional concurrency guard for de creator-stage/rollback")
     de.add_argument("--panel", choices=("waybar", "native"), default="waybar",
                     help="Session panel (native RicePlate is experimental and falls back to Waybar)")
     de.add_argument("--base", choices=("classic", "chrome"),
@@ -166,6 +168,10 @@ def main(argv: list[str] | None = None) -> int:
                 raise ValueError("--metadata only applies to de pack-export")
             if args.action not in ("pack-inspect", "pack-import") and args.package is not None:
                 raise ValueError("--package only applies to de pack-inspect/import")
+            if args.action != "creator-stage" and args.expect_sha256 is not None:
+                raise ValueError("--expect-sha256 only applies to de creator-stage")
+            if args.action not in ("creator-stage", "creator-rollback") and args.expect_active is not None:
+                raise ValueError("--expect-active only applies to de creator-stage/rollback")
             if args.action != "visual-compare" and any(value is not None for value in
                     (args.reference, args.actual, args.overlay, args.heatmap, args.threshold)):
                 raise ValueError("Visual comparison options only apply to de visual-compare")
@@ -189,6 +195,37 @@ def main(argv: list[str] | None = None) -> int:
                     print(f"RiceBowl Creator API v{contract['api_version']} (offline, on demand)")
                     for item in contract["commands"]:
                         print(f"  {item['command']:18} {item['effect']}")
+                return 0
+            if args.action in ("creator-status", "creator-stage", "creator-rollback"):
+                if args.nested or args.panel != "waybar":
+                    raise ValueError("Creator selection does not start a desktop session")
+                if (args.action == "creator-stage" and
+                        (not args.recipe or not args.expect_sha256)):
+                    raise ValueError("de creator-stage needs --recipe and --expect-sha256")
+                if args.action != "creator-stage" and args.recipe:
+                    raise ValueError("Only de creator-stage accepts --recipe")
+                from .de.staging import StageError, invalid_stage, rollback, stage, status
+                try:
+                    if args.action == "creator-status":
+                        result = status()
+                    elif args.action == "creator-stage":
+                        result = stage(args.recipe, args.expect_sha256,
+                                       expected_active=args.expect_active)
+                    else:
+                        result = rollback(expected_active=args.expect_active)
+                except StageError as exc:
+                    if not args.json:
+                        raise
+                    print(json.dumps(invalid_stage(exc), indent=2))
+                    return 2
+                if args.json:
+                    print(json.dumps(result, indent=2))
+                elif args.action == "creator-status":
+                    print(f"Next Wayland login: {result['next_session']}")
+                    print(f"Reviewed semantic SHA256: {result['semantic_sha256']}")
+                else:
+                    print(f"Next Wayland login: {result['next_session']} (was: {result['previous']})")
+                    print("Current desktop unchanged; one-step rollback remains available")
                 return 0
             if args.action in ("pack-export", "pack-inspect", "pack-import"):
                 if args.nested or args.panel != "waybar":
