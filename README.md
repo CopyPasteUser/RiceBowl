@@ -62,7 +62,7 @@ Choose a rice in the Hub. Switching requires confirmation and saves recovery sta
 
 ## From ricing suite to desktop environment
 
-The long-term goal is a **desktop-creation framework**: recreate OS-inspired interfaces or turn AI-generated UI mockups into functioning rices using shared components and validated profiles, without building a new shell for each design. An early, offline panel-recipe import/export and next-login selection/undo flow is available; the complete mockup authoring workflow is [still in development](RICEBOWL_DE_ROADMAP.md).
+The long-term goal is a **desktop-creation framework**: recreate OS-inspired interfaces or turn AI-generated UI mockups into functioning rices using shared components and validated profiles, without building a new shell for each design. Early offline panel-recipe import/export, next-login selection/undo and [machine-readable validation/diff review](WAYLAND_SESSION.md#riceplate-layout-recipes-first-data-only-contract) are available; the complete mockup authoring workflow is [still in development](RICEBOWL_DE_ROADMAP.md).
 
 RiceBowl will keep the existing styles while replacing XFCE-specific desktop responsibilities incrementally:
 

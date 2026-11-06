@@ -208,6 +208,12 @@ depend on the XFCE session.
   strict recipe limits, known fixed behaviors, and missing keyboard controls.
   Full menu/desktop/settings component discovery, richer accessibility semantics,
   Creator draft commands and examples remain open under the catalog gate above.
+- [x] Add an on-demand, **read-only semantic recipe review** (`ricebowl de
+  review --recipe ... [--compare ...] --json`) with a v1 response, canonical
+  SHA-256 fingerprint, fixed JSON Pointer field diffs, honest native/fallback
+  inventory and safe structured errors. It uses the existing restricted recipe
+  loader and never changes selected rices. This is not a graphical preview,
+  transactional draft editor, asset-manifest validator or full Creator API.
 - [ ] Publish a **versioned, machine-readable Creator contract** (CLI JSON
   output first; optional local IPC only if justified) for discovering
   components, creating/editing drafts, validating recipes, previewing the

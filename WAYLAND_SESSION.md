@@ -92,6 +92,30 @@ instead of presenting an imaginary action or widget. This catalog never reads
 private desktop state, invokes a model or changes a rice; it is the first
 machine-readable Creator *discovery* contract, not the full Creator API.
 
+The next read-only Creator building block validates one recipe and optionally
+compares it with a bundled, imported or owner-private base recipe:
+
+```bash
+ricebowl de review --recipe classic --json
+ricebowl de review --recipe /absolute/path/to/my-rice.json --compare chrome --json
+```
+
+`review_version: 1` describes a **panel-only** JSON response with `ok`,
+`applied: false`, a normalized `recipe`, a `summary`, and an optional
+`comparison`. The summary includes an SHA-256 of the **normalized recipe
+semantics** (not of the source file's bytes), native-unavailable widgets and
+whether full widget support still requires Waybar. The comparison reports a
+stable list of JSON Pointer paths and old/new values, including absent v1
+metrics versus v2 metric defaults. Source file locations are not echoed.
+Whitespace/key ordering changes do not affect the semantic fingerprint.
+
+Exit status is `0` for a valid review, `2` for an invalid/inaccessible recipe
+when `--json` is requested (a fixed, path-free `invalid_recipe` JSON response),
+and `1` for rejected command flags or ordinary human-readable recipe errors.
+The review never launches labwc, probes live hardware, writes a draft or
+changes an active/next-login rice. It is **not** a rendered preview, image
+comparison, complete RicePack validator or guarantee of functional parity.
+
 Custom recipes use the strict JSON schema illustrated in
 `macrice/de/resources/recipes/`. Supply an **absolute path** to an owner-only,
 regular JSON file (`chmod 600 YOUR_FILE.json`). Recipes are limited to 64 KiB,
