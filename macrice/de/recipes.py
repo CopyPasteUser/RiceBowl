@@ -26,6 +26,11 @@ COLORS = ("background", "foreground", "active")
 METRIC_DEFAULTS = (104, 164, 96)
 METRIC_FIELDS = ("launcher_width", "task_width", "clock_width")
 METRIC_LIMITS = ((64, 256), (96, 256), (64, 256))
+MAX_LAYOUT_NODES = 24
+MAX_LAYOUT_LABELS = 8
+MAX_LAYOUT_DEPTH = 3
+MAX_LAYOUT_ROOTS = 8
+MAX_LAYOUT_CHILDREN = 6
 BUILTINS = {
     "classic": Path(__file__).resolve().parent / "resources/recipes/classic.json",
     "chrome": Path(__file__).resolve().parent / "resources/recipes/chrome.json",
@@ -37,6 +42,16 @@ class RecipeError(ValueError):
 
 
 @dataclass(frozen=True)
+class LayoutNode:
+    """A bounded, typed, non-executable horizontal panel composition node."""
+
+    kind: str
+    value: str | int = ""
+    gap: int = 0
+    children: tuple[LayoutNode, ...] = ()
+
+
+@dataclass(frozen=True)
 class PanelRecipe:
     recipe_id: str
     name: str
@@ -45,6 +60,8 @@ class PanelRecipe:
     sections: tuple[tuple[str, ...], tuple[str, ...], tuple[str, ...]]
     colors: tuple[str, str, str]
     metrics: tuple[int, int, int] | None = None
+    layout: tuple[tuple[LayoutNode, ...], ...] | None = None
+    schema_version: int = 1
 
 
 def _object_without_duplicates(items: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -62,6 +79,71 @@ def _strict_keys(value: Any, keys: set[str], context: str) -> dict[str, Any]:
     return value
 
 
+def _parse_layout_node(raw: Any, depth: int, counts: list[int], widgets: list[str]) -> LayoutNode:
+    """Validate one reusable primitive; never interpret fields as commands."""
+    counts[0] += 1
+    if depth > MAX_LAYOUT_DEPTH or counts[0] > MAX_LAYOUT_NODES:
+        raise RecipeError("Panel layout exceeds bounded depth or node count")
+    if not isinstance(raw, dict) or type(raw.get("type")) is not str:
+        raise RecipeError("Panel layout node needs a known type")
+    kind = raw["type"]
+    if kind == "widget":
+        _strict_keys(raw, {"type", "id"}, "Widget node")
+        if type(raw["id"]) is not str or raw["id"] not in WIDGETS:
+            raise RecipeError("Unsupported panel widget ID")
+        widgets.append(raw["id"])
+        return LayoutNode(kind, raw["id"])
+    if kind == "gap":
+        _strict_keys(raw, {"type", "width"}, "Gap node")
+        if type(raw["width"]) is not int or not 4 <= raw["width"] <= 64:
+            raise RecipeError("Panel gap width must be 4-64 logical pixels")
+        return LayoutNode(kind, raw["width"])
+    if kind == "label":
+        _strict_keys(raw, {"type", "text"}, "Label node")
+        text = raw["text"]
+        if (type(text) is not str or not re.fullmatch(r"[A-Za-z0-9 ._:+-]{1,24}", text)):
+            raise RecipeError("Panel label must be 1-24 safe printable ASCII characters")
+        counts[1] += 1
+        if counts[1] > MAX_LAYOUT_LABELS:
+            raise RecipeError("Too many panel labels")
+        return LayoutNode(kind, text)
+    if kind == "group":
+        _strict_keys(raw, {"type", "gap", "children"}, "Group node")
+        children = raw["children"]
+        if (depth >= MAX_LAYOUT_DEPTH or type(raw["gap"]) is not int
+                or not 0 <= raw["gap"] <= 32 or not isinstance(children, list)
+                or not 1 <= len(children) <= MAX_LAYOUT_CHILDREN):
+            raise RecipeError("Group needs 1-6 children, 0-32px gap and bounded depth")
+        return LayoutNode(kind, gap=raw["gap"], children=tuple(
+            _parse_layout_node(child, depth + 1, counts, widgets) for child in children))
+    raise RecipeError("Unsupported panel layout node or action")
+
+
+def _parse_layout(raw: Any) -> tuple[tuple[tuple[LayoutNode, ...], ...], list[str]]:
+    layout = _strict_keys(raw, set(SECTIONS), "Panel layout")
+    counts = [0, 0]
+    widgets: list[str] = []
+    result = []
+    for section in SECTIONS:
+        entries = layout[section]
+        if not isinstance(entries, list) or len(entries) > MAX_LAYOUT_ROOTS:
+            raise RecipeError("Panel layout section has more than eight roots")
+        result.append(tuple(_parse_layout_node(entry, 1, counts, widgets) for entry in entries))
+    return (result[0], result[1], result[2]), widgets
+
+
+def layout_node_json(node: LayoutNode) -> dict[str, Any]:
+    """Canonical data representation consumed by Creator review and Waybar."""
+    if node.kind == "group":
+        return {"type": "group", "gap": node.gap,
+                "children": [layout_node_json(child) for child in node.children]}
+    if node.kind == "widget":
+        return {"type": "widget", "id": node.value}
+    if node.kind == "label":
+        return {"type": "label", "text": node.value}
+    return {"type": "gap", "width": node.value}
+
+
 def parse(raw: bytes) -> PanelRecipe:
     """Validate a bounded, declarative schema with no commands or asset paths."""
     if len(raw) > MAX_RECIPE_BYTES:
@@ -71,7 +153,7 @@ def parse(raw: bytes) -> PanelRecipe:
     except (UnicodeError, ValueError, TypeError, RecursionError) as exc:
         raise RecipeError(f"Invalid RicePlate recipe JSON: {exc}") from exc
     data = _strict_keys(data, {"schema_version", "id", "name", "panel", "colors"}, "Recipe")
-    if type(data["schema_version"]) is not int or data["schema_version"] not in (1, 2):
+    if type(data["schema_version"]) is not int or data["schema_version"] not in (1, 2, 3):
         raise RecipeError("Unsupported RicePlate recipe schema version")
     recipe_id = data["id"]
     if not isinstance(recipe_id, str) or not re.fullmatch(r"[a-z][a-z0-9-]{1,31}", recipe_id):
@@ -81,8 +163,8 @@ def parse(raw: bytes) -> PanelRecipe:
             or any(unicodedata.category(character) == "Cc" for character in name)):
         raise RecipeError("Recipe name must be 1-60 printable characters")
     version = data["schema_version"]
-    panel_keys = {"position", "height", "sections"}
-    if version == 2:
+    panel_keys = {"position", "height", "layout" if version == 3 else "sections"}
+    if version in (2, 3):
         panel_keys.add("metrics")
     panel = _strict_keys(data["panel"], panel_keys, "Panel")
     if panel["position"] not in ("top", "bottom"):
@@ -90,23 +172,32 @@ def parse(raw: bytes) -> PanelRecipe:
     if type(panel["height"]) is not int or not 28 <= panel["height"] <= 64:
         raise RecipeError("Panel height must be an integer between 28 and 64")
     metrics: tuple[int, int, int] | None = None
-    if version == 2:
+    if version in (2, 3):
         sizes = _strict_keys(panel["metrics"], set(METRIC_FIELDS), "Panel metrics")
         if any(type(sizes[key]) is not int or not lower <= sizes[key] <= upper
                for key, (lower, upper) in zip(METRIC_FIELDS, METRIC_LIMITS)):
             raise RecipeError("Panel metrics must be bounded integer widths in pixels")
         metrics = tuple(sizes[key] for key in METRIC_FIELDS)
-    sections = _strict_keys(panel["sections"], set(SECTIONS), "Panel sections")
     selected: list[tuple[str, ...]] = []
     all_widgets: list[str] = []
-    for section in SECTIONS:
-        widgets = sections[section]
-        if (not isinstance(widgets, list) or len(widgets) > 7
-                or any(not isinstance(widget, str) or widget not in WIDGETS
-                       for widget in widgets)):
-            raise RecipeError(f"Invalid widget list in panel section {section}")
-        selected.append(tuple(widgets))
-        all_widgets.extend(widgets)
+    layout_nodes = None
+    if version == 3:
+        layout_nodes, all_widgets = _parse_layout(panel["layout"])
+        def widget_ids(nodes: tuple[LayoutNode, ...]) -> tuple[str, ...]:
+            return tuple(item for node in nodes for item in (
+                (node.value,) if node.kind == "widget" else
+                widget_ids(node.children) if node.kind == "group" else ()))
+        selected = [widget_ids(nodes) for nodes in layout_nodes]
+    else:
+        sections = _strict_keys(panel["sections"], set(SECTIONS), "Panel sections")
+        for section in SECTIONS:
+            widgets = sections[section]
+            if (not isinstance(widgets, list) or len(widgets) > 7
+                    or any(not isinstance(widget, str) or widget not in WIDGETS
+                           for widget in widgets)):
+                raise RecipeError(f"Invalid widget list in panel section {section}")
+            selected.append(tuple(widgets))
+            all_widgets.extend(widgets)
     if len(all_widgets) != len(set(all_widgets)):
         raise RecipeError("A panel widget may appear only once")
     if not {"tasks", "launcher"} & set(all_widgets):
@@ -117,7 +208,8 @@ def parse(raw: bytes) -> PanelRecipe:
             raise RecipeError(f"Invalid six-digit hexadecimal color: {color}")
     return PanelRecipe(recipe_id, name, panel["position"], panel["height"],
                        (selected[0], selected[1], selected[2]),
-                       (colors["background"], colors["foreground"], colors["active"]), metrics)
+                       (colors["background"], colors["foreground"], colors["active"]),
+                       metrics, layout_nodes, version)
 
 
 def load(token: str) -> PanelRecipe:
@@ -381,9 +473,15 @@ def create_from_template(
     if not destination.is_absolute() or destination.suffix != ".json":
         raise RecipeError("New recipe output must be an absolute .json file path")
     data = json.loads(BUILTINS[source].read_text(encoding="utf-8"))
-    if schema_version == 2:
-        data["schema_version"] = 2
+    if schema_version in (2, 3):
+        data["schema_version"] = schema_version
         data["panel"]["metrics"] = dict(zip(METRIC_FIELDS, METRIC_DEFAULTS))
+        if schema_version == 3:
+            sections = data["panel"].pop("sections")
+            data["panel"]["layout"] = {
+                section: [{"type": "widget", "id": widget} for widget in sections[section]]
+                for section in SECTIONS
+            }
     elif schema_version != 1:
         raise RecipeError("Unsupported RicePlate template schema version")
     data["id"] = recipe_id
@@ -405,16 +503,49 @@ def waybar_config(recipe: PanelRecipe) -> tuple[str, str]:
         "clock": "clock", "network": "network", "audio": "pulseaudio",
         "battery": "battery", "tray": "tray",
     }
+    generated_modules: dict[str, Any] = {}
+    generated_css: list[str] = []
+    if recipe.layout is None:
+        section_modules = [[module_names[widget] for widget in widgets]
+                           for widgets in recipe.sections]
+    else:
+        counter = [0]
+
+        def generate_node(node: LayoutNode) -> list[str]:
+            if node.kind == "widget":
+                return [module_names[str(node.value)]]
+            if node.kind == "group":
+                result: list[str] = []
+                for index, child in enumerate(node.children):
+                    if index and node.gap:
+                        result.extend(generate_node(LayoutNode("gap", node.gap)))
+                    result.extend(generate_node(child))
+                return result
+            index = counter[0]
+            counter[0] += 1
+            if node.kind == "gap":
+                key = f"custom/rice-gap-{index}"
+                generated_modules[key] = {"format": "", "tooltip": False}
+                generated_css.append(f"#custom-rice-gap-{index} {{ min-width: {node.value}px; padding: 0; }}")
+            else:
+                key = f"custom/rice-label-{index}"
+                generated_modules[key] = {"format": str(node.value), "tooltip": False}
+                generated_css.append(f"#custom-rice-label-{index} {{ min-width: {len(str(node.value)) * 8}px; padding: 0 8px; }}")
+            return [key]
+
+        section_modules = [[name for node in nodes for name in generate_node(node)]
+                           for nodes in recipe.layout]
     config: dict[str, Any] = {
         "layer": "top", "position": recipe.position, "height": recipe.height,
-        "spacing": 8,
-        **{f"modules-{side}": [module_names[widget] for widget in widgets]
-           for side, widgets in zip(("left", "center", "right"), recipe.sections)},
+        "spacing": 0 if recipe.layout is not None else 8,
+        **{f"modules-{side}": names
+           for side, names in zip(("left", "center", "right"), section_modules)},
         "wlr/taskbar": {"format": "{icon}", "icon-size": 22,
                         "on-click": "minimize-raise", "tooltip-format": "{title}"},
         "custom/rice-launcher": {"format": "◈", "on-click": "fuzzel",
                                  "tooltip": True, "tooltip-format": "Applications"},
         "clock": {"format": "{:%a %d %b  %H:%M}"},
+        **generated_modules,
     }
     background, foreground, active = recipe.colors
     css = (
@@ -433,4 +564,6 @@ def waybar_config(recipe: PanelRecipe) -> tuple[str, str]:
             f"#taskbar button {{ min-width: {task_width - 14}px; }}\n"
             f"#clock {{ min-width: {clock_width - 16}px; }}\n"
         )
+    if generated_css:
+        css += "\n".join(generated_css) + "\n"
     return json.dumps(config, ensure_ascii=False, indent=2), css

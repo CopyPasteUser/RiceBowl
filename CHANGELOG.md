@@ -1,5 +1,17 @@
 # RiceBowl changelog
 
+## Unreleased — RicePlate nested panel composition (6 November 2026)
+
+- Add opt-in, strict schema-v3 horizontal panel trees: typed groups, bounded
+  spacing, noninteractive safe labels and unique real widget references.
+- Consume the same nested layout through native Rust drawing/hit testing and
+  the temporary Waybar adapter; keep existing schema-v1/v2 recipes intact.
+- Expose the exact compositional vocabulary through the versioned AI Creator
+  catalog, private draft edits, semantic review and new v3 recipe templates.
+- Test one shared v3 example through Python, Rust unit geometry and the
+  headless labwc native startup workflow. Full desktop-wide composition and
+  physical display acceptance remain outstanding.
+
 ## Unreleased — reliable in-app updates (5 November 2026)
 
 - The Hub now compares GitHub to the **installed** RiceBowl revision, not only

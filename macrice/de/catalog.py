@@ -7,17 +7,19 @@ It grants no ability to execute actions or change a running desktop.
 from __future__ import annotations
 
 from .creator_contract import describe as draft_edit_contract
-from .recipes import MAX_RECIPE_BYTES, METRIC_DEFAULTS, METRIC_FIELDS, METRIC_LIMITS, WIDGETS
+from .recipes import (MAX_LAYOUT_CHILDREN, MAX_LAYOUT_DEPTH, MAX_LAYOUT_LABELS,
+                      MAX_LAYOUT_NODES, MAX_LAYOUT_ROOTS, MAX_RECIPE_BYTES,
+                      METRIC_DEFAULTS, METRIC_FIELDS, METRIC_LIMITS, WIDGETS)
 
 
 def describe() -> dict[str, object]:
     """Describe the currently supported *panel-only* recipe contract."""
     return {
-        "catalog_version": 1,
+        "catalog_version": 2,
         "scope": "wayland-panel-preview",
         "complete_desktop_environment": False,
         "recipe": {
-            "schema_versions": [1, 2],
+            "schema_versions": [1, 2, 3],
             "maximum_bytes": MAX_RECIPE_BYTES,
             "sections": ["start", "center", "end"],
             "unique_widgets": True,
@@ -35,6 +37,25 @@ def describe() -> dict[str, object]:
                                    "unit": "logical-px"}
                            for index, (field, (lower, upper)) in
                            enumerate(zip(METRIC_FIELDS, METRIC_LIMITS))},
+            },
+            "nested_layout": {
+                "since_schema": 3,
+                "replaces_sections": True,
+                "panel_regions": ["start", "center", "end"],
+                "max_nodes": MAX_LAYOUT_NODES,
+                "max_depth": MAX_LAYOUT_DEPTH,
+                "max_roots_per_region": MAX_LAYOUT_ROOTS,
+                "max_children_per_group": MAX_LAYOUT_CHILDREN,
+                "max_labels": MAX_LAYOUT_LABELS,
+                "node_types": {
+                    "widget": {"fields": ["type", "id"], "known_ids": sorted(WIDGETS)},
+                    "group": {"fields": ["type", "gap", "children"],
+                              "gap": {"min": 0, "max": 32, "unit": "logical-px"}},
+                    "gap": {"fields": ["type", "width"],
+                            "width": {"min": 4, "max": 64, "unit": "logical-px"}},
+                    "label": {"fields": ["type", "text"], "safe_ascii": True,
+                              "max_characters": 24, "interactive": False},
+                },
             },
             "custom_commands": False,
             "custom_actions": False,
@@ -65,7 +86,16 @@ def describe() -> dict[str, object]:
             {"id": "tray", "native": "unavailable", "waybar": "host-tray",
              "behavior": "host-status-notifier-items", "keyboard_navigation": False},
         ],
+        "layout_primitives": [
+            {"id": "group", "native": "horizontal-layout", "waybar": "flattened-modules",
+             "interactive": False},
+            {"id": "gap", "native": "fixed-width", "waybar": "css-min-width",
+             "interactive": False},
+            {"id": "label", "native": "static-text", "waybar": "static-text",
+             "interactive": False},
+        ],
         "limits": [
+            "Schema-v3 groups are horizontal panel-only; no full desktop composition yet",
             "Panel-only recipes; no arbitrary OS or screenshot conversion",
             "No runtime configurable action bindings or custom scripts",
             "Native panel lacks tray, hardware controls, keyboard task navigation and popovers",

@@ -1,5 +1,5 @@
 //! Bounded, non-executable RicePlate recipes and shared widget geometry.
-//! The Waybar adapter and native renderer consume the same schema-v1 JSON.
+//! The Waybar adapter and native renderer consume the same bounded panel JSON.
 
 use std::{
     collections::HashSet,
@@ -18,12 +18,17 @@ pub const CLOCK_WIDTH: u32 = 96;
 const PAGE_BUTTON_WIDTH: u32 = 24;
 const MAX_RECIPE_BYTES: usize = 64 * 1024;
 pub const MAX_TRACKED_TASKS: usize = 128;
+const MAX_LAYOUT_NODES: usize = 24;
+const MAX_LAYOUT_LABELS: usize = 8;
+const MAX_LAYOUT_DEPTH: usize = 3;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Widget {
     Launcher,
     Tasks,
     Clock,
+    Gap(u32),
+    Label(u8),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -57,6 +62,7 @@ pub struct PanelStyle {
     /// Launcher, per-task and clock logical widths (schema v1 uses defaults).
     pub widths: [u32; 3],
     pub sections: [Vec<Widget>; 3],
+    pub labels: Vec<String>,
     pub background: u32,
     pub foreground: u32,
     pub active: u32,
@@ -77,17 +83,21 @@ struct Recipe {
 struct Panel {
     position: String,
     height: u32,
-    sections: Sections,
+    #[serde(default, deserialize_with = "deserialize_present")]
+    sections: Option<Sections>,
+    #[serde(default, deserialize_with = "deserialize_present")]
+    layout: Option<LayoutSections>,
     // Distinguish an absent field from an explicitly supplied JSON null.
-    #[serde(default, deserialize_with = "deserialize_metrics")]
+    #[serde(default, deserialize_with = "deserialize_present")]
     metrics: Option<PanelMetrics>,
 }
 
-fn deserialize_metrics<'de, D>(deserializer: D) -> Result<Option<PanelMetrics>, D::Error>
+fn deserialize_present<'de, D, T>(deserializer: D) -> Result<Option<T>, D::Error>
 where
     D: serde::Deserializer<'de>,
+    T: Deserialize<'de>,
 {
-    PanelMetrics::deserialize(deserializer).map(Some)
+    T::deserialize(deserializer).map(Some)
 }
 
 #[derive(Deserialize, Clone, Copy)]
@@ -108,6 +118,23 @@ struct Sections {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
+struct LayoutSections {
+    start: Vec<LayoutNode>,
+    center: Vec<LayoutNode>,
+    end: Vec<LayoutNode>,
+}
+
+#[derive(Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
+enum LayoutNode {
+    Widget { id: String },
+    Gap { width: u32 },
+    Label { text: String },
+    Group { gap: u32, children: Vec<LayoutNode> },
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
 struct Colors {
     background: String,
     foreground: String,
@@ -121,13 +148,61 @@ fn color(raw: &str) -> Result<u32, Box<dyn Error>> {
     Ok(0xff00_0000 | u32::from_str_radix(&raw[1..], 16)?)
 }
 
+fn expand_layout(
+    node: &LayoutNode, depth: usize, counts: &mut [usize; 2],
+    seen: &mut HashSet<String>, rendered: &mut Vec<Widget>, labels: &mut Vec<String>,
+) -> Result<(), Box<dyn Error>> {
+    counts[0] += 1;
+    if depth > MAX_LAYOUT_DEPTH || counts[0] > MAX_LAYOUT_NODES {
+        return Err("Panel layout exceeds bounded depth or node count".into());
+    }
+    match node {
+        LayoutNode::Widget { id } => {
+            if !seen.insert(id.clone()) { return Err("Duplicate panel widget".into()); }
+            match id.as_str() {
+                "launcher" => rendered.push(Widget::Launcher),
+                "tasks" => rendered.push(Widget::Tasks),
+                "clock" => rendered.push(Widget::Clock),
+                // Known but unsupported native controls remain Waybar-only.
+                "network" | "audio" | "battery" | "tray" => {},
+                _ => return Err("Unsupported panel widget or action".into()),
+            }
+        }
+        LayoutNode::Gap { width } => {
+            if !(4..=64).contains(width) { return Err("Panel gap width invalid".into()); }
+            rendered.push(Widget::Gap(*width));
+        }
+        LayoutNode::Label { text } => {
+            if text.is_empty() || text.len() > 24 || !text.bytes().all(|b|
+                b.is_ascii_alphanumeric() || b" ._:+-".contains(&b)) {
+                return Err("Panel label is not bounded safe ASCII".into());
+            }
+            counts[1] += 1;
+            if counts[1] > MAX_LAYOUT_LABELS { return Err("Too many labels".into()); }
+            let index = labels.len() as u8;
+            labels.push(text.clone());
+            rendered.push(Widget::Label(index));
+        }
+        LayoutNode::Group { gap, children } => {
+            if depth >= MAX_LAYOUT_DEPTH || *gap > 32 || !(1..=6).contains(&children.len()) {
+                return Err("Invalid panel group".into());
+            }
+            for (index, child) in children.iter().enumerate() {
+                if index > 0 && *gap > 0 { rendered.push(Widget::Gap(*gap)); }
+                expand_layout(child, depth + 1, counts, seen, rendered, labels)?;
+            }
+        }
+    }
+    Ok(())
+}
+
 pub fn parse(raw: &str, expected_id: Option<&str>) -> Result<PanelStyle, Box<dyn Error>> {
     if raw.len() > MAX_RECIPE_BYTES {
         return Err("RicePlate recipe exceeds 64 KiB".into());
     }
     let recipe: Recipe = serde_json::from_str(raw)?;
     let id = recipe.id.as_bytes();
-    if ![1, 2].contains(&recipe.schema_version) || id.len() < 2 || id.len() > 32
+    if ![1, 2, 3].contains(&recipe.schema_version) || id.len() < 2 || id.len() > 32
         || !id[0].is_ascii_lowercase()
         || !id.iter().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || *b == b'-')
         || expected_id.is_some_and(|expected| expected != recipe.id.as_str())
@@ -139,32 +214,47 @@ pub fn parse(raw: &str, expected_id: Option<&str>) -> Result<PanelStyle, Box<dyn
     }
     let widths = match (recipe.schema_version, recipe.panel.metrics) {
         (1, None) => [LAUNCHER_WIDTH, TASK_WIDTH, CLOCK_WIDTH],
-        (2, Some(metrics))
+        (2 | 3, Some(metrics))
             if (64..=256).contains(&metrics.launcher_width)
                 && (96..=256).contains(&metrics.task_width)
                 && (64..=256).contains(&metrics.clock_width) =>
             [metrics.launcher_width, metrics.task_width, metrics.clock_width],
-        _ => return Err("RicePlate schema v2 requires bounded panel metrics; v1 forbids them".into()),
+        _ => return Err("RicePlate v2/v3 requires bounded metrics; v1 forbids them".into()),
     };
-    let mut seen = HashSet::new();
+    let mut seen: HashSet<String> = HashSet::new();
     let mut sections: [Vec<Widget>; 3] = std::array::from_fn(|_| Vec::new());
-    let source = [&recipe.panel.sections.start, &recipe.panel.sections.center,
-                  &recipe.panel.sections.end];
-    for (index, widgets) in source.iter().enumerate() {
-        if widgets.len() > 7 { return Err("RicePlate section has more than seven widgets".into()); }
-        for widget in widgets.iter() {
-            if !seen.insert(widget.as_str()) {
-                return Err("RicePlate recipe duplicates a widget".into());
-            }
-            match widget.as_str() {
-                "launcher" => sections[index].push(Widget::Launcher),
-                "tasks" => sections[index].push(Widget::Tasks),
-                "clock" => sections[index].push(Widget::Clock),
-                // Valid v1 widgets that still use the fully functional Waybar backend:
-                "network" | "audio" | "battery" | "tray" => {}
-                _ => return Err("Unsupported RicePlate widget or action".into()),
+    let mut labels = Vec::new();
+    match (recipe.schema_version, recipe.panel.sections, recipe.panel.layout) {
+        (1 | 2, Some(source), None) => {
+            let selected = [source.start, source.center, source.end];
+            for (index, widgets) in selected.into_iter().enumerate() {
+                if widgets.len() > 7 { return Err("RicePlate section has more than seven widgets".into()); }
+                for widget in widgets {
+                    if !seen.insert(widget.clone()) {
+                        return Err("RicePlate recipe duplicates a widget".into());
+                    }
+                    match widget.as_str() {
+                        "launcher" => sections[index].push(Widget::Launcher),
+                        "tasks" => sections[index].push(Widget::Tasks),
+                        "clock" => sections[index].push(Widget::Clock),
+                        "network" | "audio" | "battery" | "tray" => {},
+                        _ => return Err("Unsupported RicePlate widget or action".into()),
+                    }
+                }
             }
         }
+        (3, None, Some(layout)) => {
+            let source = [layout.start, layout.center, layout.end];
+            let mut counts = [0_usize, 0_usize];
+            for (index, nodes) in source.iter().enumerate() {
+                if nodes.len() > 8 { return Err("Too many layout roots".into()); }
+                for node in nodes {
+                    expand_layout(node, 1, &mut counts, &mut seen,
+                                  &mut sections[index], &mut labels)?;
+                }
+            }
+        }
+        _ => return Err("Legacy sections and v3 layouts are mutually exclusive".into()),
     }
     if !seen.contains("launcher") && !seen.contains("tasks") {
         return Err("RicePlate requires a launcher or task widget".into());
@@ -174,6 +264,7 @@ pub fn parse(raw: &str, expected_id: Option<&str>) -> Result<PanelStyle, Box<dyn
         top: recipe.panel.position == "top",
         widths,
         sections,
+        labels,
         background: color(&recipe.colors.background)?,
         foreground: color(&recipe.colors.foreground)?,
         active: color(&recipe.colors.active)?,
@@ -214,6 +305,8 @@ fn width_for(style: &PanelStyle, widget: Widget, tasks: usize) -> u32 {
         Widget::Launcher => style.widths[0],
         Widget::Clock => style.widths[2],
         Widget::Tasks => tasks as u32 * style.widths[1],
+        Widget::Gap(width) => width,
+        Widget::Label(index) => style.labels[index as usize].len() as u32 * 8 + 16,
     }
 }
 
@@ -290,6 +383,7 @@ pub fn hit(x: f64, screen_width: u32, tasks: usize,
                 }
             }
             Widget::Clock => None,
+            Widget::Gap(_) | Widget::Label(_) => None,
         };
     }
     None
@@ -398,5 +492,50 @@ mod tests {
         let invalid = with_metrics.replace("\"schema_version\": 1", "\"schema_version\": 2")
             .replace("\"task_width\": 196", "\"task_width\": 1");
         assert!(parse(&invalid, None).is_err());
+    }
+
+    const NESTED: &str = include_str!("../../../tests/fixtures/riceplate-nested-v3.json");
+
+    #[test]
+    fn v3_nested_layout_changes_actual_native_geometry_and_hit_areas() {
+        let style = parse(NESTED, Some("my-layout")).unwrap();
+        assert!(style.top);
+        assert_eq!(style.labels, vec!["Y2K"]);
+        let placed = layout(&style, 800, 2);
+        assert!(placed.iter().any(|node| node.widget == Widget::Label(0) && node.x == 112));
+        assert!(placed.iter().any(|node| node.widget == Widget::Gap(20) && node.x == 160));
+        let task = placed.iter().find(|node| node.widget == Widget::Tasks).unwrap();
+        assert_eq!(task.x, 188);
+        assert_eq!(hit(120.0, 800, 2, 0, &style), None);
+        assert_eq!(hit(189.0, 800, 2, 0, &style), Some(Hit::Task(0)));
+        assert_eq!(hit(705.0, 800, 2, 0, &style), None);
+    }
+
+    #[test]
+    fn v3_rejects_unknown_properties_executable_nodes_and_deep_groups() {
+        let original: serde_json::Value = serde_json::from_str(NESTED).unwrap();
+        let mut unsafe_label = original.clone();
+        unsafe_label["panel"]["layout"]["start"][0]["children"][1]["text"] =
+            serde_json::json!("<script>");
+        assert!(parse(&unsafe_label.to_string(), None).is_err());
+        let mut executable_gap = original.clone();
+        executable_gap["panel"]["layout"]["start"][0]["children"][2]["exec"] =
+            serde_json::json!("shell");
+        assert!(parse(&executable_gap.to_string(), None).is_err());
+        let mut unknown = original.clone();
+        unknown["panel"]["layout"]["start"][0]["children"][2]["type"] =
+            serde_json::json!("run");
+        assert!(parse(&unknown.to_string(), None).is_err());
+        let mut both = original.clone();
+        both["panel"]["sections"] = serde_json::json!({"start":[],"center":[],"end":[]});
+        assert!(parse(&both.to_string(), None).is_err());
+        let child = r#"{"type":"widget","id":"launcher"}"#;
+        let group = |inside: String| format!(r#"{{"type":"group","gap":0,"children":[{inside}]}}"#);
+        let too_deep = group(group(group(child.to_string())));
+        let mut deep = original;
+        deep["panel"]["layout"]["start"] = serde_json::json!([
+            serde_json::from_str::<serde_json::Value>(&too_deep).unwrap()
+        ]);
+        assert!(parse(&deep.to_string(), None).is_err());
     }
 }

@@ -83,8 +83,8 @@ def parser() -> argparse.ArgumentParser:
                     help="Session panel (native RicePlate is experimental and falls back to Waybar)")
     de.add_argument("--base", choices=("classic", "chrome"),
                     help="Bundled base recipe for de recipe-init")
-    de.add_argument("--schema-version", type=int, choices=(1, 2), default=1,
-                    help="Panel recipe schema for de recipe-init (default: 1; use 2 for sizing)")
+    de.add_argument("--schema-version", type=int, choices=(1, 2, 3), default=1,
+                    help="Panel recipe schema for de recipe-init (1 classic, 2 widths, 3 nested layout)")
     de.add_argument("--id", help="Lowercase recipe identifier for de recipe-init")
     de.add_argument("--name", help="Human-readable recipe name for de recipe-init")
     de.add_argument("--output", type=Path, help="Absolute .json destination for de recipe-init or recipe-export")

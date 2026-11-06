@@ -20,12 +20,18 @@ def _manifest(recipe: recipes.PanelRecipe) -> dict[str, Any]:
     panel: dict[str, Any] = {
         "position": recipe.position,
         "height": recipe.height,
-        "sections": dict(zip(recipes.SECTIONS, (list(part) for part in recipe.sections))),
     }
+    if recipe.layout is None:
+        panel["sections"] = dict(zip(recipes.SECTIONS,
+                                     (list(part) for part in recipe.sections)))
+    else:
+        panel["layout"] = dict(zip(recipes.SECTIONS,
+                                   ([recipes.layout_node_json(node) for node in part]
+                                    for part in recipe.layout)))
     if recipe.metrics is not None:
         panel["metrics"] = dict(zip(recipes.METRIC_FIELDS, recipe.metrics))
     return {
-        "schema_version": 2 if recipe.metrics is not None else 1,
+        "schema_version": recipe.schema_version,
         "id": recipe.recipe_id,
         "name": recipe.name,
         "panel": panel,
@@ -50,7 +56,8 @@ def _fields(manifest: dict[str, Any]) -> dict[str, Any]:
         "/panel/height": panel["height"],
     }
     for section in recipes.SECTIONS:
-        result[f"/panel/sections/{section}"] = panel["sections"][section]
+        result[f"/panel/sections/{section}"] = panel.get("sections", {}).get(section)
+        result[f"/panel/layout/{section}"] = panel.get("layout", {}).get(section)
     for field in recipes.METRIC_FIELDS:
         # An absent v1 metric differs from a v2 metric at its default.
         result[f"/panel/metrics/{field}"] = panel.get("metrics", {}).get(field)
@@ -60,10 +67,11 @@ def _fields(manifest: dict[str, Any]) -> dict[str, Any]:
 
 
 def _snapshot(token: str) -> tuple[dict[str, Any], dict[str, Any]]:
-    manifest = _manifest(recipes.load(token))
+    parsed = recipes.load(token)
+    manifest = _manifest(parsed)
     component_support = {item["id"]: item for item in catalog.describe()["components"]}
     ordered = [widget for section in recipes.SECTIONS
-               for widget in manifest["panel"]["sections"][section]]
+               for widget in parsed.sections[recipes.SECTIONS.index(section)]]
     unavailable = [widget for widget in ordered
                    if component_support[widget]["native"] == "unavailable"]
     summary = {
