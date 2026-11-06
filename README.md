@@ -24,7 +24,7 @@ A collection of deeply customizable, OS-inspired desktop experiences — growing
 > **Status:** RiceBowl **0.9.x remains an XFCE/X11 development preview**. An optional, independently selectable [labwc/Wayland session preview](WAYLAND_SESSION.md) is now available for testing; it still uses a temporary Waybar shell. RicePlate and the complete standalone DE are not finished. Real-hardware acceptance is required.
 
 The optional Wayland preview also supports two early data-driven panel layouts (`ricebowl de recipes`); the native RicePlate shell remains in development.
-An isolated [native Rust layer-shell experiment](WAYLAND_SESSION.md#native-riceplate-layer-shell-experiment-developers-only) now includes live task controls, a local-time clock and two bundled panel recipes; it does not yet replace the functional Waybar panel.
+An isolated [native Rust layer-shell experiment](WAYLAND_SESSION.md#native-riceplate-layer-shell-experiment-developers-only) now includes live task controls, a local-time clock and safely validated custom panel layouts; it does not yet replace the functional Waybar panel.
 
 ## Seven desktop experiences
 

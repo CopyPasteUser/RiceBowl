@@ -5,7 +5,8 @@ use std::{error::Error, process::Command, time::Duration};
 
 use chrono::{Local, Timelike};
 use font8x8::{UnicodeFonts, BASIC_FONTS};
-use serde::Deserialize;
+mod recipe;
+use recipe::{Hit, PanelStyle, Widget};
 use smithay_client_toolkit::{
     compositor::{CompositorHandler, CompositorState, FrameCallbackData},
     delegate_registry,
@@ -39,108 +40,7 @@ use wayland_protocols_wlr::foreign_toplevel::v1::client::{
 
 const MAX_WIDTH: u32 = 16384;
 const MAX_HEIGHT: u32 = 256;
-const LAUNCHER_WIDTH: u32 = 104;
-const TASK_WIDTH: u32 = 164;
-const CLOCK_AREA_WIDTH: u32 = 96;
-const MAX_TRACKED_TASKS: usize = 128;
 const BTN_LEFT: u32 = 0x110;
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct Recipe {
-    schema_version: u32,
-    id: String,
-    name: String,
-    panel: Panel,
-    colors: Colors,
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct Panel {
-    position: String,
-    height: u32,
-    sections: Sections,
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct Sections {
-    start: Vec<String>,
-    center: Vec<String>,
-    end: Vec<String>,
-}
-
-#[derive(Deserialize)]
-#[serde(deny_unknown_fields)]
-struct Colors {
-    background: String,
-    foreground: String,
-    active: String,
-}
-
-struct PanelStyle {
-    height: u32,
-    top: bool,
-    tasks_centered: bool,
-    launcher: bool,
-    clock: bool,
-    background: u32,
-    foreground: u32,
-    active: u32,
-}
-
-fn color(raw: &str) -> Result<u32, Box<dyn Error>> {
-    if raw.len() != 7 || !raw.starts_with('#') || !raw[1..].bytes().all(|b| b.is_ascii_hexdigit()) {
-        return Err("RicePlate recipe color must be a six-digit RGB hex value".into());
-    }
-    Ok(0xff00_0000 | u32::from_str_radix(&raw[1..], 16)?)
-}
-
-fn parse_recipe(raw: &str, expected_id: &str) -> Result<PanelStyle, Box<dyn Error>> {
-    let recipe: Recipe = serde_json::from_str(raw)?;
-    if recipe.schema_version != 1 || recipe.id != expected_id || recipe.name.len() > 60
-        || recipe.name.is_empty() || recipe.panel.height < 28 || recipe.panel.height > 64
-        || !["top", "bottom"].contains(&recipe.panel.position.as_str()) {
-        return Err("RicePlate recipe has invalid schema metadata or dimensions".into());
-    }
-    let sections = [&recipe.panel.sections.start, &recipe.panel.sections.center,
-                    &recipe.panel.sections.end];
-    let mut seen = std::collections::HashSet::new();
-    for widgets in sections.iter() {
-        if widgets.len() > 7 { return Err("RicePlate recipe section is too large".into()); }
-        for widget in widgets.iter() {
-            if !["launcher", "tasks", "clock", "network", "audio", "battery", "tray"]
-                .contains(&widget.as_str()) || !seen.insert(widget) {
-                return Err("RicePlate recipe contains unsupported or duplicate widget".into());
-            }
-        }
-    }
-    if !seen.contains(&"launcher".to_string()) && !seen.contains(&"tasks".to_string()) {
-        return Err("RicePlate recipe needs a launcher or tasks widget".into());
-    }
-    // In this native preview only tasks and launcher are implemented. Other
-    // validated recipe widgets remain Waybar-only until functional parity.
-    Ok(PanelStyle {
-        height: recipe.panel.height,
-        top: recipe.panel.position == "top",
-        tasks_centered: recipe.panel.sections.center.iter().any(|w| w == "tasks"),
-        launcher: sections.iter().any(|widgets| widgets.iter().any(|w| w == "launcher")),
-        clock: sections.iter().any(|widgets| widgets.iter().any(|w| w == "clock")),
-        background: color(&recipe.colors.background)?,
-        foreground: color(&recipe.colors.foreground)?,
-        active: color(&recipe.colors.active)?,
-    })
-}
-
-fn load_builtin_recipe(name: &str) -> Result<PanelStyle, Box<dyn Error>> {
-    let raw = match name {
-        "classic" => include_str!("../../../macrice/de/resources/recipes/classic.json"),
-        "chrome" => include_str!("../../../macrice/de/resources/recipes/chrome.json"),
-        _ => return Err("Unknown RicePlate recipe; choose classic or chrome".into()),
-    };
-    parse_recipe(raw, name)
-}
 
 fn clock_now() -> String {
     Local::now().format("%H:%M").to_string()
@@ -161,15 +61,15 @@ fn main() -> Result<(), Box<dyn Error>> {
         return Ok(());
     }
     if matches!(arguments.as_slice(), [arg] if arg == "--help") {
-        println!("Usage: riceplate-native [--recipe classic|chrome]");
+        println!("Usage: riceplate-native [--recipe classic|chrome|/absolute/private.json]");
         return Ok(());
     }
     let recipe_name = match arguments.as_slice() {
         [] => "classic",
         [flag, recipe] if flag == "--recipe" => recipe.as_str(),
-        _ => return Err("Usage: riceplate-native [--recipe classic|chrome]".into()),
+        _ => return Err("Usage: riceplate-native [--recipe classic|chrome|/absolute/private.json]".into()),
     };
-    let recipe = load_builtin_recipe(recipe_name)?;
+    let recipe = recipe::load(recipe_name)?;
     let conn = Connection::connect_to_env()?;
     let (globals, event_queue) = registry_queue_init(&conn)?;
     let qh = event_queue.handle();
@@ -287,31 +187,33 @@ impl RicePlate {
         for pixel in canvas.chunks_exact_mut(4) {
             pixel.copy_from_slice(&self.recipe.background.to_le_bytes());
         }
-        if self.recipe.launcher {
-            fill_rect(canvas, width, height, 0, 0, LAUNCHER_WIDTH, height, self.recipe.active);
-            draw_text(canvas, width, height, 27, height / 2 - 4,
-                      "Apps", self.recipe.foreground);
-        }
-        let visible = visible_task_count(width, self.tasks.len(), self.recipe.clock);
-        let start = task_strip_start(width, visible, self.recipe.tasks_centered);
-        if visible == 0 {
-            draw_text(canvas, width, height, LAUNCHER_WIDTH + 16, height / 2 - 4,
-                      "RicePlate preview", self.recipe.foreground);
-        }
-        for (index, task) in self.tasks.iter().take(visible).enumerate() {
-            if !task.ready { continue }
-            let x = start + (index as u32) * TASK_WIDTH;
-            if task.active {
-                fill_rect(canvas, width, height, x, 0, TASK_WIDTH - 2, height,
-                          self.recipe.active);
+        for placed in recipe::layout(&self.recipe, width, self.tasks.len()) {
+            match placed.widget {
+                Widget::Launcher => {
+                    fill_rect(canvas, width, height, placed.x, 0, placed.width, height,
+                              self.recipe.active);
+                    draw_text(canvas, width, height, placed.x + 27, height / 2 - 4,
+                              "Apps", self.recipe.foreground);
+                }
+                Widget::Tasks => {
+                    let visible = (placed.width / recipe::TASK_WIDTH) as usize;
+                    for (index, task) in self.tasks.iter().take(visible).enumerate() {
+                        if !task.ready { continue; }
+                        let x = placed.x + (index as u32) * recipe::TASK_WIDTH;
+                        if task.active {
+                            fill_rect(canvas, width, height, x, 0,
+                                      recipe::TASK_WIDTH - 2, height, self.recipe.active);
+                        }
+                        let label = task_label(&task.title, &task.app_id);
+                        draw_text(canvas, width, height, x + 10, height / 2 - 4,
+                                  &label, self.recipe.foreground);
+                    }
+                }
+                Widget::Clock => {
+                    draw_text(canvas, width, height, placed.x + 26,
+                              height / 2 - 4, &self.clock, self.recipe.foreground);
+                }
             }
-            let label = task_label(&task.title, &task.app_id);
-            draw_text(canvas, width, height, x + 10, height / 2 - 4,
-                      &label, self.recipe.foreground);
-        }
-        if self.recipe.clock && width >= CLOCK_AREA_WIDTH {
-            draw_text(canvas, width, height, width - CLOCK_AREA_WIDTH + 26,
-                      height / 2 - 4, &self.clock, self.recipe.foreground);
         }
         surface.damage_buffer(0, 0, width as i32, height as i32);
         if let Err(error) = buffer.attach_to(surface) {
@@ -326,33 +228,10 @@ impl RicePlate {
     }
 }
 
-fn visible_task_count(width: u32, tasks: usize, clock: bool) -> usize {
-    let end_reservation = if clock { CLOCK_AREA_WIDTH + 12 } else { 24 };
-    (width.saturating_sub(LAUNCHER_WIDTH + end_reservation) / TASK_WIDTH)
-        .min(MAX_TRACKED_TASKS as u32).min(tasks as u32) as usize
-}
-
-fn task_strip_start(width: u32, visible: usize, centered: bool) -> u32 {
-    if centered {
-        ((width.saturating_sub(visible as u32 * TASK_WIDTH)) / 2)
-            .max(LAUNCHER_WIDTH)
-    } else {
-        LAUNCHER_WIDTH
-    }
-}
-
 fn task_label(title: &str, app_id: &str) -> String {
     let label = if title.trim().is_empty() { app_id } else { title };
     let label = if label.trim().is_empty() { "Window" } else { label };
     label.chars().take(18).collect()
-}
-
-fn task_at(x: f64, width: u32, tasks: usize, centered: bool, clock: bool) -> Option<usize> {
-    let start = f64::from(task_strip_start(width,
-        visible_task_count(width, tasks, clock), centered));
-    if !x.is_finite() || x < start { return None; }
-    let index = ((x - start) / f64::from(TASK_WIDTH)) as usize;
-    (index < visible_task_count(width, tasks, clock)).then_some(index)
 }
 
 fn fill_rect(canvas: &mut [u8], width: u32, height: u32,
@@ -472,22 +351,23 @@ impl PointerHandler for RicePlate {
             if let PointerEventKind::Press { button, .. } = event.kind {
                 if button == BTN_LEFT && event.position.1 >= 0.0
                     && event.position.1 < f64::from(self.height) {
-                    if self.recipe.launcher && event.position.0 >= 0.0
-                        && event.position.0 < f64::from(LAUNCHER_WIDTH) {
-                        if let Err(error) = Command::new("fuzzel").spawn() {
-                            eprintln!("RicePlate: cannot open application launcher: {error}");
-                        }
-                    } else if let Some(index) = task_at(
-                        event.position.0, self.width, self.tasks.len(),
-                        self.recipe.tasks_centered, self.recipe.clock,
-                    ) {
-                        if self.tasks[index].ready {
-                            if self.tasks[index].active {
-                                self.tasks[index].handle.set_minimized();
-                            } else if let Some(seat) = self.primary_seat.as_ref() {
-                                self.tasks[index].handle.activate(seat);
+                    match recipe::hit(event.position.0, self.width,
+                                      self.tasks.len(), &self.recipe) {
+                        Some(Hit::Launcher) => {
+                            if let Err(error) = Command::new("fuzzel").spawn() {
+                                eprintln!("RicePlate: cannot open application launcher: {error}");
                             }
                         }
+                        Some(Hit::Task(index)) => {
+                            if self.tasks[index].ready {
+                                if self.tasks[index].active {
+                                    self.tasks[index].handle.set_minimized();
+                                } else if let Some(seat) = self.primary_seat.as_ref() {
+                                    self.tasks[index].handle.activate(seat);
+                                }
+                            }
+                        }
+                        None => {}
                     }
                 }
             }
@@ -503,7 +383,7 @@ impl Dispatch<ZwlrForeignToplevelManagerV1, ()> for RicePlate {
     ) {
         match event {
             zwlr_foreign_toplevel_manager_v1::Event::Toplevel { toplevel } => {
-                if state.tasks.len() >= MAX_TRACKED_TASKS {
+                if state.tasks.len() >= recipe::MAX_TRACKED_TASKS {
                     toplevel.destroy();
                 } else {
                     state.tasks.push(Task {
@@ -586,34 +466,10 @@ mod tests {
     }
 
     #[test]
-    fn task_hit_testing_never_targets_hidden_windows() {
-        assert_eq!(visible_task_count(500, 50, false), 2);
-        assert_eq!(visible_task_count(500, 50, true), 1);
-        assert_eq!(task_at(104.0, 500, 50, false, false), Some(0));
-        assert_eq!(task_at(270.0, 500, 50, false, false), Some(1));
-        assert_eq!(task_at(440.0, 500, 50, false, false), None);
-        assert_eq!(task_at(f64::NAN, 500, 50, false, false), None);
-        assert_eq!(task_at(245.0, 800, 2, true, true), Some(0));
-        assert_eq!(task_at(700.0, 800, 2, true, true), None);
-    }
-
-    #[test]
     fn labels_are_bounded_and_have_fallbacks() {
         assert_eq!(task_label("", "org.example.Terminal"), "org.example.Termin");
         assert_eq!(task_label("", ""), "Window");
         assert_eq!(task_label("Readme", "org.example"), "Readme");
-    }
-
-    #[test]
-    fn bundled_recipes_have_distinct_native_geometry_and_colors() {
-        let classic = load_builtin_recipe("classic").unwrap();
-        let chrome = load_builtin_recipe("chrome").unwrap();
-        assert_eq!(classic.height, 36);
-        assert_eq!(chrome.height, 44);
-        assert!(!classic.tasks_centered);
-        assert!(chrome.tasks_centered);
-        assert_ne!(classic.background, chrome.background);
-        assert!(classic.clock && chrome.clock);
     }
 
     #[test]
@@ -624,12 +480,4 @@ mod tests {
         assert!(!clock_now().is_empty());
     }
 
-    #[test]
-    fn recipe_validation_rejects_unknown_fields_and_actions() {
-        let valid = include_str!("../../../macrice/de/resources/recipes/classic.json");
-        assert!(parse_recipe(&valid.replace("\"launcher\"", "\"run-command\""), "classic").is_err());
-        assert!(parse_recipe(&valid.replace("\"schema_version\": 1",
-                        "\"schema_version\": 1, \"exec\": \"evil\""), "classic").is_err());
-        assert!(load_builtin_recipe("../chrome").is_err());
-    }
 }

@@ -16,6 +16,23 @@ fi
 
 runtime=$(mktemp -d)
 chmod 0700 "$runtime"
+cp "$source_root/macrice/de/resources/recipes/classic.json" "$runtime/custom.json"
+chmod 0600 "$runtime/custom.json"
+ln -s "$runtime/custom.json" "$runtime/symlink.json"
+if "$native" --recipe "$runtime/symlink.json" >"$runtime/rejected.log" 2>&1; then
+    echo "Native RicePlate accepted a symlinked recipe" >&2
+    exit 1
+fi
+chmod 0644 "$runtime/custom.json"
+if "$native" --recipe "$runtime/custom.json" >"$runtime/rejected.log" 2>&1; then
+    echo "Native RicePlate accepted an overly public recipe" >&2
+    exit 1
+fi
+if ! grep -q "owner-private" "$runtime/rejected.log"; then
+    echo "Native RicePlate did not reject unsafe permissions at validation" >&2
+    exit 1
+fi
+chmod 0600 "$runtime/custom.json"
 cleanup_runtime() {
     if ! rm -r -- "$runtime" 2>/dev/null; then
         echo "CI note: temporary runtime mount remained for runner cleanup" >&2
@@ -61,19 +78,23 @@ dbus-run-session -- sh -eu -c '
         sed -n "1,70p" "$runtime/labwc.log" >&2
         exit 1
     fi
-    for recipe in classic chrome; do
-        WAYLAND_DISPLAY=wayland-0 "$native" --recipe "$recipe" >"$runtime/plate-$recipe.log" 2>&1 &
+    for recipe in classic chrome "$runtime/custom.json"; do
+        case "$recipe" in
+            /*) label=custom ;;
+            *) label=$recipe ;;
+        esac
+        WAYLAND_DISPLAY=wayland-0 "$native" --recipe "$recipe" >"$runtime/plate-$label.log" 2>&1 &
         plate=$!
         sleep 1
         state=$(ps -o stat= -p "$plate" 2>/dev/null || :)
         case "$state" in
             ""|*Z*)
-                echo "Native RicePlate ($recipe) exited unexpectedly" >&2
-                sed -n "1,80p" "$runtime/plate-$recipe.log" >&2
+                echo "Native RicePlate ($label) exited unexpectedly" >&2
+                sed -n "1,80p" "$runtime/plate-$label.log" >&2
                 sed -n "1,80p" "$runtime/labwc.log" >&2
                 exit 1 ;;
         esac
-        echo "Native RicePlate $recipe layer surface remained alive"
+        echo "Native RicePlate $label layer surface remained alive"
         kill "$plate"
         wait "$plate" 2>/dev/null || :
         plate=

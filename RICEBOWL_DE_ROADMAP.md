@@ -115,6 +115,10 @@ affecting XFCE, including a failed-session recovery. **Not yet signed off.**
 - [x] Add a real local-time clock with minute-boundary event-loop wakeups,
   non-clickable until a calendar exists, plus activate/minimize task clicks.
   A complete taskbar (grouping, tray, keyboard controls) remains outstanding.
+- [x] Support owner-private, bounded custom schema-v1 JSON recipes in native
+  RicePlate, and position implemented widgets from ordered start/center/end
+  sections with matching hit testing and small-display overflow behavior.
+  Full arbitrary mockup conversion and missing widget backends remain open.
 - [ ] Build a Wayland-native panel through `wlr-layer-shell`.
 - [ ] Populate tasks/windows through a supported foreign-toplevel protocol.
 - [ ] Implement launchers, task groups, tray, calendar, menus and keyboard
