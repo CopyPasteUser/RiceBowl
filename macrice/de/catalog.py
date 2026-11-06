@@ -7,7 +7,7 @@ It grants no ability to execute actions or change a running desktop.
 from __future__ import annotations
 
 from .creator_contract import (describe as draft_edit_contract, describe_capture,
-                               describe_creator_api, describe_render,
+                               describe_creator_api, describe_render, describe_staging,
                                describe_ricepack, describe_visual_qa)
 from .recipes import (ICON_ACTIONS, ICON_HEIGHT, ICON_WIDTH, MAX_DESKTOP_ICONS,
                       MENU_ACTIONS, WALLPAPERS, MAX_LAYOUT_CHILDREN, MAX_LAYOUT_DEPTH, MAX_LAYOUT_LABELS,
@@ -94,6 +94,7 @@ def describe() -> dict[str, object]:
                       "capture": describe_capture(),
                       "render": describe_render(),
                       "ricepack": describe_ricepack(),
+                      "staging": describe_staging(),
                       "creator_api": {"api_version": describe_creator_api()["api_version"],
                                       "discovery": "ricebowl de creator-api --json"}},
         "components": [

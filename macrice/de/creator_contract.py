@@ -125,6 +125,35 @@ def describe_ricepack() -> dict[str, object]:
     }
 
 
+def describe_staging() -> dict[str, object]:
+    """Explicit, compare-and-swap next-login choice; current desktop untouched."""
+    return {
+        "stage_version": 1,
+        "commands": [
+            {"command": "de creator-status", "required_options": [],
+             "optional_options": ["--json"], "read_only": True},
+            {"command": "de creator-stage",
+             "required_options": ["--recipe", "--expect-sha256"],
+             "optional_options": ["--expect-active", "--json"]},
+            {"command": "de creator-rollback", "required_options": [],
+             "optional_options": ["--expect-active", "--json"]},
+        ],
+        "recipe_input": "existing installed/bundled ID; not an arbitrary path",
+        "hash": "64 lowercase hex characters of de review summary.semantic_sha256",
+        "expected_active": "optional existing next-login ID used as concurrency guard",
+        "state": "owner-private selected recipe and one-level previous selection",
+        "runtime": "takes effect only on next opt-in Wayland login",
+        "mutates_current_session": False,
+        "mutates_xfce": False,
+        "user_invocation_required": True,
+        "reviewed_hash_saved_in_selection": True,
+        "recipe_file_immutable": False,
+        "changed_recipe_behavior": "reject pinned mismatch and fall back to classic at next login",
+        "success_exit_code": 0,
+        "error_exit_code": 2,
+    }
+
+
 def describe_creator_api() -> dict[str, object]:
     """Stable, tool-neutral inventory, including explicit side-effect limits."""
     return {
@@ -136,6 +165,7 @@ def describe_creator_api() -> dict[str, object]:
         "invalid_options_exit_code": 1,
         "operation_error_exit_code": 2,
         "active_session_mutation": "none of the Creator commands changes the active desktop",
+        "next_login_selection_mutation": "creator-stage/rollback only; requires explicit invocation",
         "commands": [
             {"command": "catalog", "effect": "read-only component discovery",
              "cli": "de catalog --json", "contract_version": 5},
@@ -158,8 +188,16 @@ def describe_creator_api() -> dict[str, object]:
              "cli": "de pack-inspect --package FILE.ricepack --json", "contract_version": 1},
             {"command": "pack-import", "effect": "install private recipe without selecting it",
              "cli": "de pack-import --package FILE.ricepack --json", "contract_version": 1},
+            {"command": "creator-status", "effect": "read next Wayland login choice and fingerprint",
+             "cli": "de creator-status --json", "contract_version": 1},
+            {"command": "creator-stage", "effect": "review-gated next Wayland login choice",
+             "cli": "de creator-stage --recipe ID --expect-sha256 HASH --json",
+             "contract_version": 1},
+            {"command": "creator-rollback", "effect": "restore preceding next-login choice",
+             "cli": "de creator-rollback --json", "contract_version": 1},
         ],
         "ricepack": describe_ricepack(),
+        "staging": describe_staging(),
         "limitations": [
             "Not a screenshot-to-rice converter or editable GUI",
             "Only schema-v1..v5 panel/shell preview and bundled wallpapers",

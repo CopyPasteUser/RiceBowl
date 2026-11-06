@@ -416,6 +416,39 @@ are deterministic for the same recipe and metadata. Invalid pack input returns
 JSON with `ok: false`, a path-free error code and exit status `2` when
 `--json` is supplied; invalid flags exit `1`. All commands work offline.
 
+#### Reviewed next-login staging (no live switch)
+
+After importing and previewing a recipe, Creator can require a semantic
+fingerprint match before staging it for the **next** opt-in Wayland login:
+
+```bash
+ricebowl de creator-status --json
+ricebowl de review --recipe my-rice --json
+# Copy summary.semantic_sha256 from the review JSON into the command below:
+ricebowl de creator-stage --recipe my-rice \
+  --expect-sha256 64_LOWERCASE_HEX_CHARACTERS --expect-active classic --json
+ricebowl de creator-status --json
+# To undo that future-login preference (without starting a session):
+ricebowl de creator-rollback --expect-active my-rice --json
+```
+
+`--expect-active` is an optional concurrency guard: if the next-login
+selection has changed since review, no new preference is committed. The
+required `--expect-sha256` is checked against the actual validated recipe
+**under the selection lock**. Creator saves that fingerprint in a compatible
+selection-state v2 record; at Wayland login, a changed recipe fails the
+fingerprint check and RiceBowl falls back to `classic`. Old v1 selections
+continue to work, and the previous next-login selection can be restored once.
+The recipe file itself is not made immutable, and this is *not* live apply,
+full multi-component transaction/rollback or protection against a malicious
+process with the same user's permissions. These commands never switch the
+current Wayland or XFCE desktop, nor launch a Creator daemon.
+
+`de creator-status`, `de creator-stage` and `de creator-rollback` support
+stable JSON responses (`stage_version: 1`), exit `0` for success, `2` for
+failed safe operations, and `1` for invalid command flags. Error responses
+do not expose private file paths or recipe contents.
+
 #### Existing recipe creation, import/export and selection
 
 Custom recipes use the strict JSON schema illustrated in
