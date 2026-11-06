@@ -51,13 +51,17 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           import struct
-          screenshot = Path('dist/riceplate-native-preview/shell-v4.png')
-          data = screenshot.read_bytes()
-          assert data[:8] == bytes.fromhex('89504e470d0a1a0a'), 'Not a PNG framebuffer capture'
-          width, height = struct.unpack('>II', data[16:24])
-          assert width >= 640 and height >= 480, (width, height)
-          assert len(data) >= 512, 'Missing screenshot pixels'
-          print(f'Captured real native labwc panel: {width}x{height}, {len(data)} bytes')
+          captures = {}
+          for label in ('shell-v4', 'desktop-v5'):
+              screenshot = Path(f'dist/riceplate-native-preview/{label}.png')
+              data = screenshot.read_bytes()
+              assert data[:8] == bytes.fromhex('89504e470d0a1a0a'), f'{label}: not a PNG capture'
+              width, height = struct.unpack('>II', data[16:24])
+              assert width >= 640 and height >= 480, (label, width, height)
+              assert len(data) >= 512, f'{label}: missing screenshot pixels'
+              print(f'Captured real native labwc {label}: {width}x{height}, {len(data)} bytes')
+              captures[label] = data
+          assert captures['shell-v4'] != captures['desktop-v5'], 'Icons missing from v5 framebuffer'
           PY
       - name: Archive smoke-tested native RicePlate preview binary
         uses: actions/upload-artifact@v4

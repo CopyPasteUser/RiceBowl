@@ -187,10 +187,10 @@ class ShellV4Tests(unittest.TestCase):
 
     def test_catalog_advertises_real_renderer_limits(self):
         data = catalog.describe()
-        self.assertEqual(data["catalog_version"], 3)
-        self.assertEqual(data["recipe"]["schema_versions"], [1, 2, 3, 4])
+        self.assertEqual(data["catalog_version"], 4)
+        self.assertEqual(data["recipe"]["schema_versions"], [1, 2, 3, 4, 5])
         extensions = data["recipe"]["shell_extensions"]
-        self.assertEqual(extensions["desktop"]["icons_and_widgets"], "not_implemented")
+        self.assertEqual(extensions["desktop"]["widgets"], "not_implemented")
         self.assertEqual(extensions["responsive"]["native"], "live-panel-layout-switch")
 
 

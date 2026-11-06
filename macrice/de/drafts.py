@@ -53,6 +53,12 @@ def _allowed_value(path: str, value: Any) -> bool:
         return recipes._safe_label(value, 32)
     if path == "/desktop/wallpaper":
         return type(value) is str and value in recipes.WALLPAPERS
+    if path == "/desktop/icons":
+        try:
+            recipes._parse_desktop_icons(value)
+        except recipes.RecipeError:
+            return False
+        return True
     if path == "/responsive/compact_max_width":
         return type(value) is int and 480 <= value <= 1440
     if path in ("/tokens/label_padding", "/tokens/task_radius"):
@@ -125,18 +131,21 @@ def create_edit(*, recipe_token: str, edit_source: Path, destination: Path) -> d
     before = review._manifest(original)
     modified = json.loads(json.dumps(before))
     for path, value in operations:
-        if path.startswith("/panel/layout/") and modified["schema_version"] not in (3, 4):
-            raise DraftError("Nested layout requires a schema-v3/v4 source recipe",
+        if path.startswith("/panel/layout/") and modified["schema_version"] not in (3, 4, 5):
+            raise DraftError("Nested layout requires a schema-v3/v4/v5 source recipe",
                              code="unsupported_property_for_schema", path=path)
-        if path.startswith("/panel/sections/") and modified["schema_version"] in (3, 4):
-            raise DraftError("Schema-v3/v4 uses panel layout, not legacy sections",
+        if path.startswith("/panel/sections/") and modified["schema_version"] in (3, 4, 5):
+            raise DraftError("Schema-v3+ uses panel layout, not legacy sections",
                              code="unsupported_property_for_schema", path=path)
-        if path.startswith("/panel/metrics/") and modified["schema_version"] not in (2, 3, 4):
-            raise DraftError("Panel metrics require a schema-v2/v3/v4 source recipe",
+        if path.startswith("/panel/metrics/") and modified["schema_version"] not in (2, 3, 4, 5):
+            raise DraftError("Panel metrics require a schema-v2+ source recipe",
                              code="unsupported_property_for_schema", path=path)
         if path.startswith(("/menu/", "/desktop/", "/tokens/", "/responsive/")) \
-                and modified["schema_version"] != 4:
-            raise DraftError("Shell components require a schema-v4 source recipe",
+                and modified["schema_version"] not in (4, 5):
+            raise DraftError("Shell components require a schema-v4/v5 source recipe",
+                             code="unsupported_property_for_schema", path=path)
+        if path == "/desktop/icons" and modified["schema_version"] != 5:
+            raise DraftError("Desktop icons require a schema-v5 source recipe",
                              code="unsupported_property_for_schema", path=path)
         parts = path.lstrip("/").split("/")
         current = modified

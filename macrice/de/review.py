@@ -37,13 +37,18 @@ def _manifest(recipe: recipes.PanelRecipe) -> dict[str, Any]:
         "panel": panel,
         "colors": dict(zip(recipes.COLORS, recipe.colors)),
     }
-    if recipe.schema_version == 4:
+    if recipe.schema_version in (4, 5):
         assert recipe.menu is not None and recipe.tokens is not None
         assert recipe.compact is not None and recipe.wallpaper is not None
         result["menu"] = {"title": recipe.menu[0], "groups": [
             {"title": group.title, "actions": list(group.actions)}
             for group in recipe.menu[1]]}
         result["desktop"] = {"wallpaper": recipe.wallpaper}
+        if recipe.schema_version == 5:
+            assert recipe.desktop_icons is not None
+            result["desktop"]["icons"] = [
+                {"label": icon.label, "action": icon.action, "x": icon.x, "y": icon.y}
+                for icon in recipe.desktop_icons]
         result["tokens"] = dict(zip(("label_padding", "task_radius"), recipe.tokens))
         result["responsive"] = {
             "compact_max_width": recipe.compact[0],
@@ -81,6 +86,7 @@ def _fields(manifest: dict[str, Any]) -> dict[str, Any]:
     result["/menu/title"] = manifest.get("menu", {}).get("title")
     result["/menu/groups"] = manifest.get("menu", {}).get("groups")
     result["/desktop/wallpaper"] = manifest.get("desktop", {}).get("wallpaper")
+    result["/desktop/icons"] = manifest.get("desktop", {}).get("icons")
     for token in ("label_padding", "task_radius"):
         result[f"/tokens/{token}"] = manifest.get("tokens", {}).get(token)
     result["/responsive/compact_max_width"] = manifest.get("responsive", {}).get(
@@ -125,7 +131,7 @@ def review(recipe_token: str, compare_token: str | None = None) -> dict[str, Any
     target, target_summary = _snapshot(recipe_token)
     result: dict[str, Any] = {
         "review_version": REVIEW_VERSION,
-        "scope": "wayland-shell-preview" if target["schema_version"] == 4
+        "scope": "wayland-shell-preview" if target["schema_version"] in (4, 5)
                  else "wayland-panel-preview",
         "ok": True,
         "applied": False,

@@ -17,6 +17,7 @@ EDITABLE_PATHS = frozenset((
     *(f"/panel/sections/{name}" for name in recipes.SECTIONS),
     *(f"/panel/layout/{name}" for name in recipes.SECTIONS),
     "/menu/title", "/menu/groups", "/desktop/wallpaper",
+    "/desktop/icons",
     "/tokens/label_padding", "/tokens/task_radius",
     "/responsive/compact_max_width",
     *(f"/responsive/compact_layout/{name}" for name in recipes.SECTIONS),

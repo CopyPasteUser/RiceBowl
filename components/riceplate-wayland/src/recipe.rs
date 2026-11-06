@@ -21,6 +21,17 @@ pub const MAX_TRACKED_TASKS: usize = 128;
 const MAX_LAYOUT_NODES: usize = 24;
 const MAX_LAYOUT_LABELS: usize = 8;
 const MAX_LAYOUT_DEPTH: usize = 3;
+pub const ICON_WIDTH: u32 = 104;
+pub const ICON_HEIGHT: u32 = 88;
+const MAX_DESKTOP_ICONS: usize = 8;
+
+#[derive(Debug, Clone)]
+pub struct DesktopIcon {
+    pub label: String,
+    pub action: String,
+    pub x: u32,
+    pub y: u32,
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Widget {
@@ -69,6 +80,7 @@ pub struct PanelStyle {
     pub background: u32,
     pub foreground: u32,
     pub active: u32,
+    pub desktop_icons: Vec<DesktopIcon>,
 }
 
 #[derive(Deserialize)]
@@ -99,7 +111,15 @@ struct MenuGroup { title: String, actions: Vec<String> }
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Desktop { wallpaper: String }
+struct Desktop {
+    wallpaper: String,
+    #[serde(default, deserialize_with = "deserialize_present")]
+    icons: Option<Vec<DesktopIconInput>>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct DesktopIconInput { label: String, action: String, x: u32, y: u32 }
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -203,6 +223,28 @@ fn validate_menu(menu: &Menu) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn validate_icons(icons: Vec<DesktopIconInput>) -> Result<Vec<DesktopIcon>, Box<dyn Error>> {
+    if !(1..=MAX_DESKTOP_ICONS).contains(&icons.len()) {
+        return Err("Desktop must contain 1-8 icons".into());
+    }
+    let mut result: Vec<DesktopIcon> = Vec::new();
+    for icon in icons {
+        if !safe_label(&icon.label, 12)
+            || !["applications", "terminal", "lock"].contains(&icon.action.as_str())
+            || icon.x > 4096 || !(72..=4096).contains(&icon.y)
+            || result.iter().any(|existing|
+                existing.x.abs_diff(icon.x) < ICON_WIDTH
+                    && existing.y.abs_diff(icon.y) < ICON_HEIGHT)
+        {
+            return Err("Unsafe, unbounded or overlapping desktop icon".into());
+        }
+        result.push(DesktopIcon {
+            label: icon.label, action: icon.action, x: icon.x, y: icon.y,
+        });
+    }
+    Ok(result)
+}
+
 fn expand_layout(
     node: &LayoutNode, depth: usize, counts: &mut [usize; 2],
     seen: &mut HashSet<String>, rendered: &mut Vec<Widget>, labels: &mut Vec<String>,
@@ -256,7 +298,7 @@ pub fn parse(raw: &str, expected_id: Option<&str>) -> Result<PanelStyle, Box<dyn
     }
     let recipe: Recipe = serde_json::from_str(raw)?;
     let id = recipe.id.as_bytes();
-    if ![1, 2, 3, 4].contains(&recipe.schema_version) || id.len() < 2 || id.len() > 32
+    if ![1, 2, 3, 4, 5].contains(&recipe.schema_version) || id.len() < 2 || id.len() > 32
         || !id[0].is_ascii_lowercase()
         || !id.iter().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || *b == b'-')
         || expected_id.is_some_and(|expected| expected != recipe.id.as_str())
@@ -268,7 +310,7 @@ pub fn parse(raw: &str, expected_id: Option<&str>) -> Result<PanelStyle, Box<dyn
     }
     let widths = match (recipe.schema_version, recipe.panel.metrics) {
         (1, None) => [LAUNCHER_WIDTH, TASK_WIDTH, CLOCK_WIDTH],
-        (2 | 3 | 4, Some(metrics))
+        (2 | 3 | 4 | 5, Some(metrics))
             if (64..=256).contains(&metrics.launcher_width)
                 && (96..=256).contains(&metrics.task_width)
                 && (64..=256).contains(&metrics.clock_width) =>
@@ -297,7 +339,7 @@ pub fn parse(raw: &str, expected_id: Option<&str>) -> Result<PanelStyle, Box<dyn
                 }
             }
         }
-        (3 | 4, None, Some(layout)) => {
+        (3 | 4 | 5, None, Some(layout)) => {
             let source = [layout.start, layout.center, layout.end];
             let mut counts = [0_usize, 0_usize];
             for (index, nodes) in source.iter().enumerate() {
@@ -316,10 +358,16 @@ pub fn parse(raw: &str, expected_id: Option<&str>) -> Result<PanelStyle, Box<dyn
     let mut compact = None;
     let mut label_padding = 8;
     let mut task_radius = 4;
+    let mut desktop_icons = Vec::new();
     match (recipe.schema_version, recipe.menu, recipe.desktop, recipe.tokens,
            recipe.responsive) {
-        (4, Some(menu), Some(desktop), Some(tokens), Some(responsive)) => {
+        (version @ (4 | 5), Some(menu), Some(desktop), Some(tokens), Some(responsive)) => {
             validate_menu(&menu)?;
+            desktop_icons = match (version, desktop.icons) {
+                (4, None) => Vec::new(),
+                (5, Some(icons)) => validate_icons(icons)?,
+                _ => return Err("Schema v5 requires icons; v4 forbids them".into()),
+            };
             if ![
                 "aero-seven-blue", "aero-seven-night", "luna-hills", "classic-teal",
                 "ten-blue", "ten-midnight", "chrome-pastel", "frutiger-future",
@@ -363,6 +411,7 @@ pub fn parse(raw: &str, expected_id: Option<&str>) -> Result<PanelStyle, Box<dyn
         background: color(&recipe.colors.background)?,
         foreground: color(&recipe.colors.foreground)?,
         active: color(&recipe.colors.active)?,
+        desktop_icons,
     })
 }
 
@@ -492,6 +541,32 @@ pub fn hit(x: f64, screen_width: u32, tasks: usize,
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn schema_v5_icons_are_strict_bounded_and_use_known_actions() {
+        let source = include_str!("../../../tests/fixtures/riceplate-desktop-v5.json");
+        let style = parse(source, Some("mockup-desktop")).unwrap();
+        assert_eq!(style.desktop_icons.len(), 3);
+        assert_eq!(style.desktop_icons[0].label, "Applications");
+        assert_eq!(style.desktop_icons[1].action, "terminal");
+        let mut data: serde_json::Value = serde_json::from_str(source).unwrap();
+        data["desktop"]["icons"][0]["action"] = "sh -c whoami".into();
+        assert!(parse(&data.to_string(), None).is_err());
+        data["desktop"]["icons"][0]["action"] = "applications".into();
+        data["desktop"]["icons"][0]["x"] = true.into();
+        assert!(parse(&data.to_string(), None).is_err());
+        data["desktop"]["icons"][0]["x"] = 32.into();
+        data["desktop"]["icons"][1]["x"] = 33.into();
+        data["desktop"]["icons"][1]["y"] = 97.into();
+        assert!(parse(&data.to_string(), None).is_err());
+        data["desktop"]["icons"][1]["x"] = 32.into();
+        data["desktop"]["icons"][1]["y"] = 208.into();
+        data["desktop"].as_object_mut().unwrap().remove("icons");
+        assert!(parse(&data.to_string(), None).is_err());
+        data["schema_version"] = 4.into();
+        data["desktop"]["icons"] = serde_json::json!([]);
+        assert!(parse(&data.to_string(), None).is_err());
+    }
 
     #[test]
     fn bundled_recipes_are_distinct_and_validated() {
