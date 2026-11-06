@@ -83,10 +83,23 @@ def start(
     config = resources() / "labwc"
     if not launcher.is_file() or not (config / "rc.xml").is_file():
         raise SessionError("Incomplete RiceBowl installation; reinstall the current checkout.")
+    from .recipes import RecipeError, load, native_token, selected_recipe
+    explicit_recipe = recipe is not None
+    if recipe is None:
+        try:
+            recipe = selected_recipe()
+        except RecipeError as error:
+            print(f"RiceBowl: ignoring invalid saved recipe selection: {error}", file=sys.stderr)
     if recipe is not None:
-        from .recipes import load, native_token
-        load(recipe)  # Fail closed before starting a compositor.
-        recipe = native_token(recipe)  # Rust consumes the same validated private file.
+        try:
+            load(recipe)  # Fail closed for explicit user-chosen recipes.
+        except RecipeError as error:
+            if explicit_recipe:
+                raise
+            print(f"RiceBowl: saved recipe unavailable, using classic: {error}", file=sys.stderr)
+            recipe = None
+        else:
+            recipe = native_token(recipe)  # Rust consumes the same validated private file.
 
     env.update({
         "XDG_CURRENT_DESKTOP": DESKTOP_NAME,

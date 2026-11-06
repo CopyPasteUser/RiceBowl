@@ -161,6 +161,9 @@ depend on the XFCE session.
   JSON recipes into a private per-user collection; preview by imported ID.
   Full multi-component RicePacks with artwork, screenshot conversion and a
   transactional apply/restore pipeline remain open.
+- [x] Persist the next opt-in Wayland panel recipe selection in owner-private
+  state with one-level rollback and classic fallback on invalid/missing state.
+  Live shell switching and cross-component transactions remain open.
 - [ ] Define a small versioned profile contract between RiceBowl, RiceField
   and Taskotto. External applications work without RiceBowl installed.
 - [ ] Support rice-specific structure, spacing, colors and components with
