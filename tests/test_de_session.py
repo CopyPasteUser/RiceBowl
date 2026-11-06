@@ -2,6 +2,7 @@
 
 import os
 import shlex
+import signal
 import tempfile
 import unittest
 import xml.etree.ElementTree as ET
@@ -122,6 +123,28 @@ class WaylandSessionTests(unittest.TestCase):
 
     @mock.patch("macrice.de.session.os.geteuid", return_value=1000)
     @mock.patch("macrice.de.session._check_runtime_dir")
+    def test_native_panel_requires_installed_binary_and_survives_dbus_reexec(self, _runtime, _uid):
+        with self.assertRaisesRegex(session.SessionError, "not installed"):
+            session.start(nested=True, panel="native", environment=self.env,
+                          which=self.which, execute=_record_exec)
+        tools = {**self.tools, "riceplate-native": "/usr/bin/riceplate-native"}
+        with self.assertRaises(_ExecCalled) as caught:
+            session.start(nested=True, panel="native", recipe="chrome",
+                          environment={"XDG_RUNTIME_DIR": self.runtime.name},
+                          which=tools.get, execute=_record_exec)
+        self.assertEqual(caught.exception.argv[-4:], ["--recipe", "chrome", "--panel", "native"])
+        self.assertEqual(caught.exception.env["RICEBOWL_DE_PANEL"], "native")
+
+    @mock.patch("macrice.de.session.os.geteuid", return_value=1000)
+    @mock.patch("macrice.de.session._check_runtime_dir")
+    def test_native_panel_opt_in_not_inherited_from_parent(self, _runtime, _uid):
+        with self.assertRaises(_ExecCalled) as caught:
+            session.start(nested=True, environment={**self.env, "RICEBOWL_DE_PANEL": "native"},
+                          which=self.which, execute=_record_exec)
+        self.assertEqual(caught.exception.env["RICEBOWL_DE_PANEL"], "waybar")
+
+    @mock.patch("macrice.de.session.os.geteuid", return_value=1000)
+    @mock.patch("macrice.de.session._check_runtime_dir")
     def test_bad_recipe_fails_before_labwc_exec(self, _runtime, _uid):
         with self.assertRaisesRegex(ValueError, "absolute"):
             session.start(nested=True, recipe="unknown-nonabsolute-recipe",
@@ -162,6 +185,82 @@ class WaylandSessionTests(unittest.TestCase):
         self.assertIn(str(session.resources() / "waybar/config.jsonc"), commands[-1])
         self.assertFalse(any(command[0] == "/usr/bin/swayidle" for command in commands))
         self.assertTrue(all(proc.terminated for proc in processes[:-1]))
+
+    def test_native_panel_runs_without_waybar_when_it_exits_cleanly(self):
+        commands = []
+
+        def spawn(command, **_kwargs):
+            commands.append(command)
+            return _FakeProcess()
+
+        env = {"RICEBOWL_DE_SHELL_CHILD": "1", "RICEBOWL_DE_NESTED": "1",
+               "RICEBOWL_DE_PANEL": "native", "RICEBOWL_DE_RECIPE": "chrome",
+               "WAYLAND_DISPLAY": "wayland-0", "XDG_RUNTIME_DIR": self.runtime.name}
+        tools = {**self.tools, "riceplate-native": "/usr/bin/riceplate-native"}
+        with mock.patch("macrice.de.session.signal.signal"):
+            self.assertEqual(session.shell(environment=env, which=tools.get, spawn=spawn), 0)
+        self.assertEqual(commands, [["/usr/bin/riceplate-native", "--recipe", "chrome"]])
+
+    def test_native_crash_restores_waybar_instead_of_exiting_the_session(self):
+        commands = []
+
+        class FailedNative(_FakeProcess):
+            def wait(self, timeout=None):
+                return -11
+
+        def spawn(command, **_kwargs):
+            commands.append(command)
+            if command[0] == "/usr/bin/riceplate-native":
+                return FailedNative()
+            return _FakeProcess()
+
+        env = {"RICEBOWL_DE_SHELL_CHILD": "1", "RICEBOWL_DE_NESTED": "1",
+               "RICEBOWL_DE_PANEL": "native", "WAYLAND_DISPLAY": "wayland-0"}
+        tools = {**self.tools, "riceplate-native": "/usr/bin/riceplate-native"}
+        with mock.patch("macrice.de.session.signal.signal"), \
+             mock.patch("sys.stderr"):
+            self.assertEqual(session.shell(environment=env, which=tools.get, spawn=spawn), 0)
+        self.assertEqual(commands[0], ["/usr/bin/riceplate-native", "--recipe", "classic"])
+        self.assertEqual(commands[1][0], "/usr/bin/waybar")
+
+    def test_native_launch_failure_restores_waybar(self):
+        commands = []
+
+        def spawn(command, **_kwargs):
+            commands.append(command)
+            if command[0] == "/usr/bin/riceplate-native":
+                raise OSError("missing library")
+            return _FakeProcess()
+
+        env = {"RICEBOWL_DE_SHELL_CHILD": "1", "RICEBOWL_DE_NESTED": "1",
+               "RICEBOWL_DE_PANEL": "native", "WAYLAND_DISPLAY": "wayland-0"}
+        tools = {**self.tools, "riceplate-native": "/usr/bin/riceplate-native"}
+        with mock.patch("macrice.de.session.signal.signal"), \
+             mock.patch("sys.stderr"):
+            self.assertEqual(session.shell(environment=env, which=tools.get, spawn=spawn), 0)
+        self.assertEqual(commands[-1][0], "/usr/bin/waybar")
+
+    def test_native_user_shutdown_never_restarts_waybar(self):
+        handlers = {}
+        commands = []
+
+        class StoppingNative(_FakeProcess):
+            def wait(self, timeout=None):
+                if self.terminated:
+                    return -15
+                handlers[signal.SIGTERM](signal.SIGTERM, None)
+                return -15
+
+        def spawn(command, **_kwargs):
+            commands.append(command)
+            return StoppingNative()
+
+        env = {"RICEBOWL_DE_SHELL_CHILD": "1", "RICEBOWL_DE_NESTED": "1",
+               "RICEBOWL_DE_PANEL": "native", "WAYLAND_DISPLAY": "wayland-0"}
+        tools = {**self.tools, "riceplate-native": "/usr/bin/riceplate-native"}
+        with mock.patch("macrice.de.session.signal.signal", side_effect=handlers.__setitem__):
+            self.assertEqual(session.shell(environment=env, which=tools.get, spawn=spawn), -15)
+        self.assertEqual(len(commands), 1)
 
     def test_failed_panel_start_cleans_up_background_services(self):
         processes = []
