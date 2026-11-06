@@ -10,6 +10,8 @@ import json
 import os
 import re
 import stat
+import tempfile
+import unicodedata
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -70,7 +72,7 @@ def parse(raw: bytes) -> PanelRecipe:
         raise RecipeError("Recipe ID must contain 2-32 lowercase ASCII characters")
     name = data["name"]
     if (not isinstance(name, str) or not 1 <= len(name) <= 60
-            or any(ord(character) < 32 for character in name)):
+            or any(unicodedata.category(character) == "Cc" for character in name)):
         raise RecipeError("Recipe name must be 1-60 printable characters")
     panel = _strict_keys(data["panel"], {"position", "height", "sections"}, "Panel")
     if panel["position"] not in ("top", "bottom"):
@@ -125,6 +127,42 @@ def load(token: str) -> PanelRecipe:
     except OSError as exc:
         raise RecipeError("Custom recipe could not be opened safely") from exc
     return parse(raw)
+
+
+def create_from_template(
+    *, source: str, destination: Path, recipe_id: str, name: str,
+) -> PanelRecipe:
+    """Create one private editable recipe atomically, never replacing a file.
+
+    Templates can change layout, but cannot inject commands, executable assets
+    or unknown keys. Both native RicePlate and the Waybar adapter validate the
+    same schema before using an authored recipe.
+    """
+    if source not in BUILTINS:
+        raise RecipeError("Choose a bundled classic or chrome template")
+    if not destination.is_absolute() or destination.suffix != ".json":
+        raise RecipeError("New recipe output must be an absolute .json file path")
+    data = json.loads(BUILTINS[source].read_text(encoding="utf-8"))
+    data["id"] = recipe_id
+    data["name"] = name
+    payload = (json.dumps(data, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+    result = parse(payload)  # Validate *before* any filesystem mutation.
+
+    # The temp file and destination share a directory/filesystem; os.link()
+    # publishes a fully written file only when its final name is still free.
+    # This does not overwrite existing files or follow a destination symlink.
+    descriptor, temporary = tempfile.mkstemp(prefix=".ricebowl-recipe-",
+                                              dir=destination.parent)
+    try:
+        with os.fdopen(descriptor, "wb") as output:
+            os.fchmod(output.fileno(), 0o600)
+            output.write(payload)
+            output.flush()
+            os.fsync(output.fileno())
+        os.link(temporary, destination)
+    finally:
+        os.unlink(temporary)
+    return result
 
 
 def waybar_config(recipe: PanelRecipe) -> tuple[str, str]:
