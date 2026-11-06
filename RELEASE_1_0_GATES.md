@@ -11,10 +11,12 @@ physical-device compatibility.
 - [x] A source archive job is defined for `v1.0.0-rc.N` / `v1.0.0` tags.
 - [x] A stable 1.0 tag is blocked by default until real-device acceptance is
   explicitly documented in `.github/release-signoff-1.0.json`.
+- [x] The separate **preview session-entry** Debian package builds
+  reproducibly with normalized timestamps and `SOURCE_DATE_EPOCH` support.
 - [ ] All project CI, including real X11 screenshots, Wayland session smoke
   and native RicePlate Rust/headless labwc tests, is green for the release SHA.
-- [ ] Rust application builds and Wayland session packages use tracked lock/
-  version metadata, and release binaries/installers are reproducible.
+- [ ] Rust application builds and the complete Wayland desktop package use
+  tracked lock/version metadata; final binary/install artifacts reproduce.
 - [ ] Installation, upgrade, uninstall and rollback pass from clean systems.
 - [ ] Native RicePlate/RiceSpice/RicePop feature parity and mockup-to-rice
   authoring gates from `RICEBOWL_DE_ROADMAP.md` are satisfied.

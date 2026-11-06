@@ -201,6 +201,9 @@ component, and incompatible clients degrade gracefully.
 - [x] Add a read-only package/CLI version consistency check and a candidate
   source-artifact gate; do not publish stable 1.0 without explicit device QA
   evidence (see `RELEASE_1_0_GATES.md`). Binary packaging remains open.
+- [x] Make the isolated *preview login-session* Debian package byte-for-byte
+  reproducible across wall-clock build times; 1.0 application/binary packaging
+  remains an independent release gate.
 - [ ] Measure cold start, settled PSS/RSS, CPU wakeups, relogin, long-running
   memory and mixed-DPI behavior for X11 and Wayland on actual devices.
 - [ ] Remove redundant processes only after their responsibilities have been
