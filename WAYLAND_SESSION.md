@@ -99,11 +99,16 @@ alongside Waybar.
 The native prototype understands two *bundled* schema-v1 RicePlate recipes:
 `classic` (left-aligned bottom taskbar) and `chrome` (centered task list and
 taller shelf). Both are parsed from the same recipe JSON files as the
-temporary Waybar adapter, with strict schema/widget/color checks. Currently
-the launcher, tasks and local-time clock render natively. The clock is updated
+temporary Waybar adapter, with strict schema/widget/color checks. It also
+accepts owner-private absolute JSON recipe files (regular files, permissions
+`0600`, no final symlinks, maximum 64 KiB). The three implemented widgets
+(launcher, tasks and local-time clock) may be arranged in the start, center or
+end section in any order, including custom top panels; their hit areas follow
+the rendered geometry and shrink on narrow displays. The clock is updated
 on minute boundaries through the Wayland event loop without a 1 Hz timer.
-Other indicators and the tray still need functional Rust backends. Arbitrary custom recipe file paths
-are not accepted by the native binary yet.
+Other indicators and the tray still need functional Rust backends. The native
+renderer deliberately omits unavailable widgets without displaying pretend
+buttons. Custom recipes cannot contain commands or arbitrary executable code.
 
 In a *disposable/nested* labwc session, developers with Rust 1.86+ can try:
 
@@ -111,8 +116,19 @@ In a *disposable/nested* labwc session, developers with Rust 1.86+ can try:
 cargo run --manifest-path components/riceplate-wayland/Cargo.toml -- --recipe chrome
 ```
 
-The dedicated CI workflow compiles it and checks that both native recipes
-stay alive on a real headless labwc compositor. Nothing changes the XFCE path,
+To preview a private recipe without changing any desktop settings:
+
+```bash
+recipe_copy=$(mktemp --suffix=.json)
+cp macrice/de/resources/recipes/classic.json "$recipe_copy"
+chmod 600 "$recipe_copy"
+cargo run --manifest-path components/riceplate-wayland/Cargo.toml -- --recipe "$recipe_copy"
+rm -- "$recipe_copy"
+```
+
+The dedicated CI workflow compiles it and checks that both bundled recipes and
+a private custom recipe remain alive on a real headless labwc compositor.
+Nothing changes the XFCE path,
 Waybar default or the optional session package.
 
 ## First-session controls
