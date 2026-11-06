@@ -75,7 +75,7 @@ def parser() -> argparse.ArgumentParser:
         "capture", "render", "creator-status", "creator-stage", "creator-rollback",
         "pack-export", "pack-inspect", "pack-import",
         "recipes", "recipe-init", "recipe-import", "recipe-export", "recipe-current",
-        "recipe-select", "recipe-restore"))
+        "recipe-select", "recipe-restore", "taskotto-export"))
     de.add_argument("--json", action="store_true", help="Read-only machine-readable preflight")
     de.add_argument("--nested", action="store_true",
                     help="Explicitly test a separate labwc session inside an active desktop")
@@ -99,7 +99,7 @@ def parser() -> argparse.ArgumentParser:
                     help="Recipe schema for de recipe-init (1 flat, 2 widths, 3 nested, 4 shell, 5 icons)")
     de.add_argument("--id", help="Lowercase recipe identifier for de recipe-init")
     de.add_argument("--name", help="Human-readable recipe name for de recipe-init")
-    de.add_argument("--output", type=Path, help="New absolute .json, .png or .ricepack output")
+    de.add_argument("--output", type=Path, help="New absolute .json, .toml, .png or .ricepack output")
     de.add_argument("--width", type=int, help="Headless de render capture width (640–4096)")
     de.add_argument("--height", type=int, help="Headless de render capture height (480–2160)")
     de.add_argument("--scale", type=float, choices=(1, 1.25, 1.5, 2),
@@ -182,7 +182,7 @@ def main(argv: list[str] | None = None) -> int:
                 raise ValueError("--base, --id and --name only apply to de recipe-init")
             if args.action != "recipe-init" and args.schema_version != 1:
                 raise ValueError("--schema-version only applies to de recipe-init")
-            if args.action not in ("recipe-init", "recipe-export", "draft-edit", "capture", "render", "pack-export") and args.output:
+            if args.action not in ("recipe-init", "recipe-export", "taskotto-export", "draft-edit", "capture", "render", "pack-export") and args.output:
                 raise ValueError("--output is not supported by this de command")
             if args.action == "creator-api":
                 if args.nested or args.recipe or args.panel != "waybar":
@@ -284,6 +284,15 @@ def main(argv: list[str] | None = None) -> int:
                 from .de.recipes import export_recipe
                 result = export_recipe(args.recipe, args.output)
                 print(f"Exported {result.recipe_id} to {args.output} (not applied)")
+                return 0
+            if args.action == "taskotto-export":
+                if (args.json or args.nested or args.panel != "waybar"
+                        or not args.recipe or not args.output):
+                    raise ValueError("de taskotto-export requires --recipe ID and --output /absolute/file.toml")
+                from .de.taskotto import export
+                result = export(args.recipe, args.output)
+                print(f"Exported Taskotto RicePack v1 from {result.recipe_id}: {args.output}")
+                print(f"Launch: RICEBOWL_TASKOTTO_RICEPACK={shlex.quote(str(args.output))} taskotto")
                 return 0
             if args.action in ("recipe-current", "recipe-select", "recipe-restore"):
                 if (args.nested or args.panel != "waybar"

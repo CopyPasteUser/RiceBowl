@@ -488,6 +488,25 @@ ricebowl de recipe-current --json
 ricebowl de recipe-restore   # One-level undo for the next login
 ```
 
+To share the *appearance* of a validated RicePlate panel recipe with the
+independently installed Taskotto process monitor, export its separate,
+versioned and non-executable TOML contract:
+
+```bash
+ricebowl de taskotto-export --recipe classic --output "$HOME/taskotto-rice.toml"
+RICEBOWL_TASKOTTO_RICEPACK="$HOME/taskotto-rice.toml" taskotto
+```
+
+This does not apply a desktop rice or require Taskotto to be installed for
+export. Taskotto checks the file itself and allows a reversible in-app
+preview. The v1 handoff carries only RicePlate's validated foreground,
+background and active colors plus a supported base family when a known
+wallpaper identifier exists; no arbitrary launcher, scripts, icons or
+window-decorator settings are handed over. Existing destination files are
+never overwritten, and exports are owner-only `0600`. Use a new filename for
+each revision. This is a **manual opt-in bridge**, not automatic session-wide
+application styling or a complete cross-app RicePack transaction.
+
 The selection is an atomic `0600` preference inside the owner-private recipe
 directory. Repeating the same selection preserves the last undo target; the
 selection lock serializes parallel updates. The default is `classic`. A

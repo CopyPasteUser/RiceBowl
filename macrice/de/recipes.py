@@ -385,10 +385,10 @@ def _read_import_source(source: Path) -> bytes:
         raise RecipeError("Import source could not be opened safely") from exc
 
 
-def _write_private_new(destination: Path, payload: bytes) -> None:
+def _write_private_new(destination: Path, payload: bytes, *, suffix: str = ".json") -> None:
     """Publish a complete 0600 file atomically, refusing any existing target."""
-    if not destination.is_absolute() or destination.suffix != ".json":
-        raise RecipeError("Output must be an absolute .json file path")
+    if not destination.is_absolute() or destination.suffix != suffix:
+        raise RecipeError(f"Output must be an absolute {suffix} file path")
     descriptor, temporary = tempfile.mkstemp(prefix=".ricebowl-recipe-",
                                               dir=destination.parent)
     try:
