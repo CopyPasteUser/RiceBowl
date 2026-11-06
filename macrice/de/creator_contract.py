@@ -38,6 +38,31 @@ def describe_visual_qa() -> dict[str, object]:
     }
 
 
+def describe_capture() -> dict[str, object]:
+    """Explicit capture of the user's current Wayland display, not a renderer."""
+    return {
+        "contract_version": 1,
+        "command": "de capture",
+        "required_options": ["--output"],
+        "optional_options": ["--json"],
+        "requires_running_wayland_session": True,
+        "requires_binary": "grim",
+        "capture_source": "current-wayland-compositor",
+        "output": "new absolute owner-private PNG, never overwrite",
+        "max_bytes": 64 * 1024 * 1024,
+        "max_pixels": 16_777_216,
+        "timeout_seconds": 30,
+        "success_exit_code": 0,
+        "capture_error_exit_code": 2,
+        "error_codes": ["invalid_capture_request", "capture_unavailable", "capture_failed"],
+        "creates_nested_session": False,
+        "captures_live_desktop": True,
+        "requires_explicit_invocation": True,
+        "mutates_active_desktop": False,
+        "screenshot_may_contain_private_data": True,
+    }
+
+
 EDITABLE_PATHS = frozenset((
     "/name", "/panel/position", "/panel/height",
     *(f"/panel/sections/{name}" for name in recipes.SECTIONS),

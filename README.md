@@ -20,7 +20,7 @@ Today, RiceBowl is a **seven-style XFCE/X11 ricing suite**: Windows 98, XP Luna,
 
 It is also becoming an independent, floating **Wayland desktop environment based on labwc**. Its long-term goal is a *desktop construction kit*: give an AI a reference screenshot or an original mockup, and use validated layout recipes and shared functional components to build a usable rice—without writing a new desktop shell for each design.
 
-The optional Wayland preview has declarative nested panels, a genuine labwc root menu, wallpapers, visual tokens, compact layouts and safe offline recipe editing. Its experimental native Rust RicePlate shell supports **clickable desktop icons** with single-output reflow through schema-v5 recipes, multi-resolution screenshot diagnostics and an offline Creator comparison command. Movable icons, desktop widgets, automated mockup conversion and the 1.0 release are still in development. The established XFCE session remains available.
+The optional Wayland preview has declarative nested panels, a genuine labwc root menu, wallpapers, visual tokens, compact layouts and safe offline recipe editing. Its experimental native Rust RicePlate shell supports **clickable desktop icons** with single-output reflow through schema-v5 recipes, real screenshot capture and offline comparison for creators. Movable icons, desktop widgets, automated mockup conversion and the 1.0 release are still in development. The established XFCE session remains available.
 
 ## Try it
 
