@@ -54,19 +54,42 @@ def _output_name(wlr_randr: str, env: dict[str, str]) -> str:
 
 
 def _stop(process: subprocess.Popen[bytes]) -> None:
+    """Bounded teardown of an owned session, including children of its leader.
+
+    The renderer starts each child with start_new_session=True, so the PID is
+    also its process-group ID. Never target a group unless its leader is still
+    alive: after reaping, the numeric PID could have been reused.
+    """
     if process.poll() is not None:
         process.wait()
         return
     try:
         os.killpg(process.pid, signal.SIGTERM)
+    except ProcessLookupError:
+        pass
+    try:
         process.wait(timeout=3)
-    except (ProcessLookupError, subprocess.TimeoutExpired):
-        if process.poll() is None:
-            try:
-                os.killpg(process.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
-        process.wait(timeout=3)
+        return
+    except subprocess.TimeoutExpired:
+        pass
+    if process.poll() is None:
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+    process.wait(timeout=3)
+
+
+def _cleanup_children(children: list[subprocess.Popen[bytes]]) -> None:
+    """Attempt every teardown even when one child refuses to exit."""
+    errors: list[Exception] = []
+    for child in reversed(children):
+        try:
+            _stop(child)
+        except (OSError, subprocess.SubprocessError) as exc:
+            errors.append(exc)
+    if errors:
+        raise RenderError("render_failed") from errors[0]
 
 
 def render(recipe_token: str | None, output: Path | None, *,
@@ -161,8 +184,7 @@ def render(recipe_token: str | None, output: Path | None, *,
                     "interactive_session": False,
                 }
             finally:
-                for child in reversed(children):
-                    _stop(child)
+                _cleanup_children(children)
     except RenderError:
         raise
     except (OSError, IndexError, KeyError, ValueError, subprocess.SubprocessError) as exc:
