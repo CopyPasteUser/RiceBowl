@@ -187,6 +187,9 @@ component, and incompatible clients degrade gracefully.
 
 ### 5 — Efficient, testable 1.0
 
+- [x] Add a read-only package/CLI version consistency check and a candidate
+  source-artifact gate; do not publish stable 1.0 without explicit device QA
+  evidence (see `RELEASE_1_0_GATES.md`). Binary packaging remains open.
 - [ ] Measure cold start, settled PSS/RSS, CPU wakeups, relogin, long-running
   memory and mixed-DPI behavior for X11 and Wayland on actual devices.
 - [ ] Remove redundant processes only after their responsibilities have been

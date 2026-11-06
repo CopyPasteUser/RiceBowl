@@ -1,0 +1,41 @@
+name: RiceBowl 1.0 release source gate
+
+on:
+  push:
+    tags:
+      - 'v1.0.0-rc.*'
+      - 'v1.0.0'
+
+permissions:
+  contents: read
+
+jobs:
+  source-gate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Require matching version and documented hardware approval for stable 1.0
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          /usr/bin/python3 scripts/check_release_contract.py --tag "$RELEASE_TAG"
+          /usr/bin/python3 -m unittest tests.test_release_contract -v
+      - name: Produce source archive and checksum
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          mkdir -p dist
+          git archive --format=zip --output="dist/RiceBowl-${RELEASE_TAG}-source.zip" HEAD
+          (cd dist && sha256sum RiceBowl-*-source.zip > SHA256SUMS)
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ricebowl-1.0-source-candidate
+          path: dist/
+          if-no-files-found: error
+
+# This is a source artifact gate, not an automatic public GitHub Release.
+# Stable 1.0 still requires passing the main CI/Wayland/native workflows,
+# completed labwc/RicePlate feature gates and *recorded* real-device sign-off.

@@ -120,9 +120,13 @@ To exercise RicePlate as the **only** panel within RiceBowl's isolated labwc
 session, first install the experimental binary into your user-local PATH:
 
 ```bash
-cargo install --path components/riceplate-wayland --locked
+cargo install --path components/riceplate-wayland
+command -v riceplate-native
 ricebowl de start --nested --panel native --recipe chrome
 ```
+
+The experimental Rust crate does not yet ship a committed `Cargo.lock`; a
+reproducible locked native-binary package remains a 1.0 release gate.
 
 This is an explicit developer opt-in, **not** the login-manager default. The
 temporary Waybar dependency remains installed and available for recovery: if

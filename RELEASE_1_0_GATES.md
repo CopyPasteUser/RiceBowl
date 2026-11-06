@@ -1,0 +1,50 @@
+# RiceBowl 1.0 — honest release gates
+
+RiceBowl currently ships a working XFCE/X11 rice preview and an **opt-in,
+unfinished** labwc/Wayland desktop preview. The two must not be presented
+as the same release state. This file is a release checklist, not proof of
+physical-device compatibility.
+
+## Automated checks
+
+- [x] Python package and CLI version agree at the current 0.9.1 baseline.
+- [x] A source archive job is defined for `v1.0.0-rc.N` / `v1.0.0` tags.
+- [x] A stable 1.0 tag is blocked by default until real-device acceptance is
+  explicitly documented in `.github/release-signoff-1.0.json`.
+- [ ] All project CI, including real X11 screenshots, Wayland session smoke
+  and native RicePlate Rust/headless labwc tests, is green for the release SHA.
+- [ ] Rust application builds and Wayland session packages use tracked lock/
+  version metadata, and release binaries/installers are reproducible.
+- [ ] Installation, upgrade, uninstall and rollback pass from clean systems.
+- [ ] Native RicePlate/RiceSpice/RicePop feature parity and mockup-to-rice
+  authoring gates from `RICEBOWL_DE_ROADMAP.md` are satisfied.
+
+## Real-hardware acceptance (not done)
+
+- [ ] Login and logout on physical Mint 22 hardware, including crash recovery.
+- [ ] XFCE remains independently selectable and untouched after rollback.
+- [ ] XWayland, Flatpak portals, clipboard, polkit, screen capture and input.
+- [ ] Taskbar, tray, network, audio, Bluetooth, power, lock, suspend and
+  multi-monitor/hotplug behavior with honest unavailable/error states.
+- [ ] Two compositionally distinct rice authoring demonstrations, including
+  offline import, preview, apply and restore.
+- [ ] Measured cold start, settled PSS/RSS, idle CPU/wakeups, mixed-DPI and
+  long-running memory behavior on actual devices.
+
+After those tests, add the **real device, date and traceable evidence** for
+every area to `.github/release-signoff-1.0.json`; then set `status` to
+`approved` in a reviewed commit. The check script verifies completeness, but
+cannot establish the truth of a human sign-off. Do not edit it merely to
+make CI green.
+
+## Candidate preparation
+
+```bash
+/usr/bin/python3 scripts/check_release_contract.py
+/usr/bin/python3 -m unittest discover -s tests -q
+```
+
+The GitHub source-artifact job runs on `v1.0.0-rc.N` and `v1.0.0` tags once
+the package/CLI source version is 1.0.0. It **does not automatically publish
+a release**: full CI, hardware sign-off and real installer/binary artifacts
+are mandatory before publication. Tagging 1.0 prematurely is prohibited.
