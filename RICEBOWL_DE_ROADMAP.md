@@ -156,8 +156,11 @@ depend on the XFCE session.
 
 - [x] Provide an initial safe author entrypoint for bundled-to-private recipe
   creation and read-only custom validation through `ricebowl de recipe-init`
-  and `de recipes --recipe`. The native/Waybar preview remains opt-in; a full
-  mockup editor, package import/export and apply/restore pipeline are open.
+  and `de recipes --recipe`.
+- [x] Allow safe offline import/export of validated, non-executable, panel-only
+  JSON recipes into a private per-user collection; preview by imported ID.
+  Full multi-component RicePacks with artwork, screenshot conversion and a
+  transactional apply/restore pipeline remain open.
 - [ ] Define a small versioned profile contract between RiceBowl, RiceField
   and Taskotto. External applications work without RiceBowl installed.
 - [ ] Support rice-specific structure, spacing, colors and components with

@@ -151,6 +151,100 @@ class RecipeTests(unittest.TestCase):
             self.assertEqual(important.read_text(encoding="utf-8"), "must not be replaced")
             self.assertTrue(destination.is_symlink())
 
+    def test_offline_import_export_and_named_preview_are_round_trippable(self):
+        from macrice.cli import main
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = root / "config"
+            config.mkdir(mode=0o700)
+            source = root / "shared.json"
+            data = _valid()
+            data["id"] = "my-offline-rice"
+            data["name"] = "An offline rice"
+            source.write_text(json.dumps(data), encoding="utf-8")
+            source.chmod(0o644)  # Shareable input does not have to be private.
+            exported = root / "export.json"
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": str(config)}):
+                self.assertEqual(main(["de", "recipe-import", "--recipe", str(source)]), 0)
+                installed = config / "ricebowl" / "recipes" / "my-offline-rice.json"
+                self.assertEqual(installed.stat().st_mode & 0o777, 0o600)
+                self.assertEqual(installed.parent.stat().st_mode & 0o777, 0o700)
+                self.assertEqual(recipes.load("my-offline-rice").name, "An offline rice")
+                self.assertEqual(recipes.native_token("my-offline-rice"), str(installed))
+                with mock.patch("builtins.print") as printed:
+                    self.assertEqual(main(["de", "recipes", "--json"]), 0)
+                self.assertIn("my-offline-rice", json.loads(printed.call_args.args[0])[-1]["id"])
+                self.assertEqual(main(["de", "recipe-export", "--recipe", "my-offline-rice",
+                                       "--output", str(exported)]), 0)
+                self.assertEqual(exported.read_bytes(), source.read_bytes())
+                self.assertEqual(exported.stat().st_mode & 0o777, 0o600)
+                with mock.patch("sys.stderr"):
+                    self.assertEqual(main(["de", "recipe-import", "--recipe", str(source)]), 1)
+                    self.assertEqual(main(["de", "recipe-export", "--recipe", "my-offline-rice",
+                                           "--output", str(exported)]), 1)
+                self.assertEqual(exported.read_bytes(), source.read_bytes())
+            self.assertEqual(source.stat().st_mode & 0o777, 0o644)
+
+    def test_offline_import_rejects_invalid_unsafe_or_reserved_sources(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = root / "config"
+            config.mkdir(mode=0o700)
+            source = root / "source.json"
+            data = _valid()
+            data["id"] = "custom-one"
+            source.write_text(json.dumps(data), encoding="utf-8")
+            source.chmod(0o666)
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": str(config)}):
+                with self.assertRaisesRegex(recipes.RecipeError, "owner-controlled"):
+                    recipes.import_recipe(source)
+                source.chmod(0o600)
+                link = root / "alias.json"
+                link.symlink_to(source)
+                with self.assertRaisesRegex(recipes.RecipeError, "safely"):
+                    recipes.import_recipe(link)
+                data["id"] = "classic"
+                source.write_text(json.dumps(data), encoding="utf-8")
+                with self.assertRaisesRegex(recipes.RecipeError, "reserved"):
+                    recipes.import_recipe(source)
+                data["id"] = "invalid!"
+                source.write_text(json.dumps(data), encoding="utf-8")
+                with self.assertRaisesRegex(recipes.RecipeError, "Recipe ID"):
+                    recipes.import_recipe(source)
+            self.assertFalse((config / "ricebowl").exists())
+
+    def test_import_rejects_symlinked_or_exposed_collection_directories(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = root / "config"
+            config.mkdir(mode=0o700)
+            exposed = root / "exposed"
+            exposed.mkdir(mode=0o700)
+            (config / "ricebowl").symlink_to(exposed, target_is_directory=True)
+            source = root / "owner.json"
+            data = _valid()
+            data["id"] = "custom-one"
+            source.write_text(json.dumps(data), encoding="utf-8")
+            source.chmod(0o600)
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": str(config)}):
+                with self.assertRaisesRegex(recipes.RecipeError, "Unsafe"):
+                    recipes.import_recipe(source)
+            (config / "ricebowl").unlink()
+            (config / "ricebowl").mkdir(mode=0o755)
+            (config / "ricebowl" / "recipes").mkdir(mode=0o755)
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": str(config)}):
+                with self.assertRaisesRegex(recipes.RecipeError, "owner-only"):
+                    recipes.import_recipe(source)
+
+    def test_recipe_portability_does_not_accept_irrelevant_cli_flags(self):
+        from macrice.cli import main
+        with mock.patch("sys.stderr"):
+            for arguments in (["de", "recipe-import", "--recipe", "/tmp/unused.json", "--nested"],
+                              ["de", "recipe-export", "--recipe", "classic"],
+                              ["de", "recipes", "--output", "/tmp/new.json"]):
+                with self.subTest(arguments=arguments):
+                    self.assertEqual(main(arguments), 1)
+
     def test_nested_shell_generates_private_files_then_removes_them(self):
         with tempfile.TemporaryDirectory() as directory:
             os.chmod(directory, 0o700)

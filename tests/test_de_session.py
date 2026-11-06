@@ -1,6 +1,7 @@
 """Session safety: login, nested mode, sandboxed config and supervised clients."""
 
 import os
+import json
 import shlex
 import signal
 import tempfile
@@ -123,6 +124,30 @@ class WaylandSessionTests(unittest.TestCase):
 
     @mock.patch("macrice.de.session.os.geteuid", return_value=1000)
     @mock.patch("macrice.de.session._check_runtime_dir")
+    def test_imported_recipe_id_is_resolved_for_native_and_dbus_reexec(self, _runtime, _uid):
+        from macrice.de import recipes
+        with tempfile.TemporaryDirectory() as folder:
+            config = Path(folder) / "config"
+            config.mkdir(mode=0o700)
+            source = Path(folder) / "portable.json"
+            data = json.loads(recipes.BUILTINS["chrome"].read_text())
+            data["id"] = "portable-rice"
+            source.write_text(json.dumps(data), encoding="utf-8")
+            source.chmod(0o600)
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": str(config)}):
+                _, installed = recipes.import_recipe(source)
+                tools = {**self.tools, "riceplate-native": "/usr/bin/riceplate-native"}
+                with self.assertRaises(_ExecCalled) as caught:
+                    session.start(nested=True, panel="native", recipe="portable-rice",
+                                  environment={"XDG_RUNTIME_DIR": self.runtime.name},
+                                  which=tools.get, execute=_record_exec)
+            call = caught.exception
+            self.assertEqual(call.program, "/usr/bin/dbus-run-session")
+            self.assertEqual(call.argv[-4:], ["--recipe", str(installed), "--panel", "native"])
+            self.assertEqual(call.env["RICEBOWL_DE_RECIPE"], str(installed))
+
+    @mock.patch("macrice.de.session.os.geteuid", return_value=1000)
+    @mock.patch("macrice.de.session._check_runtime_dir")
     def test_native_panel_requires_installed_binary_and_survives_dbus_reexec(self, _runtime, _uid):
         with self.assertRaisesRegex(session.SessionError, "not installed"):
             session.start(nested=True, panel="native", environment=self.env,
@@ -146,7 +171,9 @@ class WaylandSessionTests(unittest.TestCase):
     @mock.patch("macrice.de.session.os.geteuid", return_value=1000)
     @mock.patch("macrice.de.session._check_runtime_dir")
     def test_bad_recipe_fails_before_labwc_exec(self, _runtime, _uid):
-        with self.assertRaisesRegex(ValueError, "absolute"):
+        # Bare imported IDs are now valid tokens, but an unknown ID must be
+        # rejected before the compositor is launched.
+        with self.assertRaisesRegex(ValueError, "safely"):
             session.start(nested=True, recipe="unknown-nonabsolute-recipe",
                           environment=self.env, which=self.which, execute=_record_exec)
 

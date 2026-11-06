@@ -20,6 +20,9 @@ physical-device compatibility.
 - [ ] Installation, upgrade, uninstall and rollback pass from clean systems.
 - [ ] Native RicePlate/RiceSpice/RicePop feature parity and mockup-to-rice
   authoring gates from `RICEBOWL_DE_ROADMAP.md` are satisfied.
+- [x] Panel-only v1 recipes can be validated, imported and exported offline
+  with bounded files and no desktop mutation; full RicePack compatibility
+  remains an independent 1.0 gate.
 
 ## Real-hardware acceptance (not done)
 

@@ -84,8 +84,9 @@ def start(
     if not launcher.is_file() or not (config / "rc.xml").is_file():
         raise SessionError("Incomplete RiceBowl installation; reinstall the current checkout.")
     if recipe is not None:
-        from .recipes import load
+        from .recipes import load, native_token
         load(recipe)  # Fail closed before starting a compositor.
+        recipe = native_token(recipe)  # Rust consumes the same validated private file.
 
     env.update({
         "XDG_CURRENT_DESKTOP": DESKTOP_NAME,
