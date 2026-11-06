@@ -148,6 +148,13 @@ affecting XFCE, including a failed-session recovery. **Not yet signed off.**
 - [x] Group native Wayland windows with the same nonempty app ID, show bounded
   window counts, cycle active grouped windows and page/reveal by group; unknown
   IDs are always independent. Keyboard access remains open.
+- [x] Implement a first **real recipe-driven native start menu** as another
+  bounded Wayland layer-shell surface inside RicePlate: grouped actions, mouse
+  tabs/rows, keyboard group/row navigation with visible selection, Enter and
+  Escape, guarded labwc logout, on-demand keyboard focus, headless open-menu
+  screenshot and pure state/painting tests. The labwc fallback root menu
+  remains available. Search, pins, desktop-icon keyboard navigation and
+  multi-output menu ownership are not delivered by this slice.
 - [ ] Build a Wayland-native panel through `wlr-layer-shell`.
 - [ ] Populate tasks/windows through a supported foreign-toplevel protocol.
 - [ ] Implement launchers, task groups, tray, calendar, menus and keyboard

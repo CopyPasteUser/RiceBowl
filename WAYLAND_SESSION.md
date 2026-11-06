@@ -297,6 +297,32 @@ outside the output when no safe, non-overlapping hit area exists. This placement
 fractional-scale visual quality and multi-monitor hotplug still need device
 acceptance. Do not treat it as a finished desktop.
 
+#### Native start menu and keyboard preview
+
+For schema-v4/v5 recipes the experimental native panel now draws its **own
+start menu in the same Rust process**, using the recipe's actual grouped menu
+title and validated action IDs. Click the panel's `Apps` button to toggle it.
+Use **Left/Right** to switch groups, **Up/Down/Tab** to select an action,
+**Enter** to activate and **Escape** to dismiss. Mouse tabs, rows and close
+control have the same action mapping. The menu requests Wayland keyboard focus
+only while open; it is parked outside the output and noninteractive while
+closed. The legacy labwc root menu remains a recovery path.
+
+Actions are strictly the existing known Linux bindings: fuzzel applications,
+foot terminal, swaylock lock, and labwc's own `--exit` for logout **only when
+the compositor supplied a valid `LABWC_PID`**. Otherwise the logout row shows
+`unavailable` and cannot terminate an unrelated desktop session. Missing
+optional programs emit an error rather than inventing a working control.
+Logout is also disabled inside nested Creator previews, even if the caller
+inherited an outer compositor's `LABWC_PID`.
+
+The visual QA flag `riceplate-native --recipe /absolute/private.json
+--preview-menu` opens the menu on startup; normal use never does. CI captures
+an actual `menu-v5.png` from headless labwc and verifies it differs from the
+closed-menu framebuffer. This is a bounded four-action-per-group native menu,
+**not yet** menu search, pinning, icons, custom typography, keyboard-accessible
+desktop shortcuts or a full multi-monitor keyboard/navigation system.
+
 For **real** Wayland screenshots, install `grim` and explicitly invoke the
 Creator capture command **inside the Wayland compositor you want to inspect**:
 

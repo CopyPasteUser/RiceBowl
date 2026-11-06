@@ -1,5 +1,16 @@
 # RiceBowl changelog
 
+## Unreleased — first native Wayland start menu (6 November 2026)
+
+- Replace the schema-v4/v5 native launcher fallback with an actually rendered,
+  recipe-grouped start menu inside the existing RicePlate Rust process.
+- Add focus-on-open keyboard navigation (arrow keys, Tab, Enter, Escape),
+  pointer tabs and action rows, a visible selection and recovery through
+  the existing labwc root menu.
+- Bind only known actions, explicitly disable logout when not labwc-managed,
+  keep the menu parked/unfocused while closed, and capture a real open-menu
+  Wayland CI screenshot alongside the established desktop galleries.
+
 ## Unreleased — two real Creator demonstration rices (6 November 2026)
 
 - Author one classic OS-inspired and one original Wayland desktop strictly

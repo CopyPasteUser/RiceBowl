@@ -5,35 +5,37 @@ use std::{error::Error, process::Command, time::Duration};
 
 use chrono::{Local, Timelike};
 use font8x8::{UnicodeFonts, BASIC_FONTS};
-mod recipe;
 mod desktop_layout;
+mod native_menu;
+mod recipe;
 mod task_groups;
+use native_menu::{Hit as MenuHit, MenuState};
 use recipe::{Hit, PanelStyle, Widget};
-use task_groups::{TaskGroup, WindowInfo};
 use smithay_client_toolkit::{
     compositor::{CompositorHandler, CompositorState, FrameCallbackData},
     delegate_registry,
     output::{OutputHandler, OutputState},
-    reexports::{
-        calloop::EventLoop,
-        calloop_wayland_source::WaylandSource,
-    },
+    reexports::{calloop::EventLoop, calloop_wayland_source::WaylandSource},
     registry::{ProvidesRegistryState, RegistryState},
     registry_handlers,
     seat::{
+        keyboard::{KeyEvent, KeyboardHandler, Keysym, Modifiers, RawModifiers},
         pointer::{PointerEvent, PointerEventKind, PointerHandler},
         Capability, SeatHandler, SeatState,
     },
     shell::{
-        wlr_layer::{Anchor, KeyboardInteractivity, Layer, LayerShell, LayerShellHandler,
-                    LayerSurface, LayerSurfaceConfigure},
+        wlr_layer::{
+            Anchor, KeyboardInteractivity, Layer, LayerShell, LayerShellHandler, LayerSurface,
+            LayerSurfaceConfigure,
+        },
         WaylandSurface,
     },
     shm::{slot::SlotPool, Shm, ShmHandler},
 };
+use task_groups::{TaskGroup, WindowInfo};
 use wayland_client::{
     globals::registry_queue_init,
-    protocol::{wl_output, wl_pointer, wl_seat, wl_shm, wl_surface},
+    protocol::{wl_keyboard, wl_output, wl_pointer, wl_seat, wl_shm, wl_surface},
     Connection, Dispatch, QueueHandle,
 };
 use wayland_protocols_wlr::foreign_toplevel::v1::client::{
@@ -51,8 +53,8 @@ fn clock_now() -> String {
 
 fn next_clock_timeout() -> Duration {
     let now = Local::now();
-    let milliseconds = u64::from(60 - now.second()) * 1000
-        - u64::from(now.nanosecond() / 1_000_000);
+    let milliseconds =
+        u64::from(60 - now.second()) * 1000 - u64::from(now.nanosecond() / 1_000_000);
     Duration::from_millis(milliseconds.max(50))
 }
 
@@ -64,15 +66,24 @@ fn main() -> Result<(), Box<dyn Error>> {
         return Ok(());
     }
     if matches!(arguments.as_slice(), [arg] if arg == "--help") {
-        println!("Usage: riceplate-native [--recipe classic|chrome|/absolute/private.json]");
+        println!("Usage: riceplate-native [--recipe classic|chrome|/absolute/private.json [--preview-menu]]");
         return Ok(());
     }
-    let recipe_name = match arguments.as_slice() {
-        [] => "classic",
-        [flag, recipe] if flag == "--recipe" => recipe.as_str(),
-        _ => return Err("Usage: riceplate-native [--recipe classic|chrome|/absolute/private.json]".into()),
+    let (recipe_name, preview_menu) = match arguments.as_slice() {
+        [] => ("classic", false),
+        [flag, recipe] if flag == "--recipe" => (recipe.as_str(), false),
+        [flag, recipe, preview] if flag == "--recipe" && preview == "--preview-menu" =>
+            (recipe.as_str(), true),
+        _ => {
+            return Err(
+                "Usage: riceplate-native [--recipe classic|chrome|/absolute/private.json]".into(),
+            )
+        }
     };
     let recipe = recipe::load(recipe_name)?;
+    if preview_menu && recipe.menu.is_none() {
+        return Err("Native menu preview requires schema v4/v5".into());
+    }
     let conn = Connection::connect_to_env()?;
     let (globals, event_queue) = registry_queue_init(&conn)?;
     let qh = event_queue.handle();
@@ -81,15 +92,22 @@ fn main() -> Result<(), Box<dyn Error>> {
     let compositor = CompositorState::bind(&globals, &qh)?;
     let layer_shell = LayerShell::bind(&globals, &qh)?;
     let shm = Shm::bind(&globals, &qh)?;
-    let toplevel_manager: Option<ZwlrForeignToplevelManagerV1> =
-        globals.bind(&qh, 1..=3, ()).ok();
+    let toplevel_manager: Option<ZwlrForeignToplevelManagerV1> = globals.bind(&qh, 1..=3, ()).ok();
     if toplevel_manager.is_none() {
         eprintln!("RicePlate: compositor lacks wlr-foreign-toplevel-management; taskbar disabled");
     }
     let layer = layer_shell.create_layer_surface(
-        &qh, compositor.create_surface(&qh), Layer::Top, Some("riceplate-preview"), None,
+        &qh,
+        compositor.create_surface(&qh),
+        Layer::Top,
+        Some("riceplate-preview"),
+        None,
     );
-    let edge = if recipe.top { Anchor::TOP } else { Anchor::BOTTOM };
+    let edge = if recipe.top {
+        Anchor::TOP
+    } else {
+        Anchor::BOTTOM
+    };
     layer.set_anchor(edge | Anchor::LEFT | Anchor::RIGHT);
     layer.set_size(0, recipe.height);
     layer.set_exclusive_zone(recipe.height as i32);
@@ -101,8 +119,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     let mut icon_layers = Vec::new();
     for icon in &recipe.desktop_icons {
         let surface = layer_shell.create_layer_surface(
-            &qh, compositor.create_surface(&qh), Layer::Bottom,
-            Some("riceplate-desktop-icon"), None,
+            &qh,
+            compositor.create_surface(&qh),
+            Layer::Bottom,
+            Some("riceplate-desktop-icon"),
+            None,
         );
         surface.set_anchor(Anchor::TOP | Anchor::LEFT);
         surface.set_size(recipe::ICON_WIDTH, recipe::ICON_HEIGHT);
@@ -111,10 +132,48 @@ fn main() -> Result<(), Box<dyn Error>> {
         surface.set_keyboard_interactivity(KeyboardInteractivity::None);
         surface.commit();
         icon_layers.push(IconLayer {
-            surface, pool: None, configured: false, output: None,
+            surface,
+            pool: None,
+            configured: false,
+            output: None,
             placed: Some((icon.x, icon.y)),
         });
     }
+
+    // The native start menu shares the validated schema-v4/v5 recipe and the
+    // same process as the panel. When closed it is parked beyond the output,
+    // not destroyed (a null buffer would invalidate its layer-shell role).
+    let menu_layer = recipe.menu.as_ref().map(|_| {
+        let surface = layer_shell.create_layer_surface(
+            &qh,
+            compositor.create_surface(&qh),
+            Layer::Top,
+            Some("riceplate-native-menu"),
+            None,
+        );
+        surface.set_anchor(
+            (if recipe.top {
+                Anchor::TOP
+            } else {
+                Anchor::BOTTOM
+            }) | Anchor::LEFT,
+        );
+        surface.set_size(native_menu::WIDTH, native_menu::HEIGHT);
+        surface.set_margin(
+            if recipe.top { recipe.height as i32 } else { 0 },
+            0,
+            if recipe.top { 0 } else { recipe.height as i32 },
+            MAX_WIDTH as i32,
+        );
+        surface.set_exclusive_zone(-1);
+        surface.set_keyboard_interactivity(KeyboardInteractivity::None);
+        surface.commit();
+        MenuLayer {
+            surface,
+            pool: None,
+            configured: false,
+        }
+    });
 
     let mut app = RicePlate {
         registry: RegistryState::new(&globals),
@@ -123,9 +182,13 @@ fn main() -> Result<(), Box<dyn Error>> {
         shm,
         layer,
         icon_layers,
+        menu_layer,
+        menu_state: MenuState::default(),
         recipe,
         clock: clock_now(),
         pointer: None,
+        keyboard: None,
+        menu_focused: false,
         primary_seat: None,
         primary_output: None,
         toplevel_manager,
@@ -139,6 +202,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         frame_pending: false,
         needs_redraw: false,
     };
+    if preview_menu { app.set_menu_visible(true, &qh); }
     while !app.closed {
         // Calloop sleeps on Wayland's fd and wakes at the next minute,
         // so the clock updates without any resident 1 Hz poll/frame loop.
@@ -168,6 +232,12 @@ struct IconLayer {
     placed: Option<(u32, u32)>,
 }
 
+struct MenuLayer {
+    surface: LayerSurface,
+    pool: Option<SlotPool>,
+    configured: bool,
+}
+
 struct RicePlate {
     registry: RegistryState,
     outputs: OutputState,
@@ -175,9 +245,13 @@ struct RicePlate {
     shm: Shm,
     layer: LayerSurface,
     icon_layers: Vec<IconLayer>,
+    menu_layer: Option<MenuLayer>,
+    menu_state: MenuState,
     recipe: PanelStyle,
     clock: String,
     pointer: Option<wl_pointer::WlPointer>,
+    keyboard: Option<wl_keyboard::WlKeyboard>,
+    menu_focused: bool,
     primary_seat: Option<wl_seat::WlSeat>,
     primary_output: Option<wl_output::WlOutput>,
     toplevel_manager: Option<ZwlrForeignToplevelManagerV1>,
@@ -193,15 +267,110 @@ struct RicePlate {
 }
 
 impl RicePlate {
+    fn set_menu_visible(&mut self, visible: bool, qh: &QueueHandle<Self>) {
+        let Some(layer) = self.menu_layer.as_ref() else {
+            return;
+        };
+        if visible {
+            self.menu_state.open();
+        } else {
+            self.menu_state.close();
+            self.menu_focused = false;
+        }
+        layer.surface.set_keyboard_interactivity(if visible {
+            KeyboardInteractivity::OnDemand
+        } else {
+            KeyboardInteractivity::None
+        });
+        let left = if visible { 0 } else { MAX_WIDTH as i32 };
+        layer.surface.set_margin(
+            if self.recipe.top {
+                self.recipe.height as i32
+            } else {
+                0
+            },
+            0,
+            if self.recipe.top {
+                0
+            } else {
+                self.recipe.height as i32
+            },
+            left,
+        );
+        layer.surface.commit();
+        self.redraw_menu(qh);
+    }
+
+    fn activate_action(&mut self, action: &str, qh: &QueueHandle<Self>) {
+        if self.menu_state.visible {
+            self.set_menu_visible(false, qh);
+        }
+        if action == "logout" && !logout_available() {
+            eprintln!("RicePlate: log out unavailable outside a labwc-managed session");
+            return;
+        }
+        let (program, args): (&str, &[&str]) = match action {
+            "applications" => ("fuzzel", &[]),
+            "terminal" => ("foot", &[]),
+            "lock" => ("swaylock", &["-f"]),
+            "logout" => ("labwc", &["--exit"]),
+            _ => return, // Validated recipe contract disallows other IDs.
+        };
+        if let Err(error) = Command::new(program).args(args).spawn() {
+            eprintln!("RicePlate: cannot run {action}: {error}");
+        }
+    }
+
+    fn redraw_menu(&mut self, _qh: &QueueHandle<Self>) {
+        let (Some(layer), Some(menu)) = (self.menu_layer.as_mut(), self.recipe.menu.as_ref())
+        else {
+            return;
+        };
+        if !layer.configured {
+            return;
+        }
+        let surface = layer.surface.wl_surface();
+        let Some(pool) = layer.pool.as_mut() else {
+            return;
+        };
+        let (buffer, canvas) = match pool.create_buffer(
+            native_menu::WIDTH as i32,
+            native_menu::HEIGHT as i32,
+            (native_menu::WIDTH * 4) as i32,
+            wl_shm::Format::Argb8888,
+        ) {
+            Ok(result) => result,
+            Err(error) => {
+                eprintln!("RicePlate: native menu buffer unavailable: {error}");
+                return;
+            }
+        };
+        paint_menu(canvas, menu, &self.recipe, &self.menu_state);
+        surface.damage_buffer(0, 0, native_menu::WIDTH as i32, native_menu::HEIGHT as i32);
+        if let Err(error) = buffer.attach_to(surface) {
+            eprintln!("RicePlate: native menu attach failed: {error}");
+            self.closed = true;
+            return;
+        }
+        layer.surface.commit();
+    }
+
     fn redraw_icon(&mut self, index: usize) {
-        let Some(layer) = self.icon_layers.get_mut(index) else { return };
-        if !layer.configured || layer.placed.is_none() { return; }
+        let Some(layer) = self.icon_layers.get_mut(index) else {
+            return;
+        };
+        if !layer.configured || layer.placed.is_none() {
+            return;
+        }
         let width = recipe::ICON_WIDTH;
         let height = recipe::ICON_HEIGHT;
         let surface = layer.surface.wl_surface();
         let pool = layer.pool.as_mut().expect("configured icon has pool");
         let (buffer, canvas) = match pool.create_buffer(
-            width as i32, height as i32, (width * 4) as i32, wl_shm::Format::Argb8888,
+            width as i32,
+            height as i32,
+            (width * 4) as i32,
+            wl_shm::Format::Argb8888,
         ) {
             Ok(result) => result,
             Err(error) => {
@@ -230,7 +399,9 @@ impl RicePlate {
                 (mode.dimensions.0 / scale, mode.dimensions.1 / scale)
             })
         })?;
-        if width <= 0 || height <= 0 { return None; }
+        if width <= 0 || height <= 0 {
+            return None;
+        }
         Some((width as u32, height as u32))
     }
 
@@ -238,17 +409,29 @@ impl RicePlate {
         // The current preview creates one set of layer surfaces, owned by the
         // compositing output to which they were assigned. Full multi-output
         // desktop replication is a separate, gated milestone.
-        let Some(output) = self.primary_output.clone().or_else(||
-                self.icon_layers.iter().find_map(|icon| icon.output.clone())) else {
+        let Some(output) = self
+            .primary_output
+            .clone()
+            .or_else(|| self.icon_layers.iter().find_map(|icon| icon.output.clone()))
+        else {
             return;
         };
-        let Some((width, height)) = self.logical_output_size(&output) else { return; };
-        let placements = desktop_layout::place(&self.recipe.desktop_icons, width, height,
-                                                self.recipe.top, self.recipe.height);
+        let Some((width, height)) = self.logical_output_size(&output) else {
+            return;
+        };
+        let placements = desktop_layout::place(
+            &self.recipe.desktop_icons,
+            width,
+            height,
+            self.recipe.top,
+            self.recipe.height,
+        );
         for (index, placement) in placements.into_iter().enumerate() {
             let restored = {
                 let layer = &mut self.icon_layers[index];
-                if layer.placed == placement { continue; }
+                if layer.placed == placement {
+                    continue;
+                }
                 let restored = layer.placed.is_none() && placement.is_some();
                 layer.placed = placement;
                 if let Some((x, y)) = placement {
@@ -257,37 +440,57 @@ impl RicePlate {
                     // Keep the layer-shell role mapped: a null-buffer commit
                     // would permanently destroy it under the protocol. Park
                     // the icon beyond the output until room is available.
-                    layer.surface.set_margin(height as i32 + recipe::ICON_HEIGHT as i32,
-                                             0, 0, width as i32 + recipe::ICON_WIDTH as i32);
+                    layer.surface.set_margin(
+                        height as i32 + recipe::ICON_HEIGHT as i32,
+                        0,
+                        0,
+                        width as i32 + recipe::ICON_WIDTH as i32,
+                    );
                 }
                 layer.surface.commit();
                 restored && layer.configured
             };
-            if restored { self.redraw_icon(index); }
+            if restored {
+                self.redraw_icon(index);
+            }
         }
     }
 
     fn grouped_tasks(&self) -> Vec<TaskGroup> {
-        task_groups::group_windows(self.tasks.iter().enumerate().map(|(index, task)| {
-            WindowInfo {
-                index, app_id: &task.app_id, title: &task.title,
-                active: task.active, ready: task.ready,
-            }
-        }))
+        task_groups::group_windows(
+            self.tasks
+                .iter()
+                .enumerate()
+                .map(|(index, task)| WindowInfo {
+                    index,
+                    app_id: &task.app_id,
+                    title: &task.title,
+                    active: task.active,
+                    ready: task.ready,
+                }),
+        )
     }
 
     fn request_redraw(&mut self, qh: &QueueHandle<Self>) {
         self.needs_redraw = true;
-        if !self.frame_pending { self.redraw(qh); }
+        if !self.frame_pending {
+            self.redraw(qh);
+        }
     }
 
     fn reveal_task(&mut self, index: usize) {
         let groups = self.grouped_tasks();
-        let Some(group_index) = groups.iter().position(|group| group.members.contains(&index))
-            else { return };
-        let Some(view) = recipe::task_view(
-            &self.recipe, self.width, groups.len(), self.task_offset,
-        ) else { return };
+        let Some(group_index) = groups
+            .iter()
+            .position(|group| group.members.contains(&index))
+        else {
+            return;
+        };
+        let Some(view) =
+            recipe::task_view(&self.recipe, self.width, groups.len(), self.task_offset)
+        else {
+            return;
+        };
         if group_index < view.start {
             self.task_offset = group_index;
         } else if group_index >= view.start + view.slots {
@@ -304,9 +507,15 @@ impl RicePlate {
         let groups = self.grouped_tasks();
         let surface = self.layer.wl_surface();
         let stride = (width * 4) as i32;
-        let pool = self.pool.as_mut().expect("configured surface has a memory pool");
+        let pool = self
+            .pool
+            .as_mut()
+            .expect("configured surface has a memory pool");
         let (buffer, canvas) = match pool.create_buffer(
-            width as i32, height as i32, stride, wl_shm::Format::Argb8888,
+            width as i32,
+            height as i32,
+            stride,
+            wl_shm::Format::Argb8888,
         ) {
             Ok(result) => result,
             Err(error) => {
@@ -325,54 +534,112 @@ impl RicePlate {
         for placed in recipe::layout(&self.recipe, width, groups.len()) {
             match placed.widget {
                 Widget::Launcher => {
-                    fill_rect(canvas, width, height, placed.x, 0, placed.width, height,
-                              self.recipe.active);
-                    draw_text(canvas, width, height,
-                              placed.x + placed.width.saturating_sub(32) / 2, height / 2 - 4,
-                              "Apps", self.recipe.foreground);
+                    fill_rect(
+                        canvas,
+                        width,
+                        height,
+                        placed.x,
+                        0,
+                        placed.width,
+                        height,
+                        self.recipe.active,
+                    );
+                    draw_text(
+                        canvas,
+                        width,
+                        height,
+                        placed.x + placed.width.saturating_sub(32) / 2,
+                        height / 2 - 4,
+                        "Apps",
+                        self.recipe.foreground,
+                    );
                 }
                 Widget::Tasks => {
-                    let Some(view) = recipe::task_view(
-                        &self.recipe, width, groups.len(), self.task_offset,
-                    ) else { continue };
-                    for (index, group) in groups.iter().skip(view.start)
-                        .take(view.slots).enumerate() {
+                    let Some(view) =
+                        recipe::task_view(&self.recipe, width, groups.len(), self.task_offset)
+                    else {
+                        continue;
+                    };
+                    for (index, group) in
+                        groups.iter().skip(view.start).take(view.slots).enumerate()
+                    {
                         let consumed = (index as u32) * view.cell_width;
                         let x = placed.x + consumed;
                         let cell_width = if index + 1 == view.slots {
                             view.content_width - consumed
-                        } else { view.cell_width };
+                        } else {
+                            view.cell_width
+                        };
                         if group.active {
-                            fill_rounded_rect(canvas, width, height, x, 0,
-                                              cell_width.saturating_sub(2), height,
-                                              self.recipe.task_radius, self.recipe.active);
+                            fill_rounded_rect(
+                                canvas,
+                                width,
+                                height,
+                                x,
+                                0,
+                                cell_width.saturating_sub(2),
+                                height,
+                                self.recipe.task_radius,
+                                self.recipe.active,
+                            );
                         }
                         let label = task_groups::visible_label(group, cell_width);
-                        draw_text(canvas, width, height, x + 10, height / 2 - 4,
-                                  &label, self.recipe.foreground);
+                        draw_text(
+                            canvas,
+                            width,
+                            height,
+                            x + 10,
+                            height / 2 - 4,
+                            &label,
+                            self.recipe.foreground,
+                        );
                     }
                     if view.prev {
-                        draw_text(canvas, width, height,
-                                  placed.x + view.content_width + 8,
-                                  height / 2 - 4, "<", self.recipe.foreground);
+                        draw_text(
+                            canvas,
+                            width,
+                            height,
+                            placed.x + view.content_width + 8,
+                            height / 2 - 4,
+                            "<",
+                            self.recipe.foreground,
+                        );
                     }
                     if view.next {
-                        draw_text(canvas, width, height,
-                                  placed.x + view.content_width + 32,
-                                  height / 2 - 4, ">", self.recipe.foreground);
+                        draw_text(
+                            canvas,
+                            width,
+                            height,
+                            placed.x + view.content_width + 32,
+                            height / 2 - 4,
+                            ">",
+                            self.recipe.foreground,
+                        );
                     }
                 }
                 Widget::Clock => {
-                    draw_text(canvas, width, height,
-                              placed.x + placed.width.saturating_sub(40) / 2,
-                              height / 2 - 4, &self.clock, self.recipe.foreground);
+                    draw_text(
+                        canvas,
+                        width,
+                        height,
+                        placed.x + placed.width.saturating_sub(40) / 2,
+                        height / 2 - 4,
+                        &self.clock,
+                        self.recipe.foreground,
+                    );
                 }
                 Widget::Gap(_) => {}
                 Widget::Label(index) => {
                     if let Some(label) = self.recipe.labels.get(index as usize) {
-                        draw_text(canvas, width, height,
-                                  placed.x + self.recipe.label_padding,
-                                  height / 2 - 4, label, self.recipe.foreground);
+                        draw_text(
+                            canvas,
+                            width,
+                            height,
+                            placed.x + self.recipe.label_padding,
+                            height / 2 - 4,
+                            label,
+                            self.recipe.foreground,
+                        );
                     }
                 }
             }
@@ -390,24 +657,143 @@ impl RicePlate {
     }
 }
 
+fn logout_available() -> bool {
+    // An isolated Creator render can inherit an outer labwc PID. Never let a
+    // preview's menu terminate the real logged-in desktop.
+    if std::env::var("RICEBOWL_DE_NESTED").as_deref() == Ok("1") {
+        return false;
+    }
+    std::env::var("LABWC_PID")
+        .ok()
+        .and_then(|value| value.parse::<u32>().ok())
+        .is_some_and(|pid| pid > 1)
+}
+
+fn paint_menu(canvas: &mut [u8], menu: &recipe::NativeMenu, style: &PanelStyle, state: &MenuState) {
+    let width = native_menu::WIDTH;
+    let height = native_menu::HEIGHT;
+    for pixel in canvas.chunks_exact_mut(4) {
+        pixel.copy_from_slice(&style.background.to_le_bytes());
+    }
+    fill_rect(canvas, width, height, 0, 0, width, 38, style.active);
+    draw_text(
+        canvas,
+        width,
+        height,
+        16,
+        15,
+        &menu.title.chars().take(32).collect::<String>(),
+        style.foreground,
+    );
+    let groups = menu.groups.len().max(1) as u32;
+    for (index, group) in menu.groups.iter().enumerate() {
+        let x = index as u32 * width / groups;
+        let next = (index as u32 + 1) * width / groups;
+        if state.group == index {
+            fill_rect(
+                canvas,
+                width,
+                height,
+                x,
+                native_menu::TAB_TOP,
+                next - x,
+                native_menu::TAB_HEIGHT,
+                style.active,
+            );
+        }
+        let available = (next - x).saturating_sub(16) / 8;
+        let label: String = group.title.chars().take(available as usize).collect();
+        draw_text(
+            canvas,
+            width,
+            height,
+            x + 8,
+            native_menu::TAB_TOP + 16,
+            &label,
+            style.foreground,
+        );
+    }
+    if let Some(group) = menu.groups.get(state.group) {
+        for (index, action) in group.actions.iter().enumerate() {
+            let top = native_menu::ACTION_TOP + index as u32 * native_menu::ACTION_HEIGHT;
+            if index == state.selected {
+                fill_rounded_rect(
+                    canvas,
+                    width,
+                    height,
+                    8,
+                    top + 2,
+                    width - 16,
+                    native_menu::ACTION_HEIGHT - 4,
+                    style.task_radius,
+                    style.active,
+                );
+            }
+            let label = match action.as_str() {
+                "applications" => "Applications",
+                "terminal" => "Terminal",
+                "lock" => "Lock screen",
+                "logout" if logout_available() => "Log out of RiceBowl",
+                "logout" => "Log out (unavailable)",
+                _ => "Unsupported",
+            };
+            draw_text(canvas, width, height, 20, top + 16, label, style.foreground);
+        }
+    }
+    draw_text(
+        canvas,
+        width,
+        height,
+        12,
+        height - 16,
+        "Arrows  Enter  Esc close",
+        style.foreground,
+    );
+}
+
 fn paint_icon(canvas: &mut [u8], icon: &recipe::DesktopIcon, active: u32, foreground: u32) {
     let width = recipe::ICON_WIDTH;
     let height = recipe::ICON_HEIGHT;
     canvas.fill(0); // Leave the surrounding desktop visible.
     let glyph = match icon.action.as_str() {
-        "applications" => "Apps", "terminal" => ">_", "lock" => "Lock", _ => return,
+        "applications" => "Apps",
+        "terminal" => ">_",
+        "lock" => "Lock",
+        _ => return,
     };
     fill_rounded_rect(canvas, width, height, 24, 4, 56, 48, 10, active);
     // Contrast backplate prevents white labels from vanishing on bright rices.
     fill_rounded_rect(canvas, width, height, 2, 58, 100, 26, 6, 0xb020_2c36);
-    draw_text(canvas, width, height, 52 - (glyph.len() as u32 * 4), 24,
-              glyph, foreground);
-    draw_text(canvas, width, height, (width - icon.label.len() as u32 * 8) / 2,
-              66, &icon.label, foreground);
+    draw_text(
+        canvas,
+        width,
+        height,
+        52 - (glyph.len() as u32 * 4),
+        24,
+        glyph,
+        foreground,
+    );
+    draw_text(
+        canvas,
+        width,
+        height,
+        (width - icon.label.len() as u32 * 8) / 2,
+        66,
+        &icon.label,
+        foreground,
+    );
 }
 
-fn fill_rect(canvas: &mut [u8], width: u32, height: u32,
-             x: u32, y: u32, w: u32, h: u32, color: u32) {
+fn fill_rect(
+    canvas: &mut [u8],
+    width: u32,
+    height: u32,
+    x: u32,
+    y: u32,
+    w: u32,
+    h: u32,
+    color: u32,
+) {
     for row in y..y.saturating_add(h).min(height) {
         for column in x..x.saturating_add(w).min(width) {
             let index = ((row * width + column) * 4) as usize;
@@ -416,15 +802,35 @@ fn fill_rect(canvas: &mut [u8], width: u32, height: u32,
     }
 }
 
-fn fill_rounded_rect(canvas: &mut [u8], width: u32, height: u32,
-                     x: u32, y: u32, w: u32, h: u32, radius: u32, color: u32) {
+fn fill_rounded_rect(
+    canvas: &mut [u8],
+    width: u32,
+    height: u32,
+    x: u32,
+    y: u32,
+    w: u32,
+    h: u32,
+    radius: u32,
+    color: u32,
+) {
     let r = radius.min(w / 2).min(h / 2);
-    if r == 0 { fill_rect(canvas, width, height, x, y, w, h, color); return; }
+    if r == 0 {
+        fill_rect(canvas, width, height, x, y, w, h, color);
+        return;
+    }
     let corner = (r as i64 - 1).pow(2);
     for py in 0..h.min(height.saturating_sub(y)) {
         for px in 0..w.min(width.saturating_sub(x)) {
-            let dx = if px < r { r - 1 - px } else { px.saturating_sub(w - r) };
-            let dy = if py < r { r - 1 - py } else { py.saturating_sub(h - r) };
+            let dx = if px < r {
+                r - 1 - px
+            } else {
+                px.saturating_sub(w - r)
+            };
+            let dy = if py < r {
+                r - 1 - py
+            } else {
+                py.saturating_sub(h - r)
+            };
             if (dx as i64).pow(2) + (dy as i64).pow(2) <= corner {
                 let index = (((y + py) * width + x + px) * 4) as usize;
                 canvas[index..index + 4].copy_from_slice(&color.to_le_bytes());
@@ -433,16 +839,25 @@ fn fill_rounded_rect(canvas: &mut [u8], width: u32, height: u32,
     }
 }
 
-fn draw_text(canvas: &mut [u8], width: u32, height: u32,
-             x: u32, y: u32, text: &str, color: u32) {
+fn draw_text(canvas: &mut [u8], width: u32, height: u32, x: u32, y: u32, text: &str, color: u32) {
     for (offset, character) in text.chars().enumerate() {
-        let Some(bitmap) = BASIC_FONTS.get(character) else { continue };
+        let Some(bitmap) = BASIC_FONTS.get(character) else {
+            continue;
+        };
         let origin = x.saturating_add((offset as u32).saturating_mul(8));
         for (row, bits) in bitmap.iter().enumerate() {
             for column in 0..8_u32 {
                 if *bits & (1_u8 << column) != 0 {
-                    fill_rect(canvas, width, height, origin + column,
-                              y + row as u32, 1, 1, color);
+                    fill_rect(
+                        canvas,
+                        width,
+                        height,
+                        origin + column,
+                        y + row as u32,
+                        1,
+                        1,
+                        color,
+                    );
                 }
             }
         }
@@ -450,38 +865,79 @@ fn draw_text(canvas: &mut [u8], width: u32, height: u32,
 }
 
 impl CompositorHandler for RicePlate {
-    fn scale_factor_changed(&mut self, _: &Connection, _: &QueueHandle<Self>,
-                            _: &wl_surface::WlSurface, _: i32) {}
-    fn transform_changed(&mut self, _: &Connection, _: &QueueHandle<Self>,
-                         _: &wl_surface::WlSurface, _: wl_output::Transform) {}
-    fn frame(&mut self, _: &Connection, qh: &QueueHandle<Self>,
-             surface: &wl_surface::WlSurface, _: u32) {
-        if surface != self.layer.wl_surface() { return; }
-        self.frame_pending = false;
-        if self.needs_redraw { self.redraw(qh); }
+    fn scale_factor_changed(
+        &mut self,
+        _: &Connection,
+        _: &QueueHandle<Self>,
+        _: &wl_surface::WlSurface,
+        _: i32,
+    ) {
     }
-    fn surface_enter(&mut self, _: &Connection, _: &QueueHandle<Self>,
-                     surface: &wl_surface::WlSurface, output: &wl_output::WlOutput) {
+    fn transform_changed(
+        &mut self,
+        _: &Connection,
+        _: &QueueHandle<Self>,
+        _: &wl_surface::WlSurface,
+        _: wl_output::Transform,
+    ) {
+    }
+    fn frame(
+        &mut self,
+        _: &Connection,
+        qh: &QueueHandle<Self>,
+        surface: &wl_surface::WlSurface,
+        _: u32,
+    ) {
+        if surface != self.layer.wl_surface() {
+            return;
+        }
+        self.frame_pending = false;
+        if self.needs_redraw {
+            self.redraw(qh);
+        }
+    }
+    fn surface_enter(
+        &mut self,
+        _: &Connection,
+        _: &QueueHandle<Self>,
+        surface: &wl_surface::WlSurface,
+        output: &wl_output::WlOutput,
+    ) {
         if surface == self.layer.wl_surface() {
             self.primary_output = Some(output.clone());
             self.reflow_icons();
             return;
         }
-        if let Some(layer) = self.icon_layers.iter_mut().find(|icon|
-                icon.surface.wl_surface() == surface) {
+        if let Some(layer) = self
+            .icon_layers
+            .iter_mut()
+            .find(|icon| icon.surface.wl_surface() == surface)
+        {
             layer.output = Some(output.clone());
             self.reflow_icons();
         }
     }
-    fn surface_leave(&mut self, _: &Connection, _: &QueueHandle<Self>,
-                     surface: &wl_surface::WlSurface, output: &wl_output::WlOutput) {
+    fn surface_leave(
+        &mut self,
+        _: &Connection,
+        _: &QueueHandle<Self>,
+        surface: &wl_surface::WlSurface,
+        output: &wl_output::WlOutput,
+    ) {
         if surface == self.layer.wl_surface() {
-            if self.primary_output.as_ref() == Some(output) { self.primary_output = None; }
+            if self.primary_output.as_ref() == Some(output) {
+                self.primary_output = None;
+            }
             return;
         }
-        if let Some(layer) = self.icon_layers.iter_mut().find(|icon|
-                icon.surface.wl_surface() == surface) {
-            if layer.output.as_ref() == Some(output) { layer.output = None; }
+        if let Some(layer) = self
+            .icon_layers
+            .iter_mut()
+            .find(|icon| icon.surface.wl_surface() == surface)
+        {
+            if layer.output.as_ref() == Some(output) {
+                layer.output = None;
+            }
         }
     }
 }
@@ -490,15 +946,61 @@ impl LayerShellHandler for RicePlate {
     fn closed(&mut self, _: &Connection, _: &QueueHandle<Self>, layer: &LayerSurface) {
         if layer.wl_surface() == self.layer.wl_surface() {
             self.closed = true;
-        } else if let Some(icon) = self.icon_layers.iter_mut().find(|icon|
-            icon.surface.wl_surface() == layer.wl_surface()) {
+        } else if self
+            .menu_layer
+            .as_ref()
+            .is_some_and(|menu| menu.surface.wl_surface() == layer.wl_surface())
+        {
+            self.menu_layer = None;
+            self.menu_state.close();
+        } else if let Some(icon) = self
+            .icon_layers
+            .iter_mut()
+            .find(|icon| icon.surface.wl_surface() == layer.wl_surface())
+        {
             icon.configured = false;
         }
     }
-    fn configure(&mut self, _: &Connection, qh: &QueueHandle<Self>, layer: &LayerSurface,
-                 config: LayerSurfaceConfigure, _: u32) {
-        if let Some(index) = self.icon_layers.iter().position(|icon|
-            icon.surface.wl_surface() == layer.wl_surface()) {
+    fn configure(
+        &mut self,
+        _: &Connection,
+        qh: &QueueHandle<Self>,
+        layer: &LayerSurface,
+        config: LayerSurfaceConfigure,
+        _: u32,
+    ) {
+        if let Some(menu_layer) = self
+            .menu_layer
+            .as_mut()
+            .filter(|menu| menu.surface.wl_surface() == layer.wl_surface())
+        {
+            if config.new_size != (native_menu::WIDTH, native_menu::HEIGHT) {
+                eprintln!("RicePlate: compositor proposed unsupported native menu geometry");
+                self.menu_layer = None;
+                self.menu_state.close();
+                return;
+            }
+            if menu_layer.pool.is_none() {
+                let byte_count = (native_menu::WIDTH * native_menu::HEIGHT * 4 * 3) as usize;
+                match SlotPool::new(byte_count, &self.shm) {
+                    Ok(pool) => menu_layer.pool = Some(pool),
+                    Err(error) => {
+                        eprintln!("RicePlate: cannot allocate native menu: {error}");
+                        self.menu_layer = None;
+                        self.menu_state.close();
+                        return;
+                    }
+                }
+            }
+            menu_layer.configured = true;
+            self.redraw_menu(qh);
+            return;
+        }
+        if let Some(index) = self
+            .icon_layers
+            .iter()
+            .position(|icon| icon.surface.wl_surface() == layer.wl_surface())
+        {
             if config.new_size != (recipe::ICON_WIDTH, recipe::ICON_HEIGHT) {
                 eprintln!("RicePlate: compositor proposed unexpected desktop icon size");
                 return;
@@ -519,7 +1021,9 @@ impl LayerShellHandler for RicePlate {
             self.redraw_icon(index);
             return;
         }
-        if layer.wl_surface() != self.layer.wl_surface() { return; }
+        if layer.wl_surface() != self.layer.wl_surface() {
+            return;
+        }
         let width = config.new_size.0;
         let height = config.new_size.1;
         if width == 0 || width > MAX_WIDTH || height == 0 || height > MAX_HEIGHT {
@@ -551,29 +1055,55 @@ impl LayerShellHandler for RicePlate {
 }
 
 impl OutputHandler for RicePlate {
-    fn output_state(&mut self) -> &mut OutputState { &mut self.outputs }
+    fn output_state(&mut self) -> &mut OutputState {
+        &mut self.outputs
+    }
     fn new_output(&mut self, _: &Connection, _: &QueueHandle<Self>, _: wl_output::WlOutput) {
         self.reflow_icons();
     }
     fn update_output(&mut self, _: &Connection, _: &QueueHandle<Self>, _: wl_output::WlOutput) {
         self.reflow_icons();
     }
-    fn output_destroyed(&mut self, _: &Connection, _: &QueueHandle<Self>, output: wl_output::WlOutput) {
-        if self.primary_output.as_ref() == Some(&output) { self.primary_output = None; }
+    fn output_destroyed(
+        &mut self,
+        _: &Connection,
+        _: &QueueHandle<Self>,
+        output: wl_output::WlOutput,
+    ) {
+        if self.primary_output.as_ref() == Some(&output) {
+            self.primary_output = None;
+        }
         for icon in &mut self.icon_layers {
-            if icon.output.as_ref() == Some(&output) { icon.output = None; }
+            if icon.output.as_ref() == Some(&output) {
+                icon.output = None;
+            }
         }
         self.reflow_icons();
     }
 }
 
 impl SeatHandler for RicePlate {
-    fn seat_state(&mut self) -> &mut SeatState { &mut self.seats }
-    fn new_seat(&mut self, _: &Connection, _: &QueueHandle<Self>, seat: wl_seat::WlSeat) {
-        if self.primary_seat.is_none() { self.primary_seat = Some(seat); }
+    fn seat_state(&mut self) -> &mut SeatState {
+        &mut self.seats
     }
-    fn new_capability(&mut self, _: &Connection, qh: &QueueHandle<Self>,
-                      seat: wl_seat::WlSeat, capability: Capability) {
+    fn new_seat(&mut self, _: &Connection, _: &QueueHandle<Self>, seat: wl_seat::WlSeat) {
+        if self.primary_seat.is_none() {
+            self.primary_seat = Some(seat);
+        }
+    }
+    fn new_capability(
+        &mut self,
+        _: &Connection,
+        qh: &QueueHandle<Self>,
+        seat: wl_seat::WlSeat,
+        capability: Capability,
+    ) {
+        if capability == Capability::Keyboard && self.keyboard.is_none() {
+            match self.seats.get_keyboard(qh, &seat, None) {
+                Ok(keyboard) => self.keyboard = Some(keyboard),
+                Err(error) => eprintln!("RicePlate: keyboard unavailable: {error}"),
+            }
+        }
         if capability == Capability::Pointer && self.pointer.is_none() {
             match self.seats.get_pointer(qh, &seat) {
                 Ok(pointer) => self.pointer = Some(pointer),
@@ -581,10 +1111,22 @@ impl SeatHandler for RicePlate {
             }
         }
     }
-    fn remove_capability(&mut self, _: &Connection, _: &QueueHandle<Self>,
-                         _: wl_seat::WlSeat, capability: Capability) {
+    fn remove_capability(
+        &mut self,
+        _: &Connection,
+        _: &QueueHandle<Self>,
+        _: wl_seat::WlSeat,
+        capability: Capability,
+    ) {
         if capability == Capability::Pointer {
-            if let Some(pointer) = self.pointer.take() { pointer.release(); }
+            if let Some(pointer) = self.pointer.take() {
+                pointer.release();
+            }
+        } else if capability == Capability::Keyboard {
+            if let Some(keyboard) = self.keyboard.take() {
+                keyboard.release();
+            }
+            self.menu_focused = false;
         }
     }
     fn remove_seat(&mut self, _: &Connection, _: &QueueHandle<Self>, seat: wl_seat::WlSeat) {
@@ -594,42 +1136,214 @@ impl SeatHandler for RicePlate {
     }
 }
 
+impl KeyboardHandler for RicePlate {
+    fn enter(
+        &mut self,
+        _: &Connection,
+        _: &QueueHandle<Self>,
+        _: &wl_keyboard::WlKeyboard,
+        surface: &wl_surface::WlSurface,
+        _: u32,
+        _: &[u32],
+        _: &[Keysym],
+    ) {
+        self.menu_focused = self
+            .menu_layer
+            .as_ref()
+            .is_some_and(|menu| menu.surface.wl_surface() == surface)
+            && self.menu_state.visible;
+    }
+
+    fn leave(
+        &mut self,
+        _: &Connection,
+        qh: &QueueHandle<Self>,
+        _: &wl_keyboard::WlKeyboard,
+        surface: &wl_surface::WlSurface,
+        _: u32,
+    ) {
+        if self
+            .menu_layer
+            .as_ref()
+            .is_some_and(|menu| menu.surface.wl_surface() == surface)
+            && self.menu_focused
+        {
+            self.set_menu_visible(false, qh);
+        }
+    }
+
+    fn press_key(
+        &mut self,
+        _: &Connection,
+        qh: &QueueHandle<Self>,
+        _: &wl_keyboard::WlKeyboard,
+        _: u32,
+        event: KeyEvent,
+    ) {
+        if !self.menu_state.visible || !self.menu_focused {
+            return;
+        }
+        let Some(menu) = self.recipe.menu.as_ref() else {
+            return;
+        };
+        let action = match event.keysym {
+            Keysym::Escape => {
+                self.set_menu_visible(false, qh);
+                return;
+            }
+            Keysym::Up => {
+                self.menu_state.select_by(menu, -1);
+                None
+            }
+            Keysym::Down | Keysym::Tab => {
+                self.menu_state.select_by(menu, 1);
+                None
+            }
+            Keysym::Left => {
+                self.menu_state.group_by(menu, -1);
+                None
+            }
+            Keysym::Right => {
+                self.menu_state.group_by(menu, 1);
+                None
+            }
+            Keysym::Return | Keysym::KP_Enter | Keysym::space => {
+                self.menu_state.current_action(menu).map(str::to_owned)
+            }
+            _ => return,
+        };
+        if let Some(action) = action {
+            self.activate_action(&action, qh);
+        } else {
+            self.redraw_menu(qh);
+        }
+    }
+
+    fn repeat_key(
+        &mut self,
+        conn: &Connection,
+        qh: &QueueHandle<Self>,
+        keyboard: &wl_keyboard::WlKeyboard,
+        serial: u32,
+        event: KeyEvent,
+    ) {
+        self.press_key(conn, qh, keyboard, serial, event);
+    }
+
+    fn release_key(
+        &mut self,
+        _: &Connection,
+        _: &QueueHandle<Self>,
+        _: &wl_keyboard::WlKeyboard,
+        _: u32,
+        _: KeyEvent,
+    ) {
+    }
+
+    fn update_modifiers(
+        &mut self,
+        _: &Connection,
+        _: &QueueHandle<Self>,
+        _: &wl_keyboard::WlKeyboard,
+        _: u32,
+        _: Modifiers,
+        _: RawModifiers,
+        _: u32,
+    ) {
+    }
+}
+
 impl PointerHandler for RicePlate {
-    fn pointer_frame(&mut self, _: &Connection, qh: &QueueHandle<Self>,
-                     _: &wl_pointer::WlPointer, events: &[PointerEvent]) {
+    fn pointer_frame(
+        &mut self,
+        _: &Connection,
+        qh: &QueueHandle<Self>,
+        _: &wl_pointer::WlPointer,
+        events: &[PointerEvent],
+    ) {
         for event in events {
-            if let Some(index) = self.icon_layers.iter().position(|icon|
-                &event.surface == icon.surface.wl_surface()) {
-                if self.icon_layers[index].placed.is_none() { continue; }
-                if let PointerEventKind::Press { button: BTN_LEFT, .. } = event.kind {
-                    let icon = &self.recipe.desktop_icons[index];
-                    let (program, args): (&str, &[&str]) = match icon.action.as_str() {
-                        "applications" => ("fuzzel", &[]),
-                        "terminal" => ("foot", &[]),
-                        "lock" => ("swaylock", &["-f"]),
-                        _ => continue,
-                    };
-                    if let Err(error) = Command::new(program).args(args).spawn() {
-                        eprintln!("RicePlate: cannot run desktop action {program}: {error}");
+            if self
+                .menu_layer
+                .as_ref()
+                .is_some_and(|menu| &event.surface == menu.surface.wl_surface())
+            {
+                if let PointerEventKind::Press {
+                    button: BTN_LEFT, ..
+                } = event.kind
+                {
+                    if let Some(menu) = self.recipe.menu.as_ref() {
+                        match self
+                            .menu_state
+                            .hit(menu, event.position.0, event.position.1)
+                        {
+                            Some(MenuHit::Group(index)) => {
+                                self.menu_state.group = index;
+                                self.menu_state.selected = 0;
+                                self.redraw_menu(qh);
+                            }
+                            Some(MenuHit::Action(index)) => {
+                                if let Some(action) = menu.groups[self.menu_state.group]
+                                    .actions
+                                    .get(index)
+                                    .cloned()
+                                {
+                                    self.activate_action(&action, qh);
+                                }
+                            }
+                            Some(MenuHit::Close) => self.set_menu_visible(false, qh),
+                            None => {}
+                        }
                     }
                 }
                 continue;
             }
-            if &event.surface != self.layer.wl_surface() { continue }
+            if let Some(index) = self
+                .icon_layers
+                .iter()
+                .position(|icon| &event.surface == icon.surface.wl_surface())
+            {
+                if self.icon_layers[index].placed.is_none() {
+                    continue;
+                }
+                if let PointerEventKind::Press {
+                    button: BTN_LEFT, ..
+                } = event.kind
+                {
+                    let icon = &self.recipe.desktop_icons[index];
+                    let action = icon.action.clone();
+                    self.activate_action(&action, qh);
+                }
+                continue;
+            }
+            if &event.surface != self.layer.wl_surface() {
+                continue;
+            }
             if let PointerEventKind::Press { button, .. } = event.kind {
-                if button == BTN_LEFT && event.position.1 >= 0.0
-                    && event.position.1 < f64::from(self.height) {
+                if button == BTN_LEFT
+                    && event.position.1 >= 0.0
+                    && event.position.1 < f64::from(self.height)
+                {
                     let groups = self.grouped_tasks();
-                    match recipe::hit(event.position.0, self.width,
-                                      groups.len(), self.task_offset, &self.recipe) {
+                    match recipe::hit(
+                        event.position.0,
+                        self.width,
+                        groups.len(),
+                        self.task_offset,
+                        &self.recipe,
+                    ) {
                         Some(Hit::Launcher) => {
-                            if let Err(error) = Command::new("fuzzel").spawn() {
-                                eprintln!("RicePlate: cannot open application launcher: {error}");
+                            if self.menu_layer.is_some() {
+                                self.set_menu_visible(!self.menu_state.visible, qh);
+                            } else {
+                                self.activate_action("applications", qh);
                             }
                         }
                         Some(Hit::Task(index)) => {
                             if let Some(group) = groups.get(index) {
-                                let active_index = group.members.iter().copied()
+                                let active_index = group
+                                    .members
+                                    .iter()
+                                    .copied()
                                     .find(|&member| self.tasks[member].active);
                                 let (target, minimize) =
                                     task_groups::click_target(group, active_index);
@@ -642,7 +1356,10 @@ impl PointerHandler for RicePlate {
                         }
                         Some(Hit::PreviousTasks) => {
                             if let Some(view) = recipe::task_view(
-                                &self.recipe, self.width, groups.len(), self.task_offset,
+                                &self.recipe,
+                                self.width,
+                                groups.len(),
+                                self.task_offset,
                             ) {
                                 self.task_offset = view.start.saturating_sub(view.slots);
                                 self.request_redraw(qh);
@@ -650,7 +1367,10 @@ impl PointerHandler for RicePlate {
                         }
                         Some(Hit::NextTasks) => {
                             if let Some(view) = recipe::task_view(
-                                &self.recipe, self.width, groups.len(), self.task_offset,
+                                &self.recipe,
+                                self.width,
+                                groups.len(),
+                                self.task_offset,
                             ) {
                                 self.task_offset = (view.start + view.slots)
                                     .min(groups.len().saturating_sub(view.slots));
@@ -667,9 +1387,12 @@ impl PointerHandler for RicePlate {
 
 impl Dispatch<ZwlrForeignToplevelManagerV1, ()> for RicePlate {
     fn event(
-        state: &mut Self, _: &ZwlrForeignToplevelManagerV1,
-        event: zwlr_foreign_toplevel_manager_v1::Event, _: &(),
-        _: &Connection, qh: &QueueHandle<Self>,
+        state: &mut Self,
+        _: &ZwlrForeignToplevelManagerV1,
+        event: zwlr_foreign_toplevel_manager_v1::Event,
+        _: &(),
+        _: &Connection,
+        qh: &QueueHandle<Self>,
     ) {
         match event {
             zwlr_foreign_toplevel_manager_v1::Event::Toplevel { toplevel } => {
@@ -677,8 +1400,11 @@ impl Dispatch<ZwlrForeignToplevelManagerV1, ()> for RicePlate {
                     toplevel.destroy();
                 } else {
                     state.tasks.push(Task {
-                        handle: toplevel, title: String::new(), app_id: String::new(),
-                        active: false, ready: false,
+                        handle: toplevel,
+                        title: String::new(),
+                        app_id: String::new(),
+                        active: false,
+                        ready: false,
                     });
                 }
             }
@@ -695,16 +1421,24 @@ impl Dispatch<ZwlrForeignToplevelManagerV1, ()> for RicePlate {
 
 impl Dispatch<ZwlrForeignToplevelHandleV1, ()> for RicePlate {
     fn event(
-        state: &mut Self, proxy: &ZwlrForeignToplevelHandleV1,
-        event: zwlr_foreign_toplevel_handle_v1::Event, _: &(),
-        _: &Connection, qh: &QueueHandle<Self>,
+        state: &mut Self,
+        proxy: &ZwlrForeignToplevelHandleV1,
+        event: zwlr_foreign_toplevel_handle_v1::Event,
+        _: &(),
+        _: &Connection,
+        qh: &QueueHandle<Self>,
     ) {
         if let zwlr_foreign_toplevel_handle_v1::Event::Closed = event {
             if let Some(index) = state.tasks.iter().position(|task| task.handle == *proxy) {
                 state.tasks.remove(index).handle.destroy();
-                state.task_offset = state.task_offset
+                state.task_offset = state
+                    .task_offset
                     .min(state.grouped_tasks().len().saturating_sub(1));
-                if let Some(active) = state.tasks.iter().position(|task| task.active && task.ready) {
+                if let Some(active) = state
+                    .tasks
+                    .iter()
+                    .position(|task| task.active && task.ready)
+                {
                     state.reveal_task(active);
                 }
                 state.request_redraw(qh);
@@ -715,13 +1449,17 @@ impl Dispatch<ZwlrForeignToplevelHandleV1, ()> for RicePlate {
             let task = &mut state.tasks[index];
             let mut refresh = false;
             match event {
-                zwlr_foreign_toplevel_handle_v1::Event::Title { title } =>
-                    task.title = title.chars().take(256).collect(),
-                zwlr_foreign_toplevel_handle_v1::Event::AppId { app_id } =>
-                    task.app_id = app_id.chars().take(256).collect(),
-                zwlr_foreign_toplevel_handle_v1::Event::State { state: states } =>
-                    task.active = states.chunks_exact(4).any(|raw|
-                        u32::from_ne_bytes(raw.try_into().unwrap_or_default()) == 2),
+                zwlr_foreign_toplevel_handle_v1::Event::Title { title } => {
+                    task.title = title.chars().take(256).collect()
+                }
+                zwlr_foreign_toplevel_handle_v1::Event::AppId { app_id } => {
+                    task.app_id = app_id.chars().take(256).collect()
+                }
+                zwlr_foreign_toplevel_handle_v1::Event::State { state: states } => {
+                    task.active = states
+                        .chunks_exact(4)
+                        .any(|raw| u32::from_ne_bytes(raw.try_into().unwrap_or_default()) == 2)
+                }
                 zwlr_foreign_toplevel_handle_v1::Event::Done => {
                     task.ready = true;
                     refresh = true;
@@ -729,7 +1467,9 @@ impl Dispatch<ZwlrForeignToplevelHandleV1, ()> for RicePlate {
                 _ => {}
             }
             if refresh {
-                if state.tasks[index].active { state.reveal_task(index); }
+                if state.tasks[index].active {
+                    state.reveal_task(index);
+                }
                 state.request_redraw(qh);
             }
         }
@@ -737,12 +1477,16 @@ impl Dispatch<ZwlrForeignToplevelHandleV1, ()> for RicePlate {
 }
 
 impl ShmHandler for RicePlate {
-    fn shm_state(&mut self) -> &mut Shm { &mut self.shm }
+    fn shm_state(&mut self) -> &mut Shm {
+        &mut self.shm
+    }
 }
 
 delegate_registry!(RicePlate);
 impl ProvidesRegistryState for RicePlate {
-    fn registry(&mut self) -> &mut RegistryState { &mut self.registry }
+    fn registry(&mut self) -> &mut RegistryState {
+        &mut self.registry
+    }
     registry_handlers![OutputState, SeatState];
 }
 smithay_client_toolkit::delegate_dispatch2!(RicePlate);
@@ -754,13 +1498,20 @@ mod tests {
     #[test]
     fn desktop_icon_paint_preserves_transparent_background() {
         let icon = recipe::DesktopIcon {
-            label: "Terminal".into(), action: "terminal".into(), x: 32, y: 112,
+            label: "Terminal".into(),
+            action: "terminal".into(),
+            x: 32,
+            y: 112,
         };
         let mut pixels = vec![255; (recipe::ICON_WIDTH * recipe::ICON_HEIGHT * 4) as usize];
         paint_icon(&mut pixels, &icon, 0xff4179aa, 0xfff3f7fa);
         assert_eq!(&pixels[0..4], &[0, 0, 0, 0]);
-        assert!(pixels.chunks_exact(4).any(|pixel| pixel == 0xff4179aa_u32.to_le_bytes()));
-        assert!(pixels.chunks_exact(4).any(|pixel| pixel == 0xfff3f7fa_u32.to_le_bytes()));
+        assert!(pixels
+            .chunks_exact(4)
+            .any(|pixel| pixel == 0xff4179aa_u32.to_le_bytes()));
+        assert!(pixels
+            .chunks_exact(4)
+            .any(|pixel| pixel == 0xfff3f7fa_u32.to_le_bytes()));
     }
 
     #[test]
@@ -768,20 +1519,27 @@ mod tests {
         let mut pixels = vec![0_u8; 4 * 3 * 4];
         fill_rect(&mut pixels, 4, 3, 2, 1, 20, 20, 0xff4179aa);
         assert_eq!(&pixels[0..4], &[0, 0, 0, 0]);
-        assert_eq!(&pixels[(2 * 4 + 3) * 4..(2 * 4 + 4) * 4],
-                   &0xff4179aa_u32.to_le_bytes());
+        assert_eq!(
+            &pixels[(2 * 4 + 3) * 4..(2 * 4 + 4) * 4],
+            &0xff4179aa_u32.to_le_bytes()
+        );
     }
 
     #[test]
     fn label_pixels_come_from_font_glyphs() {
         let mut pixels = vec![0_u8; 20 * 12 * 4];
         draw_text(&mut pixels, 20, 12, 0, 0, "A", 0xfff3f7fa);
-        assert!(pixels.chunks_exact(4).any(|color| color == 0xfff3f7fa_u32.to_le_bytes()));
+        assert!(pixels
+            .chunks_exact(4)
+            .any(|color| color == 0xfff3f7fa_u32.to_le_bytes()));
     }
 
     #[test]
     fn labels_are_bounded_and_have_fallbacks() {
-        assert_eq!(task_groups::task_label("", "org.example.Terminal"), "org.example.Termin");
+        assert_eq!(
+            task_groups::task_label("", "org.example.Terminal"),
+            "org.example.Termin"
+        );
         assert_eq!(task_groups::task_label("", ""), "Window");
         assert_eq!(task_groups::task_label("Readme", "org.example"), "Readme");
     }
@@ -794,4 +1552,22 @@ mod tests {
         assert!(!clock_now().is_empty());
     }
 
+    #[test]
+    fn native_menu_draws_real_recipe_groups_without_opaque_overlay_elsewhere() {
+        let style = recipe::parse(
+            include_str!("../../../tests/fixtures/riceplate-desktop-v5.json"),
+            Some("mockup-desktop"),
+        ).unwrap();
+        let menu = style.menu.as_ref().unwrap();
+        let mut state = MenuState::default();
+        state.open();
+        let mut canvas = vec![0; (native_menu::WIDTH * native_menu::HEIGHT * 4) as usize];
+        paint_menu(&mut canvas, menu, &style, &state);
+        assert_eq!(&canvas[0..4], &style.active.to_le_bytes());
+        assert_eq!(&canvas[(100 * native_menu::WIDTH * 4) as usize..][..4],
+                   &style.background.to_le_bytes());
+        assert_eq!(state.current_action(menu), Some("applications"));
+        state.group_by(menu, 1);
+        assert_eq!(state.current_action(menu), Some("lock"));
+    }
 }
