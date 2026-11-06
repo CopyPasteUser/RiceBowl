@@ -220,7 +220,8 @@ impl RicePlate {
                 Widget::Launcher => {
                     fill_rect(canvas, width, height, placed.x, 0, placed.width, height,
                               self.recipe.active);
-                    draw_text(canvas, width, height, placed.x + 27, height / 2 - 4,
+                    draw_text(canvas, width, height,
+                              placed.x + placed.width.saturating_sub(32) / 2, height / 2 - 4,
                               "Apps", self.recipe.foreground);
                 }
                 Widget::Tasks => {
@@ -255,7 +256,8 @@ impl RicePlate {
                     }
                 }
                 Widget::Clock => {
-                    draw_text(canvas, width, height, placed.x + 26,
+                    draw_text(canvas, width, height,
+                              placed.x + placed.width.saturating_sub(40) / 2,
                               height / 2 - 4, &self.clock, self.recipe.foreground);
                 }
             }
