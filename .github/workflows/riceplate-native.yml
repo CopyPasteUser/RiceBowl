@@ -62,6 +62,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y labwc grim wlr-randr swaybg python3-pil dbus-user-session dbus-x11
+      - name: Validate both declarative Creator examples
+        run: /usr/bin/python3 -m unittest discover -s tests -p test_de_creator_examples.py -v
       - name: Boot native Wayland layer surface
         run: timeout -k 5s 70s sh scripts/smoke_riceplate_native.sh
       - name: Render validated recipe in isolated Creator compositor
