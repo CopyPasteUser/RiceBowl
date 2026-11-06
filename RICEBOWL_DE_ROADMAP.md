@@ -112,6 +112,9 @@ affecting XFCE, including a failed-session recovery. **Not yet signed off.**
 - [x] Consume the two bundled schema-v1 panel recipes from native Rust for
   geometry, placement and visual tokens, without pretending unimplemented
   system indicators are functional native widgets.
+- [x] Add a real local-time clock with minute-boundary event-loop wakeups,
+  non-clickable until a calendar exists, plus activate/minimize task clicks.
+  A complete taskbar (grouping, tray, keyboard controls) remains outstanding.
 - [ ] Build a Wayland-native panel through `wlr-layer-shell`.
 - [ ] Populate tasks/windows through a supported foreign-toplevel protocol.
 - [ ] Implement launchers, task groups, tray, calendar, menus and keyboard
