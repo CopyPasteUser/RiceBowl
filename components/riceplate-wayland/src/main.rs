@@ -2753,19 +2753,32 @@ mod tests {
         let mut loading = vec![0; (native_menu::WIDTH * native_menu::HEIGHT * 4) as usize];
         let mut empty = loading.clone();
         let mut active = loading.clone();
+        let mut past = loading.clone();
         let revision = state.begin();
         paint_notifications(&mut loading, &style, &state);
-        assert!(state.update(revision, Ok(vec![])));
+        assert!(state.update(revision, Ok(ricepop::Snapshot {
+            active: vec![], history: vec![],
+        })));
         paint_notifications(&mut empty, &style, &state);
         let revision = state.begin();
-        assert!(state.update(revision, Ok(vec![ricepop::Notice {
-            id: 1, summary: "New message".into(), body: "Private preview".into(),
-        }])));
+        assert!(state.update(revision, Ok(ricepop::Snapshot {
+            active: vec![ricepop::Notice {
+                id: 1, summary: "New message".into(), body: "Private preview".into(),
+            }],
+            history: vec![ricepop::Notice {
+                id: 2, summary: "Older message".into(), body: "Past preview".into(),
+            }],
+        })));
         paint_notifications(&mut active, &style, &state);
+        state.select_tab(true);
+        paint_notifications(&mut past, &style, &state);
         assert_ne!(loading, empty);
         assert_ne!(empty, active);
+        assert_ne!(active, past);
+        assert_eq!(state.selected_id(), None);
         state.close();
         assert!(state.notices.is_empty());
+        assert!(state.history.is_empty());
     }
 
     #[test]

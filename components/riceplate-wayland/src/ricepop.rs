@@ -244,7 +244,7 @@ mod tests {
         let mut state = State::default();
         let old = state.begin();
         let current = state.begin();
-        assert!(!state.update(old, Ok(vec![])));
+        assert!(!state.update(old, Ok(Snapshot { active: vec![], history: vec![] })));
         let items = (1..=8).map(|id| Notice { id, summary: "x".into(), body: "".into() }).collect();
         assert!(state.update(current, Ok(Snapshot { active: items, history: vec![Notice {
             id: 77, summary: "Old".into(), body: "Past".into(),
