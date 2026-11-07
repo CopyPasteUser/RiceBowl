@@ -257,6 +257,15 @@ affecting XFCE, including a failed-session recovery. **Not yet signed off.**
   content or replays third-party actions. This supplies data for a future
   native notification center; visual center, OSD and native history controls
   remain open.
+- [x] Add **explicit one-notification RicePop dismissal** for the existing
+  Mako host: `de notification-dismiss --notification-id UINT32 --json`
+  accepts only a currently active ID from a fresh bounded inventory and
+  invokes `makoctl dismiss -n ID` with fixed arguments. It never dismisses
+  everything, replays an application's action, stores private notification
+  content, or starts another notification owner. Missing Mako, stale IDs,
+  timeouts and truncated lists return machine-readable failures. This is a
+  safe control adapter, **not** the still-missing native RicePop history UI,
+  notification-center panel or OSD.
 - [x] Deliver the first **real native RiceSpice quick actions** in the bounded
   schema-v4 menu vocabulary: Wi-Fi radio toggle through NetworkManager,
   default-sink mute/unmute and 5% volume steps through WirePlumber. Run only

@@ -18,7 +18,7 @@ modify global session settings.
 | Wallpaper / appearances | Original bundled wallpapers, composable panel groups, labels, gaps, tokens, original example rices | Full desktop widgets, rich layout primitives, complete cross-app window decorations |
 | Hardware indicators | Kernel-backed battery; NetworkManager connectivity and WirePlumber sink status on a bounded worker | Device picker, Bluetooth status, event subscriptions and finer status detail |
 | RiceSpice controls | Allowlisted native-menu Wi-Fi toggle, volume ±5%, mute; asynchronous result feedback | Full settings for displays, input, network, audio, Bluetooth, accessibility, time and power |
-| RicePop notifications | On-demand `de notifications --json` reads active/history entries from the existing Mako host | Native notification center, OSD, interaction/history UI, non-Mako backends |
+| RicePop notifications | On-demand `de notifications --json` reads active/history from Mako; `de notification-dismiss --notification-id N --json` safely closes exactly one active alert | Native notification center, OSD, interaction/history UI, non-Mako backends |
 | Session safety | Opt-in session, user polkit agent when installed, optional Mako/swayidle/swaylock, compositor exit cleanup | Complete suspend/resume and hardware recovery acceptance |
 | Creator authoring | Schema-v1–v5 validation, offline private draft edits, component catalog and API inventory, nested native render/capture and visual comparisons | Broad desktop composition, complete action/state bindings, high-fidelity mockup conversion |
 | RicePack exchange | Deterministic v2 recipe archives, SHA-256-pinned bundled wallpaper, provenance and v1 read compatibility; explicit next-login staging and one-level rollback | Packaged external assets, multi-component live apply and transactional active-session rollback |
@@ -58,21 +58,24 @@ ricebowl de start --nested --panel native --recipe quick-controls
 
 # Only inside a Wayland session with the Mako notification host:
 ricebowl de notifications --json
+# Only when intentionally closing one active notification returned above:
+ricebowl de notification-dismiss --notification-id 12 --json
 ```
 
 Wi-Fi toggling can disconnect the current session. Notification JSON may
-contain private messages. The nested preview does not change your current
+contain private messages; dismissal actually closes an alert in the current
+Mako session. The nested preview does not change your current
 desktop. See [Wayland preview instructions](WAYLAND_SESSION.md) for detailed
 dependencies, screen captures and rollback behavior.
 
 ## Verification and 1.0 gates
 
-The latest code merged through [PR #141](https://github.com/CopyPasteUser/Ricebowl/pull/141).
-Local automated suites most recently passed **897 Python tests** (16 skipped
-for session/hardware constraints) and **51 native Rust tests** on the relevant
-native-change milestone. GitHub's `Tests`, `Native RicePlate prototype` and
-`Wayland session preview` workflows passed on the latest native/notification
-changes. Native CI renders actual screenshots under headless labwc, including
+Implementation evidence includes [native icons PR #143](https://github.com/CopyPasteUser/Ricebowl/pull/143)
+and [Mako bridge PR #141](https://github.com/CopyPasteUser/Ricebowl/pull/141).
+Local automated suites most recently passed **901 Python tests** (16 skipped
+for session/hardware constraints) and **53 native Rust tests**. GitHub's
+`Tests`, `Native RicePlate prototype` and `Wayland session preview` workflows
+have passed on the corresponding merged milestones. Native CI renders actual screenshots under headless labwc, including
 two-output icon/menu/calendar hotplug coverage; this is *not* physical device
 signoff, a performance benchmark or proof of historical-OS visual fidelity.
 
