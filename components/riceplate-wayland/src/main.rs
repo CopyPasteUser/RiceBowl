@@ -8,6 +8,7 @@ use font8x8::{UnicodeFonts, BASIC_FONTS};
 mod calendar;
 mod desktop_layout;
 mod icon_positions;
+mod menu_pins;
 mod native_menu;
 mod power;
 mod recipe;
@@ -103,6 +104,12 @@ fn main() -> Result<(), Box<dyn Error>> {
     let icon_outputs = icon_positions::restore(&mut recipe).unwrap_or_else(|error| {
         eprintln!("RicePlate: ignored invalid saved desktop icon positions: {error}");
         icon_positions::OutputPositions::default()
+    });
+    let saved_menu_pins = recipe.menu.as_ref().map_or_else(Vec::new, |menu| {
+        menu_pins::restore(&recipe.id, menu).unwrap_or_else(|error| {
+            eprintln!("RicePlate: ignored invalid saved menu pins: {error}");
+            Vec::new()
+        })
     });
     if preview_menu && recipe.menu.is_none() {
         return Err("Native menu preview requires schema v4/v5".into());
@@ -259,7 +266,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         calendar_mirrors: Vec::new(),
         active_calendar: None,
         preview_secondary_calendar,
-        menu_state: MenuState::default(),
+        menu_state: MenuState { pins: saved_menu_pins, ..MenuState::default() },
         notification_state: NotificationState::default(),
         notification_sender: None,
         calendar_state: CalendarState::new(Local::now().date_naive()),
@@ -548,6 +555,10 @@ impl RicePlate {
                     self.task_offset = next;
                 }
                 self.request_redraw(qh);
+            }
+            Keysym::space if self.menu_state.view == native_menu::View::Search => {
+                self.menu_state.search_input(" ");
+                None
             }
             Keysym::Return | Keysym::KP_Enter | Keysym::space => {
                 match self.focused_target {
@@ -1401,7 +1412,7 @@ fn paint_menu(canvas: &mut [u8], menu: &recipe::NativeMenu, style: &PanelStyle, 
     for (index, group) in menu.groups.iter().enumerate() {
         let x = index as u32 * width / groups;
         let next = (index as u32 + 1) * width / groups;
-        if state.group == index {
+        if state.view == native_menu::View::Groups && state.group == index {
             fill_rect(
                 canvas,
                 width,
@@ -1425,10 +1436,25 @@ fn paint_menu(canvas: &mut [u8], menu: &recipe::NativeMenu, style: &PanelStyle, 
             style.foreground,
         );
     }
-    if let Some(group) = menu.groups.get(state.group) {
-        for (index, action) in group.actions.iter().enumerate() {
-            let top = native_menu::ACTION_TOP + index as u32 * native_menu::ACTION_HEIGHT;
-            if index == state.selected {
+    if state.view == native_menu::View::Search {
+        draw_text(canvas, width, height, 12, 91,
+                  &format!("Find: {}", state.search), style.foreground);
+    } else if state.view == native_menu::View::Saved {
+        draw_text(canvas, width, height, 12, 91,
+                  &format!("Saved actions: {}", state.actions(menu).len()), style.foreground);
+    }
+    let actions = state.actions(menu);
+    if actions.is_empty() {
+        draw_text(canvas, width, height, 15, 135,
+                  if state.view == native_menu::View::Saved {
+                      "No saved actions"
+                  } else { "No matching actions" }, style.foreground);
+    } else {
+        for (row, action) in actions.into_iter().skip(state.first_action_row())
+            .take(native_menu::VISIBLE_ACTIONS).enumerate() {
+            let action_index = state.first_action_row() + row;
+            let top = native_menu::ACTION_TOP + row as u32 * native_menu::ACTION_HEIGHT;
+            if action_index == state.selected {
                 fill_rounded_rect(
                     canvas,
                     width,
@@ -1441,21 +1467,13 @@ fn paint_menu(canvas: &mut [u8], menu: &recipe::NativeMenu, style: &PanelStyle, 
                     style.active,
                 );
             }
-            let label = match action.as_str() {
-                "applications" => "Applications",
-                "terminal" => "Terminal",
-                "lock" => "Lock screen",
-                "logout" if logout_available() => "Log out of RiceBowl",
-                "logout" => "Log out (unavailable)",
-                "wifi-toggle" => "Toggle Wi-Fi radio",
-                "audio-mute" => "Toggle speaker mute",
-                "audio-up" => "Volume +5%",
-                "audio-down" => "Volume -5%",
-                "notifications" => "Notifications",
-                "settings" => "RiceSpice settings",
-                _ => "Unsupported",
-            };
-            draw_text(canvas, width, height, 20, top + 16, label, style.foreground);
+            let label = if action == "logout" && !logout_available() {
+                "Log out (unavailable)"
+            } else { native_menu::action_label(action) };
+            let pinned = state.pins.iter().any(|pin| pin.as_str() == action);
+            draw_text(canvas, width, height, 20, top + 16,
+                      &format!("{}{}", if pinned { "* " } else { "" }, label),
+                      style.foreground);
         }
     }
     draw_text(
@@ -1464,7 +1482,7 @@ fn paint_menu(canvas: &mut [u8], menu: &recipe::NativeMenu, style: &PanelStyle, 
         height,
         12,
         height - 16,
-        state.notice.unwrap_or("Arrows  Enter  Esc close"),
+        state.notice.unwrap_or("Type to find  F2 Pin  F3 Saved"),
         style.foreground,
     );
 }
@@ -2256,8 +2274,38 @@ impl KeyboardHandler for RicePlate {
         };
         let action = match event.keysym {
             Keysym::Escape => {
-                self.set_menu_visible(false, qh);
-                return;
+                if self.menu_state.back() { None } else {
+                    self.set_menu_visible(false, qh);
+                    return;
+                }
+            }
+            Keysym::BackSpace => {
+                self.menu_state.backspace();
+                None
+            }
+            Keysym::F2 => {
+                let previous = self.menu_state.pins.clone();
+                if self.menu_state.toggle_pin(menu) {
+                    let now_pinned = self.menu_state.pins.len() > previous.len();
+                    if let Err(error) = menu_pins::save(&self.recipe.id, menu, &self.menu_state.pins) {
+                        eprintln!("RicePlate: cannot save native menu pins: {error}");
+                        self.menu_state.pins = previous;
+                        self.menu_state.notice = Some("Cannot save pins");
+                    } else {
+                        self.menu_state.notice = Some(if now_pinned { "Action pinned" } else { "Pin removed" });
+                    }
+                } else {
+                    self.menu_state.notice = Some("No action or saved list full");
+                }
+                None
+            }
+            Keysym::F3 => {
+                self.menu_state.show_saved();
+                None
+            }
+            Keysym::slash => {
+                self.menu_state.start_search();
+                None
             }
             Keysym::Up => {
                 self.menu_state.select_by(menu, -1);
@@ -2278,7 +2326,12 @@ impl KeyboardHandler for RicePlate {
             Keysym::Return | Keysym::KP_Enter | Keysym::space => {
                 self.menu_state.current_action(menu).map(str::to_owned)
             }
-            _ => return,
+            _ => {
+                if !event.utf8.as_deref().is_some_and(|input| self.menu_state.search_input(input)) {
+                    return;
+                }
+                None
+            }
         };
         if let Some(action) = action {
             self.activate_action(&action, qh);
@@ -2387,16 +2440,12 @@ impl PointerHandler for RicePlate {
                             .hit(menu, event.position.0, event.position.1)
                         {
                             Some(MenuHit::Group(index)) => {
-                                self.menu_state.group = index;
-                                self.menu_state.selected = 0;
+                                self.menu_state.open_group(index);
                                 self.redraw_menu(qh);
                             }
                             Some(MenuHit::Action(index)) => {
-                                if let Some(action) = menu.groups[self.menu_state.group]
-                                    .actions
-                                    .get(index)
-                                    .cloned()
-                                {
+                                self.menu_state.selected = index;
+                                if let Some(action) = self.menu_state.current_action(menu).map(str::to_owned) {
                                     self.activate_action(&action, qh);
                                 }
                             }
