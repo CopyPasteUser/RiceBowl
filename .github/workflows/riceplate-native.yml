@@ -6,8 +6,14 @@ on:
       - '.github/workflows/riceplate-native.yml'
       - 'components/riceplate-wayland/**'
       - 'scripts/smoke_riceplate_native.sh'
+      - 'scripts/smoke_riceplate_multioutput.sh'
+      - 'scripts/check_wayland_panel_outputs.py'
       - 'scripts/compare_wayland_captures.py'
+      - 'scripts/verify_wayland_creator_examples.py'
+      - 'tests/test_de_render.py'
       - 'tests/test_de_visual_qa.py'
+      - 'tests/test_de_creator_examples.py'
+      - 'examples/wayland/**'
       - 'tests/fixtures/riceplate-desktop-v5-overflow.json'
       - 'macrice/de/capture.py'
       - 'macrice/de/render.py'
@@ -17,8 +23,14 @@ on:
       - '.github/workflows/riceplate-native.yml'
       - 'components/riceplate-wayland/**'
       - 'scripts/smoke_riceplate_native.sh'
+      - 'scripts/smoke_riceplate_multioutput.sh'
+      - 'scripts/check_wayland_panel_outputs.py'
       - 'scripts/compare_wayland_captures.py'
+      - 'scripts/verify_wayland_creator_examples.py'
+      - 'tests/test_de_render.py'
       - 'tests/test_de_visual_qa.py'
+      - 'tests/test_de_creator_examples.py'
+      - 'examples/wayland/**'
       - 'tests/fixtures/riceplate-desktop-v5-overflow.json'
       - 'macrice/de/capture.py'
       - 'macrice/de/render.py'
@@ -30,15 +42,20 @@ permissions:
 jobs:
   native-layer-shell:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - name: Install native Wayland and keyboard build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxkbcommon-dev labwc grim wlr-randr swaybg python3-pil dbus-user-session dbus-x11
       - name: Build and test native RicePlate
         run: |
           cargo test --manifest-path components/riceplate-wayland/Cargo.toml
           cargo build --release --manifest-path components/riceplate-wayland/Cargo.toml
           sh -n scripts/smoke_riceplate_native.sh
+          sh -n scripts/smoke_riceplate_multioutput.sh
       - name: Prepare native preview artifact with build provenance
         run: |
           set -eu
@@ -52,12 +69,12 @@ jobs:
             "$GITHUB_SHA" "$(rustc --version)" > dist/riceplate-native-preview/BUILDINFO.txt
           (cd dist/riceplate-native-preview && sha256sum riceplate-native Cargo.lock > SHA256SUMS)
           (cd dist/riceplate-native-preview && sha256sum -c SHA256SUMS)
-      - name: Install headless labwc
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y labwc grim wlr-randr swaybg python3-pil dbus-user-session dbus-x11
+      - name: Validate both declarative Creator examples
+        run: /usr/bin/python3 -m unittest discover -s tests -p test_de_creator_examples.py -v
       - name: Boot native Wayland layer surface
         run: timeout -k 5s 70s sh scripts/smoke_riceplate_native.sh
+      - name: Prove native panel on two outputs and secondary hotplug
+        run: timeout -k 5s 70s sh scripts/smoke_riceplate_multioutput.sh
       - name: Render validated recipe in isolated Creator compositor
         run: |
           set -eu
@@ -72,6 +89,12 @@ jobs:
             --output "$PWD/dist/riceplate-native-preview/isolated-v5.png" \
             --width 1024 --height 768 --json \
             > dist/riceplate-native-preview/isolated-v5.json
+      - name: Prove Creator teardown after real success and injected failures
+        run: |
+          export PATH="$PWD/components/riceplate-wayland/target/release:$PATH"
+          export RICEBOWL_TEST_NATIVE_RENDER=1
+          dbus-run-session -- /usr/bin/python3 -m unittest \
+            tests.test_de_render.HeadlessRenderTests.test_real_headless_success_and_injected_failures_leave_no_processes -v
       - name: Validate and record real multi-resolution captures
         run: |
           python3 - <<'PY'
@@ -105,7 +128,7 @@ jobs:
               'isolated-v5': (1024, 768, 1),
           }
           captures = {}
-          for label in ('shell-v4', 'desktop-v5', *expected):
+          for label in ('shell-v4', 'desktop-v5', 'menu-v5', *expected):
               screenshot = Path(f'dist/riceplate-native-preview/{label}.png')
               data = screenshot.read_bytes()
               assert data[:8] == bytes.fromhex('89504e470d0a1a0a'), f'{label}: not a PNG capture'
@@ -161,8 +184,16 @@ jobs:
               print(f'Captured real native labwc {label}: {width}x{height}, {len(data)} bytes')
               captures[label] = data
           assert captures['shell-v4'] != captures['desktop-v5'], 'Icons missing from v5 framebuffer'
+          assert captures['menu-v5'] != captures['desktop-v5'], 'Native menu did not render in Wayland frame'
           (directory / 'capture-manifest.json').write_text(json.dumps(manifest, indent=2, sort_keys=True) + '\n')
           PY
+      - name: Render both Creator demonstrators at four real output geometries
+        run: |
+          set -eu
+          mkdir -p dist/riceplate-native-preview/creator-examples
+          export PATH="$PWD/components/riceplate-wayland/target/release:$PATH"
+          python3 -m scripts.verify_wayland_creator_examples \
+            --output-dir "$PWD/dist/riceplate-native-preview/creator-examples"
       - name: Archive smoke-tested native RicePlate preview binary
         uses: actions/upload-artifact@v4
         with:

@@ -33,6 +33,18 @@ pub struct DesktopIcon {
     pub y: u32,
 }
 
+#[derive(Debug, Clone)]
+pub struct NativeMenu {
+    pub title: String,
+    pub groups: Vec<NativeMenuGroup>,
+}
+
+#[derive(Debug, Clone)]
+pub struct NativeMenuGroup {
+    pub title: String,
+    pub actions: Vec<String>,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Widget {
     Launcher,
@@ -81,6 +93,7 @@ pub struct PanelStyle {
     pub foreground: u32,
     pub active: u32,
     pub desktop_icons: Vec<DesktopIcon>,
+    pub menu: Option<NativeMenu>,
 }
 
 #[derive(Deserialize)]
@@ -103,11 +116,17 @@ struct Recipe {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Menu { title: String, groups: Vec<MenuGroup> }
+struct Menu {
+    title: String,
+    groups: Vec<MenuGroup>,
+}
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct MenuGroup { title: String, actions: Vec<String> }
+struct MenuGroup {
+    title: String,
+    actions: Vec<String>,
+}
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -119,15 +138,26 @@ struct Desktop {
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct DesktopIconInput { label: String, action: String, x: u32, y: u32 }
+struct DesktopIconInput {
+    label: String,
+    action: String,
+    x: u32,
+    y: u32,
+}
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Tokens { label_padding: u32, task_radius: u32 }
+struct Tokens {
+    label_padding: u32,
+    task_radius: u32,
+}
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
-struct Responsive { compact_max_width: u32, compact_layout: LayoutSections }
+struct Responsive {
+    compact_max_width: u32,
+    compact_layout: LayoutSections,
+}
 
 #[derive(Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -200,8 +230,11 @@ fn color(raw: &str) -> Result<u32, Box<dyn Error>> {
 }
 
 fn safe_label(text: &str, max_length: usize) -> bool {
-    !text.is_empty() && text.len() <= max_length && text.bytes().all(|b|
-        b.is_ascii_alphanumeric() || b" ._:+-".contains(&b))
+    !text.is_empty()
+        && text.len() <= max_length
+        && text
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b" ._:+-".contains(&b))
 }
 
 fn validate_menu(menu: &Menu) -> Result<(), Box<dyn Error>> {
@@ -215,7 +248,8 @@ fn validate_menu(menu: &Menu) -> Result<(), Box<dyn Error>> {
         }
         for action in &group.actions {
             if !["applications", "terminal", "lock", "logout"].contains(&action.as_str())
-                || !seen.insert(action.as_str()) {
+                || !seen.insert(action.as_str())
+            {
                 return Err("Menu contains unsupported or duplicate action".into());
             }
         }
@@ -231,23 +265,32 @@ fn validate_icons(icons: Vec<DesktopIconInput>) -> Result<Vec<DesktopIcon>, Box<
     for icon in icons {
         if !safe_label(&icon.label, 12)
             || !["applications", "terminal", "lock"].contains(&icon.action.as_str())
-            || icon.x > 4096 || !(72..=4096).contains(&icon.y)
-            || result.iter().any(|existing|
+            || icon.x > 4096
+            || !(72..=4096).contains(&icon.y)
+            || result.iter().any(|existing| {
                 existing.x.abs_diff(icon.x) < ICON_WIDTH
-                    && existing.y.abs_diff(icon.y) < ICON_HEIGHT)
+                    && existing.y.abs_diff(icon.y) < ICON_HEIGHT
+            })
         {
             return Err("Unsafe, unbounded or overlapping desktop icon".into());
         }
         result.push(DesktopIcon {
-            label: icon.label, action: icon.action, x: icon.x, y: icon.y,
+            label: icon.label,
+            action: icon.action,
+            x: icon.x,
+            y: icon.y,
         });
     }
     Ok(result)
 }
 
 fn expand_layout(
-    node: &LayoutNode, depth: usize, counts: &mut [usize; 2],
-    seen: &mut HashSet<String>, rendered: &mut Vec<Widget>, labels: &mut Vec<String>,
+    node: &LayoutNode,
+    depth: usize,
+    counts: &mut [usize; 2],
+    seen: &mut HashSet<String>,
+    rendered: &mut Vec<Widget>,
+    labels: &mut Vec<String>,
 ) -> Result<(), Box<dyn Error>> {
     counts[0] += 1;
     if depth > MAX_LAYOUT_DEPTH || counts[0] > MAX_LAYOUT_NODES {
@@ -255,18 +298,22 @@ fn expand_layout(
     }
     match node {
         LayoutNode::Widget { id } => {
-            if !seen.insert(id.clone()) { return Err("Duplicate panel widget".into()); }
+            if !seen.insert(id.clone()) {
+                return Err("Duplicate panel widget".into());
+            }
             match id.as_str() {
                 "launcher" => rendered.push(Widget::Launcher),
                 "tasks" => rendered.push(Widget::Tasks),
                 "clock" => rendered.push(Widget::Clock),
                 // Known but unsupported native controls remain Waybar-only.
-                "network" | "audio" | "battery" | "tray" => {},
+                "network" | "audio" | "battery" | "tray" => {}
                 _ => return Err("Unsupported panel widget or action".into()),
             }
         }
         LayoutNode::Gap { width } => {
-            if !(4..=64).contains(width) { return Err("Panel gap width invalid".into()); }
+            if !(4..=64).contains(width) {
+                return Err("Panel gap width invalid".into());
+            }
             rendered.push(Widget::Gap(*width));
         }
         LayoutNode::Label { text } => {
@@ -274,7 +321,9 @@ fn expand_layout(
                 return Err("Panel label is not bounded safe ASCII".into());
             }
             counts[1] += 1;
-            if counts[1] > MAX_LAYOUT_LABELS { return Err("Too many labels".into()); }
+            if counts[1] > MAX_LAYOUT_LABELS {
+                return Err("Too many labels".into());
+            }
             let index = labels.len() as u8;
             labels.push(text.clone());
             rendered.push(Widget::Label(index));
@@ -284,7 +333,9 @@ fn expand_layout(
                 return Err("Invalid panel group".into());
             }
             for (index, child) in children.iter().enumerate() {
-                if index > 0 && *gap > 0 { rendered.push(Widget::Gap(*gap)); }
+                if index > 0 && *gap > 0 {
+                    rendered.push(Widget::Gap(*gap));
+                }
                 expand_layout(child, depth + 1, counts, seen, rendered, labels)?;
             }
         }
@@ -298,14 +349,20 @@ pub fn parse(raw: &str, expected_id: Option<&str>) -> Result<PanelStyle, Box<dyn
     }
     let recipe: Recipe = serde_json::from_str(raw)?;
     let id = recipe.id.as_bytes();
-    if ![1, 2, 3, 4, 5].contains(&recipe.schema_version) || id.len() < 2 || id.len() > 32
+    if ![1, 2, 3, 4, 5].contains(&recipe.schema_version)
+        || id.len() < 2
+        || id.len() > 32
         || !id[0].is_ascii_lowercase()
-        || !id.iter().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || *b == b'-')
+        || !id
+            .iter()
+            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || *b == b'-')
         || expected_id.is_some_and(|expected| expected != recipe.id.as_str())
-        || recipe.name.is_empty() || recipe.name.chars().count() > 60
+        || recipe.name.is_empty()
+        || recipe.name.chars().count() > 60
         || recipe.name.chars().any(char::is_control)
         || !(28..=64).contains(&recipe.panel.height)
-        || !["top", "bottom"].contains(&recipe.panel.position.as_str()) {
+        || !["top", "bottom"].contains(&recipe.panel.position.as_str())
+    {
         return Err("RicePlate recipe metadata or dimensions are invalid".into());
     }
     let widths = match (recipe.schema_version, recipe.panel.metrics) {
@@ -314,17 +371,29 @@ pub fn parse(raw: &str, expected_id: Option<&str>) -> Result<PanelStyle, Box<dyn
             if (64..=256).contains(&metrics.launcher_width)
                 && (96..=256).contains(&metrics.task_width)
                 && (64..=256).contains(&metrics.clock_width) =>
-            [metrics.launcher_width, metrics.task_width, metrics.clock_width],
+        {
+            [
+                metrics.launcher_width,
+                metrics.task_width,
+                metrics.clock_width,
+            ]
+        }
         _ => return Err("RicePlate v2/v3 requires bounded metrics; v1 forbids them".into()),
     };
     let mut seen: HashSet<String> = HashSet::new();
     let mut sections: [Vec<Widget>; 3] = std::array::from_fn(|_| Vec::new());
     let mut labels = Vec::new();
-    match (recipe.schema_version, recipe.panel.sections, recipe.panel.layout) {
+    match (
+        recipe.schema_version,
+        recipe.panel.sections,
+        recipe.panel.layout,
+    ) {
         (1 | 2, Some(source), None) => {
             let selected = [source.start, source.center, source.end];
             for (index, widgets) in selected.into_iter().enumerate() {
-                if widgets.len() > 7 { return Err("RicePlate section has more than seven widgets".into()); }
+                if widgets.len() > 7 {
+                    return Err("RicePlate section has more than seven widgets".into());
+                }
                 for widget in widgets {
                     if !seen.insert(widget.clone()) {
                         return Err("RicePlate recipe duplicates a widget".into());
@@ -333,7 +402,7 @@ pub fn parse(raw: &str, expected_id: Option<&str>) -> Result<PanelStyle, Box<dyn
                         "launcher" => sections[index].push(Widget::Launcher),
                         "tasks" => sections[index].push(Widget::Tasks),
                         "clock" => sections[index].push(Widget::Clock),
-                        "network" | "audio" | "battery" | "tray" => {},
+                        "network" | "audio" | "battery" | "tray" => {}
                         _ => return Err("Unsupported RicePlate widget or action".into()),
                     }
                 }
@@ -343,10 +412,18 @@ pub fn parse(raw: &str, expected_id: Option<&str>) -> Result<PanelStyle, Box<dyn
             let source = [layout.start, layout.center, layout.end];
             let mut counts = [0_usize, 0_usize];
             for (index, nodes) in source.iter().enumerate() {
-                if nodes.len() > 8 { return Err("Too many layout roots".into()); }
+                if nodes.len() > 8 {
+                    return Err("Too many layout roots".into());
+                }
                 for node in nodes {
-                    expand_layout(node, 1, &mut counts, &mut seen,
-                                  &mut sections[index], &mut labels)?;
+                    expand_layout(
+                        node,
+                        1,
+                        &mut counts,
+                        &mut seen,
+                        &mut sections[index],
+                        &mut labels,
+                    )?;
                 }
             }
         }
@@ -359,22 +436,49 @@ pub fn parse(raw: &str, expected_id: Option<&str>) -> Result<PanelStyle, Box<dyn
     let mut label_padding = 8;
     let mut task_radius = 4;
     let mut desktop_icons = Vec::new();
-    match (recipe.schema_version, recipe.menu, recipe.desktop, recipe.tokens,
-           recipe.responsive) {
+    let mut native_menu = None;
+    match (
+        recipe.schema_version,
+        recipe.menu,
+        recipe.desktop,
+        recipe.tokens,
+        recipe.responsive,
+    ) {
         (version @ (4 | 5), Some(menu), Some(desktop), Some(tokens), Some(responsive)) => {
             validate_menu(&menu)?;
+            native_menu = Some(NativeMenu {
+                title: menu.title,
+                groups: menu
+                    .groups
+                    .into_iter()
+                    .map(|group| NativeMenuGroup {
+                        title: group.title,
+                        actions: group.actions,
+                    })
+                    .collect(),
+            });
             desktop_icons = match (version, desktop.icons) {
                 (4, None) => Vec::new(),
                 (5, Some(icons)) => validate_icons(icons)?,
                 _ => return Err("Schema v5 requires icons; v4 forbids them".into()),
             };
             if ![
-                "aero-seven-blue", "aero-seven-night", "luna-hills", "classic-teal",
-                "ten-blue", "ten-midnight", "chrome-pastel", "frutiger-future",
-                "aurora-day", "aurora-night",
-            ].contains(&desktop.wallpaper.as_str())
-                || tokens.label_padding > 16 || tokens.task_radius > 12
-                || !(480..=1440).contains(&responsive.compact_max_width) {
+                "aero-seven-blue",
+                "aero-seven-night",
+                "luna-hills",
+                "classic-teal",
+                "ten-blue",
+                "ten-midnight",
+                "chrome-pastel",
+                "frutiger-future",
+                "aurora-day",
+                "aurora-night",
+            ]
+            .contains(&desktop.wallpaper.as_str())
+                || tokens.label_padding > 16
+                || tokens.task_radius > 12
+                || !(480..=1440).contains(&responsive.compact_max_width)
+            {
                 return Err("Invalid v4 desktop, visual tokens or breakpoint".into());
             }
             label_padding = tokens.label_padding;
@@ -382,13 +486,26 @@ pub fn parse(raw: &str, expected_id: Option<&str>) -> Result<PanelStyle, Box<dyn
             let mut smaller: [Vec<Widget>; 3] = std::array::from_fn(|_| Vec::new());
             let mut compact_seen = HashSet::new();
             let mut counts = [0_usize, 0_usize];
-            for (index, nodes) in [responsive.compact_layout.start,
-                                    responsive.compact_layout.center,
-                                    responsive.compact_layout.end].iter().enumerate() {
-                if nodes.len() > 8 { return Err("Too many compact panel roots".into()); }
+            for (index, nodes) in [
+                responsive.compact_layout.start,
+                responsive.compact_layout.center,
+                responsive.compact_layout.end,
+            ]
+            .iter()
+            .enumerate()
+            {
+                if nodes.len() > 8 {
+                    return Err("Too many compact panel roots".into());
+                }
                 for node in nodes {
-                    expand_layout(node, 1, &mut counts, &mut compact_seen,
-                                  &mut smaller[index], &mut labels)?;
+                    expand_layout(
+                        node,
+                        1,
+                        &mut counts,
+                        &mut compact_seen,
+                        &mut smaller[index],
+                        &mut labels,
+                    )?;
                 }
             }
             if !compact_seen.contains("launcher") && !compact_seen.contains("tasks") {
@@ -396,7 +513,7 @@ pub fn parse(raw: &str, expected_id: Option<&str>) -> Result<PanelStyle, Box<dyn
             }
             compact = Some((responsive.compact_max_width, smaller));
         }
-        (1 | 2 | 3, None, None, None, None) => {},
+        (1 | 2 | 3, None, None, None, None) => {}
         _ => return Err("Shell menu, desktop, tokens and responsive require schema v4".into()),
     }
     Ok(PanelStyle {
@@ -412,32 +529,45 @@ pub fn parse(raw: &str, expected_id: Option<&str>) -> Result<PanelStyle, Box<dyn
         foreground: color(&recipe.colors.foreground)?,
         active: color(&recipe.colors.active)?,
         desktop_icons,
+        menu: native_menu,
     })
 }
 
 pub fn load(name_or_path: &str) -> Result<PanelStyle, Box<dyn Error>> {
     let (raw, expected): (String, Option<&str>) = match name_or_path {
-        "classic" => (include_str!("../../../macrice/de/resources/recipes/classic.json").into(),
-                      Some("classic")),
-        "chrome" => (include_str!("../../../macrice/de/resources/recipes/chrome.json").into(),
-                     Some("chrome")),
+        "classic" => (
+            include_str!("../../../macrice/de/resources/recipes/classic.json").into(),
+            Some("classic"),
+        ),
+        "chrome" => (
+            include_str!("../../../macrice/de/resources/recipes/chrome.json").into(),
+            Some("chrome"),
+        ),
         path => {
             let path = Path::new(path);
             if !path.is_absolute() {
                 return Err("Choose classic, chrome or an absolute private JSON path".into());
             }
-            let file = OpenOptions::new().read(true)
-                .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC).open(path)?;
+            let file = OpenOptions::new()
+                .read(true)
+                .custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC)
+                .open(path)?;
             let metadata = file.metadata()?;
             // Verify the opened inode, never just path metadata; no symlinks,
             // world/group-readable recipes, foreign owners, devices or pipes.
-            if !metadata.is_file() || metadata.uid() != unsafe { libc::geteuid() }
-                || metadata.mode() & 0o077 != 0 || metadata.len() > MAX_RECIPE_BYTES as u64 {
+            if !metadata.is_file()
+                || metadata.uid() != unsafe { libc::geteuid() }
+                || metadata.mode() & 0o077 != 0
+                || metadata.len() > MAX_RECIPE_BYTES as u64
+            {
                 return Err("Custom RicePlate recipe must be an owner-private regular file".into());
             }
             let mut data = Vec::new();
-            file.take(MAX_RECIPE_BYTES as u64 + 1).read_to_end(&mut data)?;
-            if data.len() > MAX_RECIPE_BYTES { return Err("Recipe exceeds 64 KiB".into()); }
+            file.take(MAX_RECIPE_BYTES as u64 + 1)
+                .read_to_end(&mut data)?;
+            if data.len() > MAX_RECIPE_BYTES {
+                return Err("Recipe exceeds 64 KiB".into());
+            }
             (String::from_utf8(data)?, None)
         }
     };
@@ -450,8 +580,9 @@ fn width_for(style: &PanelStyle, widget: Widget, tasks: usize) -> u32 {
         Widget::Clock => style.widths[2],
         Widget::Tasks => tasks as u32 * style.widths[1],
         Widget::Gap(width) => width,
-        Widget::Label(index) => style.labels[index as usize].len() as u32 * 8
-            + style.label_padding * 2,
+        Widget::Label(index) => {
+            style.labels[index as usize].len() as u32 * 8 + style.label_padding * 2
+        }
     }
 }
 
@@ -460,27 +591,41 @@ pub fn layout(style: &PanelStyle, screen_width: u32, tasks: usize) -> Vec<Placed
         Some((threshold, compact)) if screen_width <= *threshold => compact,
         _ => &style.sections,
     };
-    let fixed_width: u32 = sections.iter().flatten().filter(|&&w| w != Widget::Tasks)
-        .map(|&w| width_for(style, w, 0)).sum();
+    let fixed_width: u32 = sections
+        .iter()
+        .flatten()
+        .filter(|&&w| w != Widget::Tasks)
+        .map(|&w| width_for(style, w, 0))
+        .sum();
     let has_clock = sections.iter().flatten().any(|&w| w == Widget::Clock);
     let show_clock = !has_clock || screen_width >= fixed_width;
-    let effective_fixed = if show_clock { fixed_width }
-        else { fixed_width.saturating_sub(style.widths[2]) };
-    let visible = tasks.min(MAX_TRACKED_TASKS)
+    let effective_fixed = if show_clock {
+        fixed_width
+    } else {
+        fixed_width.saturating_sub(style.widths[2])
+    };
+    let visible = tasks
+        .min(MAX_TRACKED_TASKS)
         .min((screen_width.saturating_sub(effective_fixed + 8) / style.widths[1]) as usize);
     let section_width = |widgets: &[Widget]| -> u32 {
-        widgets.iter().filter(|&&w| w != Widget::Clock || show_clock)
-            .map(|&w| width_for(style, w, visible)).sum()
+        widgets
+            .iter()
+            .filter(|&&w| w != Widget::Clock || show_clock)
+            .map(|&w| width_for(style, w, visible))
+            .sum()
     };
     let widths: [u32; 3] = std::array::from_fn(|i| section_width(&sections[i]));
     let end_x = screen_width.saturating_sub(widths[2]);
     let middle_x = (screen_width.saturating_sub(widths[1]) / 2)
-        .max(widths[0]).min(end_x.saturating_sub(widths[1]));
+        .max(widths[0])
+        .min(end_x.saturating_sub(widths[1]));
     let mut result = Vec::new();
     for (index, begin) in [0, middle_x, end_x].into_iter().enumerate() {
         let mut x = begin;
         for &widget in &sections[index] {
-            if widget == Widget::Clock && !show_clock { continue; }
+            if widget == Widget::Clock && !show_clock {
+                continue;
+            }
             let width = width_for(style, widget, visible);
             if width > 0 {
                 result.push(PlacedWidget { widget, x, width });
@@ -491,28 +636,55 @@ pub fn layout(style: &PanelStyle, screen_width: u32, tasks: usize) -> Vec<Placed
     result
 }
 
-pub fn task_view(style: &PanelStyle, screen_width: u32,
-                 tasks: usize, offset: usize) -> Option<TaskViewport> {
-    let item = layout(style, screen_width, tasks).into_iter()
+pub fn task_view(
+    style: &PanelStyle,
+    screen_width: u32,
+    tasks: usize,
+    offset: usize,
+) -> Option<TaskViewport> {
+    let item = layout(style, screen_width, tasks)
+        .into_iter()
         .find(|placed| placed.widget == Widget::Tasks)?;
     let slots = (item.width / style.widths[1]) as usize;
-    if slots == 0 { return None; }
+    if slots == 0 {
+        return None;
+    }
     let overflowing = tasks > slots;
-    let start = if overflowing { offset.min(tasks - slots) } else { 0 };
-    let controls = if overflowing { PAGE_BUTTON_WIDTH * 2 } else { 0 };
+    let start = if overflowing {
+        offset.min(tasks - slots)
+    } else {
+        0
+    };
+    let controls = if overflowing {
+        PAGE_BUTTON_WIDTH * 2
+    } else {
+        0
+    };
     let content_width = item.width.saturating_sub(controls);
     Some(TaskViewport {
-        start, slots, cell_width: content_width / slots as u32,
-        content_width, prev: overflowing && start > 0,
+        start,
+        slots,
+        cell_width: content_width / slots as u32,
+        content_width,
+        prev: overflowing && start > 0,
         next: overflowing && start + slots < tasks,
     })
 }
 
-pub fn hit(x: f64, screen_width: u32, tasks: usize,
-           offset: usize, style: &PanelStyle) -> Option<Hit> {
-    if !x.is_finite() || x < 0.0 || x >= f64::from(screen_width) { return None; }
+pub fn hit(
+    x: f64,
+    screen_width: u32,
+    tasks: usize,
+    offset: usize,
+    style: &PanelStyle,
+) -> Option<Hit> {
+    if !x.is_finite() || x < 0.0 || x >= f64::from(screen_width) {
+        return None;
+    }
     for item in layout(style, screen_width, tasks) {
-        if x < f64::from(item.x) || x >= f64::from(item.x + item.width) { continue; }
+        if x < f64::from(item.x) || x >= f64::from(item.x + item.width) {
+            continue;
+        }
         return match item.widget {
             Widget::Launcher => Some(Hit::Launcher),
             Widget::Tasks => {
@@ -522,12 +694,14 @@ pub fn hit(x: f64, screen_width: u32, tasks: usize,
                     if local < f64::from(view.content_width + PAGE_BUTTON_WIDTH) && view.prev {
                         Some(Hit::PreviousTasks)
                     } else if local >= f64::from(view.content_width + PAGE_BUTTON_WIDTH)
-                        && view.next {
+                        && view.next
+                    {
                         Some(Hit::NextTasks)
-                    } else { None }
+                    } else {
+                        None
+                    }
                 } else {
-                    let index = ((local / f64::from(view.cell_width)) as usize)
-                        .min(view.slots - 1);
+                    let index = ((local / f64::from(view.cell_width)) as usize).min(view.slots - 1);
                     Some(Hit::Task(view.start + index))
                 }
             }
@@ -579,19 +753,23 @@ mod tests {
         assert_eq!(hit(250.0, 800, 2, 0, &b), Some(Hit::Task(0)));
         assert_eq!(hit(760.0, 800, 2, 0, &b), None);
         assert_eq!(hit(150.0, 180, 20, 0, &b), None);
-        assert!(layout(&b, 180, 20).iter().all(|item| item.widget != Widget::Clock));
+        assert!(layout(&b, 180, 20)
+            .iter()
+            .all(|item| item.widget != Widget::Clock));
     }
 
     #[test]
     fn custom_composition_repositions_all_supported_widgets() {
         let sample = include_str!("../../../macrice/de/resources/recipes/classic.json");
-        let reordered = sample.replace(
-            "\"start\": [\"launcher\", \"tasks\"],",
-            "\"start\": [\"clock\"],"
-        ).replace(
-            "\"end\": [\"network\", \"audio\", \"battery\", \"clock\", \"tray\"]",
-            "\"end\": [\"network\", \"audio\", \"battery\", \"launcher\", \"tasks\", \"tray\"]"
-        );
+        let reordered = sample
+            .replace(
+                "\"start\": [\"launcher\", \"tasks\"],",
+                "\"start\": [\"clock\"],",
+            )
+            .replace(
+                "\"end\": [\"network\", \"audio\", \"battery\", \"clock\", \"tray\"]",
+                "\"end\": [\"network\", \"audio\", \"battery\", \"launcher\", \"tasks\", \"tray\"]",
+            );
         let style = parse(&reordered, Some("classic")).unwrap();
         assert_eq!(hit(40.0, 800, 2, 0, &style), None);
         assert_eq!(hit(390.0, 800, 2, 0, &style), Some(Hit::Launcher));
@@ -614,7 +792,10 @@ mod tests {
         let last = task_view(&style, 800, 10, usize::MAX).unwrap();
         assert_eq!(last.start, 7);
         assert!(last.prev && !last.next);
-        assert_eq!(hit(start + 10.0, 800, 10, usize::MAX, &style), Some(Hit::Task(7)));
+        assert_eq!(
+            hit(start + 10.0, 800, 10, usize::MAX, &style),
+            Some(Hit::Task(7))
+        );
         assert_eq!(hit(nav + 30.0, 800, 10, usize::MAX, &style), None);
     }
 
@@ -631,8 +812,14 @@ mod tests {
     fn denies_unknown_actions_and_oversized_recipes() {
         let sample = include_str!("../../../macrice/de/resources/recipes/classic.json");
         assert!(parse(&sample.replace("\"launcher\"", "\"exec-shell\""), None).is_err());
-        assert!(parse(&sample.replace("\"schema_version\": 1",
-               "\"schema_version\": 1, \"exec\": \"payload\""), None).is_err());
+        assert!(parse(
+            &sample.replace(
+                "\"schema_version\": 1",
+                "\"schema_version\": 1, \"exec\": \"payload\""
+            ),
+            None
+        )
+        .is_err());
         assert!(parse(&"x".repeat(65_537), None).is_err());
         assert!(load("relative.json").is_err());
     }
@@ -646,8 +833,22 @@ mod tests {
         let style = parse(&v2, Some("classic")).unwrap();
         assert_eq!(style.widths, [120, 196, 80]);
         let placed = layout(&style, 800, 2);
-        assert_eq!(placed.iter().find(|item| item.widget == Widget::Launcher).unwrap().width, 120);
-        assert_eq!(placed.iter().find(|item| item.widget == Widget::Tasks).unwrap().width, 392);
+        assert_eq!(
+            placed
+                .iter()
+                .find(|item| item.widget == Widget::Launcher)
+                .unwrap()
+                .width,
+            120
+        );
+        assert_eq!(
+            placed
+                .iter()
+                .find(|item| item.widget == Widget::Tasks)
+                .unwrap()
+                .width,
+            392
+        );
         assert_eq!(hit(119.0, 800, 2, 0, &style), Some(Hit::Launcher));
         assert_eq!(hit(121.0, 800, 2, 0, &style), Some(Hit::Task(0)));
         assert_eq!(hit(320.0, 800, 2, 0, &style), Some(Hit::Task(1)));
@@ -664,7 +865,8 @@ mod tests {
         assert!(parse(&with_metrics, None).is_err());
         let with_null = original.replace("\"height\": 36,", "\"height\": 36, \"metrics\": null,");
         assert!(parse(&with_null, None).is_err());
-        let invalid = with_metrics.replace("\"schema_version\": 1", "\"schema_version\": 2")
+        let invalid = with_metrics
+            .replace("\"schema_version\": 1", "\"schema_version\": 2")
             .replace("\"task_width\": 196", "\"task_width\": 1");
         assert!(parse(&invalid, None).is_err());
     }
@@ -677,9 +879,16 @@ mod tests {
         assert!(style.top);
         assert_eq!(style.labels, vec!["Y2K"]);
         let placed = layout(&style, 800, 2);
-        assert!(placed.iter().any(|node| node.widget == Widget::Label(0) && node.x == 112));
-        assert!(placed.iter().any(|node| node.widget == Widget::Gap(20) && node.x == 160));
-        let task = placed.iter().find(|node| node.widget == Widget::Tasks).unwrap();
+        assert!(placed
+            .iter()
+            .any(|node| node.widget == Widget::Label(0) && node.x == 112));
+        assert!(placed
+            .iter()
+            .any(|node| node.widget == Widget::Gap(20) && node.x == 160));
+        let task = placed
+            .iter()
+            .find(|node| node.widget == Widget::Tasks)
+            .unwrap();
         assert_eq!(task.x, 188);
         assert_eq!(hit(120.0, 800, 2, 0, &style), None);
         assert_eq!(hit(189.0, 800, 2, 0, &style), Some(Hit::Task(0)));
@@ -698,8 +907,7 @@ mod tests {
             serde_json::json!("shell");
         assert!(parse(&executable_gap.to_string(), None).is_err());
         let mut unknown = original.clone();
-        unknown["panel"]["layout"]["start"][0]["children"][2]["type"] =
-            serde_json::json!("run");
+        unknown["panel"]["layout"]["start"][0]["children"][2]["type"] = serde_json::json!("run");
         assert!(parse(&unknown.to_string(), None).is_err());
         let mut both = original.clone();
         both["panel"]["sections"] = serde_json::json!({"start":[],"center":[],"end":[]});
@@ -708,9 +916,8 @@ mod tests {
         let group = |inside: String| format!(r#"{{"type":"group","gap":0,"children":[{inside}]}}"#);
         let too_deep = group(group(group(child.to_string())));
         let mut deep = original;
-        deep["panel"]["layout"]["start"] = serde_json::json!([
-            serde_json::from_str::<serde_json::Value>(&too_deep).unwrap()
-        ]);
+        deep["panel"]["layout"]["start"] =
+            serde_json::json!([serde_json::from_str::<serde_json::Value>(&too_deep).unwrap()]);
         assert!(parse(&deep.to_string(), None).is_err());
     }
 
@@ -722,11 +929,19 @@ mod tests {
         assert_eq!(style.label_padding, 12);
         assert_eq!(style.task_radius, 6);
         let wide = layout(&style, 1200, 2);
-        assert!(wide.iter().any(|node| node.widget == Widget::Label(0) && node.x == 112));
-        assert!(wide.iter().any(|node| node.widget == Widget::Tasks && node.x == 196));
+        assert!(wide
+            .iter()
+            .any(|node| node.widget == Widget::Label(0) && node.x == 112));
+        assert!(wide
+            .iter()
+            .any(|node| node.widget == Widget::Tasks && node.x == 196));
         let compact = layout(&style, 600, 2);
-        assert!(!compact.iter().any(|node| matches!(node.widget, Widget::Label(_))));
-        assert!(compact.iter().any(|node| node.widget == Widget::Tasks && node.x == 136));
+        assert!(!compact
+            .iter()
+            .any(|node| matches!(node.widget, Widget::Label(_))));
+        assert!(compact
+            .iter()
+            .any(|node| node.widget == Widget::Tasks && node.x == 136));
         assert_eq!(hit(140.0, 600, 2, 0, &style), Some(Hit::Task(0)));
         assert_eq!(hit(140.0, 1200, 2, 0, &style), None);
     }

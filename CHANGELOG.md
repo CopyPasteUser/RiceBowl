@@ -1,5 +1,69 @@
 # RiceBowl changelog
 
+## Unreleased — experimental native secondary Wayland panels (6 November 2026)
+
+- Draw a separate output-bound layer-shell panel for each secondary display
+  without starting another RicePlate process or window-discovery backend.
+- Share the same validated recipe/renderer, task groups and clock, but maintain
+  independent task paging and framebuffer state for each panel.
+- Add a genuine two-output native screenshot and secondary hotplug CI gate;
+  save four genuine output captures in the native preview workflow artifact.
+  Recover when a compositor temporarily leaves the primary Wayland surface
+  unassigned during a display transition. Full per-output native menus/icons
+  and primary-monitor failover remain open.
+
+## Unreleased — two-output Waybar fallback verification (6 November 2026)
+
+- Extend the real labwc/Waybar session smoke with two independently captured
+  Wayland outputs, a disconnect/reconnect cycle and visible panel verification.
+- Keep the native Rust panel's single-output limitation explicit; a green
+  fallback monitor test is not native per-monitor or physical-device QA.
+
+## Unreleased — first native Wayland start menu (6 November 2026)
+
+- Replace the schema-v4/v5 native launcher fallback with an actually rendered,
+  recipe-grouped start menu inside the existing RicePlate Rust process.
+- Add focus-on-open keyboard navigation (arrow keys, Tab, Enter, Escape),
+  pointer tabs and action rows, a visible selection and recovery through
+  the existing labwc root menu.
+- Bind only known actions, explicitly disable logout when not labwc-managed,
+  keep the menu parked/unfocused while closed, and capture a real open-menu
+  Wayland CI screenshot alongside the established desktop galleries.
+
+## Unreleased — two real Creator demonstration rices (6 November 2026)
+
+- Author one classic OS-inspired and one original Wayland desktop strictly
+  through the same schema-v5 panel, menu, wallpaper, tokens and shortcut
+  contract, without copied OS imagery, custom shells or unbound fake buttons.
+- Run both through isolated native labwc CI at four output geometries; archive
+  eight actual compositor screenshots and per-capture hashes, semantic
+  fingerprints and visible-geometry diagnostics for reproducible comparison.
+- Publish an offline agent-authoring exercise and explicit unsupported-action
+  inventory; visuals alone do not certify full OS fidelity or hardware QA.
+
+## Unreleased — reviewed next-login Creator staging (6 November 2026)
+
+- Add `de creator-status`, `de creator-stage` and `de creator-rollback` with
+  machine-readable stage v1 responses, semantic SHA-256 preconditions,
+  optional concurrent-selection guards and explicit one-step restore.
+- Persist reviewed recipe fingerprints in backward-compatible owner-private
+  v2 next-login selection state. A recipe changed after review cannot silently
+  be loaded as the staged design; the next Wayland session uses classic
+  fallback and leaves XFCE untouched. No live desktop mutation is implied.
+
+## Unreleased — portable Wayland Creator recipes (6 November 2026)
+
+- Publish a versioned, offline `de creator-api --json` registry for implemented
+  component discovery, safe editing, semantic review, native headless capture,
+  visual comparison and package transfer, including honest capability gaps.
+- Build reproducible `.ricepack` archives with canonical validated schema-v1–v5
+  recipes, exact byte and semantic fingerprints and optional user-declared
+  authorship/license provenance. Add safe, bounded inspect and import commands
+  that reject malformed ZIP entries, symlinks, collisions and hash mismatches.
+- Keep new packs entirely declarative, using only bundled Wayland wallpapers.
+  Import does not change active or next-session appearance; existing XFCE
+  Riceware ZIP packs and legacy JSON recipes remain supported independently.
+
 ## Unreleased — native desktop shortcuts (6 November 2026)
 
 - Add opt-in schema-v5 desktop-icon recipes: bounded labels, safe action IDs,

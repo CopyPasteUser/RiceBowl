@@ -71,10 +71,11 @@ def parser() -> argparse.ArgumentParser:
     commands.add_parser("session-sync", help="Reconcile active rice after XFCE autostart")
     de = commands.add_parser("de", help="Inspect experimental RiceBowl Wayland desktop prerequisites")
     de.add_argument("action", choices=(
-        "check", "start", "shell", "catalog", "review", "draft-edit", "visual-compare",
-        "capture", "render",
+        "check", "start", "shell", "catalog", "creator-api", "review", "draft-edit", "visual-compare",
+        "capture", "render", "creator-status", "creator-stage", "creator-rollback",
+        "pack-export", "pack-inspect", "pack-import",
         "recipes", "recipe-init", "recipe-import", "recipe-export", "recipe-current",
-        "recipe-select", "recipe-restore"))
+        "recipe-select", "recipe-restore", "taskotto-export"))
     de.add_argument("--json", action="store_true", help="Read-only machine-readable preflight")
     de.add_argument("--nested", action="store_true",
                     help="Explicitly test a separate labwc session inside an active desktop")
@@ -86,6 +87,10 @@ def parser() -> argparse.ArgumentParser:
     de.add_argument("--heatmap", type=Path, help="New private difference PNG for de visual-compare")
     de.add_argument("--threshold", type=int, help="Per-channel RGB threshold 0-255 for de visual-compare")
     de.add_argument("--edit", type=Path, help="Owner-controlled absolute JSON edit operations for de draft-edit")
+    de.add_argument("--metadata", type=Path, help="Optional provenance JSON for de pack-export")
+    de.add_argument("--package", type=Path, help="Absolute .ricepack file for de pack-inspect/import")
+    de.add_argument("--expect-sha256", help="Reviewed recipe semantic SHA-256 for de creator-stage")
+    de.add_argument("--expect-active", help="Optional concurrency guard for de creator-stage/rollback")
     de.add_argument("--panel", choices=("waybar", "native"), default="waybar",
                     help="Session panel (native RicePlate is experimental and falls back to Waybar)")
     de.add_argument("--base", choices=("classic", "chrome"),
@@ -94,7 +99,7 @@ def parser() -> argparse.ArgumentParser:
                     help="Recipe schema for de recipe-init (1 flat, 2 widths, 3 nested, 4 shell, 5 icons)")
     de.add_argument("--id", help="Lowercase recipe identifier for de recipe-init")
     de.add_argument("--name", help="Human-readable recipe name for de recipe-init")
-    de.add_argument("--output", type=Path, help="New absolute .json draft/export or .png capture destination")
+    de.add_argument("--output", type=Path, help="New absolute .json, .toml, .png or .ricepack output")
     de.add_argument("--width", type=int, help="Headless de render capture width (640–4096)")
     de.add_argument("--height", type=int, help="Headless de render capture height (480–2160)")
     de.add_argument("--scale", type=float, choices=(1, 1.25, 1.5, 2),
@@ -159,6 +164,14 @@ def main(argv: list[str] | None = None) -> int:
                 raise ValueError("--compare only applies to de review")
             if args.action != "draft-edit" and args.edit is not None:
                 raise ValueError("--edit only applies to de draft-edit")
+            if args.action != "pack-export" and args.metadata is not None:
+                raise ValueError("--metadata only applies to de pack-export")
+            if args.action not in ("pack-inspect", "pack-import") and args.package is not None:
+                raise ValueError("--package only applies to de pack-inspect/import")
+            if args.action != "creator-stage" and args.expect_sha256 is not None:
+                raise ValueError("--expect-sha256 only applies to de creator-stage")
+            if args.action not in ("creator-stage", "creator-rollback") and args.expect_active is not None:
+                raise ValueError("--expect-active only applies to de creator-stage/rollback")
             if args.action != "visual-compare" and any(value is not None for value in
                     (args.reference, args.actual, args.overlay, args.heatmap, args.threshold)):
                 raise ValueError("Visual comparison options only apply to de visual-compare")
@@ -169,8 +182,81 @@ def main(argv: list[str] | None = None) -> int:
                 raise ValueError("--base, --id and --name only apply to de recipe-init")
             if args.action != "recipe-init" and args.schema_version != 1:
                 raise ValueError("--schema-version only applies to de recipe-init")
-            if args.action not in ("recipe-init", "recipe-export", "draft-edit", "capture", "render") and args.output:
-                raise ValueError("--output only applies to recipe-init, recipe-export, draft-edit, capture or render")
+            if args.action not in ("recipe-init", "recipe-export", "taskotto-export", "draft-edit", "capture", "render", "pack-export") and args.output:
+                raise ValueError("--output is not supported by this de command")
+            if args.action == "creator-api":
+                if args.nested or args.recipe or args.panel != "waybar":
+                    raise ValueError("de creator-api accepts only --json")
+                from .de.creator_contract import describe_creator_api
+                contract = describe_creator_api()
+                if args.json:
+                    print(json.dumps(contract, indent=2))
+                else:
+                    print(f"RiceBowl Creator API v{contract['api_version']} (offline, on demand)")
+                    for item in contract["commands"]:
+                        print(f"  {item['command']:18} {item['effect']}")
+                return 0
+            if args.action in ("creator-status", "creator-stage", "creator-rollback"):
+                if args.nested or args.panel != "waybar":
+                    raise ValueError("Creator selection does not start a desktop session")
+                if (args.action == "creator-stage" and
+                        (not args.recipe or not args.expect_sha256)):
+                    raise ValueError("de creator-stage needs --recipe and --expect-sha256")
+                if args.action != "creator-stage" and args.recipe:
+                    raise ValueError("Only de creator-stage accepts --recipe")
+                from .de.staging import StageError, invalid_stage, rollback, stage, status
+                try:
+                    if args.action == "creator-status":
+                        result = status()
+                    elif args.action == "creator-stage":
+                        result = stage(args.recipe, args.expect_sha256,
+                                       expected_active=args.expect_active)
+                    else:
+                        result = rollback(expected_active=args.expect_active)
+                except StageError as exc:
+                    if not args.json:
+                        raise
+                    print(json.dumps(invalid_stage(exc), indent=2))
+                    return 2
+                if args.json:
+                    print(json.dumps(result, indent=2))
+                elif args.action == "creator-status":
+                    print(f"Next Wayland login: {result['next_session']}")
+                    print(f"Reviewed semantic SHA256: {result['semantic_sha256']}")
+                else:
+                    print(f"Next Wayland login: {result['next_session']} (was: {result['previous']})")
+                    print("Current desktop unchanged; one-step rollback remains available")
+                return 0
+            if args.action in ("pack-export", "pack-inspect", "pack-import"):
+                if args.nested or args.panel != "waybar":
+                    raise ValueError("RicePack tools do not start a desktop session")
+                if args.action == "pack-export":
+                    if not args.recipe or not args.output or args.package:
+                        raise ValueError("de pack-export requires --recipe and --output")
+                elif not args.package or args.recipe or args.output:
+                    raise ValueError("de pack-inspect/import require --package")
+                from .de.pack import PackError, export_pack, import_pack, inspect_pack, invalid_pack
+                try:
+                    if args.action == "pack-export":
+                        result = export_pack(args.recipe, args.output, metadata=args.metadata)
+                    elif args.action == "pack-inspect":
+                        result = inspect_pack(args.package)
+                    else:
+                        result = import_pack(args.package)
+                except PackError as exc:
+                    if not args.json:
+                        raise
+                    print(json.dumps(invalid_pack(exc), indent=2))
+                    return 2
+                if args.json:
+                    print(json.dumps(result, indent=2, ensure_ascii=False))
+                elif args.action == "pack-export":
+                    print(f"Exported portable recipe {result['recipe_id']} to {args.output}")
+                elif args.action == "pack-inspect":
+                    print(f"Valid RicePack: {result['manifest']['recipe']['id']}")
+                else:
+                    print(f"Imported private recipe {result['recipe_id']}; next session unchanged")
+                return 0
             if args.action == "recipe-init":
                 if (args.json or args.nested or args.recipe or args.panel != "waybar"
                         or not args.id or not args.name or not args.output):
@@ -198,6 +284,15 @@ def main(argv: list[str] | None = None) -> int:
                 from .de.recipes import export_recipe
                 result = export_recipe(args.recipe, args.output)
                 print(f"Exported {result.recipe_id} to {args.output} (not applied)")
+                return 0
+            if args.action == "taskotto-export":
+                if (args.json or args.nested or args.panel != "waybar"
+                        or not args.recipe or not args.output):
+                    raise ValueError("de taskotto-export requires --recipe ID and --output /absolute/file.toml")
+                from .de.taskotto import export
+                result = export(args.recipe, args.output)
+                print(f"Exported Taskotto RicePack v1 from {result.recipe_id}: {args.output}")
+                print(f"Launch: RICEBOWL_TASKOTTO_RICEPACK={shlex.quote(str(args.output))} taskotto")
                 return 0
             if args.action in ("recipe-current", "recipe-select", "recipe-restore"):
                 if (args.nested or args.panel != "waybar"

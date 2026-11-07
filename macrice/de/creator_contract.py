@@ -90,6 +90,123 @@ def describe_render() -> dict[str, object]:
     }
 
 
+def describe_ricepack() -> dict[str, object]:
+    """Portable v1 recipe-only archive: no executable or external assets."""
+    return {
+        "pack_version": 1,
+        "format": "org.ricebowl.ricepack",
+        "extension": ".ricepack",
+        "entries": ["ricepack.json", "recipe.json"],
+        "maximum_archive_bytes": 256 * 1024,
+        "recipe_schema_versions": [1, 2, 3, 4, 5],
+        "asset_support": "bundled-wallpapers-only",
+        "third_party_assets": False,
+        "arbitrary_code_or_scripts": False,
+        "deterministic_export": True,
+        "provenance": {
+            "metadata_version": "fields-v1",
+            "fields": ["author", "license", "origin", "source_reference"],
+            "licenses": ["unspecified", "CC0-1.0", "CC-BY-4.0", "MIT", "custom"],
+            "origins": ["unspecified", "original", "ai-assisted", "adapted"],
+            "user_declared_not_verified": True,
+        },
+        "commands": [
+            {"command": "de pack-export", "required_options": ["--recipe", "--output"],
+             "optional_options": ["--metadata", "--json"], "creates_archive": True},
+            {"command": "de pack-inspect", "required_options": ["--package"],
+             "optional_options": ["--json"], "read_only": True},
+            {"command": "de pack-import", "required_options": ["--package"],
+             "optional_options": ["--json"], "installs_recipe_only": True},
+        ],
+        "import": "no-overwrite private user recipe collection; never activates",
+        "failure_exit_code": 2,
+        "success_exit_code": 0,
+        "mutates_active_desktop": False,
+    }
+
+
+def describe_staging() -> dict[str, object]:
+    """Explicit, compare-and-swap next-login choice; current desktop untouched."""
+    return {
+        "stage_version": 1,
+        "commands": [
+            {"command": "de creator-status", "required_options": [],
+             "optional_options": ["--json"], "read_only": True},
+            {"command": "de creator-stage",
+             "required_options": ["--recipe", "--expect-sha256"],
+             "optional_options": ["--expect-active", "--json"]},
+            {"command": "de creator-rollback", "required_options": [],
+             "optional_options": ["--expect-active", "--json"]},
+        ],
+        "recipe_input": "existing installed/bundled ID; not an arbitrary path",
+        "hash": "64 lowercase hex characters of de review summary.semantic_sha256",
+        "expected_active": "optional existing next-login ID used as concurrency guard",
+        "state": "owner-private selected recipe and one-level previous selection",
+        "runtime": "takes effect only on next opt-in Wayland login",
+        "mutates_current_session": False,
+        "mutates_xfce": False,
+        "user_invocation_required": True,
+        "reviewed_hash_saved_in_selection": True,
+        "recipe_file_immutable": False,
+        "changed_recipe_behavior": "reject pinned mismatch and fall back to classic at next login",
+        "success_exit_code": 0,
+        "error_exit_code": 2,
+    }
+
+
+def describe_creator_api() -> dict[str, object]:
+    """Stable, tool-neutral inventory, including explicit side-effect limits."""
+    return {
+        "api_version": 1,
+        "scope": "experimental-wayland-shell-authoring",
+        "transport": "CLI JSON; no resident socket or AI inference",
+        "discovery": "ricebowl de creator-api --json",
+        "success_exit_code": 0,
+        "invalid_options_exit_code": 1,
+        "operation_error_exit_code": 2,
+        "active_session_mutation": "none of the Creator commands changes the active desktop",
+        "next_login_selection_mutation": "creator-stage/rollback only; requires explicit invocation",
+        "commands": [
+            {"command": "catalog", "effect": "read-only component discovery",
+             "cli": "de catalog --json", "contract_version": 5},
+            {"command": "review", "effect": "validate recipe and compare semantic diffs",
+             "cli": "de review --recipe ID [--compare ID] --json", "contract_version": 1},
+            {"command": "draft-edit", "effect": "create private reviewed JSON draft",
+             "cli": "de draft-edit --recipe ID --edit FILE --output NEW.json --json",
+             "contract_version": EDIT_VERSION},
+            {"command": "render", "effect": "isolated real native headless screenshot",
+             "cli": "de render --recipe ID --output NEW.png --json", "contract_version": 1},
+            {"command": "visual-compare", "effect": "read-only screenshot analysis; optional new artifacts",
+             "cli": "de visual-compare --reference FILE --actual FILE --json",
+             "contract_version": 1},
+            {"command": "capture", "effect": "explicit live Wayland screen capture (private data)",
+             "cli": "de capture --output NEW.png --json", "contract_version": 1},
+            {"command": "pack-export", "effect": "create portable validated recipe archive",
+             "cli": "de pack-export --recipe ID --output NEW.ricepack --json",
+             "contract_version": 1},
+            {"command": "pack-inspect", "effect": "verify archive, schema and fingerprints",
+             "cli": "de pack-inspect --package FILE.ricepack --json", "contract_version": 1},
+            {"command": "pack-import", "effect": "install private recipe without selecting it",
+             "cli": "de pack-import --package FILE.ricepack --json", "contract_version": 1},
+            {"command": "creator-status", "effect": "read next Wayland login choice and fingerprint",
+             "cli": "de creator-status --json", "contract_version": 1},
+            {"command": "creator-stage", "effect": "review-gated next Wayland login choice",
+             "cli": "de creator-stage --recipe ID --expect-sha256 HASH --json",
+             "contract_version": 1},
+            {"command": "creator-rollback", "effect": "restore preceding next-login choice",
+             "cli": "de creator-rollback --json", "contract_version": 1},
+        ],
+        "ricepack": describe_ricepack(),
+        "staging": describe_staging(),
+        "limitations": [
+            "Not a screenshot-to-rice converter or editable GUI",
+            "Only schema-v1..v5 panel/shell preview and bundled wallpapers",
+            "No automatic apply; Wayland session remains experimental",
+            "Keyboard, tray, native device controls and multi-monitor acceptance remain open",
+        ],
+    }
+
+
 EDITABLE_PATHS = frozenset((
     "/name", "/panel/position", "/panel/height",
     *(f"/panel/sections/{name}" for name in recipes.SECTIONS),

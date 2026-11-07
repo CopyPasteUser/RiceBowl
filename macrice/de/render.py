@@ -7,10 +7,13 @@ an autonomous mockup converter. No processes or state survive the call.
 from __future__ import annotations
 
 import json
+import hashlib
 import os
 import re
+import secrets
 import shutil
 import signal
+import stat
 import subprocess
 import sys
 import tempfile
@@ -53,43 +56,100 @@ def _output_name(wlr_randr: str, env: dict[str, str]) -> str:
     return first
 
 
-def _stop(process: subprocess.Popen[bytes]) -> None:
-    """Bounded teardown of an owned session, including children of its leader.
-
-    The renderer starts each child with start_new_session=True, so the PID is
-    also its process-group ID. Never target a group unless its leader is still
-    alive: after reaping, the numeric PID could have been reused.
-    """
-    if process.poll() is not None:
-        process.wait()
-        return
-    try:
-        os.killpg(process.pid, signal.SIGTERM)
-    except ProcessLookupError:
-        pass
-    try:
-        process.wait(timeout=3)
-        return
-    except subprocess.TimeoutExpired:
-        pass
-    if process.poll() is None:
+def _owned_session_pids(session: int, token: str) -> list[int]:
+    """Find surviving children without trusting a recycled process-group ID."""
+    marker = f"RICEBOWL_RENDER_SESSION={token}".encode()
+    owned = []
+    for entry in Path("/proc").iterdir():
+        if not entry.name.isdecimal():
+            continue
         try:
-            os.killpg(process.pid, signal.SIGKILL)
+            fields = (entry / "stat").read_text().rsplit(") ", 1)[1].split()
+            if fields[0] == "Z" or int(fields[3]) != session:
+                continue
+            if marker in (entry / "environ").read_bytes().split(b"\0"):
+                owned.append(int(entry.name))
+        except (OSError, ValueError, IndexError):
+            continue  # Exited between the stat and environment reads.
+    return owned
+
+
+def _signal_owned(session: int, token: str, sig: signal.Signals) -> None:
+    """Pin each matching PID before signalling; never kill a recycled group."""
+    for pid in _owned_session_pids(session, token):
+        try:
+            fd = os.pidfd_open(pid)
+        except ProcessLookupError:
+            continue
+        try:
+            # Revalidate after opening the stable pidfd to close the PID-reuse race.
+            if pid in _owned_session_pids(session, token):
+                signal.pidfd_send_signal(fd, sig)
         except ProcessLookupError:
             pass
-    process.wait(timeout=3)
+        finally:
+            os.close(fd)
 
 
-def _cleanup_children(children: list[subprocess.Popen[bytes]]) -> None:
+def _stop(process: subprocess.Popen[bytes], token: str | None = None) -> None:
+    """Stop the leader's owned group, including orphans after leader exit."""
+    if process.poll() is None:
+        try:
+            # An unreaped child pins its PID, so the group cannot be recycled.
+            os.killpg(process.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+        try:
+            process.wait(timeout=3)
+        except subprocess.TimeoutExpired:
+            if process.poll() is None:
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+            process.wait(timeout=3)
+    else:
+        process.wait()
+
+    if token is not None:
+        # The session can outlive its leader. A random inherited marker and
+        # pidfd allow killing its descendants without signalling unrelated PIDs.
+        for sig, seconds in ((signal.SIGTERM, 0.3), (signal.SIGKILL, 1.0)):
+            if not _owned_session_pids(process.pid, token):
+                break
+            _signal_owned(process.pid, token, sig)
+            deadline = time.monotonic() + seconds
+            while _owned_session_pids(process.pid, token) and time.monotonic() < deadline:
+                time.sleep(0.05)
+        if _owned_session_pids(process.pid, token):
+            raise OSError("owned renderer session did not terminate")
+
+
+def _cleanup_children(children: list[subprocess.Popen[bytes]],
+                      token: str | None = None) -> None:
     """Attempt every teardown even when one child refuses to exit."""
     errors: list[Exception] = []
     for child in reversed(children):
         try:
-            _stop(child)
+            _stop(child, token)
         except (OSError, subprocess.SubprocessError) as exc:
             errors.append(exc)
     if errors:
         raise RenderError("render_failed") from errors[0]
+
+
+def _verify_stage(stage: Path, capture: dict[str, object]) -> None:
+    """Check the captured regular file matches the subprocess's sealed receipt."""
+    descriptor = os.open(stage, os.O_RDONLY | os.O_NOFOLLOW)
+    with os.fdopen(descriptor, "rb") as stream:
+        info = os.fstat(stream.fileno())
+        if not stat.S_ISREG(info.st_mode) or info.st_size != capture.get("bytes"):
+            raise RenderError("render_failed")
+        digest = hashlib.sha256()
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    if digest.hexdigest() != capture.get("sha256"):
+        raise RenderError("render_failed")
 
 
 def render(recipe_token: str | None, output: Path | None, *,
@@ -121,6 +181,8 @@ def render(recipe_token: str | None, output: Path | None, *,
             env.update({"XDG_RUNTIME_DIR": runtime, "WLR_BACKENDS": "headless",
                         "WLR_HEADLESS_OUTPUTS": "1", "WLR_RENDERER": "pixman",
                         "RICEBOWL_DE_NESTED": "1", "LABWC_UPDATE_ACTIVATION_ENV": "0"})
+            token = secrets.token_hex(16)
+            env["RICEBOWL_RENDER_SESSION"] = token
             env.pop("WAYLAND_DISPLAY", None)
             env.pop("DISPLAY", None)
             children: list[subprocess.Popen[bytes]] = []
@@ -162,18 +224,21 @@ def render(recipe_token: str | None, output: Path | None, *,
                 if any(child.poll() is not None for child in children):
                     raise RenderError("render_failed")
                 stage = Path(staging) / "capture.png"
-                completed = subprocess.run(
+                capture = subprocess.Popen(
                     [sys.executable, str(launcher), "de", "capture", "--output", str(stage),
-                     "--json"], env=env, capture_output=True, text=True,
-                    timeout=35, check=True)
-                receipt = json.loads(completed.stdout)
-                if not receipt.get("ok") or receipt["capture"]["width"] != width \
-                        or receipt["capture"]["height"] != height:
+                     "--json"], env=env, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                    start_new_session=True)
+                children.append(capture)
+                stdout, _ = capture.communicate(timeout=35)
+                if capture.returncode != 0:
                     raise RenderError("render_failed")
-                # Same filesystem: publish only the verified capture, atomically,
-                # and refuse a concurrently created destination/symlink.
-                os.link(stage, output, follow_symlinks=False)
-                return {
+                receipt = json.loads(stdout)
+                if (not isinstance(receipt, dict) or receipt.get("ok") is not True
+                        or not isinstance(receipt.get("capture"), dict)
+                        or receipt["capture"].get("width") != width
+                        or receipt["capture"].get("height") != height):
+                    raise RenderError("render_failed")
+                result = {
                     "render_version": 1,
                     "source": "isolated-headless-labwc-native-riceplate",
                     "recipe": {"id": recipe.recipe_id, "schema_version": recipe.schema_version,
@@ -184,7 +249,12 @@ def render(recipe_token: str | None, output: Path | None, *,
                     "interactive_session": False,
                 }
             finally:
-                _cleanup_children(children)
+                _cleanup_children(children, token)
+            # Publish only after teardown succeeds. This preserves the destination
+            # when even a successful screenshot leaves an orphaned process.
+            _verify_stage(stage, receipt["capture"])
+            os.link(stage, output, follow_symlinks=False)
+            return result
     except RenderError:
         raise
     except (OSError, IndexError, KeyError, ValueError, subprocess.SubprocessError) as exc:

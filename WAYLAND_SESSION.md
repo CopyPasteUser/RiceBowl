@@ -84,13 +84,13 @@ Waybar backends actually implement:
 ricebowl de catalog --json
 ```
 
-The versioned `catalog_version` (currently **3**) identifies the response format, while
-`recipe.schema_versions` (currently **1, 2, 3, 4**) identifies supported recipe versions. Each
+The versioned `catalog_version` (currently **5**) identifies the response format, while
+`recipe.schema_versions` (currently **1, 2, 3, 4, 5**) identifies supported recipe versions. Each
 component has a known ID, real backend support level, fixed behavior and
 keyboard-availability flag. Unsupported functionality is reported explicitly
 instead of presenting an imaginary action or widget. This catalog never reads
-private desktop state, invokes a model or changes a rice; it is the first
-machine-readable Creator *discovery* contract, not the full Creator API.
+private desktop state, invokes a model or changes a rice. The cross-command
+Creator inventory is available through `ricebowl de creator-api --json`.
 
 The next read-only Creator building block validates one recipe and optionally
 compares it with a bundled, imported or owner-private base recipe:
@@ -297,6 +297,49 @@ outside the output when no safe, non-overlapping hit area exists. This placement
 fractional-scale visual quality and multi-monitor hotplug still need device
 acceptance. Do not treat it as a finished desktop.
 
+The default **Waybar-backed** Wayland session is separately checked in CI
+with two genuine labwc headless outputs. The smoke captures the bar on each,
+turns one output off, checks the remaining bar and reconnects the second.
+This verifies fallback display/hotplug behavior, **not** multi-monitor native
+RicePlate parity or physical mixed-DPI hardware acceptance.
+
+An additional experimental native RicePlate track now draws a
+separate taskbar layer on each connected output **inside the same process**,
+while sharing window discovery and the event-driven clock. Secondary panels
+use independent task paging. Native menu and desktop icons still belong to the
+primary output: the secondary launcher opens the accessible fuzzel picker.
+The `smoke_riceplate_multioutput.sh` CI test verifies two native panel frames
+and a secondary disconnect/reconnect, with four genuine compositor screenshots
+included in the `riceplate-native-preview` workflow artifact. Actual mixed-DPI,
+primary-output removal, and keyboard/menu parity on secondary screens remain
+open acceptance items.
+
+#### Native start menu and keyboard preview
+
+For schema-v4/v5 recipes the experimental native panel now draws its **own
+start menu in the same Rust process**, using the recipe's actual grouped menu
+title and validated action IDs. Click the panel's `Apps` button to toggle it.
+Use **Left/Right** to switch groups, **Up/Down/Tab** to select an action,
+**Enter** to activate and **Escape** to dismiss. Mouse tabs, rows and close
+control have the same action mapping. The menu requests Wayland keyboard focus
+only while open; it is parked outside the output and noninteractive while
+closed. The legacy labwc root menu remains a recovery path.
+
+Actions are strictly the existing known Linux bindings: fuzzel applications,
+foot terminal, swaylock lock, and labwc's own `--exit` for logout **only when
+the compositor supplied a valid `LABWC_PID`**. Otherwise the logout row shows
+`unavailable` and cannot terminate an unrelated desktop session. Missing
+optional programs emit an error rather than inventing a working control.
+Logout is also disabled inside nested Creator previews, even if the caller
+inherited an outer compositor's `LABWC_PID`.
+
+The visual QA flag `riceplate-native --recipe /absolute/private.json
+--preview-menu` opens the menu on startup; normal use never does. CI captures
+an actual `menu-v5.png` from headless labwc and verifies it differs from the
+closed-menu framebuffer. This is a bounded four-action-per-group native menu,
+**not yet** menu search, pinning, icons, custom typography, keyboard-accessible
+desktop shortcuts or a full multi-monitor keyboard/navigation system.
+
 For **real** Wayland screenshots, install `grim` and explicitly invoke the
 Creator capture command **inside the Wayland compositor you want to inspect**:
 
@@ -362,6 +405,93 @@ it is **not** a similarity score or a replacement for a manually approved
 reference. Real-hardware mixed-DPI/multi-output behavior, font tolerance,
 visual baseline sign-off and functional keyboard testing remain open.
 
+#### Portable Wayland RicePacks and Creator API (experimental)
+
+Discover the implemented authoring operations, required flags, safe effects,
+versioned output and their limits without launching a model or a daemon:
+
+```bash
+ricebowl de creator-api --json
+ricebowl de catalog --json
+```
+
+The **Wayland RicePack v1** is a reproducible, local `.ricepack` ZIP with exactly
+`ricepack.json` (format version, recipe identity, SHA-256 checksums and declared
+provenance) and `recipe.json` (canonical schema-v1–v5 recipe). There is no
+unpacking arbitrary archive paths, executing commands or importing new runtime
+assets. Existing *bundled* wallpapers are referenced by known IDs only.
+
+```bash
+ricebowl de pack-export --recipe /absolute/path/my-rice.json \
+  --output /absolute/path/my-rice.ricepack --json
+ricebowl de pack-inspect --package /absolute/path/my-rice.ricepack --json
+ricebowl de pack-import --package /absolute/path/my-rice.ricepack --json
+ricebowl de review --recipe my-rice --json
+```
+
+Export optionally accepts `--metadata /absolute/path/provenance.json` with
+this exact, owner-controlled JSON object:
+
+```json
+{
+  "author": "Your name",
+  "license": "CC0-1.0",
+  "origin": "ai-assisted",
+  "source_reference": "My original local design"
+}
+```
+
+Accepted licenses are `unspecified`, `CC0-1.0`, `CC-BY-4.0`, `MIT` and
+`custom`; origins are `unspecified`, `original`, `ai-assisted` and `adapted`.
+These are *user declarations*, not license or authorship verification. Without
+explicit metadata, the package says `unspecified`; it never fabricates a
+license or creator. The format has no third-party image/icon assets or rendered
+preview yet, and is distinct from the earlier **XFCE Riceware v2 `.zip`**
+format documented in [RICEPACK_SPEC.md](RICEPACK_SPEC.md).
+
+The archive limit is 256 KiB, recipes stay within 64 KiB and JSON is strictly
+validated. Import refuses unknown archive entries, symlinks, compression,
+corruption, duplicate names, hash mismatches, executable fields, reserved IDs
+and collisions with previously imported recipes. It installs **only** an
+owner-private `0600` JSON recipe, without selecting it for the next login or
+changing the active desktop. Export never overwrites files; the archive bytes
+are deterministic for the same recipe and metadata. Invalid pack input returns
+JSON with `ok: false`, a path-free error code and exit status `2` when
+`--json` is supplied; invalid flags exit `1`. All commands work offline.
+
+#### Reviewed next-login staging (no live switch)
+
+After importing and previewing a recipe, Creator can require a semantic
+fingerprint match before staging it for the **next** opt-in Wayland login:
+
+```bash
+ricebowl de creator-status --json
+ricebowl de review --recipe my-rice --json
+# Copy summary.semantic_sha256 from the review JSON into the command below:
+ricebowl de creator-stage --recipe my-rice \
+  --expect-sha256 64_LOWERCASE_HEX_CHARACTERS --expect-active classic --json
+ricebowl de creator-status --json
+# To undo that future-login preference (without starting a session):
+ricebowl de creator-rollback --expect-active my-rice --json
+```
+
+`--expect-active` is an optional concurrency guard: if the next-login
+selection has changed since review, no new preference is committed. The
+required `--expect-sha256` is checked against the actual validated recipe
+**under the selection lock**. Creator saves that fingerprint in a compatible
+selection-state v2 record; at Wayland login, a changed recipe fails the
+fingerprint check and RiceBowl falls back to `classic`. Old v1 selections
+continue to work, and the previous next-login selection can be restored once.
+The recipe file itself is not made immutable, and this is *not* live apply,
+full multi-component transaction/rollback or protection against a malicious
+process with the same user's permissions. These commands never switch the
+current Wayland or XFCE desktop, nor launch a Creator daemon.
+
+`de creator-status`, `de creator-stage` and `de creator-rollback` support
+stable JSON responses (`stage_version: 1`), exit `0` for success, `2` for
+failed safe operations, and `1` for invalid command flags. Error responses
+do not expose private file paths or recipe contents.
+
 #### Existing recipe creation, import/export and selection
 
 Custom recipes use the strict JSON schema illustrated in
@@ -401,6 +531,25 @@ ricebowl de recipe-current --json
 ricebowl de recipe-restore   # One-level undo for the next login
 ```
 
+To share the *appearance* of a validated RicePlate panel recipe with the
+independently installed Taskotto process monitor, export its separate,
+versioned and non-executable TOML contract:
+
+```bash
+ricebowl de taskotto-export --recipe classic --output "$HOME/taskotto-rice.toml"
+RICEBOWL_TASKOTTO_RICEPACK="$HOME/taskotto-rice.toml" taskotto
+```
+
+This does not apply a desktop rice or require Taskotto to be installed for
+export. Taskotto checks the file itself and allows a reversible in-app
+preview. The v1 handoff carries only RicePlate's validated foreground,
+background and active colors plus a supported base family when a known
+wallpaper identifier exists; no arbitrary launcher, scripts, icons or
+window-decorator settings are handed over. Existing destination files are
+never overwritten, and exports are owner-only `0600`. Use a new filename for
+each revision. This is a **manual opt-in bridge**, not automatic session-wide
+application styling or a complete cross-app RicePack transaction.
+
 The selection is an atomic `0600` preference inside the owner-private recipe
 directory. Repeating the same selection preserves the last undo target; the
 selection lock serializes parallel updates. The default is `classic`. A
@@ -415,7 +564,9 @@ duplicate names, and store the result privately in
 `$XDG_CONFIG_HOME/ricebowl/recipes/` (or `~/.config/ricebowl/recipes/`).
 Exported files are `0600` and existing files are never overwritten. Share
 the exported JSON using your normal file-transfer tool; it contains no
-executables or assets. This is **not** yet a complete, visual RicePack format.
+executables or assets. The experimental Wayland `.ricepack` above adds portable
+integrity/provenance metadata, **not** full cross-component composition,
+licensed custom artwork or live transaction/rollback.
 
 The initializer creates a fully validated `0600` file through an atomic,
 no-overwrite operation. Edit its `panel.sections`, `position`, `height` and

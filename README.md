@@ -20,7 +20,7 @@ Today, RiceBowl is a **seven-style XFCE/X11 ricing suite**: Windows 98, XP Luna,
 
 It is also becoming an independent, floating **Wayland desktop environment based on labwc**. Its long-term goal is a *desktop construction kit*: give an AI a reference screenshot or an original mockup, and use validated layout recipes and shared functional components to build a usable rice—without writing a new desktop shell for each design.
 
-The optional Wayland preview has declarative nested panels, a genuine labwc root menu, wallpapers, visual tokens, compact layouts and safe offline recipe editing. Its experimental native Rust RicePlate shell supports **clickable desktop icons** with single-output reflow through schema-v5 recipes, isolated headless screenshots and offline comparison for creators. Movable icons, desktop widgets, automated mockup conversion and the 1.0 release are still in development. The established XFCE session remains available.
+The optional Wayland preview has declarative nested panels, a genuine labwc root menu, wallpapers, visual tokens, compact layouts and safe offline recipe editing. Its experimental native Rust RicePlate shell supports **clickable desktop icons** with single-output reflow through schema-v5 recipes. An offline Creator CLI now supports isolated real-shell screenshots, visual comparison and **portable, validated `.ricepack` recipe exchange**. Movable icons, custom visual assets, desktop widgets, automated mockup conversion and the 1.0 release are still in development. The established XFCE session remains available.
 
 ## Try it
 
@@ -41,6 +41,7 @@ Select a rice in the Hub; installation alone does not change your desktop. Use `
 
 - [Wayland preview, installation and safety](WAYLAND_SESSION.md)
 - [AI-friendly shell recipes and components](WAYLAND_SESSION.md#schema-v5-native-desktop-icons-preview)
+- [Two real Wayland Creator example rices and reproducible captures](examples/wayland/README.md)
 - [Desktop environment development roadmap](RICEBOWL_DE_ROADMAP.md)
 - [Rice ecosystem (RiceField, Taskotto and more)](RICE_ECOSYSTEM_ROADMAP.md)
 - [Contributing](CONTRIBUTING.md) · [License](LICENSE) · [Releases](https://github.com/CopyPasteUser/Ricebowl/releases)

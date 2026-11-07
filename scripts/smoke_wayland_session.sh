@@ -26,7 +26,10 @@ cleanup_runtime() {
 trap cleanup_runtime EXIT
 export XDG_RUNTIME_DIR="$runtime"
 export WLR_BACKENDS=headless
-export WLR_HEADLESS_OUTPUTS=1
+case "${RICEBOWL_SMOKE_OUTPUTS:-1}" in
+    1|2) export WLR_HEADLESS_OUTPUTS="${RICEBOWL_SMOKE_OUTPUTS:-1}" ;;
+    *) echo "Test output count must be 1 or 2" >&2; exit 2 ;;
+esac
 export WLR_RENDERER=pixman
 export XDG_SESSION_TYPE=wayland
 
@@ -85,6 +88,34 @@ dbus-run-session -- sh -eu -c '
         echo "Waybar did not start in the labwc preview session" >&2
         sed -n "1,100p" "$runtime/labwc.log" >&2
         exit 1
+    fi
+    if [ "${WLR_HEADLESS_OUTPUTS:-1}" -eq 2 ]; then
+        # The supported Waybar fallback must provide a real, usable taskbar
+        # on both monitors, including after a compositor output is unplugged
+        # and reattached. The opt-in Rust preview is not certified by this.
+        set -- $(wlr-randr | sed -n "/^[A-Za-z0-9_.-][A-Za-z0-9_.-]*[[:space:]]/s/[[:space:]].*//p")
+        if [ "$#" -ne 2 ]; then
+            echo "Expected two distinct headless Wayland outputs, got $#" >&2
+            exit 1
+        fi
+        first=$1
+        second=$2
+        sleep 1
+        grim -o "$first" "$runtime/first.png"
+        grim -o "$second" "$runtime/second.png"
+        /usr/bin/python3 "$project_root/scripts/check_wayland_panel_outputs.py" \
+            "$runtime/first.png" "$runtime/second.png"
+        wlr-randr --output "$second" --off
+        sleep 1
+        grim -o "$first" "$runtime/first-after-off.png"
+        /usr/bin/python3 "$project_root/scripts/check_wayland_panel_outputs.py" \
+            "$runtime/first-after-off.png"
+        wlr-randr --output "$second" --on
+        sleep 1
+        grim -o "$second" "$runtime/second-restored.png"
+        /usr/bin/python3 "$project_root/scripts/check_wayland_panel_outputs.py" \
+            "$runtime/second-restored.png"
+        echo "Waybar fallback stayed visible across two outputs and one hotplug cycle"
     fi
     # Closing the native panel must also end the compositor. This is essential
     # on labwc 0.7.1 shipped with Mint 22, which lacks --session supervision.

@@ -45,7 +45,7 @@ explicitly implemented behavior. Packs must never execute arbitrary generated
 scripts. Third-party GTK/Qt application decorations and Wayland protocol
 limits remain real constraints on cross-app fidelity.
 
-### Runtime and Creator boundary (target, not yet implemented)
+### Runtime and Creator boundary (partially implemented; 1.0 gates open)
 
 - **RiceBowl Runtime** owns the lightweight Wayland session, rendering,
   shared Linux capability adapters, application integration and safe rice
@@ -148,6 +148,28 @@ affecting XFCE, including a failed-session recovery. **Not yet signed off.**
 - [x] Group native Wayland windows with the same nonempty app ID, show bounded
   window counts, cycle active grouped windows and page/reveal by group; unknown
   IDs are always independent. Keyboard access remains open.
+- [x] Implement a first **real recipe-driven native start menu** as another
+  bounded Wayland layer-shell surface inside RicePlate: grouped actions, mouse
+  tabs/rows, keyboard group/row navigation with visible selection, Enter and
+  Escape, guarded labwc logout, on-demand keyboard focus, headless open-menu
+  screenshot and pure state/painting tests. The labwc fallback root menu
+  remains available. Search, pins, desktop-icon keyboard navigation and
+  multi-output menu ownership are not delivered by this slice.
+- [x] Add a **two-output labwc/Waybar fallback acceptance smoke** that captures
+  genuine panel pixels separately on both headless monitors, disconnects one
+  output, verifies the remaining panel, re-enables it and verifies panel
+  recovery. Includes unit-tested screenshot validation. This exercises the
+  default Waybar-compatible session, **not** native Rust per-output surfaces
+  or mixed-DPI device signoff; both still need implementation/QA.
+- [x] Extend the **single native RicePlate process** with an independently
+  configured layer-shell taskbar on every non-primary Wayland output. Reuse one
+  window/task model, clock and renderer; keep per-panel page offsets and
+  event-driven redraws. Test a real two-output compositor and secondary
+  disconnect/reconnect. Native popup menus and desktop-icon ownership remain
+  primary-output-only for this first slice, and primary-monitor removal still
+  follows the conservative session recovery path. Both native output captures,
+  unplug and replug were verified in headless labwc CI; genuine hardware/mixed
+  DPI acceptance remains separate.
 - [ ] Build a Wayland-native panel through `wlr-layer-shell`.
 - [ ] Populate tasks/windows through a supported foreign-toplevel protocol.
 - [ ] Implement launchers, task groups, tray, calendar, menus and keyboard
@@ -239,6 +261,10 @@ depend on the XFCE session.
   Live shell switching and cross-component transactions remain open.
 - [ ] Define a small versioned profile contract between RiceBowl, RiceField
   and Taskotto. External applications work without RiceBowl installed.
+  - [x] RicePlate recipe → Taskotto v1 data-only TOML export and fixture,
+    with validated color/theme mapping and no-overwrite private output.
+  - [ ] Add auto-discovery/coordination for RiceField and full session-wide
+    multi-app pack transactions only after their independent contracts settle.
 - [ ] Support rice-specific structure, spacing, colors and components with
   validated settings, not an unsafe arbitrary runtime plugin mechanism.
 - [ ] Specify a versioned, schema-validated rice recipe format for composable
@@ -288,13 +314,42 @@ depend on the XFCE session.
   overwriting, then terminate all render children. Its CI uses real native
   pixels and content hashes. Not yet an editable preview GUI, Waybar render,
   perceptual test, active apply/rollback, or complete multi-output harness.
+- [x] Add an on-demand **Creator API v1 command inventory** (`de creator-api
+  --json`) with stable implemented command names, true side-effect boundaries,
+  version/flag/exit-code discovery and an explicit limitations list. No
+  resident Creator service or invented live apply endpoint.
+- [x] Implement **Wayland RicePack v1 recipe exchange** (`de pack-export`,
+  `de pack-inspect`, `de pack-import`): reproducible owner-private `.ricepack`
+  archives, canonical schema-v1–v5 recipe, SHA-256 byte/semantic validation,
+  optional user-declared provenance, strict two-entry ZIP allowlist, safe
+  no-overwrite import and stable JSON errors. Imported recipes are not
+  selected or applied. This **recipe-only** format references bundled assets;
+  full visual asset manifests, preview evidence and multi-component apply
+  transactions remain open.
+- [x] Add **explicit Creator next-login staging** (`de creator-status`,
+  `de creator-stage`, `de creator-rollback`) with a required reviewed semantic
+  SHA-256, optional compare-and-swap current-selection guard, one-level undo,
+  private v2 selection-state fingerprint and fail-safe classic fallback when a
+  staged recipe changes before login. Migrate old v1 state without breaking
+  existing commands. This does not switch live Wayland/XFCE or provide a
+  transaction across the desktop's future settings, windows and components.
+- [x] Publish two **honest schema-v5 Creator demonstrators** under
+  `examples/wayland/`: a classic-OS-inspired workstation and a structurally
+  distinct original Orbit concept. They use only shared native primitives,
+  original bundled wallpapers and known allowlisted actions. Native CI renders
+  both at three resolutions plus fractional scaling, verifies exact recipe
+  receipts and screenshot hashes, and archives reproducible visual diagnostics.
+  This proves the limited current contract supports two styles, **not**
+  high-fidelity OS cloning or the complete 1.0 authoring acceptance below.
 - [ ] Publish a **versioned, machine-readable Creator contract** (CLI JSON
   output first; optional local IPC only if justified) for discovering
   components, creating/editing drafts, validating recipes, previewing the
   real shell, capturing screenshots, comparing to references, exporting packs,
   and explicitly requested apply/restore. Document exit codes, diagnostics,
   feature negotiation and stable failure responses; exact command names are
-  to be finalized during implementation, not assumed to exist today.
+  to be finalized during implementation, not assumed to exist today. The v1
+  inventory and recipe-only archive now exist; active transaction/apply/restore,
+  broader component schemas and full feature negotiation are still missing.
 - [ ] Make agent-driven changes reviewable and reproducible: immutable source
   references, local/private draft workspace, deterministic validation,
   per-asset license/provenance metadata, clear diff/preview before apply,
