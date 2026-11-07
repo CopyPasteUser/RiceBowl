@@ -114,6 +114,8 @@ def describe_ricepack() -> dict[str, object]:
             "licenses": ["unspecified", "CC0-1.0", "CC-BY-4.0", "MIT", "custom"],
             "origins": ["unspecified", "original", "ai-assisted", "adapted"],
             "user_declared_not_verified": True,
+            "import_receipt": "owner-private data-only sidecar bound to recipe semantic hash",
+            "roundtrip_preserves_attribution": True,
         },
         "commands": [
             {"command": "de pack-export", "required_options": ["--recipe", "--output"],
@@ -121,7 +123,7 @@ def describe_ricepack() -> dict[str, object]:
             {"command": "de pack-inspect", "required_options": ["--package"],
              "optional_options": ["--json"], "read_only": True},
             {"command": "de pack-import", "required_options": ["--package"],
-             "optional_options": ["--json"], "installs_recipe_only": True},
+             "optional_options": ["--json"], "installs_recipe_and_receipt": True},
         ],
         "import": "no-overwrite private user recipe collection; never activates",
         "failure_exit_code": 2,

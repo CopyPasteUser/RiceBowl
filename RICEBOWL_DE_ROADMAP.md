@@ -451,6 +451,15 @@ depend on the XFCE session.
   validated legacy v1 packs. The archive still contains only known recipe JSON,
   **not** an external image or arbitrary code. Portable third-party asset
   packaging, full cross-component apply and live rollback remain open.
+- [x] **Preserve imported RicePack authorship and license declarations across
+  re-export**: a v1 owner-private data-only sidecar is written before a
+  validated recipe becomes visible, bound to its semantic hash and the exact
+  original bundled-wallpaper bytes. Re-exporting
+  the installed recipe automatically carries both rice and wallpaper
+  attribution forward. A modified recipe, missing privacy permissions,
+  incompatible existing receipt or symlink fails closed; an interrupted
+  import can safely retry with the exact same archive. The portable archive
+  schema remains v2; third-party images and live apply are not introduced.
 - [x] Add **explicit Creator next-login staging** (`de creator-status`,
   `de creator-stage`, `de creator-rollback`) with a required reviewed semantic
   SHA-256, optional compare-and-swap current-selection guard, one-level undo,

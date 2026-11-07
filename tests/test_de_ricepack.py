@@ -141,15 +141,119 @@ class PortableRicePackTests(unittest.TestCase):
                 self.assertTrue(installed["imported"])
                 self.assertFalse(installed["applied"])
                 self.assertEqual(installed["recipe_id"], created.recipe_id)
+                self.assertTrue(installed["provenance_saved"])
                 self.assertEqual(recipes.current_selection(), ("classic", None))
                 target = config / "ricebowl" / "recipes" / "original-y2k.json"
                 self.assertTrue(target.is_file())
                 self.assertEqual(target.stat().st_mode & 0o777, 0o600)
                 self.assertEqual(review.review(str(target))["summary"]["semantic_sha256"],
                                  expected)
+                attribution = config / "ricebowl" / "recipes" / "original-y2k.ricepack-provenance"
+                self.assertTrue(attribution.is_file())
+                self.assertEqual(attribution.stat().st_mode & 0o777, 0o600)
+                roundtrip = root / "roundtrip.ricepack"
+                saved_manifest = pack.export_pack("original-y2k", roundtrip)["manifest"]
+                self.assertEqual(saved_manifest["provenance"], exported["manifest"]["provenance"])
+                self.assertEqual(saved_manifest["asset_manifest"], exported["manifest"]["asset_manifest"])
+                # The import receipt is not a recipe and must never appear in
+                # component discovery or consume the recipe collection quota.
+                self.assertEqual(len(recipes.imported_recipes()), 1)
+                for index in range(128):
+                    (target.parent / f"other-{index}.ricepack-provenance").write_text("{}")
+                self.assertEqual(len(recipes.imported_recipes()), 1)
                 with self.assertRaises(pack.PackError) as caught:
                     pack.import_pack(archive)
                 self.assertEqual(caught.exception.code, "import_unavailable")
+
+    def test_imported_provenance_fails_closed_when_recipe_is_modified(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source.json"
+            recipes.create_from_template(source="classic", destination=source,
+                                         recipe_id="attributed-rice", name="Attributed Rice",
+                                         schema_version=5)
+            archive = root / "safe.ricepack"
+            pack.export_pack(str(source), archive)
+            config = root / "config"
+            config.mkdir(mode=0o700)
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": str(config)}):
+                pack.import_pack(archive)
+                imported = config / "ricebowl" / "recipes" / "attributed-rice.json"
+                changed = json.loads(imported.read_text())
+                changed["name"] = "Edited without provenance review"
+                imported.write_text(json.dumps(changed))
+                with self.assertRaises(pack.PackError) as caught:
+                    pack.export_pack("attributed-rice", root / "must-fail.ricepack")
+                self.assertEqual(caught.exception.code, "provenance_stale")
+                self.assertFalse((root / "must-fail.ricepack").exists())
+
+    def test_imported_attribution_cannot_be_reused_for_changed_artwork_bytes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "original.json"
+            recipes.create_from_template(source="classic", destination=source,
+                                         recipe_id="artwork-guard", name="Artwork Guard",
+                                         schema_version=5)
+            archive = root / "safe.ricepack"
+            pack.export_pack(str(source), archive)
+            config = root / "config"
+            config.mkdir(mode=0o700)
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": str(config)}):
+                pack.import_pack(archive)
+                with mock.patch("macrice.de.pack._bundled_wallpaper",
+                                return_value=("aero-seven-blue", "0" * 64)):
+                    with self.assertRaises(pack.PackError) as caught:
+                        pack.export_pack("artwork-guard", root / "wrong-artwork.ricepack")
+                self.assertEqual(caught.exception.code, "provenance_stale")
+                self.assertFalse((root / "wrong-artwork.ricepack").exists())
+
+    def test_retries_interrupted_import_only_with_identical_receipt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source.json"
+            recipes.create_from_template(source="classic", destination=source,
+                                         recipe_id="recovery-test", name="Recovery",
+                                         schema_version=5)
+            archive = root / "safe.ricepack"
+            pack.export_pack(str(source), archive)
+            config = root / "config"
+            config.mkdir(mode=0o700)
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": str(config)}):
+                pack.import_pack(archive)
+                folder = config / "ricebowl" / "recipes"
+                imported = folder / "recovery-test.json"
+                # Reproduce the crash window: safe receipt published, recipe
+                # still absent. A repeat import of exactly the same pack works.
+                imported.unlink()
+                self.assertTrue(pack.import_pack(archive)["provenance_saved"])
+                self.assertTrue(imported.is_file())
+
+    def test_untrusted_provenance_receipts_are_never_followed(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "source.json"
+            recipes.create_from_template(source="classic", destination=source,
+                                         recipe_id="protected-rice", name="Protected",
+                                         schema_version=5)
+            archive = root / "safe.ricepack"
+            pack.export_pack(str(source), archive)
+            config = root / "config"
+            config.mkdir(mode=0o700)
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": str(config)}):
+                pack.import_pack(archive)
+                folder = config / "ricebowl" / "recipes"
+                receipt = folder / "protected-rice.ricepack-provenance"
+                receipt.chmod(0o644)
+                with self.assertRaises(pack.PackError):
+                    pack.export_pack("protected-rice", root / "bad.ricepack")
+                receipt.chmod(0o600)
+                receipt.unlink()
+                outside = root / "unrelated.txt"
+                outside.write_text("KEEP")
+                receipt.symlink_to(outside)
+                with self.assertRaises(pack.PackError):
+                    pack.export_pack("protected-rice", root / "bad2.ricepack")
+                self.assertEqual(outside.read_text(), "KEEP")
 
     def test_rejects_overwrite_symlinks_unowned_modes_and_reserved_ids(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -250,6 +354,7 @@ class PortableRicePackTests(unittest.TestCase):
         self.assertEqual(spec["api_version"], 1)
         self.assertEqual(catalog.describe()["authoring"]["ricepack"],
                          creator_contract.describe_ricepack())
+        self.assertTrue(spec["ricepack"]["provenance"]["roundtrip_preserves_attribution"])
         commands = {item["command"] for item in spec["commands"]}
         self.assertTrue({"catalog", "review", "draft-edit", "render", "visual-compare",
                          "capture", "pack-export", "pack-inspect", "pack-import"} <= commands)

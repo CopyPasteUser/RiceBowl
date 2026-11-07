@@ -32,6 +32,7 @@ _ORIGINS = frozenset(("unspecified", "original", "ai-assisted", "adapted"))
 _DEFAULT_PROVENANCE = {
     "author": "", "license": "unspecified", "origin": "unspecified", "source_reference": "",
 }
+_RECEIPT_SUFFIX = ".ricepack-provenance"
 
 
 def _bundled_wallpaper(recipe: recipes.PanelRecipe) -> tuple[str, str]:
@@ -57,6 +58,49 @@ def _asset_receipt(recipe: recipes.PanelRecipe, provenance: dict[str, str]) -> d
     asset_id, sha = _bundled_wallpaper(recipe)
     return {"version": 1, "wallpaper": {"id": asset_id, "sha256": sha,
                                         "provenance": provenance}}
+
+
+def _provenance_receipt(manifest: dict[str, Any], recipe: recipes.PanelRecipe) -> bytes:
+    """Bind imported license/origin attribution to the exact reviewed recipe."""
+    wallpaper = (manifest["asset_manifest"]["wallpaper"]["provenance"]
+                 if manifest["format_version"] == 2 else dict(_DEFAULT_PROVENANCE))
+    wallpaper_id, wallpaper_sha = _bundled_wallpaper(recipe)
+    return _json_bytes({"version": 1,
+                        "semantic_sha256": manifest["recipe"]["semantic_sha256"],
+                        "wallpaper_id": wallpaper_id, "wallpaper_sha256": wallpaper_sha,
+                        "provenance": manifest["provenance"],
+                        "wallpaper_provenance": wallpaper})
+
+
+def _stored_provenance(recipe: recipes.PanelRecipe) -> tuple[dict[str, str], dict[str, str]] | None:
+    """Read a private import receipt only for this exact installed recipe ID."""
+    try:
+        folder = recipes._private_recipe_dir(create=False)
+    except recipes.RecipeError as exc:
+        raise PackError("Unsafe private recipe collection", code="provenance_unavailable") from exc
+    location = folder / f"{recipe.recipe_id}{_RECEIPT_SUFFIX}"
+    if not os.path.lexists(location):
+        return None
+    saved = _parse_object(_read_owned_file(location, suffix=_RECEIPT_SUFFIX,
+                                          limit=MAX_METADATA_BYTES, owner_private=True))
+    if (set(saved) != {"version", "semantic_sha256", "wallpaper_id",
+                      "wallpaper_sha256", "provenance", "wallpaper_provenance"}
+            or type(saved["version"]) is not int or saved["version"] != 1
+            or type(saved["semantic_sha256"]) is not str
+            or type(saved["wallpaper_id"]) is not str
+            or type(saved["wallpaper_sha256"]) is not str):
+        raise PackError("Malformed imported provenance receipt", code="provenance_unavailable")
+    canonical = review._manifest(recipe)
+    if saved["semantic_sha256"] != review._semantic_hash(canonical):
+        raise PackError("Imported rice changed since its license/provenance receipt",
+                        code="provenance_stale")
+    if (saved["wallpaper_id"], saved["wallpaper_sha256"]) != _bundled_wallpaper(recipe):
+        raise PackError("Bundled artwork changed since its license/provenance receipt",
+                        code="provenance_stale")
+    main = _provenance(saved["provenance"] if type(saved["provenance"]) is dict else {})
+    wallpaper = _provenance(saved["wallpaper_provenance"]
+                            if type(saved["wallpaper_provenance"]) is dict else {})
+    return main, wallpaper
 
 
 class PackError(ValueError):
@@ -101,7 +145,8 @@ def _provenance(value: dict[str, Any]) -> dict[str, str]:
     return value
 
 
-def _read_owned_file(path: Path, *, suffix: str, limit: int) -> bytes:
+def _read_owned_file(path: Path, *, suffix: str, limit: int,
+                     owner_private: bool = False) -> bytes:
     if not path.is_absolute() or path.suffix != suffix:
         raise PackError(f"Input must be an absolute {suffix} file", code="invalid_input")
     try:
@@ -109,7 +154,8 @@ def _read_owned_file(path: Path, *, suffix: str, limit: int) -> bytes:
         with os.fdopen(fd, "rb") as stream:
             meta = os.fstat(stream.fileno())
             if (not stat.S_ISREG(meta.st_mode) or meta.st_uid != os.geteuid()
-                    or meta.st_mode & 0o022 or meta.st_size > limit):
+                    or meta.st_mode & 0o022 or meta.st_size > limit
+                    or (owner_private and meta.st_mode & 0o077)):
                 raise PackError("Input is unsafe, unowned or too large", code="invalid_input")
             payload = stream.read(limit + 1)
             if len(payload) > limit:
@@ -161,6 +207,10 @@ def export_pack(recipe_token: str, destination: Path,
     recipe = _read_recipe(recipe_token)
     provenance = dict(_DEFAULT_PROVENANCE)
     wallpaper_provenance = dict(_DEFAULT_PROVENANCE)
+    if metadata is None and _ID.fullmatch(recipe_token) and recipe_token not in recipes.BUILTINS:
+        remembered = _stored_provenance(recipe)
+        if remembered is not None:
+            provenance, wallpaper_provenance = remembered
     if metadata is not None:
         declared = _parse_object(_read_owned_file(
             metadata, suffix=".json", limit=MAX_METADATA_BYTES))
@@ -279,19 +329,37 @@ def inspect_pack(source: Path) -> dict[str, Any]:
 
 
 def import_pack(source: Path) -> dict[str, Any]:
-    """Install only the validated recipe, explicitly never its provenance as code."""
+    """Install a recipe and a data-only provenance receipt, without applying it."""
     metadata, payload = _validate_archive(source)
     if metadata["recipe"]["id"] in recipes.BUILTINS:
         raise PackError("Cannot replace a reserved built-in recipe", code="reserved_id")
     try:
-        destination = (recipes._private_recipe_dir(create=True)
-                       / f"{metadata['recipe']['id']}.json")
+        folder = recipes._private_recipe_dir(create=True)
+        destination = folder / f"{metadata['recipe']['id']}.json"
+        receipt = folder / f"{metadata['recipe']['id']}{_RECEIPT_SUFFIX}"
+        if os.path.lexists(destination):
+            raise PackError("Cannot replace an installed recipe", code="import_unavailable")
+        attribution = _provenance_receipt(metadata, recipes.parse(payload))
+        if os.path.lexists(receipt):
+            # A previous interrupted import may have published its receipt
+            # before the recipe. Reuse only byte-identical private metadata.
+            if (_read_owned_file(receipt, suffix=_RECEIPT_SUFFIX,
+                                 limit=MAX_METADATA_BYTES, owner_private=True) != attribution):
+                raise PackError("Existing provenance does not match this pack",
+                                code="import_unavailable")
+        else:
+            recipes._write_private_new(receipt, attribution, suffix=_RECEIPT_SUFFIX)
+        # The runtime sees a recipe only after its attribution is present.
+        # If this write fails, the unreferenced receipt is safe to retry with
+        # the same archive; never silently overwrite another user's data.
         recipes._write_private_new(destination, payload)
+    except PackError:
+        raise
     except (OSError, recipes.RecipeError) as exc:
         raise PackError("Cannot install recipe without overwriting an existing file",
                         code="import_unavailable") from exc
     return {"pack_version": metadata["format_version"], "ok": True, "valid": True,
-            "imported": True, "applied": False,
+            "imported": True, "applied": False, "provenance_saved": True,
             "recipe_id": metadata["recipe"]["id"],
             "semantic_sha256": metadata["recipe"]["semantic_sha256"]}
 
