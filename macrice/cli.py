@@ -74,6 +74,7 @@ def parser() -> argparse.ArgumentParser:
         "check", "start", "shell", "catalog", "creator-api", "review", "draft-edit", "visual-compare",
         "capture", "render", "creator-status", "creator-stage", "creator-rollback",
         "pack-export", "pack-inspect", "pack-import", "notifications", "notification-dismiss",
+        "audio-devices", "audio-default",
         "recipes", "recipe-init", "recipe-import", "recipe-export", "recipe-current",
         "recipe-select", "recipe-restore", "taskotto-export"))
     de.add_argument("--json", action="store_true", help="Read-only machine-readable preflight")
@@ -91,6 +92,10 @@ def parser() -> argparse.ArgumentParser:
     de.add_argument("--package", type=Path, help="Absolute .ricepack file for de pack-inspect/import")
     de.add_argument("--notification-id", type=int,
                     help="One active notification ID for explicit de notification-dismiss")
+    de.add_argument("--device-kind", choices=("sink", "source"),
+                    help="Playback sink or recording source for de audio-default")
+    de.add_argument("--device-name", help="Exact reviewed audio device name for de audio-default")
+    de.add_argument("--expect-current", help="Optional previous default for concurrency-safe audio selection")
     de.add_argument("--expect-sha256", help="Reviewed recipe semantic SHA-256 for de creator-stage")
     de.add_argument("--expect-active", help="Optional concurrency guard for de creator-stage/rollback")
     de.add_argument("--panel", choices=("waybar", "native"), default="waybar",
@@ -172,6 +177,9 @@ def main(argv: list[str] | None = None) -> int:
                 raise ValueError("--package only applies to de pack-inspect/import")
             if args.action != "notification-dismiss" and args.notification_id is not None:
                 raise ValueError("--notification-id only applies to de notification-dismiss")
+            if args.action != "audio-default" and any(value is not None for value in
+                    (args.device_kind, args.device_name, args.expect_current)):
+                raise ValueError("Audio device mutation options only apply to de audio-default")
             if args.action != "creator-stage" and args.expect_sha256 is not None:
                 raise ValueError("--expect-sha256 only applies to de creator-stage")
             if args.action not in ("creator-stage", "creator-rollback") and args.expect_active is not None:
@@ -211,6 +219,21 @@ def main(argv: list[str] | None = None) -> int:
                 except NotificationBridgeError as error:
                     print(json.dumps(invalid(error,
                                              attempted_dismiss=args.action == "notification-dismiss"), indent=2))
+                    return 2
+                print(json.dumps(result, indent=2, ensure_ascii=False))
+                return 0
+            if args.action in ("audio-devices", "audio-default"):
+                if args.nested or args.recipe or args.panel != "waybar" or not args.json:
+                    raise ValueError("RiceSpice audio commands require --json and no session options")
+                if args.action == "audio-default" and not (args.device_kind and args.device_name):
+                    raise ValueError("de audio-default requires --device-kind and --device-name")
+                from .de.audio_devices import AudioDeviceError, inspect, invalid, set_default
+                try:
+                    result = (inspect() if args.action == "audio-devices" else
+                              set_default(args.device_kind, args.device_name,
+                                          expected_current=args.expect_current))
+                except AudioDeviceError as error:
+                    print(json.dumps(invalid(error), indent=2))
                     return 2
                 print(json.dumps(result, indent=2, ensure_ascii=False))
                 return 0

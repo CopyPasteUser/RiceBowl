@@ -17,7 +17,7 @@ modify global session settings.
 | Desktop shortcuts | Schema-v5 native shortcut surfaces, drag repositioning, owner-private **per-named-output positions**, independent multi-output reflow, hotplug, Tab/Shift-Tab | Cross-monitor drag semantics, output identity without stable names and mixed-DPI/device tests |
 | Wallpaper / appearances | Original bundled wallpapers, composable panel groups, labels, gaps, tokens, original example rices | Full desktop widgets, rich layout primitives, complete cross-app window decorations |
 | Hardware indicators | Kernel-backed battery; NetworkManager connectivity and WirePlumber sink status on a bounded worker | Device picker, Bluetooth status, event subscriptions and finer status detail |
-| RiceSpice controls | Allowlisted native-menu Wi-Fi toggle, volume ±5%, mute; asynchronous result feedback | Full settings for displays, input, network, audio, Bluetooth, accessibility, time and power |
+| RiceSpice controls | Allowlisted native-menu Wi-Fi toggle, volume ±5%, mute; asynchronous feedback; on-demand real audio input/output inventory and explicit default selection | Native settings UI, per-stream routing, displays, input, Bluetooth, accessibility, time and power |
 | RicePop notifications | On-demand `de notifications --json` reads active/history from Mako; `de notification-dismiss --notification-id N --json` safely closes exactly one active alert | Native notification center, OSD, interaction/history UI, non-Mako backends |
 | Session safety | Opt-in session, user polkit agent when installed, optional Mako/swayidle/swaylock, compositor exit cleanup | Complete suspend/resume and hardware recovery acceptance |
 | Creator authoring | Schema-v1–v5 validation, offline private draft edits, component catalog and API inventory, nested native render/capture and visual comparisons | Broad desktop composition, complete action/state bindings, high-fidelity mockup conversion |
@@ -34,7 +34,9 @@ non-clickable; the separate validated native-menu actions perform changes.
 - **RicePlate** is the resident native Rust shell renderer; one process renders
   all panels, popups and supported desktop shortcut surfaces.
 - **RiceSpice** delegates ordinary controls to NetworkManager and WirePlumber
-  through fixed arguments. No custom recipe commands or privileged daemon.
+  through fixed arguments. On-demand input/output device selection uses the
+  existing PulseAudio-compatible server via `pactl`. No custom recipe commands
+  or privileged daemon.
 - **RicePop** currently delegates delivery to the installed Mako host and only
   reads its history on request; it does not own the notification bus name.
 - **Creator** is optional, on demand and offline. It never needs a model at
@@ -60,6 +62,11 @@ ricebowl de start --nested --panel native --recipe quick-controls
 ricebowl de notifications --json
 # Only when intentionally closing one active notification returned above:
 ricebowl de notification-dismiss --notification-id 12 --json
+
+# Real audio devices (never invent sink/source names):
+ricebowl de audio-devices --json
+# After reviewing a returned device name, explicitly choose it:
+ricebowl de audio-default --device-kind sink --device-name "$DEVICE_NAME" --json
 ```
 
 Wi-Fi toggling can disconnect the current session. Notification JSON may
@@ -68,11 +75,16 @@ Mako session. The nested preview does not change your current
 desktop. See [Wayland preview instructions](WAYLAND_SESSION.md) for detailed
 dependencies, screen captures and rollback behavior.
 
+Changing an audio default affects future streams and may affect the active
+audio session even outside the experimental RiceBowl login. Running streams
+can continue on their previous outputs. If selection verification fails,
+the CLI reports that the state may already have changed; inspect again.
+
 ## Verification and 1.0 gates
 
 Implementation evidence includes [native icons PR #143](https://github.com/CopyPasteUser/Ricebowl/pull/143)
 and [Mako bridge PR #141](https://github.com/CopyPasteUser/Ricebowl/pull/141).
-Local automated suites most recently passed **901 Python tests** (16 skipped
+Local automated suites most recently passed **911 Python tests** (16 skipped
 for session/hardware constraints) and **53 native Rust tests**. GitHub's
 `Tests`, `Native RicePlate prototype` and `Wayland session preview` workflows
 have passed on the corresponding merged milestones. Native CI renders actual screenshots under headless labwc, including
