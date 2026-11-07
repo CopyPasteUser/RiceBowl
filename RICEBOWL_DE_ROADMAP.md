@@ -196,6 +196,13 @@ affecting XFCE, including a failed-session recovery. **Not yet signed off.**
   disappears and recreate the hidden surface on reconnect. A genuine
   two-output labwc smoke captures exactly one visible menu and verifies
   unplug/replug; physical mouse/keyboard and assistive QA remain open.
+- [x] Show a **real, read-only native battery percentage** in RicePlate from
+  Linux's fixed `/sys/class/power_supply`, with charging state, explicit
+  no-battery/unknown labels, multi-battery handling and bounded once-per-minute
+  refresh. The indicator is a validated recipe widget on each native panel;
+  it yields layout width to task groups instead of silently reducing task
+  capacity. No fake battery on desktops, new daemon, UPower power action or
+  claims of hardware QA. Network, audio, SNI tray and power controls remain open.
 - [ ] Build a Wayland-native panel through `wlr-layer-shell`.
 - [ ] Populate tasks/windows through a supported foreign-toplevel protocol.
 - [ ] Implement launchers, task groups, tray, calendar, menus and keyboard

@@ -50,6 +50,7 @@ pub enum Widget {
     Launcher,
     Tasks,
     Clock,
+    Battery,
     Gap(u32),
     Label(u8),
 }
@@ -307,8 +308,9 @@ fn expand_layout(
                 "launcher" => rendered.push(Widget::Launcher),
                 "tasks" => rendered.push(Widget::Tasks),
                 "clock" => rendered.push(Widget::Clock),
+                "battery" => rendered.push(Widget::Battery),
                 // Known but unsupported native controls remain Waybar-only.
-                "network" | "audio" | "battery" | "tray" => {}
+                "network" | "audio" | "tray" => {}
                 _ => return Err("Unsupported panel widget or action".into()),
             }
         }
@@ -404,7 +406,8 @@ pub fn parse(raw: &str, expected_id: Option<&str>) -> Result<PanelStyle, Box<dyn
                         "launcher" => sections[index].push(Widget::Launcher),
                         "tasks" => sections[index].push(Widget::Tasks),
                         "clock" => sections[index].push(Widget::Clock),
-                        "network" | "audio" | "battery" | "tray" => {}
+                        "battery" => sections[index].push(Widget::Battery),
+                        "network" | "audio" | "tray" => {}
                         _ => return Err("Unsupported RicePlate widget or action".into()),
                     }
                 }
@@ -581,6 +584,7 @@ fn width_for(style: &PanelStyle, widget: Widget, tasks: usize) -> u32 {
     match widget {
         Widget::Launcher => style.widths[0],
         Widget::Clock => style.widths[2],
+        Widget::Battery => 64,
         Widget::Tasks => tasks as u32 * style.widths[1],
         Widget::Gap(width) => width,
         Widget::Label(index) => {
@@ -601,19 +605,29 @@ pub fn layout(style: &PanelStyle, screen_width: u32, tasks: usize) -> Vec<Placed
         .map(|&w| width_for(style, w, 0))
         .sum();
     let has_clock = sections.iter().flatten().any(|&w| w == Widget::Clock);
-    let show_clock = !has_clock || screen_width >= fixed_width;
-    let effective_fixed = if show_clock {
-        fixed_width
-    } else {
-        fixed_width.saturating_sub(style.widths[2])
-    };
+    let has_battery = sections.iter().flatten().any(|&w| w == Widget::Battery);
+    let fixed_without_battery = fixed_width.saturating_sub(if has_battery { 64 } else { 0 });
+    let show_clock = !has_clock || screen_width >= fixed_without_battery;
+    let fixed_without_optional = fixed_without_battery.saturating_sub(
+        if show_clock || !has_clock { 0 } else { style.widths[2] });
+    let slots_without = screen_width.saturating_sub(fixed_without_optional + 8)
+        / style.widths[1];
+    let slots_with = screen_width.saturating_sub(fixed_without_optional + 64 + 8)
+        / style.widths[1];
+    // Preserve existing task capacity: battery information yields to task
+    // groups when its width would otherwise remove a visible window.
+    let show_battery = has_battery && screen_width >= fixed_without_optional + 64
+        && (slots_with >= tasks.min(MAX_TRACKED_TASKS) as u32
+            || slots_with == slots_without);
+    let effective_fixed = fixed_without_optional + if show_battery { 64 } else { 0 };
     let visible = tasks
         .min(MAX_TRACKED_TASKS)
         .min((screen_width.saturating_sub(effective_fixed + 8) / style.widths[1]) as usize);
     let section_width = |widgets: &[Widget]| -> u32 {
         widgets
             .iter()
-            .filter(|&&w| w != Widget::Clock || show_clock)
+            .filter(|&&w| (w != Widget::Clock || show_clock)
+                && (w != Widget::Battery || show_battery))
             .map(|&w| width_for(style, w, visible))
             .sum()
     };
@@ -626,7 +640,8 @@ pub fn layout(style: &PanelStyle, screen_width: u32, tasks: usize) -> Vec<Placed
     for (index, begin) in [0, middle_x, end_x].into_iter().enumerate() {
         let mut x = begin;
         for &widget in &sections[index] {
-            if widget == Widget::Clock && !show_clock {
+            if (widget == Widget::Clock && !show_clock)
+                || (widget == Widget::Battery && !show_battery) {
                 continue;
             }
             let width = width_for(style, widget, visible);
@@ -709,6 +724,7 @@ pub fn hit(
                 }
             }
             Widget::Clock => Some(Hit::Clock),
+            Widget::Battery => None,
             Widget::Gap(_) | Widget::Label(_) => None,
         };
     }
@@ -855,6 +871,10 @@ mod tests {
         assert_eq!(hit(119.0, 800, 2, 0, &style), Some(Hit::Launcher));
         assert_eq!(hit(121.0, 800, 2, 0, &style), Some(Hit::Task(0)));
         assert_eq!(hit(320.0, 800, 2, 0, &style), Some(Hit::Task(1)));
+        // Native power is a lower-priority indicator, not a reason to
+        // regress the preexisting taskbar viewport under heavy workload.
+        assert!(layout(&style, 800, 2).iter().any(|item| item.widget == Widget::Battery));
+        assert!(!layout(&style, 800, 10).iter().any(|item| item.widget == Widget::Battery));
         assert_eq!(task_view(&style, 800, 10, 0).unwrap().slots, 3);
     }
 

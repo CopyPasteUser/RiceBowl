@@ -9,10 +9,12 @@ mod calendar;
 mod desktop_layout;
 mod icon_positions;
 mod native_menu;
+mod power;
 mod recipe;
 mod task_groups;
 mod task_navigation;
 use native_menu::{Hit as MenuHit, MenuState};
+use power::PowerStatus;
 use calendar::{CalendarState, Hit as CalendarHit};
 use recipe::{Hit, PanelStyle, Widget};
 use task_navigation::Target as KeyboardTarget;
@@ -237,6 +239,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         calendar_focused: false,
         recipe,
         clock: clock_now(),
+        power: PowerStatus::current(),
         pointer: None,
         keyboard: None,
         focused_icon: None,
@@ -270,6 +273,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         let current = clock_now();
         if app.clock != current {
             app.clock = current;
+            // The fixed sysfs power supply is read at most once per minute,
+            // never on every pointer/frame event or from a resident helper.
+            app.power = PowerStatus::current();
             app.request_redraw(&qh);
         }
         let today = Local::now().date_naive();
@@ -354,6 +360,7 @@ struct RicePlate {
     calendar_focused: bool,
     recipe: PanelStyle,
     clock: String,
+    power: PowerStatus,
     pointer: Option<wl_pointer::WlPointer>,
     keyboard: Option<wl_keyboard::WlKeyboard>,
     focused_icon: Option<usize>,
@@ -613,7 +620,7 @@ impl RicePlate {
             }
         };
         paint_panel(canvas, mirror.width, mirror.height, &self.recipe, &groups,
-                    &self.clock, mirror.task_offset, selected);
+                    &self.clock, &self.power, mirror.task_offset, selected);
         surface.damage_buffer(0, 0, mirror.width as i32, mirror.height as i32);
         if let Err(error) = buffer.attach_to(surface) {
             eprintln!("RicePlate: cannot attach output panel: {error}");
@@ -1041,7 +1048,7 @@ impl RicePlate {
             }
         };
         paint_panel(canvas, width, height, &self.recipe, &groups,
-                    &self.clock, self.task_offset, selected);
+                    &self.clock, &self.power, self.task_offset, selected);
         surface.damage_buffer(0, 0, width as i32, height as i32);
         if let Err(error) = buffer.attach_to(surface) {
             eprintln!("RicePlate: failed to attach Wayland buffer: {error}");
@@ -1056,7 +1063,8 @@ impl RicePlate {
 }
 
 fn paint_panel(canvas: &mut [u8], width: u32, height: u32,
-               style: &PanelStyle, groups: &[TaskGroup], clock: &str, offset: usize,
+               style: &PanelStyle, groups: &[TaskGroup], clock: &str,
+               power: &PowerStatus, offset: usize,
                selected: Option<KeyboardTarget>) {
     for pixel in canvas.chunks_exact_mut(4) {
         pixel.copy_from_slice(&style.background.to_le_bytes());
@@ -1112,6 +1120,12 @@ fn paint_panel(canvas: &mut [u8], width: u32, height: u32,
                 draw_text(canvas, width, height,
                           placed.x + placed.width.saturating_sub(40) / 2,
                           height / 2 - 4, clock, style.foreground);
+            }
+            Widget::Battery => {
+                let label = power.label();
+                draw_text(canvas, width, height,
+                          placed.x + placed.width.saturating_sub(label.len() as u32 * 8) / 2,
+                          height / 2 - 4, &label, style.foreground);
             }
             Widget::Gap(_) => {}
             Widget::Label(index) => {
@@ -2284,6 +2298,29 @@ mod tests {
     use super::*;
 
     #[test]
+    fn native_power_indicator_draws_real_state_in_allocated_panel_region() {
+        let style = recipe::load("classic").unwrap();
+        let width = 800;
+        let height = style.height;
+        let len = (width * height * 4) as usize;
+        let mut without = vec![0; len];
+        let mut charging = vec![0; len];
+        paint_panel(&mut without, width, height, &style, &[], "12:00",
+                    &PowerStatus::NotPresent, 0, None);
+        paint_panel(&mut charging, width, height, &style, &[], "12:00",
+                    &PowerStatus::Battery { percent: 73, charging: true }, 0, None);
+        let region = recipe::layout(&style, width, 0).into_iter()
+            .find(|item| item.widget == Widget::Battery).unwrap();
+        assert_eq!(region.width, 64);
+        assert!(charging.chunks_exact(4).enumerate().any(|(index, pixel)| {
+            let x = index as u32 % width;
+            x >= region.x && x < region.x + region.width
+                && pixel == style.foreground.to_le_bytes()
+        }));
+        assert_ne!(without, charging);
+    }
+
+    #[test]
     fn shared_panel_painter_renders_on_independent_output_buffers() {
         let style = recipe::parse(
             include_str!("../../../tests/fixtures/riceplate-desktop-v5.json"),
@@ -2293,8 +2330,10 @@ mod tests {
         let height = style.height;
         let mut first = vec![0_u8; (width * height * 4) as usize];
         let mut second = vec![0_u8; (width * height * 4) as usize];
-        paint_panel(&mut first, width, height, &style, &[], "12:00", 0, None);
-        paint_panel(&mut second, width, height, &style, &[], "12:00", 0, None);
+        paint_panel(&mut first, width, height, &style, &[], "12:00",
+                    &PowerStatus::NotPresent, 0, None);
+        paint_panel(&mut second, width, height, &style, &[], "12:00",
+                    &PowerStatus::NotPresent, 0, None);
         assert_eq!(first, second);
         assert_eq!(&first[(width * (height / 2) + 400) as usize * 4..][..4],
                    &style.background.to_le_bytes());
@@ -2310,8 +2349,10 @@ mod tests {
         let len = (width * height * 4) as usize;
         let mut normal = vec![0; len];
         let mut selected = vec![0; len];
-        paint_panel(&mut normal, width, height, &style, &[], "12:00", 0, None);
-        paint_panel(&mut selected, width, height, &style, &[], "12:00", 0,
+        paint_panel(&mut normal, width, height, &style, &[], "12:00",
+                    &PowerStatus::NotPresent, 0, None);
+        paint_panel(&mut selected, width, height, &style, &[], "12:00",
+                    &PowerStatus::NotPresent, 0,
                     Some(KeyboardTarget::Launcher));
         assert_ne!(normal, selected);
         let launcher = recipe::layout(&style, width, 0).into_iter()

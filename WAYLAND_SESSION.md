@@ -221,8 +221,11 @@ total. A `gap` has width 4–64; a noninteractive `label` allows 1–24 safe ASC
 characters (`A–Z`, `a–z`, digits, spaces, `._:+-`). Limits are 24 typed nodes,
 8 labels and 8 root nodes per panel region. Widget IDs cannot be duplicated,
 and either a launcher or task list is required. The native panel currently
-renders only launcher, tasks, clock, labels and spacing; network, audio,
-battery and tray remain **Waybar-only**. Waybar uses GTK/CSS minimum widths,
+renders launcher, tasks, clock, a read-only battery label, labels and spacing;
+network, audio and tray remain **Waybar-only**. Native battery state comes from
+Linux sysfs once per minute, displays `N/A` when absent and yields space to
+overflowed task groups. No power control or UPower subscription is implied.
+Waybar uses GTK/CSS minimum widths,
 so the visual pixel result can differ from Rust's fixed geometry. Grouping is
 horizontal and panel-only, without flex/grid, responsiveness, generic content
 containers, custom actions or AI running inside the desktop.
@@ -664,8 +667,9 @@ than can fit, the native taskbar exposes previous/next page controls to reach
 remaining groups, automatically reveals the active group, and keeps input hit
 areas aligned with the visible labels. Only visible entries accept clicks; if the
 protocol is missing the panel keeps its launcher and reports the limitation.
-It is **not** a replacement taskbar: it still lacks a calendar
-popover, tray, keyboard task navigation, notification handling or multi-output ownership. Do not start it automatically
+It is **not** a replacement taskbar: despite later additions of calendar,
+keyboard task navigation and multi-output panels, it still lacks a native tray,
+network/audio controls and notification handling. Do not start it automatically
 alongside Waybar.
 
 The native prototype understands two *bundled* schema-v1 RicePlate recipes:
@@ -673,15 +677,16 @@ The native prototype understands two *bundled* schema-v1 RicePlate recipes:
 taller shelf). Both are parsed from the same recipe JSON files as the
 temporary Waybar adapter, with strict schema/widget/color checks. It also
 accepts owner-private absolute JSON recipe files (regular files, permissions
-`0600`, no final symlinks, maximum 64 KiB). The three implemented widgets
-(launcher, tasks and local-time clock) may be arranged in the start, center or
+`0600`, no final symlinks, maximum 64 KiB). The first implemented widgets
+(launcher, tasks and local-time clock), plus the read-only battery label,
+may be arranged in the start, center or
 end section in any order, including custom top panels; their hit areas follow
 the rendered geometry and shrink on narrow displays. The clock is updated
 on minute boundaries through the Wayland event loop without a 1 Hz timer.
 Custom schema-v2/v3 panel recipes additionally support strict per-widget widths;
 schema-v3 adds validated nested groups, static text and spacers with real native
 geometry/hit areas; schema-v1 recipes retain their original native dimensions.
-Other indicators and the tray still need functional Rust backends. The native
+Network/audio indicators and the tray still need functional Rust backends. The native
 renderer deliberately omits unavailable widgets without displaying pretend
 buttons. Custom recipes cannot contain commands or arbitrary executable code.
 
