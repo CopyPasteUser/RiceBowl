@@ -1,5 +1,16 @@
 # RiceBowl changelog
 
+## Unreleased — Native RicePop history tabs
+
+- Extend the opt-in RicePlate/Mako notification view with a distinct read-only
+  **Past** tab alongside active alerts. Both tabs support bounded three-row
+  keyboard/pointer navigation and on-demand refresh. Only active entries expose
+  ID-bound dismissal; history cannot replay actions or mutate notifications.
+- Validate both Mako inventories, reject truncation and malformed IDs, and
+  discard both active and historical private text when the view closes. No
+  second notification owner, persistent log or background polling. OSD and
+  accessibility/hardware acceptance remain open.
+
 ## Unreleased — Native RicePop active alerts
 
 - Add an opt-in native RicePlate menu view for actual active Mako notifications

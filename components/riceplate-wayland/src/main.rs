@@ -345,7 +345,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         });
     }
     if has_notifications {
-        let (sender, receiver) = channel::channel::<(u64, Result<Vec<ricepop::Notice>, &'static str>)>();
+        let (sender, receiver) = channel::channel::<(u64, Result<ricepop::Snapshot, &'static str>)>();
         let (request_sender, requests) = mpsc::sync_channel::<NotificationRequest>(1);
         app.notification_sender = Some(request_sender);
         let redraw_qh = qh.clone();
@@ -1475,19 +1475,24 @@ fn paint_notifications(canvas: &mut [u8], style: &PanelStyle, state: &Notificati
     }
     fill_rect(canvas, width, height, 0, 0, width, 38, style.active);
     draw_text(canvas, width, height, 14, 15, "Notifications", style.foreground);
-    let status = if state.loading { "Refreshing...".to_owned() }
-        else if state.error.is_some() { "Alerts unavailable".to_owned() }
-        else { format!("Active alerts: {}", state.notices.len()) };
-    draw_text(canvas, width, height, 14, 57, &status, style.foreground);
+    let selected_tab_x = if state.show_history { 164 } else { 4 };
+    fill_rounded_rect(canvas, width, height, selected_tab_x, 41, 152, 42,
+                      style.task_radius, style.active);
+    draw_text(canvas, width, height, 14, 54,
+              &format!("Active ({})", state.notices.len()), style.foreground);
+    draw_text(canvas, width, height, 174, 54,
+              &format!("Past ({})", state.history.len()), style.foreground);
     if state.loading {
         draw_text(canvas, width, height, 14, 120, "Loading alerts...", style.foreground);
     } else if let Some(error) = state.error {
         draw_text(canvas, width, height, 14, 120, error, style.foreground);
         draw_text(canvas, width, height, 14, 145, "Refresh to try again", style.foreground);
-    } else if state.notices.is_empty() {
-        draw_text(canvas, width, height, 14, 120, "No active alerts", style.foreground);
+    } else if state.visible_notices().is_empty() {
+        draw_text(canvas, width, height, 14, 120,
+                  if state.show_history { "No past alerts" } else { "No active alerts" },
+                  style.foreground);
     } else {
-        for (position, notice) in state.notices.iter().skip(state.first_row())
+        for (position, notice) in state.visible_notices().iter().skip(state.first_row())
             .take(ricepop::VISIBLE_ROWS).enumerate() {
             let row_index = state.first_row() + position;
             let y = ricepop::ROW_TOP + position as u32 * ricepop::ROW_HEIGHT;
@@ -2220,9 +2225,11 @@ impl KeyboardHandler for RicePlate {
         }
         if self.notification_state.open {
             match event.keysym {
-                Keysym::Escape | Keysym::BackSpace | Keysym::Left => {
+                Keysym::Escape | Keysym::BackSpace => {
                     self.notification_state.close();
                 }
+                Keysym::Left => self.notification_state.select_tab(false),
+                Keysym::Right => self.notification_state.select_tab(true),
                 Keysym::Up => self.notification_state.select(-1),
                 Keysym::Down | Keysym::Tab => self.notification_state.select(1),
                 Keysym::Prior => self.notification_state.select(-(ricepop::VISIBLE_ROWS as isize)),
@@ -2352,6 +2359,10 @@ impl PointerHandler for RicePlate {
                         match self.notification_state.hit(event.position.0, event.position.1) {
                             Some(ricepop::Hit::Row(index)) => {
                                 self.notification_state.selected = index;
+                                self.redraw_menu(qh);
+                            }
+                            Some(ricepop::Hit::Tab(history)) => {
+                                self.notification_state.select_tab(history);
                                 self.redraw_menu(qh);
                             }
                             Some(ricepop::Hit::Back) => {

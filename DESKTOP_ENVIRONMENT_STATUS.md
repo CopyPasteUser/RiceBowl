@@ -18,7 +18,7 @@ modify global session settings.
 | Wallpaper / appearances | Original bundled wallpapers, composable panel groups, labels, gaps, tokens, original example rices | Full desktop widgets, rich layout primitives, complete cross-app window decorations |
 | Hardware indicators | Kernel-backed battery; NetworkManager connectivity and WirePlumber sink status on a bounded worker | Device picker, Bluetooth status, event subscriptions and finer status detail |
 | RiceSpice controls | Allowlisted native-menu Wi-Fi toggle, volume ±5%, mute; asynchronous feedback; on-demand real audio input/output inventory and explicit default selection | Native settings UI, per-stream routing, displays, input, Bluetooth, accessibility, time and power |
-| RicePop notifications | Opt-in native three-row active-alert view in RicePlate with refresh, keyboard/pointer selection, loading/empty/error and explicit single-ID dismissal using the existing Mako bridge; CLI also reads history | Full history center, OSD, rich actions, native notification owner and non-Mako backends |
+| RicePop notifications | Opt-in native three-row Active/Past tabs in RicePlate, bounded keyboard/pointer selection, on-demand refresh and ID-bound dismissal **only** for active alerts, using Mako as the existing owner | OSD, rich actions, native notification owner and non-Mako backends; physical accessibility QA |
 | Session safety | Opt-in session, user polkit agent when installed, optional Mako/swayidle/swaylock, compositor exit cleanup | Complete suspend/resume and hardware recovery acceptance |
 | Creator authoring | Schema-v1–v5 validation, offline private draft edits, component catalog and API inventory, nested native render/capture and visual comparisons | Broad desktop composition, complete action/state bindings, high-fidelity mockup conversion |
 | RicePack exchange | Deterministic v2 recipe archives, SHA-256-pinned bundled wallpaper, per-asset provenance preserved on private import/re-export, v1 read compatibility; next-login staging and one-level rollback | Packaged external assets, multi-component live apply and transactional active-session rollback |
@@ -38,9 +38,10 @@ non-clickable; the separate validated native-menu actions perform changes.
   existing PulseAudio-compatible server via `pactl`. No custom recipe commands
   or privileged daemon.
 - **RicePop** delegates delivery to the installed Mako host. The optional
-  native menu queries active notifications only when opened/refreshed and
-  discards private messages when closed. The separate CLI can read history;
-  neither path owns the notification bus name or replays third-party actions.
+  native menu queries active and past notifications only when opened/refreshed,
+  displays history read-only and discards both sets of private messages when
+  closed. Neither the menu nor CLI owns the notification bus name or replays
+  third-party actions.
 - **Creator** is optional, on demand and offline. It never needs a model at
   runtime and must require an explicit user choice before an active desktop
   change. Current stage/rollback affects the *next* opt-in login only.
@@ -60,8 +61,9 @@ ricebowl de start --nested --panel native
 # import never applies it:
 ricebowl de recipe-import --recipe "$PWD/examples/wayland/quick-controls.json"
 ricebowl de start --nested --panel native --recipe quick-controls
-# Open menu → Session → Notifications. Enter/Delete dismisses selected item;
-# R refreshes, Escape returns. A running Mako host is required.
+# Open menu → Session → Notifications. Left/Right switches Active/Past;
+# Enter/Delete dismisses a selected ACTIVE item only. R refreshes, Esc returns.
+# A running Mako host is required.
 
 # Only inside a Wayland session with the Mako notification host:
 ricebowl de notifications --json
@@ -102,8 +104,9 @@ The next substantial release gates, in recommended order:
    complete panel keyboard/accessibility behavior.
 2. Reusable native RiceSpice settings pages with hardware service adapters,
    device selectors, permission handling and recovery, including suspend/lock.
-3. RicePop notification presentation, OSD and a usable history interface
-   without a duplicate owner or private-message replay.
+3. RicePop OSD, richer notification presentation and accessibility semantics
+   without a duplicate owner or private-message replay; a read-only history
+   tab is available already.
 4. Complete safe RicePacks with licensed asset manifests, broader composition,
    reproducible visual/functional QA and **explicit transactional live
    apply/restore** across all affected components.

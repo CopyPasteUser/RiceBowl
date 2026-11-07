@@ -249,6 +249,13 @@ affecting XFCE, including a failed-session recovery. **Not yet signed off.**
 
 ### 3 — RiceSpice and RicePop
 
+- [x] Expose **native read-only Mako history** in RicePlate's opt-in RicePop
+  view as a second Active/Past tab with pointer and Left/Right keyboard access,
+  bounded three-row navigation, on-demand refresh and explicit empty/error
+  states. History entries can never be dismissed or replayed; both snapshots
+  are cleared on close and validated before rendering. Mako remains the sole
+  notification owner, and no private message store or polling daemon is added.
+  OSD, rich actions, accessible announcements and real-device QA remain open.
 - [x] Add a **first interactive native RicePop active-notification view** to
   the existing RicePlate schema-v4/v5 menu. A deliberately selected
   `notifications` action asynchronously reads the already-validated Mako
