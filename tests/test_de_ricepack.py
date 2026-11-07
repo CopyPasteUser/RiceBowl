@@ -31,6 +31,68 @@ def _zip_files(items, *, compressed=False, symlink=False):
 
 
 class PortableRicePackTests(unittest.TestCase):
+    def test_v2_asset_receipts_tamper_detection_and_v1_read_compatibility(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            original = root / "asset-pinned.ricepack"
+            pack.export_pack("chrome", original)
+            with zipfile.ZipFile(original) as archive:
+                manifest = json.loads(archive.read("ricepack.json"))
+                recipe_data = archive.read("recipe.json")
+            asset = manifest["asset_manifest"]["wallpaper"]
+            self.assertEqual(len(asset["sha256"]), 64)
+            self.assertEqual(asset["provenance"]["license"], "unspecified")
+
+            wrong = json.loads(json.dumps(manifest))
+            wrong["asset_manifest"]["wallpaper"]["sha256"] = "0" * 64
+            modified = root / "modified.ricepack"
+            modified.write_bytes(_zip_files([("ricepack.json", json.dumps(wrong)),
+                                              ("recipe.json", recipe_data)]))
+            with self.assertRaises(pack.PackError) as failure:
+                pack.inspect_pack(modified)
+            self.assertEqual(failure.exception.code, "asset_mismatch")
+            config = root / "config"
+            config.mkdir(mode=0o700)
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": str(config)}):
+                with self.assertRaises(pack.PackError) as failure:
+                    pack.import_pack(modified)
+                self.assertEqual(failure.exception.code, "asset_mismatch")
+                self.assertFalse((config / "ricebowl").exists())
+
+            legacy = json.loads(json.dumps(manifest))
+            legacy["format_version"] = 1
+            del legacy["asset_manifest"]
+            old_pack = root / "old-v1.ricepack"
+            old_pack.write_bytes(_zip_files([("ricepack.json", json.dumps(legacy)),
+                                             ("recipe.json", recipe_data)]))
+            self.assertEqual(pack.inspect_pack(old_pack)["pack_version"], 1)
+
+    def test_v2_per_asset_provenance_is_declarative_and_non_executable(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            metadata = root / "metadata.json"
+            metadata.write_text(json.dumps({
+                "author": "Rice Artist", "license": "CC0-1.0",
+                "origin": "original", "source_reference": "offline work",
+                "wallpaper_provenance": {
+                    "author": "Wallpaper Artist", "license": "CC-BY-4.0",
+                    "origin": "adapted", "source_reference": "local painting",
+                },
+            }))
+            archive = root / "v2.ricepack"
+            manifest = pack.export_pack("classic", archive, metadata=metadata)["manifest"]
+            self.assertEqual(manifest["asset_manifest"]["wallpaper"]["provenance"]["author"],
+                             "Wallpaper Artist")
+            self.assertEqual(pack.inspect_pack(archive)["manifest"], manifest)
+            metadata.write_text(json.dumps({
+                "author": "Rice Artist", "license": "CC0-1.0",
+                "origin": "original", "source_reference": "offline work",
+                "wallpaper_provenance": {"author": "Bad", "license": "run:script",
+                                          "origin": "original", "source_reference": ""},
+            }))
+            with self.assertRaises(pack.PackError):
+                pack.export_pack("classic", root / "invalid.ricepack", metadata=metadata)
+
     def test_both_builtin_schemas_export_deterministically_with_integrity(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -69,6 +131,9 @@ class PortableRicePackTests(unittest.TestCase):
             self.assertEqual(exported["manifest"]["recipe"]["semantic_sha256"], expected)
             self.assertEqual(exported["manifest"]["provenance"]["origin"], "ai-assisted")
             self.assertEqual(exported["manifest"]["recipe"]["schema_version"], 5)
+            self.assertEqual(exported["manifest"]["format_version"], 2)
+            self.assertEqual(exported["manifest"]["asset_manifest"]["wallpaper"]["id"],
+                             created.wallpaper)
             config = root / "config"
             config.mkdir(mode=0o700)
             with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": str(config)}):
@@ -127,7 +192,7 @@ class PortableRicePackTests(unittest.TestCase):
             scenarios.append(_zip_files([("ricepack.json", json.dumps(bad_checksum)),
                                          ("recipe.json", recipe)]))
             bad_schema = json.loads(json.dumps(manifest))
-            bad_schema["format_version"] = 2
+            bad_schema["format_version"] = 3
             scenarios.append(_zip_files([("ricepack.json", json.dumps(bad_schema)),
                                          ("recipe.json", recipe)]))
             bad_metadata = json.loads(json.dumps(manifest))

@@ -455,11 +455,13 @@ ricebowl de creator-api --json
 ricebowl de catalog --json
 ```
 
-The **Wayland RicePack v1** is a reproducible, local `.ricepack` ZIP with exactly
+The **Wayland RicePack v2** is a reproducible, local `.ricepack` ZIP with exactly
 `ricepack.json` (format version, recipe identity, SHA-256 checksums and declared
 provenance) and `recipe.json` (canonical schema-v1–v5 recipe). There is no
 unpacking arbitrary archive paths, executing commands or importing new runtime
 assets. Existing *bundled* wallpapers are referenced by known IDs only.
+V2 records the chosen wallpaper's exact SHA-256 digest, checked again when
+inspecting/importing. Older v1 archives remain readable.
 
 ```bash
 ricebowl de pack-export --recipe /absolute/path/my-rice.json \
@@ -477,12 +479,18 @@ this exact, owner-controlled JSON object:
   "author": "Your name",
   "license": "CC0-1.0",
   "origin": "ai-assisted",
-  "source_reference": "My original local design"
+  "source_reference": "My original local design",
+  "wallpaper_provenance": {
+    "author": "Wallpaper artist", "license": "CC-BY-4.0",
+    "origin": "original", "source_reference": "My own painting"
+  }
 }
 ```
 
 Accepted licenses are `unspecified`, `CC0-1.0`, `CC-BY-4.0`, `MIT` and
 `custom`; origins are `unspecified`, `original`, `ai-assisted` and `adapted`.
+The optional `wallpaper_provenance` has those same four bounded fields. These
+are declarations by the exporter, not externally verified license evidence.
 These are *user declarations*, not license or authorship verification. Without
 explicit metadata, the package says `unspecified`; it never fabricates a
 license or creator. The format has no third-party image/icon assets or rendered
@@ -633,7 +641,8 @@ per-task **96–256**, clock **64–256**. Unknown fields, missing dimensions,
 booleans and out-of-range values are rejected. Native RicePlate uses these
 widths for actual drawing and click areas; the Waybar preview translates them
 to CSS minimum widths, so long text/font metrics can yield a wider fallback
-widget. This is **not** a general RicePack v2 or automated mockup importer.
+widget. RicePack v2 still does **not** embed third-party artwork or automate
+mockup conversion.
 
 This demonstrates structural composition through a shared recipe contract;
 it does **not** mean RicePlate's Rust layer-shell renderer, arbitrary mockup

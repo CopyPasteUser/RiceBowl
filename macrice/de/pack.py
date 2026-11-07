@@ -20,7 +20,7 @@ from typing import Any
 from . import recipes, review
 
 
-PACK_VERSION = 1
+PACK_VERSION = 2
 PACK_FORMAT = "org.ricebowl.ricepack"
 MAX_PACK_BYTES = 256 * 1024
 MAX_METADATA_BYTES = 4096
@@ -32,6 +32,31 @@ _ORIGINS = frozenset(("unspecified", "original", "ai-assisted", "adapted"))
 _DEFAULT_PROVENANCE = {
     "author": "", "license": "unspecified", "origin": "unspecified", "source_reference": "",
 }
+
+
+def _bundled_wallpaper(recipe: recipes.PanelRecipe) -> tuple[str, str]:
+    """Pin the original installed wallpaper bytes without bundling executables."""
+    asset_id = recipe.wallpaper or "aero-seven-blue"
+    path = recipes.wallpaper_path(recipe)
+    try:
+        descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
+        with os.fdopen(descriptor, "rb") as stream:
+            info = os.fstat(stream.fileno())
+            if not stat.S_ISREG(info.st_mode) or info.st_size > 8 * 1024 * 1024:
+                raise PackError("Bundled wallpaper is unavailable or unsafe",
+                                code="asset_unavailable")
+            data = stream.read(8 * 1024 * 1024 + 1)
+            if len(data) > 8 * 1024 * 1024:
+                raise PackError("Bundled wallpaper is oversized", code="asset_unavailable")
+    except OSError as exc:
+        raise PackError("Bundled wallpaper is unavailable", code="asset_unavailable") from exc
+    return asset_id, _digest(data)
+
+
+def _asset_receipt(recipe: recipes.PanelRecipe, provenance: dict[str, str]) -> dict[str, Any]:
+    asset_id, sha = _bundled_wallpaper(recipe)
+    return {"version": 1, "wallpaper": {"id": asset_id, "sha256": sha,
+                                        "provenance": provenance}}
 
 
 class PackError(ValueError):
@@ -135,9 +160,14 @@ def export_pack(recipe_token: str, destination: Path,
         raise PackError("Output must be an absolute .ricepack file", code="invalid_output")
     recipe = _read_recipe(recipe_token)
     provenance = dict(_DEFAULT_PROVENANCE)
+    wallpaper_provenance = dict(_DEFAULT_PROVENANCE)
     if metadata is not None:
-        provenance = _provenance(_parse_object(_read_owned_file(
-            metadata, suffix=".json", limit=MAX_METADATA_BYTES)))
+        declared = _parse_object(_read_owned_file(
+            metadata, suffix=".json", limit=MAX_METADATA_BYTES))
+        if "wallpaper_provenance" in declared:
+            wallpaper = declared.pop("wallpaper_provenance")
+            wallpaper_provenance = _provenance(wallpaper if type(wallpaper) is dict else {})
+        provenance = _provenance(declared)
     canonical = review._manifest(recipe)
     recipe_payload = _json_bytes(canonical)
     # The canonical form must itself be the exact runtime schema, not a
@@ -156,6 +186,7 @@ def export_pack(recipe_token: str, destination: Path,
                    "semantic_sha256": review._semantic_hash(canonical)},
         "provenance": provenance,
         "runtime_assets": "bundled-wallpapers-only",
+        "asset_manifest": _asset_receipt(recipe, wallpaper_provenance),
     }
     memory = io.BytesIO()
     with zipfile.ZipFile(memory, "w", compression=zipfile.ZIP_STORED,
@@ -194,10 +225,14 @@ def _validate_archive(source: Path) -> tuple[dict[str, Any], bytes]:
         if isinstance(exc, PackError):
             raise
         raise PackError("Corrupt or invalid RicePack archive") from exc
-    if (set(metadata) != {"format", "format_version", "recipe", "provenance", "runtime_assets"}
+    version = metadata.get("format_version")
+    expected = {"format", "format_version", "recipe", "provenance", "runtime_assets"}
+    if version == 2:
+        expected.add("asset_manifest")
+    if (set(metadata) != expected
             or metadata["format"] != PACK_FORMAT
-            or type(metadata["format_version"]) is not int
-            or metadata["format_version"] != PACK_VERSION
+            or type(version) is not int
+            or version not in (1, PACK_VERSION)
             or metadata["runtime_assets"] != "bundled-wallpapers-only"):
         raise PackError("Unsupported RicePack format or version")
     info = metadata["recipe"]
@@ -218,13 +253,28 @@ def _validate_archive(source: Path) -> tuple[dict[str, Any], bytes]:
             or _digest(recipe_payload) != info["sha256"]
             or review._semantic_hash(review._manifest(recipe)) != info["semantic_sha256"]):
         raise PackError("RicePack recipe fingerprint or identity mismatch")
+    if version == 2:
+        assets = metadata["asset_manifest"]
+        if (type(assets) is not dict or set(assets) != {"version", "wallpaper"}
+                or type(assets["version"]) is not int or assets["version"] != 1):
+            raise PackError("Invalid RicePack asset manifest")
+        wallpaper = assets["wallpaper"]
+        if (type(wallpaper) is not dict
+                or set(wallpaper) != {"id", "sha256", "provenance"}
+                or type(wallpaper["id"]) is not str
+                or type(wallpaper["sha256"]) is not str):
+            raise PackError("Invalid bundled wallpaper receipt")
+        _provenance(wallpaper["provenance"] if type(wallpaper["provenance"]) is dict else {})
+        if (wallpaper["id"], wallpaper["sha256"]) != _bundled_wallpaper(recipe):
+            raise PackError("Bundled wallpaper identity or checksum does not match",
+                            code="asset_mismatch")
     return metadata, recipe_payload
 
 
 def inspect_pack(source: Path) -> dict[str, Any]:
     """Verify all archive entries, fingerprints and the real recipe schema."""
     metadata, _ = _validate_archive(source)
-    return {"pack_version": PACK_VERSION, "ok": True, "valid": True,
+    return {"pack_version": metadata["format_version"], "ok": True, "valid": True,
             "imported": False, "applied": False, "manifest": metadata}
 
 
@@ -240,7 +290,7 @@ def import_pack(source: Path) -> dict[str, Any]:
     except (OSError, recipes.RecipeError) as exc:
         raise PackError("Cannot install recipe without overwriting an existing file",
                         code="import_unavailable") from exc
-    return {"pack_version": PACK_VERSION, "ok": True, "valid": True,
+    return {"pack_version": metadata["format_version"], "ok": True, "valid": True,
             "imported": True, "applied": False,
             "recipe_id": metadata["recipe"]["id"],
             "semantic_sha256": metadata["recipe"]["semantic_sha256"]}
