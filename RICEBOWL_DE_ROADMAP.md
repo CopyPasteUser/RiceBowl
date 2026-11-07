@@ -215,12 +215,22 @@ affecting XFCE, including a failed-session recovery. **Not yet signed off.**
   one RicePlate process with fixed secondary-output ownership; reflow each
   output independently against its logical dimensions and panel reservation,
   recover the shortcut layers after hot-unplug/replug, and keep private saved
-  coordinates shared per recipe rather than multiplying per-monitor state.
+  coordinates under the selected rice, initially shared across monitors.
   Keyboard `Tab`/`Shift-Tab` cycles only visible icons on the focused output;
   Enter launches and arrows move the selected shortcut. The two-output
   labwc CI now checks original rendered icon pixels before/after hotplug.
   Physical mixed-DPI, compositor-dependent initial output ownership and
   assistive-technology acceptance remain separate.
+- [x] Add **independent owner-private desktop-icon positions for named Wayland
+  outputs**: a validated v2 state file stores at most eight per-output layouts,
+  preserves all existing schema-v1 saved positions, and keeps shortcuts on
+  monitor A from moving merely because their counterparts on monitor B moved.
+  Output names are supplied by the compositor; absent/unsafe names fall back
+  to the original shared layout rather than guessing a stable identity.
+  Reconnect restores the last named layout without writing into source
+  recipes. Rust tests cover independent displays, migration, malformed
+  locations and atomic private persistence. Real cross-monitor drag and
+  mixed-DPI physical-device behavior remain unverified.
 - [ ] Build a Wayland-native panel through `wlr-layer-shell`.
 - [ ] Populate tasks/windows through a supported foreign-toplevel protocol.
 - [ ] Implement launchers, task groups, tray, calendar, menus and keyboard
@@ -322,8 +332,9 @@ depend on the XFCE session.
 - [ ] Extend schema-v5 desktop shortcuts with moving, keyboard accessibility,
   focus states, monitor-aware position reflow and hotplug. Add reusable native
   desktop widgets and their bounded recipe contracts. Basic move/focus/key
-  controls and single-output reflow are implemented; multi-output lifecycle,
-  richer keyboard navigation, widget contracts and device QA remain open.
+  controls, independent named-monitor saved positions and multi-output
+  hotplug/reflow are implemented; cross-monitor dragging, widget contracts,
+  assistive semantics and device QA remain open.
 - [ ] Implement visually configurable, truly interactive native start menus
   (beyond the initial functional labwc fallback menu), including navigation,
   searching, pinning and the per-rice layout variants required by XP/7/etc.
