@@ -1,5 +1,17 @@
 # RiceBowl changelog
 
+## Unreleased — output-owned native Wayland start menus (7 November 2026)
+
+- Give every schema-v4/v5 native RicePlate panel an in-process start menu on
+  its own output, reusing validated grouped actions, mouse and keyboard input.
+  Switch/close the single visible popup without duplicating shell processes.
+- Cleanly drop the active menu on output removal, rebuild hidden per-output
+  popup layers on reconnect, and keep the simple fuzzel fallback for recipes
+  without a native menu. No change to the default XFCE/Waybar sessions.
+- Extend genuine two-output labwc screenshot/hotplug smoke and pixel assertions
+  to the native menu; save evidence in the workflow artifact. Physical focus,
+  assistive-technology and mixed-DPI signoff remain open.
+
 ## Unreleased — output-owned native Wayland calendars (7 November 2026)
 
 - Give each secondary native RicePlate clock a real output-bound calendar

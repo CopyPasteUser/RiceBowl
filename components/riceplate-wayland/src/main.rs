@@ -185,12 +185,11 @@ fn main() -> Result<(), Box<dyn Error>> {
         surface.set_exclusive_zone(-1);
         surface.set_keyboard_interactivity(KeyboardInteractivity::None);
         surface.commit();
-        MenuLayer {
-            surface,
-            pool: None,
-            configured: false,
-        }
+        MenuLayer { surface, pool: None, configured: false, output: None }
     });
+    let preview_secondary_menu = preview_menu
+        && std::env::var("RICEBOWL_DE_NESTED").as_deref() == Ok("1")
+        && std::env::var("RICEBOWL_DE_MENU_OUTPUT").as_deref() == Ok("secondary");
 
     // One owner-private calendar popup, idle and parked until the clock is used.
     let calendar_layer = clock_present.then(|| {
@@ -226,6 +225,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         mirrors: Vec::new(),
         icon_layers,
         menu_layer,
+        menu_mirrors: Vec::new(),
+        active_menu: None,
+        preview_secondary_menu,
         calendar_layer,
         calendar_mirrors: Vec::new(),
         active_calendar: None,
@@ -257,7 +259,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         frame_pending: false,
         needs_redraw: false,
     };
-    if preview_menu { app.set_menu_visible(true, &qh); }
+    if preview_menu && !preview_secondary_menu { app.set_menu_visible(true, &qh); }
     if preview_calendar && !preview_secondary_calendar {
         app.set_calendar_visible(true, &qh);
     }
@@ -307,6 +309,7 @@ struct MenuLayer {
     surface: LayerSurface,
     pool: Option<SlotPool>,
     configured: bool,
+    output: Option<wl_output::WlOutput>,
 }
 
 struct CalendarLayer {
@@ -339,6 +342,9 @@ struct RicePlate {
     mirrors: Vec<PanelMirror>,
     icon_layers: Vec<IconLayer>,
     menu_layer: Option<MenuLayer>,
+    menu_mirrors: Vec<MenuLayer>,
+    active_menu: Option<wl_surface::WlSurface>,
+    preview_secondary_menu: bool,
     calendar_layer: Option<CalendarLayer>,
     calendar_mirrors: Vec<CalendarLayer>,
     active_calendar: Option<wl_surface::WlSurface>,
@@ -384,8 +390,8 @@ impl RicePlate {
     }
 
     fn activate_launcher(&mut self, mirror: Option<usize>, qh: &QueueHandle<Self>) {
-        if mirror.is_none() && self.menu_layer.is_some() {
-            self.set_menu_visible(!self.menu_state.visible, qh);
+        if self.menu_layer.is_some() {
+            self.toggle_menu_for_panel(mirror, qh);
         } else {
             self.activate_action("applications", qh);
         }
@@ -491,6 +497,48 @@ impl RicePlate {
                 task_offset: 0,
             });
         }
+        self.menu_mirrors.retain(|menu|
+            menu.output.as_ref().is_some_and(|output| outputs.contains(output)));
+        if self.menu_layer.is_some() {
+            for output in &outputs {
+                if self.menu_mirrors.iter().any(|menu|
+                    menu.output.as_ref() == Some(output)) { continue; }
+                let surface = self.layer_shell.create_layer_surface(
+                    qh, self.compositor.create_surface(qh), Layer::Top,
+                    Some("riceplate-output-menu"), Some(output),
+                );
+                surface.set_anchor((if self.recipe.top { Anchor::TOP } else { Anchor::BOTTOM })
+                    | Anchor::LEFT);
+                surface.set_size(native_menu::WIDTH, native_menu::HEIGHT);
+                surface.set_margin(
+                    if self.recipe.top { self.recipe.height as i32 } else { 0 },
+                    0,
+                    if self.recipe.top { 0 } else { self.recipe.height as i32 },
+                    MAX_WIDTH as i32,
+                );
+                surface.set_exclusive_zone(-1);
+                surface.set_keyboard_interactivity(KeyboardInteractivity::None);
+                surface.commit();
+                self.menu_mirrors.push(MenuLayer {
+                    surface, pool: None, configured: false, output: Some(output.clone()),
+                });
+            }
+        }
+        if self.active_menu.as_ref().is_some_and(|surface|
+            self.menu_layer.as_ref().is_none_or(|root| root.surface.wl_surface() != surface)
+            && !self.menu_mirrors.iter().any(|menu|
+                menu.surface.wl_surface() == surface)) {
+            self.active_menu = None;
+            self.menu_state.close();
+            self.menu_focused = false;
+        }
+        if self.preview_secondary_menu {
+            if let Some(surface) = self.menu_mirrors.first()
+                .map(|menu| menu.surface.wl_surface().clone()) {
+                self.show_menu_at(surface, qh);
+                self.preview_secondary_menu = false;
+            }
+        }
         self.calendar_mirrors.retain(|calendar|
             calendar.output.as_ref().is_some_and(|output| outputs.contains(output)));
         if self.calendar_layer.is_some() {
@@ -578,38 +626,68 @@ impl RicePlate {
     }
 
     fn set_menu_visible(&mut self, visible: bool, qh: &QueueHandle<Self>) {
-        if visible && self.calendar_state.visible { self.set_calendar_visible(false, qh); }
-        let Some(layer) = self.menu_layer.as_ref() else {
-            return;
-        };
         if visible {
-            self.menu_state.open();
-        } else {
-            self.menu_state.close();
-            self.menu_focused = false;
+            if let Some(surface) = self.menu_layer.as_ref()
+                .map(|menu| menu.surface.wl_surface().clone()) {
+                self.show_menu_at(surface, qh);
+            }
+            return;
         }
-        layer.surface.set_keyboard_interactivity(if visible {
-            KeyboardInteractivity::OnDemand
-        } else {
-            KeyboardInteractivity::None
-        });
-        let left = if visible { 0 } else { MAX_WIDTH as i32 };
-        layer.surface.set_margin(
-            if self.recipe.top {
-                self.recipe.height as i32
+        self.menu_state.close();
+        self.menu_focused = false;
+        self.active_menu = None;
+        for layer in self.menu_layer.iter().chain(self.menu_mirrors.iter()) {
+            layer.surface.set_keyboard_interactivity(KeyboardInteractivity::None);
+            layer.surface.set_margin(
+                if self.recipe.top { self.recipe.height as i32 } else { 0 },
+                0,
+                if self.recipe.top { 0 } else { self.recipe.height as i32 },
+                MAX_WIDTH as i32,
+            );
+            layer.surface.commit();
+        }
+    }
+
+    fn show_menu_at(&mut self, surface: wl_surface::WlSurface, qh: &QueueHandle<Self>) {
+        if !self.menu_layer.iter().chain(self.menu_mirrors.iter()).any(|menu|
+            menu.surface.wl_surface() == &surface) { return; }
+        if self.calendar_state.visible { self.set_calendar_visible(false, qh); }
+        self.menu_state.open();
+        self.menu_focused = false;
+        self.active_menu = Some(surface.clone());
+        for layer in self.menu_layer.iter().chain(self.menu_mirrors.iter()) {
+            let active = layer.surface.wl_surface() == &surface;
+            layer.surface.set_keyboard_interactivity(if active {
+                KeyboardInteractivity::OnDemand
             } else {
-                0
-            },
-            0,
-            if self.recipe.top {
-                0
-            } else {
-                self.recipe.height as i32
-            },
-            left,
-        );
-        layer.surface.commit();
+                KeyboardInteractivity::None
+            });
+            layer.surface.set_margin(
+                if self.recipe.top { self.recipe.height as i32 } else { 0 },
+                0,
+                if self.recipe.top { 0 } else { self.recipe.height as i32 },
+                if active { 0 } else { MAX_WIDTH as i32 },
+            );
+            layer.surface.commit();
+        }
         self.redraw_menu(qh);
+    }
+
+    fn toggle_menu_for_panel(&mut self, mirror: Option<usize>, qh: &QueueHandle<Self>) {
+        let target = match mirror {
+            Some(index) => self.mirrors.get(index).and_then(|panel|
+                self.menu_mirrors.iter().find(|menu|
+                    menu.output.as_ref() == Some(&panel.output)))
+                .map(|menu| menu.surface.wl_surface().clone()),
+            None => self.menu_layer.as_ref()
+                .map(|menu| menu.surface.wl_surface().clone()),
+        };
+        let Some(target) = target else { return; };
+        if self.menu_state.visible && self.active_menu.as_ref() == Some(&target) {
+            self.set_menu_visible(false, qh);
+        } else {
+            self.show_menu_at(target, qh);
+        }
     }
 
     fn activate_action(&mut self, action: &str, qh: &QueueHandle<Self>) {
@@ -633,13 +711,13 @@ impl RicePlate {
     }
 
     fn redraw_menu(&mut self, _qh: &QueueHandle<Self>) {
-        let (Some(layer), Some(menu)) = (self.menu_layer.as_mut(), self.recipe.menu.as_ref())
-        else {
-            return;
-        };
-        if !layer.configured {
-            return;
-        }
+        let Some(active) = self.active_menu.as_ref() else { return; };
+        let layer = self.menu_layer.as_mut().filter(|menu|
+            menu.surface.wl_surface() == active)
+            .or_else(|| self.menu_mirrors.iter_mut().find(|menu|
+                menu.surface.wl_surface() == active));
+        let (Some(layer), Some(menu)) = (layer, self.recipe.menu.as_ref()) else { return };
+        if !layer.configured || !self.menu_state.visible { return; }
         let surface = layer.surface.wl_surface();
         let Some(pool) = layer.pool.as_mut() else {
             return;
@@ -1425,7 +1503,15 @@ impl LayerShellHandler for RicePlate {
             .is_some_and(|menu| menu.surface.wl_surface() == layer.wl_surface())
         {
             self.menu_layer = None;
-            self.menu_state.close();
+            if self.active_menu.as_ref() == Some(layer.wl_surface()) {
+                self.set_menu_visible(false, qh);
+            }
+        } else if let Some(index) = self.menu_mirrors.iter().position(|menu|
+            menu.surface.wl_surface() == layer.wl_surface()) {
+            self.menu_mirrors.remove(index);
+            if self.active_menu.as_ref() == Some(layer.wl_surface()) {
+                self.set_menu_visible(false, qh);
+            }
         } else if self.calendar_layer.as_ref()
             .is_some_and(|calendar| calendar.surface.wl_surface() == layer.wl_surface()) {
             self.calendar_layer = None;
@@ -1509,25 +1595,36 @@ impl LayerShellHandler for RicePlate {
             self.redraw_calendar(qh);
             return;
         }
-        if let Some(menu_layer) = self
-            .menu_layer
-            .as_mut()
-            .filter(|menu| menu.surface.wl_surface() == layer.wl_surface())
-        {
+        if self.menu_layer.as_ref().is_some_and(|menu|
+            menu.surface.wl_surface() == layer.wl_surface())
+            || self.menu_mirrors.iter().any(|menu|
+                menu.surface.wl_surface() == layer.wl_surface()) {
             if config.new_size != (native_menu::WIDTH, native_menu::HEIGHT) {
                 eprintln!("RicePlate: compositor proposed unsupported native menu geometry");
-                self.menu_layer = None;
-                self.menu_state.close();
+                if self.menu_layer.as_ref().is_some_and(|menu|
+                    menu.surface.wl_surface() == layer.wl_surface()) {
+                    self.menu_layer = None;
+                } else {
+                    self.menu_mirrors.retain(|menu|
+                        menu.surface.wl_surface() != layer.wl_surface());
+                }
+                if self.active_menu.as_ref() == Some(layer.wl_surface()) {
+                    self.set_menu_visible(false, qh);
+                }
                 return;
             }
+            let menu_layer = self.menu_layer.as_mut().filter(|menu|
+                menu.surface.wl_surface() == layer.wl_surface())
+                .or_else(|| self.menu_mirrors.iter_mut().find(|menu|
+                    menu.surface.wl_surface() == layer.wl_surface()))
+                .expect("matched a live native menu layer");
             if menu_layer.pool.is_none() {
                 let byte_count = (native_menu::WIDTH * native_menu::HEIGHT * 4 * 3) as usize;
                 match SlotPool::new(byte_count, &self.shm) {
                     Ok(pool) => menu_layer.pool = Some(pool),
                     Err(error) => {
                         eprintln!("RicePlate: cannot allocate native menu: {error}");
-                        self.menu_layer = None;
-                        self.menu_state.close();
+                        self.set_menu_visible(false, qh);
                         return;
                     }
                 }
@@ -1700,11 +1797,8 @@ impl KeyboardHandler for RicePlate {
         _: &[u32],
         _: &[Keysym],
     ) {
-        self.menu_focused = self
-            .menu_layer
-            .as_ref()
-            .is_some_and(|menu| menu.surface.wl_surface() == surface)
-            && self.menu_state.visible;
+        self.menu_focused = self.menu_state.visible
+            && self.active_menu.as_ref() == Some(surface);
         self.calendar_focused = self.calendar_state.visible
             && self.active_calendar.as_ref() == Some(surface);
         if let Some((mirror, width, offset)) = self.panel_geometry(surface) {
@@ -1746,12 +1840,7 @@ impl KeyboardHandler for RicePlate {
         surface: &wl_surface::WlSurface,
         _: u32,
     ) {
-        if self
-            .menu_layer
-            .as_ref()
-            .is_some_and(|menu| menu.surface.wl_surface() == surface)
-            && self.menu_focused
-        {
+        if self.active_menu.as_ref() == Some(surface) && self.menu_focused {
             self.set_menu_visible(false, qh);
         }
         if self.active_calendar.as_ref() == Some(surface) && self.calendar_focused {
@@ -1929,11 +2018,7 @@ impl PointerHandler for RicePlate {
                 }
                 continue;
             }
-            if self
-                .menu_layer
-                .as_ref()
-                .is_some_and(|menu| &event.surface == menu.surface.wl_surface())
-            {
+            if self.active_menu.as_ref() == Some(&event.surface) {
                 if let PointerEventKind::Press {
                     button: BTN_LEFT, ..
                 } = event.kind

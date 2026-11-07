@@ -34,6 +34,9 @@ dbus-run-session -- sh -eu -c '
             if [ -f "$runtime/plate-calendar.log" ]; then
                 sed -n "1,120p" "$runtime/plate-calendar.log" >&2 || :
             fi
+            if [ -f "$runtime/plate-menu.log" ]; then
+                sed -n "1,120p" "$runtime/plate-menu.log" >&2 || :
+            fi
             echo "labwc two-output diagnostic log:" >&2
             sed -n "1,100p" "$runtime/labwc.log" >&2 || :
             wlr-randr >&2 || :
@@ -116,6 +119,39 @@ dbus-run-session -- sh -eu -c '
     /usr/bin/python3 "$source_root/scripts/check_wayland_calendar_outputs.py" \
         --closed "$runtime/calendar-after-on.png"
     kill -0 "$plate" 2>/dev/null || { echo "Native calendar exited after output recovery" >&2; exit 1; }
+    # A native schema-v5 menu must likewise open on the secondary monitor,
+    # using the same action model instead of invoking an unrelated launcher.
+    kill "$plate" 2>/dev/null || :
+    wait "$plate" 2>/dev/null || :
+    plate=
+    cp "$source_root/tests/fixtures/riceplate-desktop-v5.json" "$runtime/desktop-v5.json"
+    chmod 0600 "$runtime/desktop-v5.json"
+    RICEBOWL_DE_MENU_OUTPUT=secondary "$native" --recipe "$runtime/desktop-v5.json" --preview-menu \
+        >"$runtime/plate-menu.log" 2>&1 &
+    plate=$!
+    sleep 1.5
+    kill -0 "$plate" 2>/dev/null || { echo "Native menu preview exited" >&2; exit 1; }
+    grim -o "$first" "$runtime/first-menu.png"
+    grim -o "$second" "$runtime/second-menu.png"
+    menu_index=$(/usr/bin/python3 "$source_root/scripts/check_wayland_menu_outputs.py" \
+        "$runtime/first-menu.png" "$runtime/second-menu.png")
+    case "$menu_index" in
+        0) menu_output=$first; remaining_output=$second ;;
+        1) menu_output=$second; remaining_output=$first ;;
+        *) echo "Invalid menu output index: $menu_index" >&2; exit 1 ;;
+    esac
+    wlr-randr --output "$menu_output" --off
+    sleep 0.7
+    grim -o "$remaining_output" "$runtime/remaining-menu-off.png"
+    /usr/bin/python3 "$source_root/scripts/check_wayland_menu_outputs.py" \
+        --closed "$runtime/remaining-menu-off.png"
+    kill -0 "$plate" 2>/dev/null || { echo "Native menu exited after output removal" >&2; exit 1; }
+    wlr-randr --output "$menu_output" --on
+    sleep 0.8
+    grim -o "$menu_output" "$runtime/menu-after-on.png"
+    /usr/bin/python3 "$source_root/scripts/check_wayland_menu_outputs.py" \
+        --closed "$runtime/menu-after-on.png"
+    kill -0 "$plate" 2>/dev/null || { echo "Native menu exited after output recovery" >&2; exit 1; }
     # These are real grim captures from two actual compositor outputs. Keep
     # them in the workflow artifact for inspection rather than discarding
     # all evidence with the private runtime directory.
@@ -129,5 +165,9 @@ dbus-run-session -- sh -eu -c '
     cp "$runtime/second-calendar.png" "$captures/second-calendar.png"
     cp "$runtime/remaining-calendar-off.png" "$captures/remaining-calendar-off.png"
     cp "$runtime/calendar-after-on.png" "$captures/calendar-after-on.png"
-    echo "One native RicePlate process painted two outputs, opened an output-bound calendar and survived hotplug"
+    cp "$runtime/first-menu.png" "$captures/first-menu.png"
+    cp "$runtime/second-menu.png" "$captures/second-menu.png"
+    cp "$runtime/remaining-menu-off.png" "$captures/remaining-menu-off.png"
+    cp "$runtime/menu-after-on.png" "$captures/menu-after-on.png"
+    echo "Native RicePlate painted two outputs, output-bound calendars/menus and survived hotplug"
 ' sh "$source_root" "$runtime" "$native"
