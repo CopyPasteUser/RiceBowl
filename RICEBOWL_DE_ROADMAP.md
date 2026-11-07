@@ -138,8 +138,9 @@ affecting XFCE, including a failed-session recovery. **Not yet signed off.**
   leap years, month/today buttons, selection and Escape/arrow/PageUp/PageDown
   navigation. It lives in RicePlate without a new process or online service;
   pure Rust date/hit/paint tests and a real labwc calendar capture gate are
-  included. The secondary-output clock remains non-clickable; event creation,
-  localization, assistive-tech and physical-device QA remain open.
+  included. A later native milestone added output-bound popups for the
+  secondary clocks; event creation, localization, assistive-tech and
+  physical-device QA remain open.
 - [x] Support owner-private, bounded custom schema-v1 JSON recipes in native
   RicePlate, and position implemented widgets from ordered start/center/end
   sections with matching hit testing and small-display overflow behavior.
@@ -183,13 +184,19 @@ affecting XFCE, including a failed-session recovery. **Not yet signed off.**
   follows the conservative session recovery path. Both native output captures,
   unplug and replug were verified in headless labwc CI; genuine hardware/mixed
   DPI acceptance remains separate.
+- [x] Make the **secondary native clocks interactive** with their own
+  output-bound calendar layers. Keep a single active popup and shared local
+  date state inside RicePlate; remove the popup on output loss and recreate
+  its hidden surface on reconnect. Real two-output labwc CI proves the popup
+  appears on exactly one output and the shell survives unplug/replug, with
+  screenshot evidence. Physical mixed-DPI/input/accessibility QA stays open.
 - [ ] Build a Wayland-native panel through `wlr-layer-shell`.
 - [ ] Populate tasks/windows through a supported foreign-toplevel protocol.
 - [ ] Implement launchers, task groups, tray, calendar, menus and keyboard
   navigation; avoid invisible or fake controls. Native task/menu keyboard
-  controls and a primary-output calendar are partially implemented; tray,
-  calendar parity on other outputs, global accessibility and full interaction
-  parity are still missing.
+  controls and output-aware calendars are partially implemented; tray,
+  events/localization, global accessibility and full interaction parity
+  are still missing.
 - [ ] Expose reusable, composable shell primitives and stable interaction/state
   bindings so substantially different rice layouts share core behavior.
 - [ ] Render wallpapers and desktop icons with correct layer, focus, hit tests,

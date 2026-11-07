@@ -8,10 +8,12 @@ on:
       - 'scripts/smoke_riceplate_native.sh'
       - 'scripts/smoke_riceplate_multioutput.sh'
       - 'scripts/check_wayland_panel_outputs.py'
+      - 'scripts/check_wayland_calendar_outputs.py'
       - 'scripts/compare_wayland_captures.py'
       - 'scripts/verify_wayland_creator_examples.py'
       - 'tests/test_de_render.py'
       - 'tests/test_de_visual_qa.py'
+      - 'tests/test_de_calendar_outputs.py'
       - 'tests/test_de_creator_examples.py'
       - 'examples/wayland/**'
       - 'tests/fixtures/riceplate-desktop-v5-overflow.json'
@@ -25,10 +27,12 @@ on:
       - 'scripts/smoke_riceplate_native.sh'
       - 'scripts/smoke_riceplate_multioutput.sh'
       - 'scripts/check_wayland_panel_outputs.py'
+      - 'scripts/check_wayland_calendar_outputs.py'
       - 'scripts/compare_wayland_captures.py'
       - 'scripts/verify_wayland_creator_examples.py'
       - 'tests/test_de_render.py'
       - 'tests/test_de_visual_qa.py'
+      - 'tests/test_de_calendar_outputs.py'
       - 'tests/test_de_creator_examples.py'
       - 'examples/wayland/**'
       - 'tests/fixtures/riceplate-desktop-v5-overflow.json'
@@ -71,9 +75,11 @@ jobs:
           (cd dist/riceplate-native-preview && sha256sum -c SHA256SUMS)
       - name: Validate both declarative Creator examples
         run: /usr/bin/python3 -m unittest discover -s tests -p test_de_creator_examples.py -v
+      - name: Validate two-output calendar pixel analyzer
+        run: /usr/bin/python3 -m unittest discover -s tests -p test_de_calendar_outputs.py -v
       - name: Boot native Wayland layer surface
         run: timeout -k 5s 70s sh scripts/smoke_riceplate_native.sh
-      - name: Prove native panel on two outputs and secondary hotplug
+      - name: Prove two native outputs, secondary calendar and hotplug
         run: timeout -k 5s 70s sh scripts/smoke_riceplate_multioutput.sh
       - name: Render validated recipe in isolated Creator compositor
         run: |

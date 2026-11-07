@@ -1,13 +1,24 @@
 # RiceBowl changelog
 
+## Unreleased — output-owned native Wayland calendars (7 November 2026)
+
+- Give each secondary native RicePlate clock a real output-bound calendar
+  popup, reusing the primary calendar state, painting and safe controls without
+  launching another process. Show at most one calendar at a time.
+- Retire disconnected output calendars and clear focus/visibility; reconnecting
+  a screen recreates its calendar surface but does not reopen the popup.
+- Add real two-output labwc calendar captures, exactly-one-output pixel
+  assertions, removal/reconnect smoke and archived visual evidence. Mixed-DPI,
+  physical focus/input and accessibility checks remain outstanding.
+
 ## Unreleased — interactive native Wayland calendar (7 November 2026)
 
 - Make the primary native RicePlate clock open a bounded, rice-colored calendar
   layer-shell popup, with local dates, leap-year-aware month grids, month
   navigation, a Today button, day selection and arrow/PageUp/PageDown/Escape
   keyboard controls. The popup is in-process and sleeps between input events.
-- Keep secondary-output clocks passive while per-output popup ownership is
-  unfinished. Do not alter Waybar or XFCE clock behavior.
+- Preserve Waybar and XFCE clock behavior; output-local calendar ownership is
+  delivered by the separate native milestone above.
 - Extend real headless labwc CI with a visible calendar screenshot and pixel
   distinction from the normal desktop, plus pure Rust date, hit and drawing
   tests. Physical input/focus and accessibility signoff remain outstanding.

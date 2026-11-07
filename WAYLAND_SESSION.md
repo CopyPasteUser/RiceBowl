@@ -319,15 +319,21 @@ group is visibly outlined and automatically paged into view on that output;
 this is a first keyboard pathway, not screen-reader or device signoff.
 Native menu and desktop icons still belong to the primary output: the
 secondary launcher opens the accessible fuzzel picker.
-The **primary native clock now opens a functional calendar**. Choose months
+Every **native panel clock now opens a functional calendar on its own output**.
+Only one popup is visible at a time; the other outputs remain unobstructed.
+Choose months
 with the previous/next controls, select a date or return with **Today**;
 arrow keys move between days, PageUp/PageDown switch months and Escape closes
 the popup. Dates come from the local system clock (no extra daemon).
-Secondary panel clocks remain display-only until native calendar popups are
-output-aware. The `--preview-calendar` native flag is intended for headless
-labwc CI (the shown dates follow its local clock), not for a full desktop release.
+Calendars on secondary outputs are separate Wayland layers in the existing
+RicePlate process; losing an output closes its calendar without moving it to
+the surviving display. The `--preview-calendar` native flag is intended for
+headless labwc CI (the shown dates follow its local clock), not for a full
+desktop release. CI sets `RICEBOWL_DE_CALENDAR_OUTPUT=secondary` inside an
+isolated nested session to exercise the secondary-calendar preview.
 The `smoke_riceplate_multioutput.sh` CI test verifies two native panel frames
-and a secondary disconnect/reconnect, with four genuine compositor screenshots
+and a secondary disconnect/reconnect, plus output-bound calendar screenshot
+proof and popup cleanup after hotplug. Genuine compositor screenshots are
 included in the `riceplate-native-preview` workflow artifact. Actual mixed-DPI,
 primary-output removal, and keyboard/menu parity on secondary screens remain
 open acceptance items.
