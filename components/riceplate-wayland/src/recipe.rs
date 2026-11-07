@@ -359,7 +359,7 @@ pub fn parse(raw: &str, expected_id: Option<&str>) -> Result<PanelStyle, Box<dyn
     }
     let recipe: Recipe = serde_json::from_str(raw)?;
     let id = recipe.id.as_bytes();
-    if ![1, 2, 3, 4, 5].contains(&recipe.schema_version)
+    if ![1, 2, 3, 4, 5, 6].contains(&recipe.schema_version)
         || id.len() < 2
         || id.len() > 32
         || !id[0].is_ascii_lowercase()
@@ -377,7 +377,7 @@ pub fn parse(raw: &str, expected_id: Option<&str>) -> Result<PanelStyle, Box<dyn
     }
     let widths = match (recipe.schema_version, recipe.panel.metrics) {
         (1, None) => [LAUNCHER_WIDTH, TASK_WIDTH, CLOCK_WIDTH],
-        (2 | 3 | 4 | 5, Some(metrics))
+        (2 | 3 | 4 | 5 | 6, Some(metrics))
             if (64..=256).contains(&metrics.launcher_width)
                 && (96..=256).contains(&metrics.task_width)
                 && (64..=256).contains(&metrics.clock_width) =>
@@ -421,7 +421,7 @@ pub fn parse(raw: &str, expected_id: Option<&str>) -> Result<PanelStyle, Box<dyn
                 }
             }
         }
-        (3 | 4 | 5, None, Some(layout)) => {
+        (3 | 4 | 5 | 6, None, Some(layout)) => {
             let source = [layout.start, layout.center, layout.end];
             let mut counts = [0_usize, 0_usize];
             for (index, nodes) in source.iter().enumerate() {
@@ -457,7 +457,7 @@ pub fn parse(raw: &str, expected_id: Option<&str>) -> Result<PanelStyle, Box<dyn
         recipe.tokens,
         recipe.responsive,
     ) {
-        (version @ (4 | 5), Some(menu), Some(desktop), Some(tokens), Some(responsive)) => {
+        (version @ (4 | 5 | 6), Some(menu), Some(desktop), Some(tokens), Some(responsive)) => {
             validate_menu(&menu)?;
             native_menu = Some(NativeMenu {
                 title: menu.title,
@@ -472,10 +472,10 @@ pub fn parse(raw: &str, expected_id: Option<&str>) -> Result<PanelStyle, Box<dyn
             });
             desktop_icons = match (version, desktop.icons) {
                 (4, None) => Vec::new(),
-                (5, Some(icons)) => validate_icons(icons)?,
+                (5 | 6, Some(icons)) => validate_icons(icons)?,
                 _ => return Err("Schema v5 requires icons; v4 forbids them".into()),
             };
-            if ![
+            let bundled = [
                 "aero-seven-blue",
                 "aero-seven-night",
                 "luna-hills",
@@ -486,8 +486,12 @@ pub fn parse(raw: &str, expected_id: Option<&str>) -> Result<PanelStyle, Box<dyn
                 "frutiger-future",
                 "aurora-day",
                 "aurora-night",
-            ]
-            .contains(&desktop.wallpaper.as_str())
+            ].contains(&desktop.wallpaper.as_str());
+            let private_asset = version == 6 && desktop.wallpaper.len() == 70
+                && desktop.wallpaper.starts_with("asset-")
+                && desktop.wallpaper.as_bytes()[6..].iter().all(|c|
+                    c.is_ascii_hexdigit() && !c.is_ascii_uppercase());
+            if !(bundled || private_asset)
                 || tokens.label_padding > 16
                 || tokens.task_radius > 12
                 || !(480..=1440).contains(&responsive.compact_max_width)
@@ -1032,5 +1036,21 @@ mod tests {
         let mut extra = base;
         extra["desktop"]["script"] = serde_json::json!("payload");
         assert!(parse(&extra.to_string(), None).is_err());
+    }
+
+    #[test]
+    fn v6_accepts_only_bounded_content_addressed_png_ids() {
+        let fixture = include_str!("../../../tests/fixtures/riceplate-desktop-v5.json");
+        let mut data: serde_json::Value = serde_json::from_str(fixture).unwrap();
+        data["schema_version"] = serde_json::json!(6);
+        data["desktop"]["wallpaper"] = serde_json::json!(format!("asset-{}", "a".repeat(64)));
+        assert!(parse(&data.to_string(), Some("mockup-desktop")).is_ok());
+        data["schema_version"] = serde_json::json!(5);
+        assert!(parse(&data.to_string(), None).is_err());
+        data["schema_version"] = serde_json::json!(6);
+        data["desktop"]["wallpaper"] = serde_json::json!("asset-../../secrets.png");
+        assert!(parse(&data.to_string(), None).is_err());
+        data["desktop"]["wallpaper"] = serde_json::json!(format!("asset-{}", "A".repeat(64)));
+        assert!(parse(&data.to_string(), None).is_err());
     }
 }

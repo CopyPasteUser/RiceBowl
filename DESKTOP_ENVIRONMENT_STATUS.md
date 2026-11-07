@@ -21,7 +21,7 @@ modify global session settings.
 | RicePop notifications | Opt-in native three-row Active/Past tabs in RicePlate, bounded keyboard/pointer selection, on-demand refresh and ID-bound dismissal **only** for active alerts, using Mako as the existing owner | OSD, rich actions, native notification owner and non-Mako backends; physical accessibility QA |
 | Session safety | Opt-in session, user polkit agent when installed, optional Mako/swayidle/swaylock, compositor exit cleanup | Complete suspend/resume and hardware recovery acceptance |
 | Creator authoring | Schema-v1–v5 validation, offline private draft edits, component catalog and API inventory, nested native render/capture and visual comparisons | Broad desktop composition, complete action/state bindings, high-fidelity mockup conversion |
-| RicePack exchange | Deterministic v2 recipe archives, SHA-256-pinned bundled wallpaper, per-asset provenance preserved on private import/re-export, v1 read compatibility; next-login staging and one-level rollback | Packaged external assets, multi-component live apply and transactional active-session rollback |
+| RicePack exchange | Deterministic v2 bundled-asset archives or v3 with one SHA-256-addressed private PNG wallpaper; private import/re-export attribution, v1/v2 read compatibility, next-login staging and one-level rollback | Portable icon/font/multi-asset sets, multi-component live apply and transactional active-session rollback |
 
 **Native here means running in the experimental labwc session**, not the
 existing Python/GTK XFCE experience. A declarative menu/indicator is not a

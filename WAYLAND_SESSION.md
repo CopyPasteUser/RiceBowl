@@ -278,7 +278,7 @@ required, typed objects:
 | Section | Runtime behavior | Bounds / limits |
 | --- | --- | --- |
 | `menu` | Generates a genuine **labwc root context menu** in an isolated private per-session config; action IDs map to fixed `fuzzel`, `foot`, `swaylock -f` or labwc Exit | 1–4 groups, 1–4 unique actions each, short ASCII labels; no commands in recipes |
-| `desktop.wallpaper` | Selects an existing **original bundled** wallpaper for `swaybg` | Only catalog-listed wallpaper IDs; no arbitrary asset paths |
+| `desktop.wallpaper` | Selects bundled artwork, or in schema v6 a previously imported private PNG for `swaybg` | Bundled IDs or `asset-<sha256>`; never a recipe-supplied path or URL |
 | `tokens` | `label_padding` changes native text geometry / Waybar CSS; `task_radius` changes native active task backgrounds / Waybar CSS | Integer 0–16 and 0–12 logical px respectively |
 | `responsive` | `compact_layout` replaces the full panel layout at or below `compact_max_width` **live in native Rust** | Breakpoint 480–1440, same strict nested node limits; Waybar only supports explicit width-dependent offline generation |
 
@@ -498,10 +498,31 @@ ricebowl de catalog --json
 The **Wayland RicePack v2** is a reproducible, local `.ricepack` ZIP with exactly
 `ricepack.json` (format version, recipe identity, SHA-256 checksums and declared
 provenance) and `recipe.json` (canonical schema-v1–v5 recipe). There is no
-unpacking arbitrary archive paths, executing commands or importing new runtime
-assets. Existing *bundled* wallpapers are referenced by known IDs only.
-V2 records the chosen wallpaper's exact SHA-256 digest, checked again when
-inspecting/importing. Older v1 archives remain readable.
+unpacking arbitrary archive paths or executing commands. Existing *bundled*
+wallpapers are referenced by known IDs only. V2 records their exact SHA-256.
+**V3** additionally carries one locally imported PNG wallpaper as the exact
+third entry `assets/wallpaper.png` for a schema-v6 recipe. Its SHA-256-derived
+`asset-…` ID is verified on import and runtime resolution, and the image is
+stored separately as a private `0600` file. Other artwork, fonts, icons,
+commands and scripts are not supported. Older v1/v2 packs remain readable;
+exports with only bundled artwork retain deterministic v2 bytes.
+
+To create a portable rice with an **original or properly licensed PNG**:
+
+```bash
+ricebowl de asset-import --asset /absolute/path/my-wallpaper.png --json
+# Copy asset_id from the output into desktop.wallpaper in the new JSON.
+ricebowl de recipe-init --base classic --schema-version 6 \
+  --id my-rice --name "My Rice" --output "$HOME/my-rice.json"
+ricebowl de review --recipe "$HOME/my-rice.json" --json
+ricebowl de pack-export --recipe "$HOME/my-rice.json" \
+  --output "$HOME/my-rice.ricepack" --json
+```
+
+Only owner-controlled regular PNG files up to 2 MiB, with verified checksums
+and bounded dimensions, are accepted. Private storage is
+`$XDG_CONFIG_HOME/ricebowl/wallpapers/` (or `~/.config/ricebowl/wallpapers/`).
+Importing never selects or applies a rice.
 
 ```bash
 ricebowl de pack-export --recipe /absolute/path/my-rice.json \
@@ -530,18 +551,17 @@ this exact, owner-controlled JSON object:
 Accepted licenses are `unspecified`, `CC0-1.0`, `CC-BY-4.0`, `MIT` and
 `custom`; origins are `unspecified`, `original`, `ai-assisted` and `adapted`.
 The optional `wallpaper_provenance` has those same four bounded fields. These
-are declarations by the exporter, not externally verified license evidence.
-These are *user declarations*, not license or authorship verification. Without
+are declarations by the exporter, not externally verified license evidence. Without
 explicit metadata, the package says `unspecified`; it never fabricates a
-license or creator. The format has no third-party image/icon assets or rendered
+license or creator. V3 supports one user-declared PNG, but no third-party icons/fonts or rendered
 preview yet, and is distinct from the earlier **XFCE Riceware v2 `.zip`**
 format documented in [RICEPACK_SPEC.md](RICEPACK_SPEC.md).
 
-The archive limit is 256 KiB, recipes stay within 64 KiB and JSON is strictly
+The archive limit is 3 MiB including a possible PNG, recipes stay within 64 KiB and JSON is strictly
 validated. Import refuses unknown archive entries, symlinks, compression,
 corruption, duplicate names, hash mismatches, executable fields, reserved IDs
 and collisions with previously imported recipes. It installs **only** an
-owner-private `0600` JSON recipe, without selecting it for the next login or
+owner-private `0600` JSON recipe and optional content-addressed PNG, without selecting it for the next login or
 changing the active desktop. Export never overwrites files; the archive bytes
 are deterministic for the same recipe and metadata. Invalid pack input returns
 JSON with `ok: false`, a path-free error code and exit status `2` when
@@ -653,8 +673,8 @@ duplicate names, and store the result privately in
 Exported files are `0600` and existing files are never overwritten. Share
 the exported JSON using your normal file-transfer tool; it contains no
 executables or assets. The experimental Wayland `.ricepack` above adds portable
-integrity/provenance metadata, **not** full cross-component composition,
-licensed custom artwork or live transaction/rollback.
+integrity/provenance metadata and one bounded PNG, **not** full cross-component
+composition, a complete asset suite or live transaction/rollback.
 
 The initializer creates a fully validated `0600` file through an atomic,
 no-overwrite operation. Edit its `panel.sections`, `position`, `height` and
@@ -681,8 +701,7 @@ per-task **96–256**, clock **64–256**. Unknown fields, missing dimensions,
 booleans and out-of-range values are rejected. Native RicePlate uses these
 widths for actual drawing and click areas; the Waybar preview translates them
 to CSS minimum widths, so long text/font metrics can yield a wider fallback
-widget. RicePack v2 still does **not** embed third-party artwork or automate
-mockup conversion.
+widget. RicePack v3 can embed one PNG, but does not automate mockup conversion.
 
 This demonstrates structural composition through a shared recipe contract;
 it does **not** mean RicePlate's Rust layer-shell renderer, arbitrary mockup

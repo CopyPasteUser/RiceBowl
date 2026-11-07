@@ -240,10 +240,10 @@ def parse(raw: bytes) -> PanelRecipe:
     if not isinstance(data, dict):
         raise RecipeError("Recipe must be a JSON object")
     version = data.get("schema_version")
-    if type(version) is not int or version not in (1, 2, 3, 4, 5):
+    if type(version) is not int or version not in (1, 2, 3, 4, 5, 6):
         raise RecipeError("Unsupported RicePlate recipe schema version")
     expected = {"schema_version", "id", "name", "panel", "colors"}
-    if version in (4, 5):
+    if version in (4, 5, 6):
         expected.update(("menu", "desktop", "tokens", "responsive"))
     data = _strict_keys(data, expected, "Recipe")
     recipe_id = data["id"]
@@ -253,8 +253,8 @@ def parse(raw: bytes) -> PanelRecipe:
     if (not isinstance(name, str) or not 1 <= len(name) <= 60
             or any(unicodedata.category(character) == "Cc" for character in name)):
         raise RecipeError("Recipe name must be 1-60 printable characters")
-    panel_keys = {"position", "height", "layout" if version in (3, 4, 5) else "sections"}
-    if version in (2, 3, 4, 5):
+    panel_keys = {"position", "height", "layout" if version in (3, 4, 5, 6) else "sections"}
+    if version in (2, 3, 4, 5, 6):
         panel_keys.add("metrics")
     panel = _strict_keys(data["panel"], panel_keys, "Panel")
     if panel["position"] not in ("top", "bottom"):
@@ -262,7 +262,7 @@ def parse(raw: bytes) -> PanelRecipe:
     if type(panel["height"]) is not int or not 28 <= panel["height"] <= 64:
         raise RecipeError("Panel height must be an integer between 28 and 64")
     metrics: tuple[int, int, int] | None = None
-    if version in (2, 3, 4, 5):
+    if version in (2, 3, 4, 5, 6):
         sizes = _strict_keys(panel["metrics"], set(METRIC_FIELDS), "Panel metrics")
         if any(type(sizes[key]) is not int or not lower <= sizes[key] <= upper
                for key, (lower, upper) in zip(METRIC_FIELDS, METRIC_LIMITS)):
@@ -271,7 +271,7 @@ def parse(raw: bytes) -> PanelRecipe:
     selected: list[tuple[str, ...]] = []
     all_widgets: list[str] = []
     layout_nodes = None
-    if version in (3, 4, 5):
+    if version in (3, 4, 5, 6):
         layout_nodes, all_widgets = _parse_layout(panel["layout"])
         def widget_ids(nodes: tuple[LayoutNode, ...]) -> tuple[str, ...]:
             return tuple(item for node in nodes for item in (
@@ -301,15 +301,18 @@ def parse(raw: bytes) -> PanelRecipe:
     tokens = None
     compact = None
     desktop_icons = None
-    if version in (4, 5):
+    if version in (4, 5, 6):
         menu = _parse_menu(data["menu"])
         desktop = _strict_keys(data["desktop"],
-                               {"wallpaper", "icons"} if version == 5 else {"wallpaper"},
+                               {"wallpaper", "icons"} if version >= 5 else {"wallpaper"},
                                "Desktop")
-        if type(desktop["wallpaper"]) is not str or desktop["wallpaper"] not in WALLPAPERS:
-            raise RecipeError("Desktop wallpaper must name a bundled original asset")
+        from .assets import ASSET_ID
+        if (type(desktop["wallpaper"]) is not str
+                or not (desktop["wallpaper"] in WALLPAPERS
+                        or version == 6 and ASSET_ID.fullmatch(desktop["wallpaper"]))):
+            raise RecipeError("Desktop wallpaper must name a bundled or v6 content-addressed asset")
         wallpaper = desktop["wallpaper"]
-        if version == 5:
+        if version >= 5:
             desktop_icons = _parse_desktop_icons(desktop["icons"])
         visual = _strict_keys(data["tokens"], {"label_padding", "task_radius"}, "Tokens")
         if (type(visual["label_padding"]) is not int
@@ -656,22 +659,22 @@ def create_from_template(
     if not destination.is_absolute() or destination.suffix != ".json":
         raise RecipeError("New recipe output must be an absolute .json file path")
     data = json.loads(BUILTINS[source].read_text(encoding="utf-8"))
-    if schema_version in (2, 3, 4, 5):
+    if schema_version in (2, 3, 4, 5, 6):
         data["schema_version"] = schema_version
         data["panel"]["metrics"] = dict(zip(METRIC_FIELDS, METRIC_DEFAULTS))
-        if schema_version in (3, 4, 5):
+        if schema_version in (3, 4, 5, 6):
             sections = data["panel"].pop("sections")
             data["panel"]["layout"] = {
                 section: [{"type": "widget", "id": widget} for widget in sections[section]]
                 for section in SECTIONS
             }
-        if schema_version in (4, 5):
+        if schema_version in (4, 5, 6):
             data["menu"] = {"title": "RiceBowl", "groups": [
                 {"title": "Applications", "actions": ["applications", "terminal"]},
                 {"title": "Session", "actions": ["lock", "logout"]},
             ]}
             data["desktop"] = {"wallpaper": "aero-seven-blue"}
-            if schema_version == 5:
+            if schema_version >= 5:
                 data["desktop"]["icons"] = [
                     {"label": "Applications", "action": "applications", "x": 32, "y": 96},
                     {"label": "Terminal", "action": "terminal", "x": 32, "y": 208},
@@ -776,8 +779,15 @@ def waybar_config(recipe: PanelRecipe, *, screen_width: int | None = None) -> tu
 
 
 def wallpaper_path(recipe: PanelRecipe) -> Path:
-    """Resolve only pre-bundled original wallpapers; never a recipe-supplied path."""
+    """Resolve bundled or private SHA-256 artwork, never recipe-supplied paths."""
     name = recipe.wallpaper or "aero-seven-blue"
+    if recipe.schema_version == 6:
+        from . import assets
+        if assets.ASSET_ID.fullmatch(name):
+            try:
+                return assets.read(name)[0]  # Re-verify bytes before use by swaybg.
+            except assets.AssetError as exc:
+                raise RecipeError("Private wallpaper asset is missing or unsafe") from exc
     if name not in WALLPAPERS:
         raise RecipeError("Unknown bundled wallpaper")
     return Path(__file__).resolve().parents[2] / "assets" / "wallpapers" / f"{name}.jpg"

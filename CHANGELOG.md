@@ -1,5 +1,19 @@
 # RiceBowl changelog
 
+## Unreleased — portable RicePack v3 PNG wallpapers (7 November 2026)
+
+- Add schema-v6 wallpaper references by immutable `asset-<sha256>` ID and an
+  explicit `de asset-import --asset /absolute/image.png`; reject arbitrary
+  filesystem paths, symlinks, malformed PNG/chunk CRC, oversized dimensions,
+  unowned or writable files. Assets are 0600 in a private user collection.
+- Export deterministic v3 RicePacks with one verified `assets/wallpaper.png`
+  and user-declared provenance; inspect/import hash and revalidate its bytes
+  before writing any recipe. Preserve v1/v2 reading, v2 bundled-only exports
+  and non-applying/no-overwrite semantics. No fonts/icons/multiple assets or
+  live cross-component apply are claimed.
+- Extend Python/Rust schema parsing, Creator capability contracts and tests;
+  guard a rare disappearing `/proc` entry in the existing cleanup regression.
+
 ## Unreleased — native menu search and saved actions (7 November 2026)
 
 - Filter approved native RicePlate menu actions by typing their visible label;

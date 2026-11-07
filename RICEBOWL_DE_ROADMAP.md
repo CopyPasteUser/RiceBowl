@@ -500,6 +500,16 @@ depend on the XFCE session.
   incompatible existing receipt or symlink fails closed; an interrupted
   import can safely retry with the exact same archive. The portable archive
   schema remains v2; third-party images and live apply are not introduced.
+- [x] Extend **RicePack v3 / recipe schema v6 with one portable private PNG**:
+  explicit owner-controlled `de asset-import`, strict PNG chunk checksums,
+  dimensions and 2 MiB bound, content-addressed `asset-<sha256>` references,
+  owner-private immutable files and no recipe-supplied filesystem paths.
+  Deterministic v3 exports embed exactly `assets/wallpaper.png`; imports check
+  identity and image bytes before installing the recipe, never activating it.
+  Existing v1/v2 archive readers and bundled-only v2 export remain intact.
+  This is **wallpaper-only**, not a complete multi-asset pack: fonts, icons,
+  licenses verified by third parties, runtime live apply and full desktop
+  transactions remain open. Physical PNG rendering/CI acceptance is required.
 - [x] Add **explicit Creator next-login staging** (`de creator-status`,
   `de creator-stage`, `de creator-rollback`) with a required reviewed semantic
   SHA-256, optional compare-and-swap current-selection guard, one-level undo,

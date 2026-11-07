@@ -73,7 +73,7 @@ def parser() -> argparse.ArgumentParser:
     de.add_argument("action", choices=(
         "check", "start", "shell", "catalog", "creator-api", "review", "draft-edit", "visual-compare",
         "capture", "render", "creator-status", "creator-stage", "creator-rollback",
-        "pack-export", "pack-inspect", "pack-import", "notifications", "notification-dismiss",
+        "pack-export", "pack-inspect", "pack-import", "asset-import", "notifications", "notification-dismiss",
         "settings",
         "audio-devices", "audio-default",
         "recipes", "recipe-init", "recipe-import", "recipe-export", "recipe-current",
@@ -91,6 +91,7 @@ def parser() -> argparse.ArgumentParser:
     de.add_argument("--edit", type=Path, help="Owner-controlled absolute JSON edit operations for de draft-edit")
     de.add_argument("--metadata", type=Path, help="Optional provenance JSON for de pack-export")
     de.add_argument("--package", type=Path, help="Absolute .ricepack file for de pack-inspect/import")
+    de.add_argument("--asset", type=Path, help="Absolute owner-controlled .png file for de asset-import")
     de.add_argument("--notification-id", type=int,
                     help="One active notification ID for explicit de notification-dismiss")
     de.add_argument("--device-kind", choices=("sink", "source"),
@@ -103,8 +104,8 @@ def parser() -> argparse.ArgumentParser:
                     help="Session panel (native RicePlate is experimental and falls back to Waybar)")
     de.add_argument("--base", choices=("classic", "chrome"),
                     help="Bundled base recipe for de recipe-init")
-    de.add_argument("--schema-version", type=int, choices=(1, 2, 3, 4, 5), default=1,
-                    help="Recipe schema for de recipe-init (1 flat, 2 widths, 3 nested, 4 shell, 5 icons)")
+    de.add_argument("--schema-version", type=int, choices=(1, 2, 3, 4, 5, 6), default=1,
+                    help="Recipe schema for de recipe-init (1 flat, 2 widths, 3 nested, 4 shell, 5 icons, 6 private PNG)")
     de.add_argument("--id", help="Lowercase recipe identifier for de recipe-init")
     de.add_argument("--name", help="Human-readable recipe name for de recipe-init")
     de.add_argument("--output", type=Path, help="New absolute .json, .toml, .png or .ricepack output")
@@ -176,6 +177,8 @@ def main(argv: list[str] | None = None) -> int:
                 raise ValueError("--metadata only applies to de pack-export")
             if args.action not in ("pack-inspect", "pack-import") and args.package is not None:
                 raise ValueError("--package only applies to de pack-inspect/import")
+            if args.action != "asset-import" and args.asset is not None:
+                raise ValueError("--asset only applies to de asset-import")
             if args.action != "notification-dismiss" and args.notification_id is not None:
                 raise ValueError("--notification-id only applies to de notification-dismiss")
             if args.action != "audio-default" and any(value is not None for value in
@@ -274,6 +277,26 @@ def main(argv: list[str] | None = None) -> int:
                 else:
                     print(f"Next Wayland login: {result['next_session']} (was: {result['previous']})")
                     print("Current desktop unchanged; one-step rollback remains available")
+                return 0
+            if args.action == "asset-import":
+                if (args.nested or args.panel != "waybar" or not args.asset or args.recipe
+                        or args.output or args.package):
+                    raise ValueError("de asset-import requires --asset absolute.png only")
+                from .de.assets import import_png, AssetError
+                try:
+                    asset_id, location = import_png(args.asset)
+                except AssetError as exc:
+                    if not args.json:
+                        raise
+                    print(json.dumps({"ok": False, "imported": False, "applied": False,
+                                      "error": {"code": "invalid_asset", "message": str(exc)}}))
+                    return 2
+                result = {"ok": True, "imported": True, "applied": False,
+                          "asset_id": asset_id, "private_path": str(location)}
+                if args.json:
+                    print(json.dumps(result, indent=2))
+                else:
+                    print(f"Stored private wallpaper {asset_id}. Add this ID to a schema-v6 recipe.")
                 return 0
             if args.action in ("pack-export", "pack-inspect", "pack-import"):
                 if args.nested or args.panel != "waybar":
