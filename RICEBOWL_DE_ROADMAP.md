@@ -275,6 +275,18 @@ affecting XFCE, including a failed-session recovery. **Not yet signed off.**
   controls; the Waybar/labwc fallback omits them. The status labels themselves
   stay non-clickable. Device choosers, settings pages and notification ownership
   remain open; hardware permission/device acceptance is still needed.
+- [x] Add an **on-demand RiceSpice playback/recording device adapter** to the
+  installed CLI. `de audio-devices --json` reads and validates real device
+  identities, descriptions and current defaults through the existing
+  PulseAudio-compatible server (`pactl`, including pipewire-pulse).
+  `de audio-default --device-kind sink|source --device-name NAME --json`
+  requires explicit validated selection; an optional `--expect-current`
+  prevents stale reviewed changes. Calls are fixed-argument, bounded and
+  unprivileged, report missing/invalid data and distinguish unverified
+  post-mutation state. The adapter neither starts a daemon nor pretends a
+  settings GUI exists. Existing streams may retain their previous routing;
+  native visual selection, accessibility, permissions and hardware QA remain
+  independent gates.
 - [ ] Implement usable native settings for screens, input, network, audio,
   Bluetooth, accessibility, power, timezone and user preferences.
 - [ ] Delegate privileged actions to polkit/system services; never add a
