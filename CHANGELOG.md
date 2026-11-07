@@ -1,5 +1,17 @@
 # RiceBowl changelog
 
+## Unreleased — truthful Creator shell catalog v6 (7 November 2026)
+
+- Update `ricebowl de catalog --json` to reflect verified native keyboard
+  launcher/task controls, output-bound menus and calendars, and desktop icon
+  drag, arrow movement and private per-rice persistence.
+- Add a distinct, non-executable `shell_components` inventory for the native
+  menu, calendar and desktop shortcut, listing safe actions, focus/inputs,
+  multi-output ownership and unsupported features. Keep existing panel IDs and
+  recipe schemas unchanged; catalog contract version moves from 5 to 6.
+- Assert catalog accuracy and action allowlists in tests. No AI service,
+  privileged action or new long-running Creator component is introduced.
+
 ## Unreleased — output-owned native Wayland start menus (7 November 2026)
 
 - Give every schema-v4/v5 native RicePlate panel an in-process start menu on

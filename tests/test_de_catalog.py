@@ -12,7 +12,7 @@ class ComponentCatalogTests(unittest.TestCase):
     def test_catalog_is_complete_truthful_and_declarative(self):
         info = catalog.describe()
         catalog.validate_catalog_contract()
-        self.assertEqual(info["catalog_version"], 5)
+        self.assertEqual(info["catalog_version"], 6)
         self.assertEqual(info["scope"], "wayland-shell-preview")
         self.assertFalse(info["complete_desktop_environment"])
         self.assertEqual(info["recipe"]["schema_versions"], [1, 2, 3, 4, 5])
@@ -21,6 +21,10 @@ class ComponentCatalogTests(unittest.TestCase):
         self.assertFalse(info["recipe"]["external_assets"])
         self.assertEqual(info["recipe"]["maximum_bytes"], recipes.MAX_RECIPE_BYTES)
         self.assertEqual(info["authoring"]["draft_edit"], creator_contract.describe())
+        catalog_command = next(command for command in
+                               creator_contract.describe_creator_api()["commands"]
+                               if command["command"] == "catalog")
+        self.assertEqual(catalog_command["contract_version"], info["catalog_version"])
         self.assertEqual(info["authoring"]["draft_edit"]["operation"], "set")
         self.assertFalse(info["authoring"]["draft_edit"]["mutates_active_desktop"])
         self.assertEqual(info["authoring"]["visual_compare"],
@@ -32,7 +36,33 @@ class ComponentCatalogTests(unittest.TestCase):
         implemented = {part["id"] for part in info["components"]
                        if part["native"] != "unavailable"}
         self.assertEqual(implemented, {"launcher", "tasks", "clock"})
-        self.assertTrue(all(not part["keyboard_navigation"] for part in info["components"]))
+        components = {part["id"]: part for part in info["components"]}
+        self.assertTrue(components["launcher"]["keyboard_navigation"])
+        self.assertTrue(components["tasks"]["keyboard_navigation"])
+        self.assertFalse(components["clock"]["keyboard_navigation"])
+        self.assertTrue(components["clock"]["calendar_popup"])
+        self.assertTrue(components["clock"]["popup_keyboard_navigation"])
+        self.assertEqual(components["launcher"]["output_ownership"], "per-output")
+        self.assertEqual(components["tasks"]["output_ownership"], "per-output")
+        self.assertEqual(components["clock"]["output_ownership"], "per-output")
+        shell = {part["id"]: part for part in info["shell_components"]}
+        self.assertEqual(set(shell), {"native-menu", "calendar-popup", "desktop-shortcut"})
+        self.assertEqual(shell["native-menu"]["actions"], sorted(recipes.MENU_ACTIONS))
+        self.assertFalse(shell["native-menu"]["search"])
+        self.assertFalse(shell["native-menu"]["pins"])
+        self.assertTrue(shell["native-menu"]["close_on_output_removal"])
+        self.assertFalse(shell["calendar-popup"]["events"])
+        self.assertFalse(shell["calendar-popup"]["localized_month_labels"])
+        self.assertTrue(shell["calendar-popup"]["close_on_output_removal"])
+        self.assertEqual(shell["desktop-shortcut"]["actions"], sorted(recipes.ICON_ACTIONS))
+        self.assertFalse(shell["desktop-shortcut"]["hotplug_across_outputs"])
+        self.assertFalse(shell["desktop-shortcut"]["arbitrary_commands"])
+        icons = info["recipe"]["shell_extensions"]["desktop"]["icons"]
+        self.assertTrue(icons["keyboard_navigation"])
+        self.assertEqual(icons["keyboard_focus_entry"], "pointer-or-compositor-focus")
+        self.assertTrue(icons["pointer_drag"])
+        self.assertEqual(icons["keyboard_arrow_movement_px"], 16)
+        self.assertEqual(icons["position_storage"], "private-per-rice-not-source-recipe")
         self.assertEqual({name: field["default"] for name, field in
                           info["recipe"]["metrics"]["fields"].items()},
                          dict(zip(recipes.METRIC_FIELDS, recipes.METRIC_DEFAULTS)))

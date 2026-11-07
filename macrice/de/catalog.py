@@ -1,4 +1,4 @@
-"""Versioned, read-only panel component discovery for humans and authoring agents.
+"""Versioned, read-only shell component discovery for humans and agents.
 
 The catalog reports only behavior supported by the actual preview backends.
 It grants no ability to execute actions or change a running desktop.
@@ -18,7 +18,7 @@ from .recipes import (ICON_ACTIONS, ICON_HEIGHT, ICON_WIDTH, MAX_DESKTOP_ICONS,
 def describe() -> dict[str, object]:
     """Describe exactly which panel and early shell primitives are implemented."""
     return {
-        "catalog_version": 5,
+        "catalog_version": 6,
         "scope": "wayland-shell-preview",
         "complete_desktop_environment": False,
         "recipe": {
@@ -62,8 +62,10 @@ def describe() -> dict[str, object]:
             },
             "shell_extensions": {
                 "since_schema": 4,
-                "menu": {"renderer": "labwc-root-menu", "actions": sorted(MENU_ACTIONS),
-                         "max_groups": 4, "max_actions_per_group": 4},
+                "menu": {"native": "output-bound-layer-shell-popup",
+                         "waybar": "labwc-root-menu", "actions": sorted(MENU_ACTIONS),
+                         "max_groups": 4, "max_actions_per_group": 4,
+                         "search": False, "pins": False},
                 "desktop": {"rendered": ["wallpaper"],
                             "wallpapers": sorted(WALLPAPERS),
                             "icons": {"since_schema": 5,
@@ -74,7 +76,12 @@ def describe() -> dict[str, object]:
                                       "hit_width": ICON_WIDTH, "hit_height": ICON_HEIGHT,
                                       "coordinate_max": 4096,
                                       "native_placement": "single-output-logical-bounds-reflow",
-                                      "keyboard_navigation": False},
+                                      "keyboard_navigation": True,
+                                      "keyboard_focus_entry": "pointer-or-compositor-focus",
+                                      "pointer_drag": True,
+                                      "keyboard_arrow_movement_px": 16,
+                                      "position_storage": "private-per-rice-not-source-recipe",
+                                      "nested_render_overrides": False},
                             "widgets": "not_implemented"},
                 "tokens": {"label_padding": [0, 16], "task_radius": [0, 12]},
                 "responsive": {"compact_max_width": [480, 1440],
@@ -99,15 +106,21 @@ def describe() -> dict[str, object]:
                                       "discovery": "ricebowl de creator-api --json"}},
         "components": [
             {"id": "launcher", "native": "interactive", "waybar": "interactive",
-             "behavior": "open-fuzzel", "keyboard_navigation": False,
+             "behavior": "native-menu-if-schema-4-else-fuzzel",
+             "keyboard_navigation": True, "output_ownership": "per-output",
              "width_property": "launcher_width"},
             {"id": "tasks", "native": "interactive", "waybar": "interactive",
-             "behavior": "activate-minimize-windows", "keyboard_navigation": False,
+             "behavior": "activate-minimize-windows", "keyboard_navigation": True,
+             "output_ownership": "per-output",
              "width_property": "task_width",
-             "native_details": ["group-by-app-id", "cycle-group-windows", "page-overflow"]},
-            {"id": "clock", "native": "indicator", "waybar": "indicator",
+             "native_details": ["group-by-app-id", "cycle-group-windows",
+                                "page-overflow", "independent-output-paging",
+                                "focus-on-demand"]},
+            {"id": "clock", "native": "interactive", "waybar": "indicator",
              "behavior": "show-local-time", "keyboard_navigation": False,
-             "width_property": "clock_width", "calendar_popup": False},
+             "width_property": "clock_width", "calendar_popup": True,
+             "popup_keyboard_navigation": True, "output_ownership": "per-output",
+             "keyboard_focus_entry": "pointer-required"},
             {"id": "network", "native": "unavailable", "waybar": "indicator",
              "behavior": "show-network-status", "keyboard_navigation": False},
             {"id": "audio", "native": "unavailable", "waybar": "indicator",
@@ -116,6 +129,28 @@ def describe() -> dict[str, object]:
              "behavior": "show-power-status", "keyboard_navigation": False},
             {"id": "tray", "native": "unavailable", "waybar": "host-tray",
              "behavior": "host-status-notifier-items", "keyboard_navigation": False},
+        ],
+        "shell_components": [
+            {"id": "native-menu", "since_schema": 4,
+             "recipe_pointer": "/menu", "native": "interactive-output-local",
+             "waybar": "compiled-labwc-root-menu",
+             "actions": sorted(MENU_ACTIONS),
+             "input": ["pointer", "Left/Right", "Up/Down/Tab", "Enter/Space", "Escape"],
+             "focus": "on-demand", "search": False, "pins": False,
+             "close_on_output_removal": True},
+            {"id": "calendar-popup", "trigger_widget": "clock",
+             "native": "interactive-output-local", "waybar": "not-owned-by-riceplate",
+             "input": ["pointer", "arrow-keys", "PageUp/PageDown", "Home", "Escape"],
+             "date_source": "offline-local-clock", "events": False,
+             "localized_month_labels": False, "close_on_output_removal": True,
+             "focus": "on-demand-after-pointer"},
+            {"id": "desktop-shortcut", "since_schema": 5,
+             "recipe_pointer": "/desktop/icons", "native": "interactive-primary-output",
+             "waybar": "not_available", "actions": sorted(ICON_ACTIONS),
+             "input": ["pointer-click", "pointer-drag", "arrows-after-focus", "Enter/Space"],
+             "focus": "pointer-or-compositor-focus", "keyboard_move_px": 16,
+             "saved_positions": "private-per-rice", "hotplug_across_outputs": False,
+             "arbitrary_commands": False},
         ],
         "layout_primitives": [
             {"id": "group", "native": "horizontal-layout", "waybar": "flattened-modules",
@@ -127,13 +162,15 @@ def describe() -> dict[str, object]:
         ],
         "limits": [
             "Schema-v5 desktop icons are native-only; no Waybar icon layer yet",
-            "Native desktop icons reflow within one output; no dragging, saved placement or keyboard navigation yet",
+            "Native icons can move and persist per rice but remain primary-output-only; no cross-output drag/hotplug lifecycle",
             "Desktop widgets are not implemented",
             "Native panel handles responsive compact layout live; Waybar requires width-specific generation",
             "Schema-v3 groups are horizontal panel-only; no full desktop composition yet",
             "Panel-only recipes; no arbitrary OS or screenshot conversion",
             "No runtime configurable action bindings or custom scripts",
-            "Native panel lacks tray, hardware controls, keyboard task navigation and popovers",
+            "Native panel still lacks tray and live network/audio/power hardware controls",
+            "Native calendar has no events or locale-specific labels; clock cannot be reached from panel keyboard navigation",
+            "Keyboard focus and assistive technology on real devices are not signed off",
             "Waybar CSS widths are minima; content can grow",
             "Available status indicators depend on host services and devices",
             "No active desktop configuration is read or changed",
@@ -145,7 +182,12 @@ def validate_catalog_contract() -> None:
     """Protect the discoverability contract from drifting off the recipe parser."""
     result = describe()
     ids = [component["id"] for component in result["components"]]
+    shell = {component["id"]: component for component in result["shell_components"]}
     metrics = tuple(result["recipe"]["metrics"]["fields"])
     if (len(ids) != len(set(ids)) or set(ids) != WIDGETS
-            or metrics != METRIC_FIELDS):
+            or metrics != METRIC_FIELDS
+            or len(shell) != len(result["shell_components"])
+            or set(shell) != {"native-menu", "calendar-popup", "desktop-shortcut"}
+            or shell["native-menu"]["actions"] != sorted(MENU_ACTIONS)
+            or shell["desktop-shortcut"]["actions"] != sorted(ICON_ACTIONS)):
         raise ValueError("RiceBowl component catalog is out of sync with panel recipes")
