@@ -1,5 +1,25 @@
 # RiceBowl changelog
 
+## Unreleased — native desktop icon movement and private placement (7 November 2026)
+
+- Native RicePlate desktop shortcuts now distinguish activation from a
+  pointer drag. Keyboard focus is visibly marked; arrow keys move the focused
+  icon in 16-pixel steps and Enter/Space keep the existing safe actions.
+- Persist icon placements per rice without rewriting the validated source
+  recipe. Require owner-private bounded JSON and reject stale identities,
+  oversized coordinates, symlink destinations and unsafe permissions.
+- Keep nested Creator/headless screenshots deterministic by ignoring local
+  overrides; retain Waybar/XFCE behavior and the unfinished multi-output and
+  physical-input acceptance gates.
+
+## Unreleased — reliable isolated Creator renderer shutdown (7 November 2026)
+
+- Supervise an owned Creator render process family, including descendants that
+  outlive a wrapper. Use process identity guards before teardown.
+- Verify staged PNG size and content hash against the capture receipt and
+  publish without overwriting only after cleanup; add injected failure and
+  real native headless regression cases.
+
 ## Unreleased — experimental native secondary Wayland panels (6 November 2026)
 
 - Draw a separate output-bound layer-shell panel for each secondary display

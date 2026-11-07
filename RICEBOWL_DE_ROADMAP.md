@@ -232,7 +232,14 @@ depend on the XFCE session.
   workarea, preserve valid positions and park icons outside the output when no
   safe hit region fits (without destroying their layer-shell role). Rust
   geometry tests cover normal, compact and insufficient workspaces.
-  Dragging, saved placement and true multi-output ownership remain open.
+  True multi-output ownership remains open.
+- [x] Add **first native shortcut editing interactions**: distinguish click
+  from pointer drag, expose an on-demand keyboard focus frame and 16-pixel
+  arrow-key moves, and persist positions separately for each selected rice in
+  an owner-private bounded JSON file. Reject stale actions/labels and symlinks;
+  never write back to source rice recipes. Skip saved overrides in deterministic
+  nested Creator captures. Pointer/focus geometry and persistence have Rust
+  tests; real input-device/drag QA is still required.
 - [x] Start a **real Wayland screenshot QA path**: capture headless native
   labwc output with grim into CI artifacts, allow no-overwrite manual captures
   and report deterministic pixel-difference metrics for an offline reference.
@@ -243,9 +250,9 @@ depend on the XFCE session.
   device acceptance, approved image baselines and interaction checks remain open.
 - [ ] Extend schema-v5 desktop shortcuts with moving, keyboard accessibility,
   focus states, monitor-aware position reflow and hotplug. Add reusable native
-  desktop widgets and their bounded recipe contracts. Static clickable icons
-  and single-output reflow are implemented, but the remaining interaction and
-  multi-output lifecycle requirements are still open.
+  desktop widgets and their bounded recipe contracts. Basic move/focus/key
+  controls and single-output reflow are implemented; multi-output lifecycle,
+  richer keyboard navigation, widget contracts and device QA remain open.
 - [ ] Implement visually configurable, truly interactive native start menus
   (beyond the initial functional labwc fallback menu), including navigation,
   searching, pinning and the per-rice layout variants required by XP/7/etc.
@@ -314,6 +321,11 @@ depend on the XFCE session.
   overwriting, then terminate all render children. Its CI uses real native
   pixels and content hashes. Not yet an editable preview GUI, Waybar render,
   perceptual test, active apply/rollback, or complete multi-output harness.
+- [x] Harden headless Creator renderer teardown: track one private render
+  session, terminate descendants after a wrapper exits, never signal unrelated
+  reused PIDs, validate staged PNG bytes and receipt before publication, and
+  test real failure/timeout/fork cases with native CI. No lingering renderer
+  is allowed to keep the session alive after successful capture.
 - [x] Add an on-demand **Creator API v1 command inventory** (`de creator-api
   --json`) with stable implemented command names, true side-effect boundaries,
   version/flag/exit-code discovery and an explicit limitations list. No

@@ -289,9 +289,15 @@ semantic `de review` comparisons. RicePlate draws each icon as a small
 transparent Wayland Bottom-layer surface in its **existing process**; it does
 not cover the desktop with a giant input window. The ordinary Waybar fallback
 still renders the panel, menu and wallpaper but **does not show icons**. This
-first slice has mouse clicks only: drag/reposition, keyboard focus, desktop
-widgets, independent multi-output ownership and real-GPU acceptance remain
-open. Native RicePlate now **reflows shortcuts within its selected logical
+preview supports click-to-launch, dragging a shortcut with the left button,
+and an on-demand keyboard focus frame: click to focus, use arrow keys to move
+in 16-pixel steps, or Enter/Space to launch. RicePlate stores positions per
+rice in `$XDG_CONFIG_HOME/ricebowl/native-icon-positions/<rice-id>.json`
+(typically `~/.config/ricebowl/native-icon-positions/`) without altering the
+original recipe. Saved coordinates are private and never honored by nested
+Creator/headless sessions, so screenshots remain reproducible. Desktop widgets,
+independent multi-output ownership and real-GPU/input acceptance remain open.
+Native RicePlate **reflows shortcuts within its selected logical
 output** on mode/scale changes, preserving valid positions and parking icons
 outside the output when no safe, non-overlapping hit area exists. This placement is not persisted;
 fractional-scale visual quality and multi-monitor hotplug still need device

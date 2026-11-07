@@ -6,6 +6,7 @@ use std::{error::Error, process::Command, time::Duration};
 use chrono::{Local, Timelike};
 use font8x8::{UnicodeFonts, BASIC_FONTS};
 mod desktop_layout;
+mod icon_positions;
 mod native_menu;
 mod recipe;
 mod task_groups;
@@ -81,7 +82,10 @@ fn main() -> Result<(), Box<dyn Error>> {
             )
         }
     };
-    let recipe = recipe::load(recipe_name)?;
+    let mut recipe = recipe::load(recipe_name)?;
+    if let Err(error) = icon_positions::restore(&mut recipe) {
+        eprintln!("RicePlate: ignored invalid saved desktop icon positions: {error}");
+    }
     if preview_menu && recipe.menu.is_none() {
         return Err("Native menu preview requires schema v4/v5".into());
     }
@@ -130,7 +134,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         surface.set_size(recipe::ICON_WIDTH, recipe::ICON_HEIGHT);
         surface.set_margin(icon.y as i32, 0, 0, icon.x as i32);
         surface.set_exclusive_zone(-1);
-        surface.set_keyboard_interactivity(KeyboardInteractivity::None);
+        surface.set_keyboard_interactivity(KeyboardInteractivity::OnDemand);
         surface.commit();
         icon_layers.push(IconLayer {
             surface,
@@ -192,6 +196,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         clock: clock_now(),
         pointer: None,
         keyboard: None,
+        focused_icon: None,
+        icon_drag: None,
+        icon_position_dirty: false,
         menu_focused: false,
         primary_seat: None,
         primary_output: None,
@@ -218,6 +225,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             app.request_redraw(&qh);
         }
     }
+    app.save_icon_positions();
     Ok(())
 }
 
@@ -235,6 +243,13 @@ struct IconLayer {
     configured: bool,
     output: Option<wl_output::WlOutput>,
     placed: Option<(u32, u32)>,
+}
+
+struct IconDrag {
+    index: usize,
+    anchor: (f64, f64),
+    started: (u32, u32),
+    moved: bool,
 }
 
 struct MenuLayer {
@@ -271,6 +286,9 @@ struct RicePlate {
     clock: String,
     pointer: Option<wl_pointer::WlPointer>,
     keyboard: Option<wl_keyboard::WlKeyboard>,
+    focused_icon: Option<usize>,
+    icon_drag: Option<IconDrag>,
+    icon_position_dirty: bool,
     menu_focused: bool,
     primary_seat: Option<wl_seat::WlSeat>,
     primary_output: Option<wl_output::WlOutput>,
@@ -288,6 +306,17 @@ struct RicePlate {
 }
 
 impl RicePlate {
+    fn save_icon_positions(&mut self) {
+        if !self.icon_position_dirty {
+            return;
+        }
+        if let Err(error) = icon_positions::save(&self.recipe) {
+            eprintln!("RicePlate: cannot persist desktop icon positions: {error}");
+            return;
+        }
+        self.icon_position_dirty = false;
+    }
+
     fn sync_mirrors(&mut self, qh: &QueueHandle<Self>) {
         // An output can disappear between wl_surface.leave and its eventual
         // enter on another output. Never leave the remaining display blank
@@ -469,7 +498,8 @@ impl RicePlate {
             }
         };
         let icon = &self.recipe.desktop_icons[index];
-        paint_icon(canvas, icon, self.recipe.active, self.recipe.foreground);
+        paint_icon(canvas, icon, self.recipe.active, self.recipe.foreground,
+                   self.focused_icon == Some(index));
         surface.damage_buffer(0, 0, width as i32, height as i32);
         if let Err(error) = buffer.attach_to(surface) {
             eprintln!("RicePlate: desktop icon attach failed: {error}");
@@ -801,10 +831,18 @@ fn paint_menu(canvas: &mut [u8], menu: &recipe::NativeMenu, style: &PanelStyle, 
     );
 }
 
-fn paint_icon(canvas: &mut [u8], icon: &recipe::DesktopIcon, active: u32, foreground: u32) {
+fn paint_icon(canvas: &mut [u8], icon: &recipe::DesktopIcon, active: u32,
+              foreground: u32, focused: bool) {
     let width = recipe::ICON_WIDTH;
     let height = recipe::ICON_HEIGHT;
     canvas.fill(0); // Leave the surrounding desktop visible.
+    if focused {
+        // Narrow focus frame: keep the rest of the desktop hit area transparent.
+        fill_rect(canvas, width, height, 0, 0, width, 2, foreground);
+        fill_rect(canvas, width, height, 0, height - 2, width, 2, foreground);
+        fill_rect(canvas, width, height, 0, 0, 2, height, foreground);
+        fill_rect(canvas, width, height, width - 2, 0, 2, height, foreground);
+    }
     let glyph = match icon.action.as_str() {
         "applications" => "Apps",
         "terminal" => ">_",
@@ -1215,6 +1253,8 @@ impl SeatHandler for RicePlate {
             if let Some(pointer) = self.pointer.take() {
                 pointer.release();
             }
+            self.icon_drag = None;
+            self.save_icon_positions();
         } else if capability == Capability::Keyboard {
             if let Some(keyboard) = self.keyboard.take() {
                 keyboard.release();
@@ -1245,6 +1285,15 @@ impl KeyboardHandler for RicePlate {
             .as_ref()
             .is_some_and(|menu| menu.surface.wl_surface() == surface)
             && self.menu_state.visible;
+        let next = self.icon_layers.iter()
+            .position(|icon| icon.surface.wl_surface() == surface && icon.placed.is_some());
+        if self.focused_icon != next {
+            let previous = self.focused_icon;
+            self.focused_icon = next;
+            if let Some(index) = previous { self.redraw_icon(index); }
+            if let Some(index) = next { self.redraw_icon(index); }
+            self.save_icon_positions();
+        }
     }
 
     fn leave(
@@ -1263,6 +1312,13 @@ impl KeyboardHandler for RicePlate {
         {
             self.set_menu_visible(false, qh);
         }
+        if let Some(index) = self.focused_icon {
+            if self.icon_layers[index].surface.wl_surface() == surface {
+                self.focused_icon = None;
+                self.redraw_icon(index);
+                self.save_icon_positions();
+            }
+        }
     }
 
     fn press_key(
@@ -1273,6 +1329,31 @@ impl KeyboardHandler for RicePlate {
         _: u32,
         event: KeyEvent,
     ) {
+        if let Some(index) = self.focused_icon {
+            match event.keysym {
+                Keysym::Return | Keysym::KP_Enter | Keysym::space => {
+                    let action = self.recipe.desktop_icons[index].action.clone();
+                    self.activate_action(&action, qh);
+                }
+                Keysym::Left | Keysym::Right | Keysym::Up | Keysym::Down => {
+                    let icon = &mut self.recipe.desktop_icons[index];
+                    match event.keysym {
+                        Keysym::Left => icon.x = icon.x.saturating_sub(16),
+                        Keysym::Right => icon.x = icon.x.saturating_add(16).min(desktop_layout::MAX_SAVED_POSITION),
+                        Keysym::Up => icon.y = icon.y.saturating_sub(16),
+                        Keysym::Down => icon.y = icon.y.saturating_add(16).min(desktop_layout::MAX_SAVED_POSITION),
+                        _ => unreachable!(),
+                    }
+                    self.reflow_icons();
+                    self.icon_position_dirty = true;
+                }
+                Keysym::Escape => {
+                    self.save_icon_positions();
+                }
+                _ => {}
+            }
+            return;
+        }
         if !self.menu_state.visible || !self.menu_focused {
             return;
         }
@@ -1329,8 +1410,11 @@ impl KeyboardHandler for RicePlate {
         _: &QueueHandle<Self>,
         _: &wl_keyboard::WlKeyboard,
         _: u32,
-        _: KeyEvent,
+        event: KeyEvent,
     ) {
+        if matches!(event.keysym, Keysym::Left | Keysym::Right | Keysym::Up | Keysym::Down) {
+            self.save_icon_positions();
+        }
     }
 
     fn update_modifiers(
@@ -1398,13 +1482,44 @@ impl PointerHandler for RicePlate {
                 if self.icon_layers[index].placed.is_none() {
                     continue;
                 }
-                if let PointerEventKind::Press {
-                    button: BTN_LEFT, ..
-                } = event.kind
-                {
-                    let icon = &self.recipe.desktop_icons[index];
-                    let action = icon.action.clone();
-                    self.activate_action(&action, qh);
+                match event.kind {
+                    PointerEventKind::Press { button: BTN_LEFT, .. } => {
+                        if let Some(position) = self.icon_layers[index].placed {
+                            self.icon_drag = Some(IconDrag {
+                                index, anchor: event.position, started: position, moved: false,
+                            });
+                        }
+                    }
+                    PointerEventKind::Motion { .. } => {
+                        if let Some(drag) = self.icon_drag.as_mut().filter(|d| d.index == index) {
+                            let current = self.icon_layers[index].placed.unwrap();
+                            let desired = desktop_layout::dragged_to(
+                                current, drag.anchor, event.position,
+                            );
+                            if desired.0.abs_diff(drag.started.0)
+                                + desired.1.abs_diff(drag.started.1) >= 6
+                            {
+                                drag.moved = true;
+                            }
+                            if drag.moved && desired != current {
+                                let icon = &mut self.recipe.desktop_icons[index];
+                                (icon.x, icon.y) = desired;
+                                self.reflow_icons();
+                                self.icon_position_dirty = true;
+                            }
+                        }
+                    }
+                    PointerEventKind::Release { button: BTN_LEFT, .. } => {
+                        if let Some(drag) = self.icon_drag.take() {
+                            if drag.index == index && !drag.moved {
+                                let action = self.recipe.desktop_icons[index].action.clone();
+                                self.activate_action(&action, qh);
+                            } else if drag.index == index {
+                                self.save_icon_positions();
+                            }
+                        }
+                    }
+                    _ => {}
                 }
                 continue;
             }
@@ -1632,7 +1747,7 @@ mod tests {
             y: 112,
         };
         let mut pixels = vec![255; (recipe::ICON_WIDTH * recipe::ICON_HEIGHT * 4) as usize];
-        paint_icon(&mut pixels, &icon, 0xff4179aa, 0xfff3f7fa);
+        paint_icon(&mut pixels, &icon, 0xff4179aa, 0xfff3f7fa, false);
         assert_eq!(&pixels[0..4], &[0, 0, 0, 0]);
         assert!(pixels
             .chunks_exact(4)
@@ -1640,6 +1755,12 @@ mod tests {
         assert!(pixels
             .chunks_exact(4)
             .any(|pixel| pixel == 0xfff3f7fa_u32.to_le_bytes()));
+        paint_icon(&mut pixels, &icon, 0xff4179aa, 0xfff3f7fa, true);
+        assert_eq!(&pixels[0..4], &0xfff3f7fa_u32.to_le_bytes());
+        assert_eq!(
+            &pixels[((recipe::ICON_HEIGHT - 1) * recipe::ICON_WIDTH * 4) as usize..][..4],
+            &0xfff3f7fa_u32.to_le_bytes(),
+        );
     }
 
     #[test]
