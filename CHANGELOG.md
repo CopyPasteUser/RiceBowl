@@ -1,5 +1,17 @@
 # RiceBowl changelog
 
+## Unreleased — keyboard-accessible native Wayland taskbar (7 November 2026)
+
+- Support on-demand keyboard focus for the primary and secondary native
+  RicePlate panels. Left/Right/Tab select the launcher or grouped windows,
+  with a visible keyboard focus frame; Enter/Space activate and Escape clears
+  the selection. Repeated activation keys never launch multiple apps.
+- Bring an offscreen selected window group into view on its own monitor,
+  leaving the other panels' independent task paging unchanged.
+- Reuse existing allowlisted launcher and window activation paths, preserving
+  the original pointer behavior. Hardware and assistive-technology QA remain
+  separate from automated geometry/paint tests.
+
 ## Unreleased — native desktop icon movement and private placement (7 November 2026)
 
 - Native RicePlate desktop shortcuts now distinguish activation from a

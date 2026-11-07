@@ -312,8 +312,13 @@ RicePlate parity or physical mixed-DPI hardware acceptance.
 An additional experimental native RicePlate track now draws a
 separate taskbar layer on each connected output **inside the same process**,
 while sharing window discovery and the event-driven clock. Secondary panels
-use independent task paging. Native menu and desktop icons still belong to the
-primary output: the secondary launcher opens the accessible fuzzel picker.
+use independent task paging. Click a panel to give it keyboard focus, then
+use Left/Right or Tab to move between its launcher and window groups, Enter
+or Space to activate, and Escape to clear its focus selection. The focused
+group is visibly outlined and automatically paged into view on that output;
+this is a first keyboard pathway, not screen-reader or device signoff.
+Native menu and desktop icons still belong to the primary output: the
+secondary launcher opens the accessible fuzzel picker.
 The `smoke_riceplate_multioutput.sh` CI test verifies two native panel frames
 and a secondary disconnect/reconnect, with four genuine compositor screenshots
 included in the `riceplate-native-preview` workflow artifact. Actual mixed-DPI,

@@ -147,7 +147,14 @@ affecting XFCE, including a failed-session recovery. **Not yet signed off.**
   reveal of the active window. Keyboard access remains open.
 - [x] Group native Wayland windows with the same nonempty app ID, show bounded
   window counts, cycle active grouped windows and page/reveal by group; unknown
-  IDs are always independent. Keyboard access remains open.
+  IDs are always independent.
+- [x] Add **keyboard navigation for the native multi-output taskbar**:
+  focus on demand, accessible launcher and window-group selection with a
+  visible frame, Left/Right/Tab navigation, Enter/Space activation and
+  automatic reveal of offscreen groups. Preserve each output's independent
+  task paging and share the existing safe pointer activation path. Pure Rust
+  navigation and painter tests cover wrap/reveal/focus; physical keyboard,
+  focus transfer and screen-reader QA remain open.
 - [x] Implement a first **real recipe-driven native start menu** as another
   bounded Wayland layer-shell surface inside RicePlate: grouped actions, mouse
   tabs/rows, keyboard group/row navigation with visible selection, Enter and
@@ -173,7 +180,9 @@ affecting XFCE, including a failed-session recovery. **Not yet signed off.**
 - [ ] Build a Wayland-native panel through `wlr-layer-shell`.
 - [ ] Populate tasks/windows through a supported foreign-toplevel protocol.
 - [ ] Implement launchers, task groups, tray, calendar, menus and keyboard
-  navigation; avoid invisible or fake controls.
+  navigation; avoid invisible or fake controls. Native task/menu keyboard
+  controls are partially implemented; tray, calendar, global accessibility
+  and full interaction parity are still missing.
 - [ ] Expose reusable, composable shell primitives and stable interaction/state
   bindings so substantially different rice layouts share core behavior.
 - [ ] Render wallpapers and desktop icons with correct layer, focus, hit tests,
