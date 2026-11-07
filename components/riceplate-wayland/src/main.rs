@@ -11,10 +11,12 @@ mod icon_positions;
 mod native_menu;
 mod power;
 mod recipe;
+mod system_status;
 mod task_groups;
 mod task_navigation;
 use native_menu::{Hit as MenuHit, MenuState};
 use power::PowerStatus;
+use system_status::SystemStatus;
 use calendar::{CalendarState, Hit as CalendarHit};
 use recipe::{Hit, PanelStyle, Widget};
 use task_navigation::Target as KeyboardTarget;
@@ -22,7 +24,7 @@ use smithay_client_toolkit::{
     compositor::{CompositorHandler, CompositorState, FrameCallbackData},
     delegate_registry,
     output::{OutputHandler, OutputState},
-    reexports::{calloop::EventLoop, calloop_wayland_source::WaylandSource},
+    reexports::{calloop::{channel, EventLoop}, calloop_wayland_source::WaylandSource},
     registry::{ProvidesRegistryState, RegistryState},
     registry_handlers,
     seat::{
@@ -100,6 +102,11 @@ fn main() -> Result<(), Box<dyn Error>> {
     let clock_present = recipe.sections.iter().flatten().any(|widget| *widget == Widget::Clock)
         || recipe.compact.as_ref().is_some_and(|(_, sections)|
             sections.iter().flatten().any(|widget| *widget == Widget::Clock));
+    let status_present = |widget| recipe.sections.iter().flatten().any(|&item| item == widget)
+        || recipe.compact.as_ref().is_some_and(|(_, sections)|
+            sections.iter().flatten().any(|&item| item == widget));
+    let poll_network = status_present(Widget::Network);
+    let poll_audio = status_present(Widget::Audio);
     if preview_calendar && !clock_present {
         return Err("Calendar preview requires a native clock widget".into());
     }
@@ -240,6 +247,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         recipe,
         clock: clock_now(),
         power: PowerStatus::current(),
+        system_status: SystemStatus::default(),
         pointer: None,
         keyboard: None,
         focused_icon: None,
@@ -265,6 +273,24 @@ fn main() -> Result<(), Box<dyn Error>> {
     if preview_menu && !preview_secondary_menu { app.set_menu_visible(true, &qh); }
     if preview_calendar && !preview_secondary_calendar {
         app.set_calendar_visible(true, &qh);
+    }
+    if poll_network || poll_audio {
+        let (sender, receiver) = channel::channel::<SystemStatus>();
+        let redraw_qh = qh.clone();
+        event_loop.handle().insert_source(receiver, move |event, _, app: &mut RicePlate| {
+            if let channel::Event::Msg(status) = event {
+                if app.system_status != status {
+                    app.system_status = status;
+                    app.request_redraw(&redraw_qh);
+                }
+            }
+        })?;
+        // One sleeping worker, enabled only for rices using these widgets;
+        // bounded subprocesses never block Wayland input or the frame loop.
+        std::thread::spawn(move || loop {
+            if sender.send(SystemStatus::read(poll_network, poll_audio)).is_err() { break; }
+            std::thread::sleep(Duration::from_secs(30));
+        });
     }
     while !app.closed {
         // Calloop sleeps on Wayland's fd and wakes at the next minute,
@@ -361,6 +387,7 @@ struct RicePlate {
     recipe: PanelStyle,
     clock: String,
     power: PowerStatus,
+    system_status: SystemStatus,
     pointer: Option<wl_pointer::WlPointer>,
     keyboard: Option<wl_keyboard::WlKeyboard>,
     focused_icon: Option<usize>,
@@ -620,7 +647,8 @@ impl RicePlate {
             }
         };
         paint_panel(canvas, mirror.width, mirror.height, &self.recipe, &groups,
-                    &self.clock, &self.power, mirror.task_offset, selected);
+                    &self.clock, &self.power, &self.system_status,
+                    mirror.task_offset, selected);
         surface.damage_buffer(0, 0, mirror.width as i32, mirror.height as i32);
         if let Err(error) = buffer.attach_to(surface) {
             eprintln!("RicePlate: cannot attach output panel: {error}");
@@ -1048,7 +1076,8 @@ impl RicePlate {
             }
         };
         paint_panel(canvas, width, height, &self.recipe, &groups,
-                    &self.clock, &self.power, self.task_offset, selected);
+                    &self.clock, &self.power, &self.system_status,
+                    self.task_offset, selected);
         surface.damage_buffer(0, 0, width as i32, height as i32);
         if let Err(error) = buffer.attach_to(surface) {
             eprintln!("RicePlate: failed to attach Wayland buffer: {error}");
@@ -1064,7 +1093,7 @@ impl RicePlate {
 
 fn paint_panel(canvas: &mut [u8], width: u32, height: u32,
                style: &PanelStyle, groups: &[TaskGroup], clock: &str,
-               power: &PowerStatus, offset: usize,
+               power: &PowerStatus, status: &SystemStatus, offset: usize,
                selected: Option<KeyboardTarget>) {
     for pixel in canvas.chunks_exact_mut(4) {
         pixel.copy_from_slice(&style.background.to_le_bytes());
@@ -1123,6 +1152,16 @@ fn paint_panel(canvas: &mut [u8], width: u32, height: u32,
             }
             Widget::Battery => {
                 let label = power.label();
+                draw_text(canvas, width, height,
+                          placed.x + placed.width.saturating_sub(label.len() as u32 * 8) / 2,
+                          height / 2 - 4, &label, style.foreground);
+            }
+            Widget::Network | Widget::Audio => {
+                let label = if placed.widget == Widget::Network {
+                    status.network.label().to_owned()
+                } else {
+                    status.audio.label()
+                };
                 draw_text(canvas, width, height,
                           placed.x + placed.width.saturating_sub(label.len() as u32 * 8) / 2,
                           height / 2 - 4, &label, style.foreground);
@@ -2298,6 +2337,33 @@ mod tests {
     use super::*;
 
     #[test]
+    fn network_and_audio_status_pixels_follow_real_backend_results() {
+        let style = recipe::load("classic").unwrap();
+        let width = 1024;
+        let height = style.height;
+        let mut unavailable = vec![0; (width * height * 4) as usize];
+        let mut connected = unavailable.clone();
+        paint_panel(&mut unavailable, width, height, &style, &[], "12:00",
+                    &PowerStatus::NotPresent, &SystemStatus::default(), 0, None);
+        let current = SystemStatus {
+            network: system_status::Network::Global,
+            audio: system_status::Audio::Volume(58),
+        };
+        paint_panel(&mut connected, width, height, &style, &[], "12:00",
+                    &PowerStatus::NotPresent, &current, 0, None);
+        for widget in [Widget::Network, Widget::Audio] {
+            let region = recipe::layout(&style, width, 0).into_iter()
+                .find(|item| item.widget == widget).unwrap();
+            assert!((region.x..region.x + region.width).any(|x| {
+                (0..height).any(|y| {
+                    let offset = ((y * width + x) * 4) as usize;
+                    unavailable[offset..offset+4] != connected[offset..offset+4]
+                })
+            }));
+        }
+    }
+
+    #[test]
     fn native_power_indicator_draws_real_state_in_allocated_panel_region() {
         let style = recipe::load("classic").unwrap();
         let width = 800;
@@ -2306,9 +2372,10 @@ mod tests {
         let mut without = vec![0; len];
         let mut charging = vec![0; len];
         paint_panel(&mut without, width, height, &style, &[], "12:00",
-                    &PowerStatus::NotPresent, 0, None);
+                    &PowerStatus::NotPresent, &SystemStatus::default(), 0, None);
         paint_panel(&mut charging, width, height, &style, &[], "12:00",
-                    &PowerStatus::Battery { percent: 73, charging: true }, 0, None);
+                    &PowerStatus::Battery { percent: 73, charging: true },
+                    &SystemStatus::default(), 0, None);
         let region = recipe::layout(&style, width, 0).into_iter()
             .find(|item| item.widget == Widget::Battery).unwrap();
         assert_eq!(region.width, 64);
@@ -2331,9 +2398,9 @@ mod tests {
         let mut first = vec![0_u8; (width * height * 4) as usize];
         let mut second = vec![0_u8; (width * height * 4) as usize];
         paint_panel(&mut first, width, height, &style, &[], "12:00",
-                    &PowerStatus::NotPresent, 0, None);
+                    &PowerStatus::NotPresent, &SystemStatus::default(), 0, None);
         paint_panel(&mut second, width, height, &style, &[], "12:00",
-                    &PowerStatus::NotPresent, 0, None);
+                    &PowerStatus::NotPresent, &SystemStatus::default(), 0, None);
         assert_eq!(first, second);
         assert_eq!(&first[(width * (height / 2) + 400) as usize * 4..][..4],
                    &style.background.to_le_bytes());
@@ -2350,9 +2417,9 @@ mod tests {
         let mut normal = vec![0; len];
         let mut selected = vec![0; len];
         paint_panel(&mut normal, width, height, &style, &[], "12:00",
-                    &PowerStatus::NotPresent, 0, None);
+                    &PowerStatus::NotPresent, &SystemStatus::default(), 0, None);
         paint_panel(&mut selected, width, height, &style, &[], "12:00",
-                    &PowerStatus::NotPresent, 0,
+                    &PowerStatus::NotPresent, &SystemStatus::default(), 0,
                     Some(KeyboardTarget::Launcher));
         assert_ne!(normal, selected);
         let launcher = recipe::layout(&style, width, 0).into_iter()

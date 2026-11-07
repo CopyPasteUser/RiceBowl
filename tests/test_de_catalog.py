@@ -35,8 +35,12 @@ class ComponentCatalogTests(unittest.TestCase):
         self.assertEqual({part["id"] for part in info["components"]}, recipes.WIDGETS)
         implemented = {part["id"] for part in info["components"]
                        if part["native"] != "unavailable"}
-        self.assertEqual(implemented, {"launcher", "tasks", "clock", "battery"})
+        self.assertEqual(implemented, {"launcher", "tasks", "clock", "battery", "network", "audio"})
         components = {part["id"]: part for part in info["components"]}
+        self.assertEqual(components["network"]["status_backend"], "bounded-nmcli-worker")
+        self.assertEqual(components["audio"]["status_backend"], "bounded-wpctl-worker")
+        self.assertFalse(components["network"]["interactive"])
+        self.assertFalse(components["audio"]["interactive"])
         self.assertEqual(components["battery"]["status_backend"],
                          "read-only-linux-sysfs-power-supply")
         self.assertFalse(components["battery"]["interactive"])
