@@ -18,7 +18,7 @@ modify global session settings.
 | Wallpaper / appearances | Original bundled wallpapers, composable panel groups, labels, gaps, tokens, original example rices | Full desktop widgets, rich layout primitives, complete cross-app window decorations |
 | Hardware indicators | Kernel-backed battery; NetworkManager connectivity and WirePlumber sink status on a bounded worker | Device picker, Bluetooth status, event subscriptions and finer status detail |
 | RiceSpice controls | Allowlisted native-menu Wi-Fi toggle, volume ±5%, mute; asynchronous feedback; on-demand real audio input/output inventory and explicit default selection | Native settings UI, per-stream routing, displays, input, Bluetooth, accessibility, time and power |
-| RicePop notifications | On-demand `de notifications --json` reads active/history from Mako; `de notification-dismiss --notification-id N --json` safely closes exactly one active alert | Native notification center, OSD, interaction/history UI, non-Mako backends |
+| RicePop notifications | Opt-in native three-row active-alert view in RicePlate with refresh, keyboard/pointer selection, loading/empty/error and explicit single-ID dismissal using the existing Mako bridge; CLI also reads history | Full history center, OSD, rich actions, native notification owner and non-Mako backends |
 | Session safety | Opt-in session, user polkit agent when installed, optional Mako/swayidle/swaylock, compositor exit cleanup | Complete suspend/resume and hardware recovery acceptance |
 | Creator authoring | Schema-v1–v5 validation, offline private draft edits, component catalog and API inventory, nested native render/capture and visual comparisons | Broad desktop composition, complete action/state bindings, high-fidelity mockup conversion |
 | RicePack exchange | Deterministic v2 recipe archives, SHA-256-pinned bundled wallpaper, per-asset provenance preserved on private import/re-export, v1 read compatibility; next-login staging and one-level rollback | Packaged external assets, multi-component live apply and transactional active-session rollback |
@@ -37,8 +37,10 @@ non-clickable; the separate validated native-menu actions perform changes.
   through fixed arguments. On-demand input/output device selection uses the
   existing PulseAudio-compatible server via `pactl`. No custom recipe commands
   or privileged daemon.
-- **RicePop** currently delegates delivery to the installed Mako host and only
-  reads its history on request; it does not own the notification bus name.
+- **RicePop** delegates delivery to the installed Mako host. The optional
+  native menu queries active notifications only when opened/refreshed and
+  discards private messages when closed. The separate CLI can read history;
+  neither path owns the notification bus name or replays third-party actions.
 - **Creator** is optional, on demand and offline. It never needs a model at
   runtime and must require an explicit user choice before an active desktop
   change. Current stage/rollback affects the *next* opt-in login only.
@@ -54,9 +56,12 @@ ricebowl de creator-api --json
 # Explicit nested preview; native binary and labwc prerequisites required:
 ricebowl de start --nested --panel native
 
-# Optional example with real Wi-Fi/audio quick actions; import never applies it:
+# Optional example with real Wi-Fi/audio quick actions and native RicePop;
+# import never applies it:
 ricebowl de recipe-import --recipe "$PWD/examples/wayland/quick-controls.json"
 ricebowl de start --nested --panel native --recipe quick-controls
+# Open menu → Session → Notifications. Enter/Delete dismisses selected item;
+# R refreshes, Escape returns. A running Mako host is required.
 
 # Only inside a Wayland session with the Mako notification host:
 ricebowl de notifications --json

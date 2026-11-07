@@ -17,7 +17,15 @@ Open its native start menu and choose **Quick actions** to toggle Wi-Fi radio,
 mute/unmute sound or change the default sink volume. The commands use existing
 user-session NetworkManager/WirePlumber permissions: refused or unavailable
 operations show an error in the menu. **Wi-Fi toggling can disconnect the
-session**; test locally when safe. The Waybar fallback hides those entries.
+session**; test locally when safe. The **Session → Notifications** entry opens
+the first native RicePop active-alert view. Up/Down, Tab and PageUp/PageDown
+navigate; Enter/Delete dismiss the selected active alert, `R` refreshes and
+Escape/Backspace returns to the main menu. Pointer users select a row and
+explicitly choose Dismiss. Loading, empty, Mako-unavailable and refusal states
+are shown without inventing notifications. No message content is saved or
+replayed, and the underlying Mako owner is unchanged. This is not yet a full
+notification-history UI or system OSD. The Waybar fallback hides native-only
+entries.
 
 ## Validate, inspect and render
 

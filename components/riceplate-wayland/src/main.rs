@@ -11,11 +11,13 @@ mod icon_positions;
 mod native_menu;
 mod power;
 mod recipe;
+mod ricepop;
 mod system_status;
 mod task_groups;
 mod task_navigation;
 use native_menu::{Hit as MenuHit, MenuState};
 use power::PowerStatus;
+use ricepop::{Request as NotificationRequest, State as NotificationState};
 use system_status::{ControlAction, SystemStatus};
 
 enum StatusEvent {
@@ -115,6 +117,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         .flat_map(|menu| menu.groups.iter())
         .flat_map(|group| group.actions.iter())
         .filter_map(|action| ControlAction::from_id(action)).collect();
+    let has_notifications = recipe.menu.as_ref().is_some_and(|menu|
+        menu.groups.iter().any(|group| group.actions.iter().any(|action| action == "notifications")));
     let poll_network = status_present(Widget::Network)
         || menu_controls.contains(&ControlAction::WifiToggle);
     let poll_audio = status_present(Widget::Audio) || menu_controls.iter().any(|action|
@@ -256,6 +260,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         active_calendar: None,
         preview_secondary_calendar,
         menu_state: MenuState::default(),
+        notification_state: NotificationState::default(),
+        notification_sender: None,
         calendar_state: CalendarState::new(Local::now().date_naive()),
         calendar_focused: false,
         recipe,
@@ -335,6 +341,27 @@ fn main() -> Result<(), Box<dyn Error>> {
                     }
                     Err(mpsc::RecvTimeoutError::Disconnected) => break,
                 }
+            }
+        });
+    }
+    if has_notifications {
+        let (sender, receiver) = channel::channel::<(u64, Result<Vec<ricepop::Notice>, &'static str>)>();
+        let (request_sender, requests) = mpsc::sync_channel::<NotificationRequest>(1);
+        app.notification_sender = Some(request_sender);
+        let redraw_qh = qh.clone();
+        event_loop.handle().insert_source(receiver, move |event, _, app: &mut RicePlate| {
+            if let channel::Event::Msg((revision, result)) = event {
+                if app.notification_state.update(revision, result) {
+                    app.redraw_menu(&redraw_qh);
+                }
+            }
+        })?;
+        // Only starts for a recipe with the native RicePop action. Sleeps on
+        // requests; no background Mako polling or second notification owner.
+        std::thread::spawn(move || {
+            while let Ok(request) = requests.recv() {
+                let revision = request.revision();
+                if sender.send((revision, ricepop::run(&request))).is_err() { break; }
             }
         });
     }
@@ -430,6 +457,8 @@ struct RicePlate {
     active_calendar: Option<wl_surface::WlSurface>,
     preview_secondary_calendar: bool,
     menu_state: MenuState,
+    notification_state: NotificationState,
+    notification_sender: Option<mpsc::SyncSender<NotificationRequest>>,
     calendar_state: CalendarState,
     calendar_focused: bool,
     recipe: PanelStyle,
@@ -757,6 +786,7 @@ impl RicePlate {
             return;
         }
         self.menu_state.close();
+        self.notification_state.close();
         self.menu_focused = false;
         self.active_menu = None;
         for layer in self.menu_layer.iter().chain(self.menu_mirrors.iter()) {
@@ -776,6 +806,7 @@ impl RicePlate {
             menu.surface.wl_surface() == &surface) { return; }
         if self.calendar_state.visible { self.set_calendar_visible(false, qh); }
         self.menu_state.open();
+        self.notification_state.close();
         self.menu_focused = false;
         self.active_menu = Some(surface.clone());
         for layer in self.menu_layer.iter().chain(self.menu_mirrors.iter()) {
@@ -814,6 +845,10 @@ impl RicePlate {
     }
 
     fn activate_action(&mut self, action: &str, qh: &QueueHandle<Self>) {
+        if action == "notifications" {
+            self.request_notifications(None, qh);
+            return;
+        }
         if let Some(control) = ControlAction::from_id(action) {
             let sent = self.control_sender.as_ref()
                 .is_some_and(|sender| sender.try_send(control).is_ok());
@@ -840,6 +875,19 @@ impl RicePlate {
         }
     }
 
+    fn request_notifications(&mut self, dismiss_id: Option<u32>, qh: &QueueHandle<Self>) {
+        let revision = self.notification_state.begin();
+        let request = match dismiss_id {
+            Some(id) => NotificationRequest::Dismiss(revision, id),
+            None => NotificationRequest::Refresh(revision),
+        };
+        if !self.notification_sender.as_ref()
+            .is_some_and(|sender| sender.try_send(request).is_ok()) {
+            self.notification_state.update(revision, Err("RicePop busy or unavailable"));
+        }
+        self.redraw_menu(qh);
+    }
+
     fn redraw_menu(&mut self, _qh: &QueueHandle<Self>) {
         let Some(active) = self.active_menu.as_ref() else { return; };
         let layer = self.menu_layer.as_mut().filter(|menu|
@@ -864,7 +912,11 @@ impl RicePlate {
                 return;
             }
         };
-        paint_menu(canvas, menu, &self.recipe, &self.menu_state);
+        if self.notification_state.open {
+            paint_notifications(canvas, &self.recipe, &self.notification_state);
+        } else {
+            paint_menu(canvas, menu, &self.recipe, &self.menu_state);
+        }
         surface.damage_buffer(0, 0, native_menu::WIDTH as i32, native_menu::HEIGHT as i32);
         if let Err(error) = buffer.attach_to(surface) {
             eprintln!("RicePlate: native menu attach failed: {error}");
@@ -1398,6 +1450,7 @@ fn paint_menu(canvas: &mut [u8], menu: &recipe::NativeMenu, style: &PanelStyle, 
                 "audio-mute" => "Toggle speaker mute",
                 "audio-up" => "Volume +5%",
                 "audio-down" => "Volume -5%",
+                "notifications" => "Notifications",
                 _ => "Unsupported",
             };
             draw_text(canvas, width, height, 20, top + 16, label, style.foreground);
@@ -1412,6 +1465,54 @@ fn paint_menu(canvas: &mut [u8], menu: &recipe::NativeMenu, style: &PanelStyle, 
         state.notice.unwrap_or("Arrows  Enter  Esc close"),
         style.foreground,
     );
+}
+
+fn paint_notifications(canvas: &mut [u8], style: &PanelStyle, state: &NotificationState) {
+    let width = native_menu::WIDTH;
+    let height = native_menu::HEIGHT;
+    for pixel in canvas.chunks_exact_mut(4) {
+        pixel.copy_from_slice(&style.background.to_le_bytes());
+    }
+    fill_rect(canvas, width, height, 0, 0, width, 38, style.active);
+    draw_text(canvas, width, height, 14, 15, "Notifications", style.foreground);
+    let status = if state.loading { "Refreshing...".to_owned() }
+        else if state.error.is_some() { "Alerts unavailable".to_owned() }
+        else { format!("Active alerts: {}", state.notices.len()) };
+    draw_text(canvas, width, height, 14, 57, &status, style.foreground);
+    if state.loading {
+        draw_text(canvas, width, height, 14, 120, "Loading alerts...", style.foreground);
+    } else if let Some(error) = state.error {
+        draw_text(canvas, width, height, 14, 120, error, style.foreground);
+        draw_text(canvas, width, height, 14, 145, "Refresh to try again", style.foreground);
+    } else if state.notices.is_empty() {
+        draw_text(canvas, width, height, 14, 120, "No active alerts", style.foreground);
+    } else {
+        for (position, notice) in state.notices.iter().skip(state.first_row())
+            .take(ricepop::VISIBLE_ROWS).enumerate() {
+            let row_index = state.first_row() + position;
+            let y = ricepop::ROW_TOP + position as u32 * ricepop::ROW_HEIGHT;
+            if row_index == state.selected {
+                fill_rounded_rect(canvas, width, height, 8, y, width - 16, 50,
+                                  style.task_radius, style.active);
+            }
+            let summary: String = notice.summary.chars()
+                .map(|c| if c.is_ascii() && !c.is_ascii_control() { c } else { '?' })
+                .take(35).collect();
+            let body: String = notice.body.chars()
+                .map(|c| if c.is_ascii() && !c.is_ascii_control() { c } else { '?' })
+                .take(35).collect();
+            draw_text(canvas, width, height, 18, y + 10,
+                      if summary.is_empty() { "(No title)" } else { &summary },
+                      style.foreground);
+            draw_text(canvas, width, height, 18, y + 28, &body, style.foreground);
+        }
+    }
+    fill_rect(canvas, width, height, 0, 261, width, 1, style.foreground);
+    draw_text(canvas, width, height, 14, 279, "Esc Back", style.foreground);
+    draw_text(canvas, width, height, 98, 279, "R Refresh", style.foreground);
+    draw_text(canvas, width, height, 193, 279,
+              if state.selected_id().is_some() { "Del Dismiss" } else { "Unavailable" },
+              style.foreground);
 }
 
 fn paint_calendar(canvas: &mut [u8], style: &PanelStyle, state: &CalendarState) {
@@ -2117,6 +2218,30 @@ impl KeyboardHandler for RicePlate {
         if !self.menu_state.visible || !self.menu_focused {
             return;
         }
+        if self.notification_state.open {
+            match event.keysym {
+                Keysym::Escape | Keysym::BackSpace | Keysym::Left => {
+                    self.notification_state.close();
+                }
+                Keysym::Up => self.notification_state.select(-1),
+                Keysym::Down | Keysym::Tab => self.notification_state.select(1),
+                Keysym::Prior => self.notification_state.select(-(ricepop::VISIBLE_ROWS as isize)),
+                Keysym::Next => self.notification_state.select(ricepop::VISIBLE_ROWS as isize),
+                Keysym::r | Keysym::R => {
+                    self.request_notifications(None, qh);
+                    return;
+                }
+                Keysym::Delete | Keysym::Return | Keysym::KP_Enter => {
+                    if let Some(id) = self.notification_state.selected_id() {
+                        self.request_notifications(Some(id), qh);
+                    }
+                    return;
+                }
+                _ => return,
+            }
+            self.redraw_menu(qh);
+            return;
+        }
         let Some(menu) = self.recipe.menu.as_ref() else {
             return;
         };
@@ -2223,6 +2348,26 @@ impl PointerHandler for RicePlate {
                     button: BTN_LEFT, ..
                 } = event.kind
                 {
+                    if self.notification_state.open {
+                        match self.notification_state.hit(event.position.0, event.position.1) {
+                            Some(ricepop::Hit::Row(index)) => {
+                                self.notification_state.selected = index;
+                                self.redraw_menu(qh);
+                            }
+                            Some(ricepop::Hit::Back) => {
+                                self.notification_state.close();
+                                self.redraw_menu(qh);
+                            }
+                            Some(ricepop::Hit::Refresh) => self.request_notifications(None, qh),
+                            Some(ricepop::Hit::Dismiss) => {
+                                if let Some(id) = self.notification_state.selected_id() {
+                                    self.request_notifications(Some(id), qh);
+                                }
+                            }
+                            None => {}
+                        }
+                        continue;
+                    }
                     if let Some(menu) = self.recipe.menu.as_ref() {
                         match self
                             .menu_state
@@ -2588,6 +2733,28 @@ mod tests {
         state.shift(1);
         paint_calendar(&mut march, &style, &state);
         assert_ne!(february, march, "real month names/days must change the pixels");
+    }
+
+    #[test]
+    fn native_ricepop_painter_distinguishes_loading_empty_and_live_alerts() {
+        let style = recipe::load("classic").unwrap();
+        let mut state = NotificationState::default();
+        let mut loading = vec![0; (native_menu::WIDTH * native_menu::HEIGHT * 4) as usize];
+        let mut empty = loading.clone();
+        let mut active = loading.clone();
+        let revision = state.begin();
+        paint_notifications(&mut loading, &style, &state);
+        assert!(state.update(revision, Ok(vec![])));
+        paint_notifications(&mut empty, &style, &state);
+        let revision = state.begin();
+        assert!(state.update(revision, Ok(vec![ricepop::Notice {
+            id: 1, summary: "New message".into(), body: "Private preview".into(),
+        }])));
+        paint_notifications(&mut active, &style, &state);
+        assert_ne!(loading, empty);
+        assert_ne!(empty, active);
+        state.close();
+        assert!(state.notices.is_empty());
     }
 
     #[test]
