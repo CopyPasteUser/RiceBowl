@@ -31,6 +31,9 @@ dbus-run-session -- sh -eu -c '
         if [ "$status" -ne 0 ]; then
             echo "RicePlate two-output diagnostic log:" >&2
             sed -n "1,120p" "$runtime/plate.log" >&2 || :
+            if [ -f "$runtime/plate-calendar.log" ]; then
+                sed -n "1,120p" "$runtime/plate-calendar.log" >&2 || :
+            fi
             echo "labwc two-output diagnostic log:" >&2
             sed -n "1,100p" "$runtime/labwc.log" >&2 || :
             wlr-randr >&2 || :
@@ -79,6 +82,40 @@ dbus-run-session -- sh -eu -c '
     /usr/bin/python3 "$source_root/scripts/check_wayland_panel_outputs.py" \
         "$runtime/second-after-on.png"
     kill -0 "$plate" 2>/dev/null || { echo "Native panel exited after hotplug" >&2; exit 1; }
+    # A secondary panel clock must open its own calendar on that output, with
+    # no duplicate popup on the primary. Identify the actual owner by pixels
+    # rather than depending on connector naming or compositor output order.
+    kill "$plate" 2>/dev/null || :
+    wait "$plate" 2>/dev/null || :
+    plate=
+    RICEBOWL_DE_CALENDAR_OUTPUT=secondary "$native" --recipe classic --preview-calendar \
+        >"$runtime/plate-calendar.log" 2>&1 &
+    plate=$!
+    sleep 1.5
+    kill -0 "$plate" 2>/dev/null || { echo "Native calendar preview exited" >&2; exit 1; }
+    grim -o "$first" "$runtime/first-calendar.png"
+    grim -o "$second" "$runtime/second-calendar.png"
+    calendar_index=$(/usr/bin/python3 "$source_root/scripts/check_wayland_calendar_outputs.py" \
+        "$runtime/first-calendar.png" "$runtime/second-calendar.png")
+    case "$calendar_index" in
+        0) calendar_output=$first; remaining_output=$second ;;
+        1) calendar_output=$second; remaining_output=$first ;;
+        *) echo "Invalid calendar output index: $calendar_index" >&2; exit 1 ;;
+    esac
+    wlr-randr --output "$calendar_output" --off
+    sleep 0.7
+    grim -o "$remaining_output" "$runtime/remaining-calendar-off.png"
+    /usr/bin/python3 "$source_root/scripts/check_wayland_panel_outputs.py" \
+        "$runtime/remaining-calendar-off.png"
+    kill -0 "$plate" 2>/dev/null || { echo "Native calendar exited after output removal" >&2; exit 1; }
+    wlr-randr --output "$calendar_output" --on
+    sleep 0.8
+    grim -o "$calendar_output" "$runtime/calendar-after-on.png"
+    /usr/bin/python3 "$source_root/scripts/check_wayland_panel_outputs.py" \
+        "$runtime/calendar-after-on.png"
+    /usr/bin/python3 "$source_root/scripts/check_wayland_calendar_outputs.py" \
+        --closed "$runtime/calendar-after-on.png"
+    kill -0 "$plate" 2>/dev/null || { echo "Native calendar exited after output recovery" >&2; exit 1; }
     # These are real grim captures from two actual compositor outputs. Keep
     # them in the workflow artifact for inspection rather than discarding
     # all evidence with the private runtime directory.
@@ -88,5 +125,9 @@ dbus-run-session -- sh -eu -c '
     cp "$runtime/second.png" "$captures/second.png"
     cp "$runtime/first-after-off.png" "$captures/first-after-off.png"
     cp "$runtime/second-after-on.png" "$captures/second-after-on.png"
-    echo "One native RicePlate process painted two outputs and survived secondary hotplug"
+    cp "$runtime/first-calendar.png" "$captures/first-calendar.png"
+    cp "$runtime/second-calendar.png" "$captures/second-calendar.png"
+    cp "$runtime/remaining-calendar-off.png" "$captures/remaining-calendar-off.png"
+    cp "$runtime/calendar-after-on.png" "$captures/calendar-after-on.png"
+    echo "One native RicePlate process painted two outputs, opened an output-bound calendar and survived hotplug"
 ' sh "$source_root" "$runtime" "$native"

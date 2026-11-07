@@ -209,8 +209,11 @@ fn main() -> Result<(), Box<dyn Error>> {
         surface.set_exclusive_zone(-1);
         surface.set_keyboard_interactivity(KeyboardInteractivity::None);
         surface.commit();
-        CalendarLayer { surface, pool: None, configured: false }
+        CalendarLayer { surface, pool: None, configured: false, output: None }
     });
+    let preview_secondary_calendar = preview_calendar
+        && std::env::var("RICEBOWL_DE_NESTED").as_deref() == Ok("1")
+        && std::env::var("RICEBOWL_DE_CALENDAR_OUTPUT").as_deref() == Ok("secondary");
 
     let mut app = RicePlate {
         compositor,
@@ -224,6 +227,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         icon_layers,
         menu_layer,
         calendar_layer,
+        calendar_mirrors: Vec::new(),
+        active_calendar: None,
+        preview_secondary_calendar,
         menu_state: MenuState::default(),
         calendar_state: CalendarState::new(Local::now().date_naive()),
         calendar_focused: false,
@@ -252,7 +258,9 @@ fn main() -> Result<(), Box<dyn Error>> {
         needs_redraw: false,
     };
     if preview_menu { app.set_menu_visible(true, &qh); }
-    if preview_calendar { app.set_calendar_visible(true, &qh); }
+    if preview_calendar && !preview_secondary_calendar {
+        app.set_calendar_visible(true, &qh);
+    }
     while !app.closed {
         // Calloop sleeps on Wayland's fd and wakes at the next minute,
         // so the clock updates without any resident 1 Hz poll/frame loop.
@@ -305,6 +313,7 @@ struct CalendarLayer {
     surface: LayerSurface,
     pool: Option<SlotPool>,
     configured: bool,
+    output: Option<wl_output::WlOutput>,
 }
 
 struct PanelMirror {
@@ -331,6 +340,9 @@ struct RicePlate {
     icon_layers: Vec<IconLayer>,
     menu_layer: Option<MenuLayer>,
     calendar_layer: Option<CalendarLayer>,
+    calendar_mirrors: Vec<CalendarLayer>,
+    active_calendar: Option<wl_surface::WlSurface>,
+    preview_secondary_calendar: bool,
     menu_state: MenuState,
     calendar_state: CalendarState,
     calendar_focused: bool,
@@ -460,7 +472,7 @@ impl RicePlate {
         if old_count != self.mirrors.len() {
             eprintln!("RicePlate: secondary panels removed: {} -> {}", old_count, self.mirrors.len());
         }
-        for output in outputs {
+        for output in outputs.iter().cloned() {
             if self.mirrors.iter().any(|mirror| mirror.output == output) { continue; }
             eprintln!("RicePlate: creating secondary panel on {output:?}");
             let surface = self.layer_shell.create_layer_surface(
@@ -478,6 +490,49 @@ impl RicePlate {
                 configured: false, frame_pending: false, needs_redraw: false,
                 task_offset: 0,
             });
+        }
+        self.calendar_mirrors.retain(|calendar|
+            calendar.output.as_ref().is_some_and(|output| outputs.contains(output)));
+        if self.calendar_layer.is_some() {
+            for output in &outputs {
+                if self.calendar_mirrors.iter().any(|calendar|
+                    calendar.output.as_ref() == Some(output)) { continue; }
+                let surface = self.layer_shell.create_layer_surface(
+                    qh, self.compositor.create_surface(qh), Layer::Top,
+                    Some("riceplate-output-calendar"), Some(output),
+                );
+                surface.set_anchor((if self.recipe.top { Anchor::TOP } else { Anchor::BOTTOM })
+                    | Anchor::RIGHT);
+                surface.set_size(calendar::WIDTH, calendar::HEIGHT);
+                surface.set_margin(
+                    if self.recipe.top { self.recipe.height as i32 } else { 0 },
+                    MAX_WIDTH as i32,
+                    if self.recipe.top { 0 } else { self.recipe.height as i32 },
+                    0,
+                );
+                surface.set_exclusive_zone(-1);
+                surface.set_keyboard_interactivity(KeyboardInteractivity::None);
+                surface.commit();
+                self.calendar_mirrors.push(CalendarLayer {
+                    surface, pool: None, configured: false, output: Some(output.clone()),
+                });
+            }
+        }
+        if self.active_calendar.as_ref().is_some_and(|surface|
+            self.calendar_layer.as_ref().is_none_or(|root|
+                root.surface.wl_surface() != surface)
+            && !self.calendar_mirrors.iter().any(|calendar|
+                calendar.surface.wl_surface() == surface)) {
+            self.active_calendar = None;
+            self.calendar_state.visible = false;
+            self.calendar_focused = false;
+        }
+        if self.preview_secondary_calendar {
+            if let Some(surface) = self.calendar_mirrors.first()
+                .map(|calendar| calendar.surface.wl_surface().clone()) {
+                self.show_calendar_at(surface, qh);
+                self.preview_secondary_calendar = false;
+            }
         }
         if self.focused_panel.as_ref().is_some_and(|surface|
             self.panel_geometry(surface).is_none()) {
@@ -612,32 +667,75 @@ impl RicePlate {
     }
 
     fn set_calendar_visible(&mut self, visible: bool, qh: &QueueHandle<Self>) {
-        if self.calendar_layer.is_none() { return; }
-        if visible && self.menu_state.visible { self.set_menu_visible(false, qh); }
         if visible {
-            self.calendar_state.open(Local::now().date_naive());
-        } else {
-            self.calendar_state.visible = false;
-            self.calendar_focused = false;
+            if let Some(surface) = self.calendar_layer.as_ref()
+                .map(|calendar| calendar.surface.wl_surface().clone()) {
+                self.show_calendar_at(surface, qh);
+            }
+            return;
         }
-        let layer = self.calendar_layer.as_ref().unwrap();
-        layer.surface.set_keyboard_interactivity(if visible {
-            KeyboardInteractivity::OnDemand
+        self.calendar_state.visible = false;
+        self.calendar_focused = false;
+        self.active_calendar = None;
+        for layer in self.calendar_layer.iter().chain(self.calendar_mirrors.iter()) {
+            layer.surface.set_keyboard_interactivity(KeyboardInteractivity::None);
+            layer.surface.set_margin(
+                if self.recipe.top { self.recipe.height as i32 } else { 0 },
+                MAX_WIDTH as i32,
+                if self.recipe.top { 0 } else { self.recipe.height as i32 }, 0,
+            );
+            layer.surface.commit();
+        }
+    }
+
+    fn show_calendar_at(&mut self, surface: wl_surface::WlSurface, qh: &QueueHandle<Self>) {
+        if !self.calendar_layer.iter().chain(self.calendar_mirrors.iter()).any(|calendar|
+            calendar.surface.wl_surface() == &surface) { return; }
+        if self.menu_state.visible { self.set_menu_visible(false, qh); }
+        self.calendar_state.open(Local::now().date_naive());
+        self.calendar_focused = false;
+        self.active_calendar = Some(surface.clone());
+        for layer in self.calendar_layer.iter().chain(self.calendar_mirrors.iter()) {
+            let active = layer.surface.wl_surface() == &surface;
+            layer.surface.set_keyboard_interactivity(if active {
+                KeyboardInteractivity::OnDemand
+            } else {
+                KeyboardInteractivity::None
+            });
+            layer.surface.set_margin(
+                if self.recipe.top { self.recipe.height as i32 } else { 0 },
+                if active { 8 } else { MAX_WIDTH as i32 },
+                if self.recipe.top { 0 } else { self.recipe.height as i32 }, 0,
+            );
+            layer.surface.commit();
+        }
+        self.redraw_calendar(qh);
+    }
+
+    fn toggle_calendar_for_panel(&mut self, mirror: Option<usize>, qh: &QueueHandle<Self>) {
+        let target = match mirror {
+            Some(index) => self.mirrors.get(index).and_then(|panel|
+                self.calendar_mirrors.iter().find(|calendar|
+                    calendar.output.as_ref() == Some(&panel.output)))
+                .map(|calendar| calendar.surface.wl_surface().clone()),
+            None => self.calendar_layer.as_ref()
+                .map(|calendar| calendar.surface.wl_surface().clone()),
+        };
+        let Some(target) = target else { return; };
+        if self.calendar_state.visible && self.active_calendar.as_ref() == Some(&target) {
+            self.set_calendar_visible(false, qh);
         } else {
-            KeyboardInteractivity::None
-        });
-        layer.surface.set_margin(
-            if self.recipe.top { self.recipe.height as i32 } else { 0 },
-            if visible { 8 } else { MAX_WIDTH as i32 },
-            if self.recipe.top { 0 } else { self.recipe.height as i32 },
-            0,
-        );
-        layer.surface.commit();
-        if visible { self.redraw_calendar(qh); }
+            self.show_calendar_at(target, qh);
+        }
     }
 
     fn redraw_calendar(&mut self, _qh: &QueueHandle<Self>) {
-        let Some(layer) = self.calendar_layer.as_mut() else { return; };
+        let Some(active) = self.active_calendar.as_ref() else { return; };
+        let layer = self.calendar_layer.as_mut().filter(|calendar|
+            calendar.surface.wl_surface() == active)
+            .or_else(|| self.calendar_mirrors.iter_mut().find(|calendar|
+                calendar.surface.wl_surface() == active));
+        let Some(layer) = layer else { return; };
         if !layer.configured || !self.calendar_state.visible { return; }
         let surface = layer.surface.wl_surface();
         // Keep the popup's shared-memory allocation lazy during idle sessions.
@@ -1311,7 +1409,7 @@ impl CompositorHandler for RicePlate {
 }
 
 impl LayerShellHandler for RicePlate {
-    fn closed(&mut self, _: &Connection, _: &QueueHandle<Self>, layer: &LayerSurface) {
+    fn closed(&mut self, _: &Connection, qh: &QueueHandle<Self>, layer: &LayerSurface) {
         if self.focused_panel.as_ref() == Some(layer.wl_surface()) {
             self.focused_panel = None;
             self.focused_target = None;
@@ -1329,11 +1427,17 @@ impl LayerShellHandler for RicePlate {
             self.menu_layer = None;
             self.menu_state.close();
         } else if self.calendar_layer.as_ref()
-            .is_some_and(|calendar| calendar.surface.wl_surface() == layer.wl_surface())
-        {
+            .is_some_and(|calendar| calendar.surface.wl_surface() == layer.wl_surface()) {
             self.calendar_layer = None;
-            self.calendar_state.visible = false;
-            self.calendar_focused = false;
+            if self.active_calendar.as_ref() == Some(layer.wl_surface()) {
+                self.set_calendar_visible(false, qh);
+            }
+        } else if let Some(index) = self.calendar_mirrors.iter().position(|calendar|
+            calendar.surface.wl_surface() == layer.wl_surface()) {
+            self.calendar_mirrors.remove(index);
+            if self.active_calendar.as_ref() == Some(layer.wl_surface()) {
+                self.set_calendar_visible(false, qh);
+            }
         } else if let Some(icon) = self
             .icon_layers
             .iter_mut()
@@ -1377,16 +1481,31 @@ impl LayerShellHandler for RicePlate {
             self.redraw_mirror(index, qh);
             return;
         }
-        if let Some(calendar_layer) = self.calendar_layer.as_mut()
-            .filter(|calendar| calendar.surface.wl_surface() == layer.wl_surface())
-        {
+        if self.calendar_layer.as_ref().is_some_and(|calendar|
+            calendar.surface.wl_surface() == layer.wl_surface())
+            || self.calendar_mirrors.iter().any(|calendar|
+                calendar.surface.wl_surface() == layer.wl_surface()) {
             if config.new_size != (calendar::WIDTH, calendar::HEIGHT) {
                 eprintln!("RicePlate: compositor proposed unsupported calendar dimensions");
-                self.calendar_layer = None;
-                self.calendar_state.visible = false;
+                if self.calendar_layer.as_ref().is_some_and(|calendar|
+                    calendar.surface.wl_surface() == layer.wl_surface()) {
+                    self.calendar_layer = None;
+                } else {
+                    self.calendar_mirrors.retain(|calendar|
+                        calendar.surface.wl_surface() != layer.wl_surface());
+                }
+                if self.active_calendar.as_ref() == Some(layer.wl_surface()) {
+                    self.set_calendar_visible(false, qh);
+                }
                 return;
             }
-            calendar_layer.configured = true;
+            if let Some(calendar_layer) = self.calendar_layer.as_mut()
+                .filter(|calendar| calendar.surface.wl_surface() == layer.wl_surface()) {
+                calendar_layer.configured = true;
+            } else if let Some(calendar_layer) = self.calendar_mirrors.iter_mut().find(|calendar|
+                calendar.surface.wl_surface() == layer.wl_surface()) {
+                calendar_layer.configured = true;
+            }
             self.redraw_calendar(qh);
             return;
         }
@@ -1586,9 +1705,8 @@ impl KeyboardHandler for RicePlate {
             .as_ref()
             .is_some_and(|menu| menu.surface.wl_surface() == surface)
             && self.menu_state.visible;
-        self.calendar_focused = self.calendar_layer.as_ref()
-            .is_some_and(|calendar| calendar.surface.wl_surface() == surface)
-            && self.calendar_state.visible;
+        self.calendar_focused = self.calendar_state.visible
+            && self.active_calendar.as_ref() == Some(surface);
         if let Some((mirror, width, offset)) = self.panel_geometry(surface) {
             let groups = self.grouped_tasks();
             let active = groups.iter().position(|group| group.active);
@@ -1636,8 +1754,7 @@ impl KeyboardHandler for RicePlate {
         {
             self.set_menu_visible(false, qh);
         }
-        if self.calendar_layer.as_ref().is_some_and(|calendar|
-            calendar.surface.wl_surface() == surface) && self.calendar_focused {
+        if self.active_calendar.as_ref() == Some(surface) && self.calendar_focused {
             self.set_calendar_visible(false, qh);
         }
         if let Some(index) = self.focused_icon {
@@ -1797,8 +1914,7 @@ impl PointerHandler for RicePlate {
         events: &[PointerEvent],
     ) {
         for event in events {
-            if self.calendar_layer.as_ref().is_some_and(|calendar|
-                &event.surface == calendar.surface.wl_surface()) {
+            if self.active_calendar.as_ref() == Some(&event.surface) {
                 if let PointerEventKind::Press { button: BTN_LEFT, .. } = event.kind {
                     match self.calendar_state.hit(event.position.0, event.position.1) {
                         Some(CalendarHit::Previous) => self.calendar_state.shift(-1),
@@ -1926,11 +2042,7 @@ impl PointerHandler for RicePlate {
                             self.activate_launcher(mirror_index, qh);
                         }
                         Some(Hit::Clock) => {
-                            // The first calendar popup belongs to the primary
-                            // shell output; mirrored clock labels remain passive.
-                            if mirror_index.is_none() {
-                                self.set_calendar_visible(!self.calendar_state.visible, qh);
-                            }
+                            self.toggle_calendar_for_panel(mirror_index, qh);
                         }
                         Some(Hit::Task(index)) => {
                             if self.focused_panel.as_ref() == Some(&event.surface) {
