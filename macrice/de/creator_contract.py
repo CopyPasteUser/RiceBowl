@@ -91,21 +91,21 @@ def describe_render() -> dict[str, object]:
 
 
 def describe_ricepack() -> dict[str, object]:
-    """Portable v2 recipe archive with pinned bundled-asset receipts."""
+    """Portable v2/v3 archives, optionally with one content-addressed PNG."""
     return {
-        "pack_version": 2,
-        "accepts_older_versions": [1],
+        "pack_version": 3,
+        "accepts_older_versions": [1, 2],
         "format": "org.ricebowl.ricepack",
         "extension": ".ricepack",
-        "entries": ["ricepack.json", "recipe.json"],
-        "maximum_archive_bytes": 256 * 1024,
-        "recipe_schema_versions": [1, 2, 3, 4, 5],
-        "asset_support": "bundled-wallpapers-only; sha256-pinned-reference-not-embedded",
+        "entries": ["ricepack.json", "recipe.json", "assets/wallpaper.png (v3 only)"],
+        "maximum_archive_bytes": 3 * 1024 * 1024,
+        "recipe_schema_versions": [1, 2, 3, 4, 5, 6],
+        "asset_support": "bundled wallpaper receipts or one embedded SHA256-addressed PNG (v3)",
         "asset_manifest": {"since_version": 2, "version": 1,
                            "fields": ["id", "sha256", "provenance"],
                            "declared_provenance": ["author", "license", "origin", "source_reference"],
                            "installed_wallpaper_must_match_digest": True},
-        "third_party_assets": False,
+        "third_party_assets": "one-owner-controlled-PNG-wallpaper-only",
         "arbitrary_code_or_scripts": False,
         "deterministic_export": True,
         "provenance": {
@@ -118,6 +118,8 @@ def describe_ricepack() -> dict[str, object]:
             "roundtrip_preserves_attribution": True,
         },
         "commands": [
+            {"command": "de asset-import", "required_options": ["--asset"],
+             "optional_options": ["--json"], "installs_content_addressed_png": True},
             {"command": "de pack-export", "required_options": ["--recipe", "--output"],
              "optional_options": ["--metadata", "--json"], "creates_archive": True},
             {"command": "de pack-inspect", "required_options": ["--package"],
@@ -200,11 +202,13 @@ def describe_creator_api() -> dict[str, object]:
              "contract_version": 1, "mutates_active_session": True},
             {"command": "pack-export", "effect": "create portable validated recipe archive",
              "cli": "de pack-export --recipe ID --output NEW.ricepack --json",
-             "contract_version": 2},
+             "contract_version": 3},
             {"command": "pack-inspect", "effect": "verify archive, schema and fingerprints",
-             "cli": "de pack-inspect --package FILE.ricepack --json", "contract_version": 2},
+             "cli": "de pack-inspect --package FILE.ricepack --json", "contract_version": 3},
             {"command": "pack-import", "effect": "install private recipe without selecting it",
-             "cli": "de pack-import --package FILE.ricepack --json", "contract_version": 2},
+             "cli": "de pack-import --package FILE.ricepack --json", "contract_version": 3},
+            {"command": "asset-import", "effect": "store a reviewed PNG as a private SHA256 asset; no apply",
+             "cli": "de asset-import --asset /absolute/image.png --json", "contract_version": 1},
             {"command": "creator-status", "effect": "read next Wayland login choice and fingerprint",
              "cli": "de creator-status --json", "contract_version": 1},
             {"command": "creator-stage", "effect": "review-gated next Wayland login choice",
@@ -217,7 +221,7 @@ def describe_creator_api() -> dict[str, object]:
         "staging": describe_staging(),
         "limitations": [
             "Not a screenshot-to-rice converter or editable GUI",
-            "Only schema-v1..v5 panel/shell preview and bundled wallpapers",
+            "Schema-v1..v6 shell preview; v6 supports only one bounded PNG wallpaper, not arbitrary assets",
             "No automatic apply; Wayland session remains experimental",
             "Native tray, complete settings, notification center and physical multi-monitor acceptance remain open",
         ],

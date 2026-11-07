@@ -1,7 +1,8 @@
 """Portable, non-executable RicePacks for the experimental Wayland shell.
 
 Only validated recipe data and declared provenance are included. A RicePack
-does not contain scripts, untrusted assets or an active-session instruction.
+never contains scripts or active-session instructions. V3 may include one
+strictly validated PNG wallpaper, installed by content hash only.
 """
 
 from __future__ import annotations
@@ -17,12 +18,12 @@ import zipfile
 from pathlib import Path
 from typing import Any
 
-from . import recipes, review
+from . import assets, recipes, review
 
 
-PACK_VERSION = 2
+PACK_VERSION = 3
 PACK_FORMAT = "org.ricebowl.ricepack"
-MAX_PACK_BYTES = 256 * 1024
+MAX_PACK_BYTES = 3 * 1024 * 1024
 MAX_METADATA_BYTES = 4096
 MAX_MANIFEST_BYTES = 8192
 _ZIP_DATE = (1980, 1, 1, 0, 0, 0)
@@ -54,8 +55,25 @@ def _bundled_wallpaper(recipe: recipes.PanelRecipe) -> tuple[str, str]:
     return asset_id, _digest(data)
 
 
+def _custom_wallpaper(recipe: recipes.PanelRecipe) -> bytes | None:
+    if recipe.schema_version != 6 or not assets.ASSET_ID.fullmatch(recipe.wallpaper or ""):
+        return None
+    try:
+        return assets.read(recipe.wallpaper)[1]
+    except assets.AssetError as exc:
+        raise PackError("Private wallpaper is missing or unsafe", code="asset_unavailable") from exc
+
+
+def _wallpaper_identity(recipe: recipes.PanelRecipe) -> tuple[str, str]:
+    if recipe.schema_version == 6 and assets.ASSET_ID.fullmatch(recipe.wallpaper or ""):
+        data = _custom_wallpaper(recipe)
+        assert data is not None
+        return recipe.wallpaper, _digest(data)
+    return _bundled_wallpaper(recipe)
+
+
 def _asset_receipt(recipe: recipes.PanelRecipe, provenance: dict[str, str]) -> dict[str, Any]:
-    asset_id, sha = _bundled_wallpaper(recipe)
+    asset_id, sha = _wallpaper_identity(recipe)
     return {"version": 1, "wallpaper": {"id": asset_id, "sha256": sha,
                                         "provenance": provenance}}
 
@@ -63,8 +81,8 @@ def _asset_receipt(recipe: recipes.PanelRecipe, provenance: dict[str, str]) -> d
 def _provenance_receipt(manifest: dict[str, Any], recipe: recipes.PanelRecipe) -> bytes:
     """Bind imported license/origin attribution to the exact reviewed recipe."""
     wallpaper = (manifest["asset_manifest"]["wallpaper"]["provenance"]
-                 if manifest["format_version"] == 2 else dict(_DEFAULT_PROVENANCE))
-    wallpaper_id, wallpaper_sha = _bundled_wallpaper(recipe)
+                 if manifest["format_version"] >= 2 else dict(_DEFAULT_PROVENANCE))
+    wallpaper_id, wallpaper_sha = _wallpaper_identity(recipe)
     return _json_bytes({"version": 1,
                         "semantic_sha256": manifest["recipe"]["semantic_sha256"],
                         "wallpaper_id": wallpaper_id, "wallpaper_sha256": wallpaper_sha,
@@ -94,7 +112,7 @@ def _stored_provenance(recipe: recipes.PanelRecipe) -> tuple[dict[str, str], dic
     if saved["semantic_sha256"] != review._semantic_hash(canonical):
         raise PackError("Imported rice changed since its license/provenance receipt",
                         code="provenance_stale")
-    if (saved["wallpaper_id"], saved["wallpaper_sha256"]) != _bundled_wallpaper(recipe):
+    if (saved["wallpaper_id"], saved["wallpaper_sha256"]) != _wallpaper_identity(recipe):
         raise PackError("Bundled artwork changed since its license/provenance receipt",
                         code="provenance_stale")
     main = _provenance(saved["provenance"] if type(saved["provenance"]) is dict else {})
@@ -227,63 +245,76 @@ def export_pack(recipe_token: str, destination: Path,
             raise PackError("Recipe cannot be serialized losslessly", code="invalid_recipe")
     except recipes.RecipeError as exc:
         raise PackError("Canonical recipe is invalid", code="invalid_recipe") from exc
+    included_wallpaper = _custom_wallpaper(recipe)
+    pack_version = 3 if included_wallpaper is not None else 2
     manifest = {
         "format": PACK_FORMAT,
-        "format_version": PACK_VERSION,
+        "format_version": pack_version,
         "recipe": {"path": "recipe.json", "id": recipe.recipe_id,
                    "schema_version": recipe.schema_version,
                    "sha256": _digest(recipe_payload),
                    "semantic_sha256": review._semantic_hash(canonical)},
         "provenance": provenance,
-        "runtime_assets": "bundled-wallpapers-only",
+        "runtime_assets": ("one-private-content-addressed-png" if included_wallpaper is not None
+                           else "bundled-wallpapers-only"),
         "asset_manifest": _asset_receipt(recipe, wallpaper_provenance),
     }
     memory = io.BytesIO()
     with zipfile.ZipFile(memory, "w", compression=zipfile.ZIP_STORED,
                          allowZip64=False) as archive:
-        for name, data in (("ricepack.json", _json_bytes(manifest)),
-                           ("recipe.json", recipe_payload)):
+        entries = [("ricepack.json", _json_bytes(manifest)), ("recipe.json", recipe_payload)]
+        if included_wallpaper is not None:
+            entries.append(("assets/wallpaper.png", included_wallpaper))
+        for name, data in entries:
             info = zipfile.ZipInfo(name, date_time=_ZIP_DATE)
             info.create_system = 3
             info.external_attr = (stat.S_IFREG | 0o644) << 16
             info.compress_type = zipfile.ZIP_STORED
             archive.writestr(info, data)
     _new_archive(destination, memory.getvalue())
-    return {"pack_version": PACK_VERSION, "ok": True, "created": True,
+    return {"pack_version": pack_version, "ok": True, "created": True,
             "imported": False, "applied": False, "recipe_id": recipe.recipe_id,
             "package_sha256": _digest(memory.getvalue()), "manifest": manifest}
 
 
-def _validate_archive(source: Path) -> tuple[dict[str, Any], bytes]:
+def _validate_archive(source: Path) -> tuple[dict[str, Any], bytes, bytes | None]:
     payload = _read_owned_file(source, suffix=".ricepack", limit=MAX_PACK_BYTES)
     try:
         with zipfile.ZipFile(io.BytesIO(payload)) as archive:
             entries = archive.infolist()
-            if (len(entries) != 2 or {entry.filename for entry in entries}
-                    != {"ricepack.json", "recipe.json"}):
-                raise PackError("RicePack must contain exactly two known data files")
+            names = {entry.filename for entry in entries}
+            if (len(entries) not in (2, 3) or len(names) != len(entries)
+                    or not {"ricepack.json", "recipe.json"} <= names
+                    or names - {"ricepack.json", "recipe.json", "assets/wallpaper.png"}):
+                raise PackError("RicePack contains unexpected or duplicate data entries")
             for entry in entries:
                 mode = entry.external_attr >> 16
                 if (entry.flag_bits & 1 or entry.compress_type != zipfile.ZIP_STORED
                         or stat.S_IFMT(mode) not in (0, stat.S_IFREG)
                         or entry.file_size > (MAX_MANIFEST_BYTES if entry.filename == "ricepack.json"
-                                              else recipes.MAX_RECIPE_BYTES)):
+                                              else (recipes.MAX_RECIPE_BYTES if entry.filename == "recipe.json"
+                                                    else assets.MAX_IMAGE_BYTES))):
                     raise PackError("Unsafe, compressed or oversized RicePack entry")
             metadata = _parse_object(archive.read("ricepack.json"))
             recipe_payload = archive.read("recipe.json")
+            wallpaper_payload = (archive.read("assets/wallpaper.png")
+                                 if "assets/wallpaper.png" in names else None)
     except (zipfile.BadZipFile, OSError, RuntimeError, EOFError, ValueError) as exc:
         if isinstance(exc, PackError):
             raise
         raise PackError("Corrupt or invalid RicePack archive") from exc
     version = metadata.get("format_version")
     expected = {"format", "format_version", "recipe", "provenance", "runtime_assets"}
-    if version == 2:
+    if version in (2, 3):
         expected.add("asset_manifest")
+    expected_assets = ("one-private-content-addressed-png" if version == 3
+                       else "bundled-wallpapers-only")
     if (set(metadata) != expected
             or metadata["format"] != PACK_FORMAT
             or type(version) is not int
-            or version not in (1, PACK_VERSION)
-            or metadata["runtime_assets"] != "bundled-wallpapers-only"):
+            or version not in (1, 2, PACK_VERSION)
+            or metadata["runtime_assets"] != expected_assets
+            or (wallpaper_payload is None) != (version != 3)):
         raise PackError("Unsupported RicePack format or version")
     info = metadata["recipe"]
     if (type(info) is not dict
@@ -303,34 +334,48 @@ def _validate_archive(source: Path) -> tuple[dict[str, Any], bytes]:
             or _digest(recipe_payload) != info["sha256"]
             or review._semantic_hash(review._manifest(recipe)) != info["semantic_sha256"]):
         raise PackError("RicePack recipe fingerprint or identity mismatch")
-    if version == 2:
-        assets = metadata["asset_manifest"]
-        if (type(assets) is not dict or set(assets) != {"version", "wallpaper"}
-                or type(assets["version"]) is not int or assets["version"] != 1):
+    if version in (2, 3):
+        asset_manifest = metadata["asset_manifest"]
+        if (type(asset_manifest) is not dict or set(asset_manifest) != {"version", "wallpaper"}
+                or type(asset_manifest["version"]) is not int or asset_manifest["version"] != 1):
             raise PackError("Invalid RicePack asset manifest")
-        wallpaper = assets["wallpaper"]
+        wallpaper = asset_manifest["wallpaper"]
         if (type(wallpaper) is not dict
                 or set(wallpaper) != {"id", "sha256", "provenance"}
                 or type(wallpaper["id"]) is not str
                 or type(wallpaper["sha256"]) is not str):
             raise PackError("Invalid bundled wallpaper receipt")
         _provenance(wallpaper["provenance"] if type(wallpaper["provenance"]) is dict else {})
-        if (wallpaper["id"], wallpaper["sha256"]) != _bundled_wallpaper(recipe):
-            raise PackError("Bundled wallpaper identity or checksum does not match",
-                            code="asset_mismatch")
-    return metadata, recipe_payload
+        if version == 2:
+            if (wallpaper["id"], wallpaper["sha256"]) != _bundled_wallpaper(recipe):
+                raise PackError("Bundled wallpaper identity or checksum does not match",
+                                code="asset_mismatch")
+        else:
+            if (recipe.schema_version != 6 or wallpaper["id"] != recipe.wallpaper
+                    or not assets.ASSET_ID.fullmatch(wallpaper["id"])
+                    or wallpaper_payload is None):
+                raise PackError("Invalid content-addressed wallpaper identity",
+                                code="asset_mismatch")
+            try:
+                expected_id = assets.image_id(wallpaper_payload)
+            except assets.AssetError as exc:
+                raise PackError("RicePack contains an invalid PNG", code="asset_mismatch") from exc
+            if (expected_id != wallpaper["id"]
+                    or _digest(wallpaper_payload) != wallpaper["sha256"]):
+                raise PackError("RicePack wallpaper checksum does not match", code="asset_mismatch")
+    return metadata, recipe_payload, wallpaper_payload
 
 
 def inspect_pack(source: Path) -> dict[str, Any]:
     """Verify all archive entries, fingerprints and the real recipe schema."""
-    metadata, _ = _validate_archive(source)
+    metadata, _, _ = _validate_archive(source)
     return {"pack_version": metadata["format_version"], "ok": True, "valid": True,
             "imported": False, "applied": False, "manifest": metadata}
 
 
 def import_pack(source: Path) -> dict[str, Any]:
     """Install a recipe and a data-only provenance receipt, without applying it."""
-    metadata, payload = _validate_archive(source)
+    metadata, payload, wallpaper_bytes = _validate_archive(source)
     if metadata["recipe"]["id"] in recipes.BUILTINS:
         raise PackError("Cannot replace a reserved built-in recipe", code="reserved_id")
     try:
@@ -339,6 +384,13 @@ def import_pack(source: Path) -> dict[str, Any]:
         receipt = folder / f"{metadata['recipe']['id']}{_RECEIPT_SUFFIX}"
         if os.path.lexists(destination):
             raise PackError("Cannot replace an installed recipe", code="import_unavailable")
+        if wallpaper_bytes is not None:
+            try:
+                stored_id, _ = assets.store(wallpaper_bytes)
+            except assets.AssetError as exc:
+                raise PackError("Cannot install private wallpaper", code="asset_unavailable") from exc
+            if stored_id != metadata["asset_manifest"]["wallpaper"]["id"]:
+                raise PackError("Wallpaper changed while importing", code="asset_mismatch")
         attribution = _provenance_receipt(metadata, recipes.parse(payload))
         if os.path.lexists(receipt):
             # A previous interrupted import may have published its receipt

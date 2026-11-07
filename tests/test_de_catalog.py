@@ -15,10 +15,10 @@ class ComponentCatalogTests(unittest.TestCase):
         self.assertEqual(info["catalog_version"], 6)
         self.assertEqual(info["scope"], "wayland-shell-preview")
         self.assertFalse(info["complete_desktop_environment"])
-        self.assertEqual(info["recipe"]["schema_versions"], [1, 2, 3, 4, 5])
+        self.assertEqual(info["recipe"]["schema_versions"], [1, 2, 3, 4, 5, 6])
         self.assertFalse(info["recipe"]["custom_commands"])
         self.assertFalse(info["recipe"]["custom_actions"])
-        self.assertFalse(info["recipe"]["external_assets"])
+        self.assertEqual(info["recipe"]["external_assets"], "PNG")
         self.assertEqual(info["recipe"]["maximum_bytes"], recipes.MAX_RECIPE_BYTES)
         self.assertEqual(info["authoring"]["draft_edit"], creator_contract.describe())
         catalog_command = next(command for command in

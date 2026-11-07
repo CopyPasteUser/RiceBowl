@@ -146,11 +146,16 @@ class HeadlessRenderTests(unittest.TestCase):
                               "orphan is not discoverable as an owned process")
                 render._stop(leader, token)
                 stat = Path(f"/proc/{descendant}/stat")
+                def stopped():
+                    try:
+                        return stat.read_text().split(") ")[1][0] == "Z"
+                    except FileNotFoundError:
+                        # /proc entries may vanish between exists() and read().
+                        return True
                 deadline = time.monotonic() + 2
-                while stat.exists() and stat.read_text().split(") ")[1][0] != "Z" \
-                        and time.monotonic() < deadline:
+                while not stopped() and time.monotonic() < deadline:
                     time.sleep(0.02)
-                self.assertTrue(not stat.exists() or stat.read_text().split(") ")[1][0] == "Z",
+                self.assertTrue(stopped(),
                                 "orphan descendant still running")
             finally:
                 if descendant is not None:

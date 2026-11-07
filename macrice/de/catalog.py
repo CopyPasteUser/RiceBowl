@@ -22,7 +22,7 @@ def describe() -> dict[str, object]:
         "scope": "wayland-shell-preview",
         "complete_desktop_environment": False,
         "recipe": {
-            "schema_versions": [1, 2, 3, 4, 5],
+            "schema_versions": [1, 2, 3, 4, 5, 6],
             "maximum_bytes": MAX_RECIPE_BYTES,
             "sections": ["start", "center", "end"],
             "unique_widgets": True,
@@ -91,7 +91,7 @@ def describe() -> dict[str, object]:
             },
             "custom_commands": False,
             "custom_actions": False,
-            "external_assets": False,
+            "external_assets": "PNG",
         },
         "backends": {
             "native": "experimental-rust-layer-shell",
@@ -159,7 +159,7 @@ def describe() -> dict[str, object]:
                           "delegated_pages": ["displays", "input", "accessibility", "timezone"],
                           "fully_native_settings": False},
              "input": ["pointer", "Left/Right", "Up/Down/Tab", "Enter/Space", "Escape",
-                       "type-to-search", "Backspace", "F2-pin-toggle", "F3-saved-actions"],
+                       "type-search", "Backspace", "F2", "F3"],
              "focus": "on-demand", "search": True, "pins": "private-per-rice-fixed-actions",
              "search_max_bytes": 24, "saved_actions_max": 8, "visible_action_rows": 4,
              "close_on_output_removal": True},
