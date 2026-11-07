@@ -21,7 +21,7 @@ modify global session settings.
 | RicePop notifications | On-demand `de notifications --json` reads active/history from Mako; `de notification-dismiss --notification-id N --json` safely closes exactly one active alert | Native notification center, OSD, interaction/history UI, non-Mako backends |
 | Session safety | Opt-in session, user polkit agent when installed, optional Mako/swayidle/swaylock, compositor exit cleanup | Complete suspend/resume and hardware recovery acceptance |
 | Creator authoring | Schema-v1–v5 validation, offline private draft edits, component catalog and API inventory, nested native render/capture and visual comparisons | Broad desktop composition, complete action/state bindings, high-fidelity mockup conversion |
-| RicePack exchange | Deterministic v2 recipe archives, SHA-256-pinned bundled wallpaper, provenance and v1 read compatibility; explicit next-login staging and one-level rollback | Packaged external assets, multi-component live apply and transactional active-session rollback |
+| RicePack exchange | Deterministic v2 recipe archives, SHA-256-pinned bundled wallpaper, per-asset provenance preserved on private import/re-export, v1 read compatibility; next-login staging and one-level rollback | Packaged external assets, multi-component live apply and transactional active-session rollback |
 
 **Native here means running in the experimental labwc session**, not the
 existing Python/GTK XFCE experience. A declarative menu/indicator is not a
@@ -84,7 +84,7 @@ the CLI reports that the state may already have changed; inspect again.
 
 Implementation evidence includes [native icons PR #143](https://github.com/CopyPasteUser/Ricebowl/pull/143)
 and [Mako bridge PR #141](https://github.com/CopyPasteUser/Ricebowl/pull/141).
-Local automated suites most recently passed **911 Python tests** (16 skipped
+Local automated suites most recently passed **914 Python tests** (16 skipped
 for session/hardware constraints) and **53 native Rust tests**. GitHub's
 `Tests`, `Native RicePlate prototype` and `Wayland session preview` workflows
 have passed on the corresponding merged milestones. Native CI renders actual screenshots under headless labwc, including
