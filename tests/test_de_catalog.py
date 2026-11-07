@@ -35,8 +35,11 @@ class ComponentCatalogTests(unittest.TestCase):
         self.assertEqual({part["id"] for part in info["components"]}, recipes.WIDGETS)
         implemented = {part["id"] for part in info["components"]
                        if part["native"] != "unavailable"}
-        self.assertEqual(implemented, {"launcher", "tasks", "clock"})
+        self.assertEqual(implemented, {"launcher", "tasks", "clock", "battery"})
         components = {part["id"]: part for part in info["components"]}
+        self.assertEqual(components["battery"]["status_backend"],
+                         "read-only-linux-sysfs-power-supply")
+        self.assertFalse(components["battery"]["interactive"])
         self.assertTrue(components["launcher"]["keyboard_navigation"])
         self.assertTrue(components["tasks"]["keyboard_navigation"])
         self.assertFalse(components["clock"]["keyboard_navigation"])

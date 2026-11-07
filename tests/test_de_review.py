@@ -20,7 +20,7 @@ class CreatorReviewTests(unittest.TestCase):
         self.assertIsNone(result["comparison"])
         self.assertEqual(result["recipe"]["panel"]["height"], 36)
         self.assertEqual(result["summary"]["native_unavailable_widgets"],
-                         ["network", "audio", "battery", "tray"])
+                         ["network", "audio", "tray"])
         self.assertTrue(result["summary"]["requires_waybar_fallback_for_all_widgets"])
         self.assertFalse(result["summary"]["native_panel_complete"])
         self.assertEqual(result, review.review("classic"))

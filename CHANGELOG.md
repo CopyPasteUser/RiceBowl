@@ -1,5 +1,18 @@
 # RiceBowl changelog
 
+## Unreleased — kernel-backed native battery indicator (7 November 2026)
+
+- Render the first real native RicePlate hardware-status widget: battery
+  percentage and charging state read from Linux sysfs, without adding a
+  resident poller, network service or privileged dependency. Show honest
+  unavailable/unknown labels when no usable battery data exists.
+- Retain taskbar capacity on compact/overflowed panels by hiding the optional
+  battery label when it would remove a window-group slot. The shared layout
+  and paint path also works on secondary outputs.
+- Add deterministic sysfs fixture, layout and painter tests; update Creator
+  catalog/review capability reporting. Full native network/audio/tray, events
+  and real-device acceptance are still outstanding.
+
 ## Unreleased — truthful Creator shell catalog v6 (7 November 2026)
 
 - Update `ricebowl de catalog --json` to reflect verified native keyboard
