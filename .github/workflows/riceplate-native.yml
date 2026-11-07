@@ -10,6 +10,7 @@ on:
       - 'scripts/check_wayland_panel_outputs.py'
       - 'scripts/compare_wayland_captures.py'
       - 'scripts/verify_wayland_creator_examples.py'
+      - 'tests/test_de_render.py'
       - 'tests/test_de_visual_qa.py'
       - 'tests/test_de_creator_examples.py'
       - 'examples/wayland/**'
@@ -26,6 +27,7 @@ on:
       - 'scripts/check_wayland_panel_outputs.py'
       - 'scripts/compare_wayland_captures.py'
       - 'scripts/verify_wayland_creator_examples.py'
+      - 'tests/test_de_render.py'
       - 'tests/test_de_visual_qa.py'
       - 'tests/test_de_creator_examples.py'
       - 'examples/wayland/**'
@@ -87,6 +89,12 @@ jobs:
             --output "$PWD/dist/riceplate-native-preview/isolated-v5.png" \
             --width 1024 --height 768 --json \
             > dist/riceplate-native-preview/isolated-v5.json
+      - name: Prove Creator teardown after real success and injected failures
+        run: |
+          export PATH="$PWD/components/riceplate-wayland/target/release:$PATH"
+          export RICEBOWL_TEST_NATIVE_RENDER=1
+          dbus-run-session -- /usr/bin/python3 -m unittest \
+            tests.test_de_render.HeadlessRenderTests.test_real_headless_success_and_injected_failures_leave_no_processes -v
       - name: Validate and record real multi-resolution captures
         run: |
           python3 - <<'PY'
