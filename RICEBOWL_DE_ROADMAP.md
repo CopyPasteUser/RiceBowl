@@ -196,6 +196,14 @@ affecting XFCE, including a failed-session recovery. **Not yet signed off.**
   disappears and recreate the hidden surface on reconnect. A genuine
   two-output labwc smoke captures exactly one visible menu and verifies
   unplug/replug; physical mouse/keyboard and assistive QA remain open.
+- [x] Add **bounded native Start-menu action search and per-rice favorites**:
+  type-to-filter only validated fixed action labels (24 ASCII bytes maximum),
+  F2 pin/unpin, F3 saved-action view, four-row keyboard/pointer paging, and
+  at most eight pins stored in a private atomic file separate from the recipe.
+  Reject symlinks, foreign permissions, unknown/duplicate actions and stale
+  rice IDs; nested Creator previews do not load or save preferences. Neither
+  dynamic installed-app search nor personalized OS-specific menu layouts or
+  assistive-technology/physical keyboard acceptance are complete.
 - [x] Show a **real, read-only native battery percentage** in RicePlate from
   Linux's fixed `/sys/class/power_supply`, with charging state, explicit
   no-battery/unknown labels, multi-battery handling and bounded once-per-minute

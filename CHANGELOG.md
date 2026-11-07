@@ -1,5 +1,17 @@
 # RiceBowl changelog
 
+## Unreleased — native menu search and saved actions (7 November 2026)
+
+- Filter approved native RicePlate menu actions by typing their visible label;
+  navigate a four-row viewport with the keyboard or mouse, and switch back to
+  recipe groups with Escape. This does not search arbitrary installed apps.
+- F2 pins/unpins the selected fixed action, F3 toggles the saved-actions view.
+  Save up to eight favorites per rice in an owner-private, atomic JSON file;
+  reject stale, malformed, symlinked and untrusted state. No executable
+  commands, extra background process or source-recipe mutation.
+- Update Creator capability discovery, regression checks and the Wayland
+  usage guide. Real hardware input/assistive testing remains outstanding.
+
 ## Unreleased — RiceSpice on-demand settings hub
 
 - Add a real opt-in GTK3 RiceSpice settings window from the fixed `settings`

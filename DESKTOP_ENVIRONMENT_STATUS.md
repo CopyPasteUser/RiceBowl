@@ -13,7 +13,7 @@ modify global session settings.
 | Component | Verified implementation | Important gap |
 | --- | --- | --- |
 | Session / compositor | Opt-in labwc session, nested preview, Waybar fallback, startup supervision and cleanup | Physical login/relogin, recovery and power-use acceptance |
-| RicePlate panel | Native Rust layer-shell, per-output panels, window discovery and grouped task activation, launcher, menu, calendar, keyboard task navigation, compact layouts | Native StatusNotifier tray; full accessibility and real-world focus QA |
+| RicePlate panel | Native Rust layer-shell, per-output panels, window discovery and grouped task activation, launcher, menu with fixed-action search/private per-rice pins, calendar, keyboard task navigation, compact layouts | Native StatusNotifier tray; dynamic installed-app menu search, full accessibility and real-world focus QA |
 | Desktop shortcuts | Schema-v5 native shortcut surfaces, drag repositioning, owner-private **per-named-output positions**, independent multi-output reflow, hotplug, Tab/Shift-Tab | Cross-monitor drag semantics, output identity without stable names and mixed-DPI/device tests |
 | Wallpaper / appearances | Original bundled wallpapers, composable panel groups, labels, gaps, tokens, original example rices | Full desktop widgets, rich layout primitives, complete cross-app window decorations |
 | Hardware indicators | Kernel-backed battery; NetworkManager connectivity and WirePlumber sink status on a bounded worker | Device picker, Bluetooth status, event subscriptions and finer status detail |

@@ -379,7 +379,11 @@ For schema-v4/v5 recipes the experimental native panel now draws its **own
 start menu in the same Rust process**, using the recipe's actual grouped menu
 title and validated action IDs. Click the panel's `Apps` button to toggle it.
 Use **Left/Right** to switch groups, **Up/Down/Tab** to select an action,
-**Enter** to activate and **Escape** to dismiss. Mouse tabs, rows and close
+**Enter** to activate, **type** to search the validated action labels across
+groups, **Backspace** to edit the search, **F2** to save/remove the selected
+action, **F3** to toggle the saved-action view, and **Escape** to return to
+groups or dismiss. Search input is restricted to 24 ASCII characters and the
+four visible action rows scroll to follow keyboard selection. Mouse tabs, rows and close
 control have the same action mapping. The menu requests Wayland keyboard focus
 only while open; it is parked outside the output and noninteractive while
 closed. The legacy labwc root menu remains a recovery path.
@@ -395,9 +399,17 @@ inherited an outer compositor's `LABWC_PID`.
 The visual QA flag `riceplate-native --recipe /absolute/private.json
 --preview-menu` opens the menu on startup; normal use never does. CI captures
 an actual `menu-v5.png` from headless labwc and verifies it differs from the
-closed-menu framebuffer. This is a bounded four-action-per-group native menu,
-**not yet** menu search, pinning, icons, custom typography, keyboard-accessible
-desktop shortcuts or a full multi-monitor keyboard/navigation system.
+closed-menu framebuffer. Favorites are limited to eight prevalidated fixed
+actions, stored atomically in an owner-private
+`$XDG_CONFIG_HOME/ricebowl/native-menu-pins/<rice-id>.json` (or
+`~/.config/ricebowl/native-menu-pins/`), never added to recipes or used to
+execute arbitrary commands. Nested Creator previews neither load nor write
+these overrides. Unsafe, symlinked, stale or malformed files are ignored with
+a diagnostic. These capabilities apply to the **native RicePlate menu only**;
+the labwc/Waybar fallback does not offer the same search/pins UI. Dynamic
+installed-app search, arbitrary layout composition, rich app icons, custom
+typography, assistive-technology validation and physical multi-monitor
+keyboard/navigation acceptance remain open.
 
 For **real** Wayland screenshots, install `grim` and explicitly invoke the
 Creator capture command **inside the Wayland compositor you want to inspect**:

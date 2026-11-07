@@ -55,8 +55,10 @@ class ComponentCatalogTests(unittest.TestCase):
         shell = {part["id"]: part for part in info["shell_components"]}
         self.assertEqual(set(shell), {"native-menu", "calendar-popup", "desktop-shortcut"})
         self.assertEqual(shell["native-menu"]["actions"], sorted(recipes.MENU_ACTIONS))
-        self.assertFalse(shell["native-menu"]["search"])
-        self.assertFalse(shell["native-menu"]["pins"])
+        self.assertTrue(shell["native-menu"]["search"])
+        self.assertEqual(shell["native-menu"]["pins"], "private-per-rice-fixed-actions")
+        self.assertEqual(shell["native-menu"]["saved_actions_max"], 8)
+        self.assertEqual(shell["native-menu"]["visible_action_rows"], 4)
         self.assertTrue(shell["native-menu"]["close_on_output_removal"])
         self.assertEqual(shell["native-menu"]["notifications"]["action"], "notifications")
         self.assertTrue(shell["native-menu"]["notifications"]["dismiss_one"])
