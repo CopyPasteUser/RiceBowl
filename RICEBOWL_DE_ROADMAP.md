@@ -239,6 +239,14 @@ affecting XFCE, including a failed-session recovery. **Not yet signed off.**
 
 ### 3 — RiceSpice and RicePop
 
+- [x] Add an **on-demand RicePop/Mako notification inventory** for the opt-in
+  Wayland session: `de notifications --json` reads bounded active and past
+  notifications from the session's existing Mako host, strips embedded action
+  identifiers and rejects malformed/oversized replies. It never claims its
+  own D-Bus notification name, spawns another daemon, persists private
+  content or replays third-party actions. This supplies data for a future
+  native notification center; visual center, OSD and native history controls
+  remain open.
 - [x] Deliver the first **real native RiceSpice quick actions** in the bounded
   schema-v4 menu vocabulary: Wi-Fi radio toggle through NetworkManager,
   default-sink mute/unmute and 5% volume steps through WirePlumber. Run only

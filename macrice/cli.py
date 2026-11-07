@@ -73,7 +73,7 @@ def parser() -> argparse.ArgumentParser:
     de.add_argument("action", choices=(
         "check", "start", "shell", "catalog", "creator-api", "review", "draft-edit", "visual-compare",
         "capture", "render", "creator-status", "creator-stage", "creator-rollback",
-        "pack-export", "pack-inspect", "pack-import",
+        "pack-export", "pack-inspect", "pack-import", "notifications",
         "recipes", "recipe-init", "recipe-import", "recipe-export", "recipe-current",
         "recipe-select", "recipe-restore", "taskotto-export"))
     de.add_argument("--json", action="store_true", help="Read-only machine-readable preflight")
@@ -195,6 +195,17 @@ def main(argv: list[str] | None = None) -> int:
                     print(f"RiceBowl Creator API v{contract['api_version']} (offline, on demand)")
                     for item in contract["commands"]:
                         print(f"  {item['command']:18} {item['effect']}")
+                return 0
+            if args.action == "notifications":
+                if args.nested or args.recipe or args.panel != "waybar" or not args.json:
+                    raise ValueError("de notifications requires --json and no session options")
+                from .de.notifications import NotificationBridgeError, inspect, invalid
+                try:
+                    result = inspect()
+                except NotificationBridgeError as error:
+                    print(json.dumps(invalid(error), indent=2))
+                    return 2
+                print(json.dumps(result, indent=2, ensure_ascii=False))
                 return 0
             if args.action in ("creator-status", "creator-stage", "creator-rollback"):
                 if args.nested or args.panel != "waybar":

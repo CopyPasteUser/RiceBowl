@@ -163,6 +163,13 @@ def describe() -> dict[str, object]:
              "saved_positions": "private-per-rice", "hotplug_across_outputs": True,
              "arbitrary_commands": False},
         ],
+        "integrations": [
+            {"id": "ricepop-notification-history", "native": "read-only-cli-bridge",
+             "waybar": "mako-host", "command": "de notifications --json",
+             "backend": "on-demand-makoctl-list-and-history", "max_items_per_list": 64,
+             "actions_replayed": False, "notification_owner": "existing-mako-only",
+             "persistent_ricepop_log": False, "mutates_desktop": False},
+        ],
         "layout_primitives": [
             {"id": "group", "native": "horizontal-layout", "waybar": "flattened-modules",
              "interactive": False},
@@ -183,6 +190,7 @@ def describe() -> dict[str, object]:
             "Network and audio status widgets remain non-clickable; explicit native-menu quick actions use fixed NetworkManager/WirePlumber commands; no device chooser",
             "Waybar/labwc menu omits native-only RiceSpice quick actions instead of displaying fake controls",
             "Native panel still lacks a StatusNotifier tray",
+            "RicePop Wayland can read Mako alerts/history on demand; it does not yet render a native notification center or OSD",
             "Native calendar has no events or locale-specific labels; clock cannot be reached from panel keyboard navigation",
             "Keyboard focus and assistive technology on real devices are not signed off",
             "Waybar CSS widths are minima; content can grow",
