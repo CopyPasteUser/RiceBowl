@@ -10,7 +10,10 @@ from macrice.de import settings
 
 class SettingsGuiTests(unittest.TestCase):
     def test_all_sections_render_without_hardware_services_or_side_effects(self):
-        Gtk, Gdk, GLib = settings._gtk_modules()
+        try:
+            Gtk, Gdk, GLib = settings._gtk_modules()
+        except (ImportError, ValueError):
+            self.skipTest("GTK introspection typelib is not installed")
         if not Gtk.init_check([])[0]:
             self.skipTest("GTK display is unavailable")
         with tempfile.TemporaryDirectory() as directory, \
