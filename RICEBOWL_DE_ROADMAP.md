@@ -203,6 +203,14 @@ affecting XFCE, including a failed-session recovery. **Not yet signed off.**
   it yields layout width to task groups instead of silently reducing task
   capacity. No fake battery on desktops, new daemon, UPower power action or
   claims of hardware QA. Network, audio, SNI tray and power controls remain open.
+- [x] Add **truthful native network/audio status labels** backed by
+  NetworkManager's `nmcli` overall state and WirePlumber's `wpctl` default
+  sink volume/mute state, with bounded subprocess runtimes on one lazy worker
+  thread. Wake the Wayland event loop only when data changes, sample at most
+  once every 30 seconds, report missing services as unavailable, and hide
+  lower-priority status slots before sacrificing task groups on small screens.
+  They are intentionally non-clickable until real RiceSpice quick actions
+  exist. The SNI tray and actual network/audio device controls remain open.
 - [ ] Build a Wayland-native panel through `wlr-layer-shell`.
 - [ ] Populate tasks/windows through a supported foreign-toplevel protocol.
 - [ ] Implement launchers, task groups, tray, calendar, menus and keyboard

@@ -51,6 +51,8 @@ pub enum Widget {
     Tasks,
     Clock,
     Battery,
+    Network,
+    Audio,
     Gap(u32),
     Label(u8),
 }
@@ -309,8 +311,10 @@ fn expand_layout(
                 "tasks" => rendered.push(Widget::Tasks),
                 "clock" => rendered.push(Widget::Clock),
                 "battery" => rendered.push(Widget::Battery),
+                "network" => rendered.push(Widget::Network),
+                "audio" => rendered.push(Widget::Audio),
                 // Known but unsupported native controls remain Waybar-only.
-                "network" | "audio" | "tray" => {}
+                "tray" => {}
                 _ => return Err("Unsupported panel widget or action".into()),
             }
         }
@@ -407,7 +411,9 @@ pub fn parse(raw: &str, expected_id: Option<&str>) -> Result<PanelStyle, Box<dyn
                         "tasks" => sections[index].push(Widget::Tasks),
                         "clock" => sections[index].push(Widget::Clock),
                         "battery" => sections[index].push(Widget::Battery),
-                        "network" | "audio" | "tray" => {}
+                        "network" => sections[index].push(Widget::Network),
+                        "audio" => sections[index].push(Widget::Audio),
+                        "tray" => {}
                         _ => return Err("Unsupported RicePlate widget or action".into()),
                     }
                 }
@@ -584,7 +590,7 @@ fn width_for(style: &PanelStyle, widget: Widget, tasks: usize) -> u32 {
     match widget {
         Widget::Launcher => style.widths[0],
         Widget::Clock => style.widths[2],
-        Widget::Battery => 64,
+        Widget::Battery | Widget::Network | Widget::Audio => 64,
         Widget::Tasks => tasks as u32 * style.widths[1],
         Widget::Gap(width) => width,
         Widget::Label(index) => {
@@ -604,30 +610,42 @@ pub fn layout(style: &PanelStyle, screen_width: u32, tasks: usize) -> Vec<Placed
         .filter(|&&w| w != Widget::Tasks)
         .map(|&w| width_for(style, w, 0))
         .sum();
+    let optional = [Widget::Battery, Widget::Audio, Widget::Network];
+    let enabled = optional.map(|widget| sections.iter().flatten().any(|&w| w == widget));
+    let without_status = fixed_width.saturating_sub(
+        enabled.iter().filter(|&&present| present).count() as u32 * 64);
     let has_clock = sections.iter().flatten().any(|&w| w == Widget::Clock);
-    let has_battery = sections.iter().flatten().any(|&w| w == Widget::Battery);
-    let fixed_without_battery = fixed_width.saturating_sub(if has_battery { 64 } else { 0 });
-    let show_clock = !has_clock || screen_width >= fixed_without_battery;
-    let fixed_without_optional = fixed_without_battery.saturating_sub(
+    let show_clock = !has_clock || screen_width >= without_status;
+    let mut effective_fixed = without_status.saturating_sub(
         if show_clock || !has_clock { 0 } else { style.widths[2] });
-    let slots_without = screen_width.saturating_sub(fixed_without_optional + 8)
-        / style.widths[1];
-    let slots_with = screen_width.saturating_sub(fixed_without_optional + 64 + 8)
-        / style.widths[1];
-    // Preserve existing task capacity: battery information yields to task
-    // groups when its width would otherwise remove a visible window.
-    let show_battery = has_battery && screen_width >= fixed_without_optional + 64
-        && (slots_with >= tasks.min(MAX_TRACKED_TASKS) as u32
-            || slots_with == slots_without);
-    let effective_fixed = fixed_without_optional + if show_battery { 64 } else { 0 };
+    let baseline_slots = screen_width.saturating_sub(effective_fixed + 8) / style.widths[1];
+    let mut show_status = [false; 3];
+    // Preserve task capacity, adding lower-priority read-only indicators only
+    // when the next one does not cost an existing visible task group.
+    for (index, present) in enabled.into_iter().enumerate() {
+        if !present { continue; }
+        let next_width = effective_fixed + 64;
+        let slots = screen_width.saturating_sub(next_width + 8) / style.widths[1];
+        if screen_width >= next_width && (slots >= tasks.min(MAX_TRACKED_TASKS) as u32
+            || slots == baseline_slots) {
+            show_status[index] = true;
+            effective_fixed = next_width;
+        }
+    }
     let visible = tasks
         .min(MAX_TRACKED_TASKS)
         .min((screen_width.saturating_sub(effective_fixed + 8) / style.widths[1]) as usize);
+    let is_visible = |widget: Widget| -> bool {
+        if widget == Widget::Clock { return show_clock; }
+        if let Some(index) = optional.iter().position(|&candidate| candidate == widget) {
+            return show_status[index];
+        }
+        true
+    };
     let section_width = |widgets: &[Widget]| -> u32 {
         widgets
             .iter()
-            .filter(|&&w| (w != Widget::Clock || show_clock)
-                && (w != Widget::Battery || show_battery))
+            .filter(|&&w| is_visible(w))
             .map(|&w| width_for(style, w, visible))
             .sum()
     };
@@ -640,8 +658,7 @@ pub fn layout(style: &PanelStyle, screen_width: u32, tasks: usize) -> Vec<Placed
     for (index, begin) in [0, middle_x, end_x].into_iter().enumerate() {
         let mut x = begin;
         for &widget in &sections[index] {
-            if (widget == Widget::Clock && !show_clock)
-                || (widget == Widget::Battery && !show_battery) {
+            if !is_visible(widget) {
                 continue;
             }
             let width = width_for(style, widget, visible);
@@ -724,7 +741,7 @@ pub fn hit(
                 }
             }
             Widget::Clock => Some(Hit::Clock),
-            Widget::Battery => None,
+            Widget::Battery | Widget::Network | Widget::Audio => None,
             Widget::Gap(_) | Widget::Label(_) => None,
         };
     }
@@ -876,6 +893,23 @@ mod tests {
         assert!(layout(&style, 800, 2).iter().any(|item| item.widget == Widget::Battery));
         assert!(!layout(&style, 800, 10).iter().any(|item| item.widget == Widget::Battery));
         assert_eq!(task_view(&style, 800, 10, 0).unwrap().slots, 3);
+    }
+
+    #[test]
+    fn native_statuses_preserve_window_slots_and_have_no_fake_click_targets() {
+        let style = load("classic").unwrap();
+        let normal = layout(&style, 1024, 2);
+        for widget in [Widget::Battery, Widget::Audio, Widget::Network] {
+            let indicator = normal.iter().find(|item| item.widget == widget).unwrap();
+            assert_eq!(indicator.width, 64);
+            assert_eq!(hit(f64::from(indicator.x + 15), 1024, 2, 0, &style), None);
+        }
+        let overflow = layout(&style, 800, 20);
+        let statuses: Vec<_> = overflow.iter().filter(|item| matches!(item.widget,
+            Widget::Battery | Widget::Audio | Widget::Network)).collect();
+        assert_eq!(statuses.len(), 1);
+        assert_eq!(statuses[0].widget, Widget::Battery);
+        assert_eq!(task_view(&style, 800, 20, 0).unwrap().slots, 3);
     }
 
     #[test]

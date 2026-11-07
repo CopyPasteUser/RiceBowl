@@ -1,5 +1,17 @@
 # RiceBowl changelog
 
+## Unreleased — live native network/audio status (7 November 2026)
+
+- Render real NetworkManager connectivity states and WirePlumber default-sink
+  volume/mute indicators in native RicePlate, with explicit unavailability.
+  Never present a status-only widget as a working quick-action button.
+- Use one optional, sleeping worker thread with bounded `nmcli`/`wpctl`
+  subprocess timeouts and calloop wakeups, keeping input and frame processing
+  responsive. Do not start a separate daemon or poll on every UI event.
+- Preserve the taskbar's window-group capacity by hiding lower-priority status
+  slots when space is tight. Add parser, geometry and genuine framebuffer
+  painting tests; keep the SNI tray, native controls and hardware signoff open.
+
 ## Unreleased — kernel-backed native battery indicator (7 November 2026)
 
 - Render the first real native RicePlate hardware-status widget: battery

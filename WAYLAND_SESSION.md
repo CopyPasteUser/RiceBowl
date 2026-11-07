@@ -221,8 +221,13 @@ total. A `gap` has width 4–64; a noninteractive `label` allows 1–24 safe ASC
 characters (`A–Z`, `a–z`, digits, spaces, `._:+-`). Limits are 24 typed nodes,
 8 labels and 8 root nodes per panel region. Widget IDs cannot be duplicated,
 and either a launcher or task list is required. The native panel currently
-renders launcher, tasks, clock, a read-only battery label, labels and spacing;
-network, audio and tray remain **Waybar-only**. Native battery state comes from
+renders launcher, tasks, clock, read-only battery/network/audio labels, and
+static labels/spacing; the system tray remains **Waybar-only**. NetworkManager
+(`nmcli`) and WirePlumber (`wpctl`) are sampled by one bounded worker thread
+only when the active recipe includes their widgets. Unavailable services are
+shown as `N/A`, not as connected or working. Their refresh interval is 30
+seconds, without a second background service or blocking Wayland input.
+Native battery state comes from
 Linux sysfs once per minute, displays `N/A` when absent and yields space to
 overflowed task groups. No power control or UPower subscription is implied.
 Waybar uses GTK/CSS minimum widths,
@@ -669,7 +674,7 @@ areas aligned with the visible labels. Only visible entries accept clicks; if th
 protocol is missing the panel keeps its launcher and reports the limitation.
 It is **not** a replacement taskbar: despite later additions of calendar,
 keyboard task navigation and multi-output panels, it still lacks a native tray,
-network/audio controls and notification handling. Do not start it automatically
+network/audio quick actions and notification handling. Do not start it automatically
 alongside Waybar.
 
 The native prototype understands two *bundled* schema-v1 RicePlate recipes:
@@ -686,7 +691,7 @@ on minute boundaries through the Wayland event loop without a 1 Hz timer.
 Custom schema-v2/v3 panel recipes additionally support strict per-widget widths;
 schema-v3 adds validated nested groups, static text and spacers with real native
 geometry/hit areas; schema-v1 recipes retain their original native dimensions.
-Network/audio indicators and the tray still need functional Rust backends. The native
+Network/audio interactions and the tray still need functional Rust backends. The native
 renderer deliberately omits unavailable widgets without displaying pretend
 buttons. Custom recipes cannot contain commands or arbitrary executable code.
 
