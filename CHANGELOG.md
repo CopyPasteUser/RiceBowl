@@ -14,6 +14,9 @@
   Complete native editors, a live pack transaction and hardware acceptance
   remain open. No privileged service, permission bypass or default-session
   takeover is introduced.
+- Make the existing two-output Waybar CI smoke wait for **genuine rendered
+  panel pixels** (bounded retries), not merely a newly spawned Waybar PID.
+  Persistent missing panels still fail the same pixel check.
 
 ## Unreleased — Native RicePop history tabs
 
