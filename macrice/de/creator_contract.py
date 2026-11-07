@@ -186,6 +186,8 @@ def describe_creator_api() -> dict[str, object]:
              "contract_version": 1},
             {"command": "capture", "effect": "explicit live Wayland screen capture (private data)",
              "cli": "de capture --output NEW.png --json", "contract_version": 1},
+            {"command": "notifications", "effect": "read live Mako alerts and prior history without replaying actions",
+             "cli": "de notifications --json", "contract_version": 1},
             {"command": "pack-export", "effect": "create portable validated recipe archive",
              "cli": "de pack-export --recipe ID --output NEW.ricepack --json",
              "contract_version": 2},

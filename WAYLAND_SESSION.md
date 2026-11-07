@@ -447,6 +447,15 @@ visual baseline sign-off and functional keyboard testing remain open.
 
 #### Portable Wayland RicePacks and Creator API (experimental)
 
+For experimental **Wayland RicePop diagnostics**, run
+`ricebowl de notifications --json` explicitly inside the opt-in labwc session.
+It queries the existing optional Mako host for current notifications and its
+history. The JSON can contain private message bodies: handle it like a
+personal screenshot, and do not paste it publicly. If Mako is absent or not
+running, the command returns an explicit unavailable error. It never starts a
+notification daemon, invokes saved notification actions or modifies history.
+This is a read-only Creator integration, not a finished on-screen center.
+
 Discover the implemented authoring operations, required flags, safe effects,
 versioned output and their limits without launching a model or a daemon:
 

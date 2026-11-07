@@ -1,5 +1,14 @@
 # RiceBowl changelog
 
+## Unreleased — RicePop Wayland notification bridge
+
+- Add opt-in, read-only `ricebowl de notifications --json` integration with the
+  existing Mako notification owner in experimental labwc sessions. Return
+  bounded active/history records and explicit unavailable/error state without
+  storing messages, invoking third-party actions or launching a second daemon.
+- Keep personal notification contents available only through an explicit user
+  query. The native notification center/OSD is not implemented yet.
+
 ## Unreleased — RicePack v2 bundled wallpaper integrity
 
 - Deterministically export v2 RicePacks with a SHA-256 receipt for the exact
