@@ -10,8 +10,10 @@ mod icon_positions;
 mod native_menu;
 mod recipe;
 mod task_groups;
+mod task_navigation;
 use native_menu::{Hit as MenuHit, MenuState};
 use recipe::{Hit, PanelStyle, Widget};
+use task_navigation::Target as KeyboardTarget;
 use smithay_client_toolkit::{
     compositor::{CompositorHandler, CompositorState, FrameCallbackData},
     delegate_registry,
@@ -116,7 +118,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     layer.set_anchor(edge | Anchor::LEFT | Anchor::RIGHT);
     layer.set_size(0, recipe.height);
     layer.set_exclusive_zone(recipe.height as i32);
-    layer.set_keyboard_interactivity(KeyboardInteractivity::None);
+    layer.set_keyboard_interactivity(KeyboardInteractivity::OnDemand);
     layer.commit();
 
     // One small Bottom-layer surface per icon: transparent desktop space is
@@ -197,6 +199,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         pointer: None,
         keyboard: None,
         focused_icon: None,
+        focused_panel: None,
+        focused_target: None,
         icon_drag: None,
         icon_position_dirty: false,
         menu_focused: false,
@@ -287,6 +291,8 @@ struct RicePlate {
     pointer: Option<wl_pointer::WlPointer>,
     keyboard: Option<wl_keyboard::WlKeyboard>,
     focused_icon: Option<usize>,
+    focused_panel: Option<wl_surface::WlSurface>,
+    focused_target: Option<KeyboardTarget>,
     icon_drag: Option<IconDrag>,
     icon_position_dirty: bool,
     menu_focused: bool,
@@ -306,6 +312,79 @@ struct RicePlate {
 }
 
 impl RicePlate {
+    fn panel_geometry(&self, surface: &wl_surface::WlSurface)
+        -> Option<(Option<usize>, u32, usize)>
+    {
+        if surface == self.layer.wl_surface() {
+            return Some((None, self.width, self.task_offset));
+        }
+        self.mirrors.iter().enumerate()
+            .find(|(_, mirror)| mirror.surface.wl_surface() == surface)
+            .map(|(index, mirror)| (Some(index), mirror.width, mirror.task_offset))
+    }
+
+    fn activate_launcher(&mut self, mirror: Option<usize>, qh: &QueueHandle<Self>) {
+        if mirror.is_none() && self.menu_layer.is_some() {
+            self.set_menu_visible(!self.menu_state.visible, qh);
+        } else {
+            self.activate_action("applications", qh);
+        }
+    }
+
+    fn activate_group(&mut self, index: usize) {
+        let groups = self.grouped_tasks();
+        if let Some(group) = groups.get(index) {
+            let active_index = group.members.iter().copied()
+                .find(|&member| self.tasks[member].active);
+            let (target, minimize) = task_groups::click_target(group, active_index);
+            if minimize {
+                self.tasks[target].handle.set_minimized();
+            } else if let Some(seat) = self.primary_seat.as_ref() {
+                self.tasks[target].handle.activate(seat);
+            }
+        }
+    }
+
+    fn handle_panel_key(&mut self, key: Keysym, qh: &QueueHandle<Self>) -> bool {
+        let Some(surface) = self.focused_panel.as_ref() else { return false; };
+        let Some((mirror, width, offset)) = self.panel_geometry(surface) else { return false; };
+        let groups = self.grouped_tasks();
+        let count = groups.len();
+        match key {
+            Keysym::Right | Keysym::Tab | Keysym::Down
+            | Keysym::Left | Keysym::ISO_Left_Tab | Keysym::Up => {
+                let delta = if matches!(key, Keysym::Left | Keysym::ISO_Left_Tab | Keysym::Up) {
+                    -1
+                } else { 1 };
+                self.focused_target = task_navigation::advance(
+                    &self.recipe, width, count, self.focused_target, delta,
+                );
+                let next = task_navigation::reveal(
+                    &self.recipe, width, count, offset, self.focused_target,
+                );
+                if let Some(index) = mirror {
+                    self.mirrors[index].task_offset = next;
+                } else {
+                    self.task_offset = next;
+                }
+                self.request_redraw(qh);
+            }
+            Keysym::Return | Keysym::KP_Enter | Keysym::space => {
+                match self.focused_target {
+                    Some(KeyboardTarget::Launcher) => self.activate_launcher(mirror, qh),
+                    Some(KeyboardTarget::Task(index)) => self.activate_group(index),
+                    None => {}
+                }
+            }
+            Keysym::Escape => {
+                self.focused_target = None;
+                self.request_redraw(qh);
+            }
+            _ => return false,
+        }
+        true
+    }
+
     fn save_icon_positions(&mut self) {
         if !self.icon_position_dirty {
             return;
@@ -344,7 +423,7 @@ impl RicePlate {
             surface.set_anchor(edge | Anchor::LEFT | Anchor::RIGHT);
             surface.set_size(0, self.recipe.height);
             surface.set_exclusive_zone(self.recipe.height as i32);
-            surface.set_keyboard_interactivity(KeyboardInteractivity::None);
+            surface.set_keyboard_interactivity(KeyboardInteractivity::OnDemand);
             surface.commit();
             self.mirrors.push(PanelMirror {
                 output, surface, pool: None, width: 0, height: 0,
@@ -352,10 +431,19 @@ impl RicePlate {
                 task_offset: 0,
             });
         }
+        if self.focused_panel.as_ref().is_some_and(|surface|
+            self.panel_geometry(surface).is_none()) {
+            self.focused_panel = None;
+            self.focused_target = None;
+        }
     }
 
     fn redraw_mirror(&mut self, index: usize, qh: &QueueHandle<Self>) {
         let groups = self.grouped_tasks();
+        let selected = if self.focused_panel.as_ref()
+            == self.mirrors.get(index).map(|mirror| mirror.surface.wl_surface()) {
+            self.focused_target
+        } else { None };
         let Some(mirror) = self.mirrors.get_mut(index) else { return };
         if !mirror.configured || mirror.width == 0 || mirror.height == 0 { return; }
         let surface = mirror.surface.wl_surface();
@@ -374,7 +462,7 @@ impl RicePlate {
             }
         };
         paint_panel(canvas, mirror.width, mirror.height, &self.recipe, &groups,
-                    &self.clock, mirror.task_offset);
+                    &self.clock, mirror.task_offset, selected);
         surface.damage_buffer(0, 0, mirror.width as i32, mirror.height as i32);
         if let Err(error) = buffer.attach_to(surface) {
             eprintln!("RicePlate: cannot attach output panel: {error}");
@@ -639,6 +727,9 @@ impl RicePlate {
         let width = self.width;
         let height = self.height;
         let groups = self.grouped_tasks();
+        let selected = if self.focused_panel.as_ref() == Some(self.layer.wl_surface()) {
+            self.focused_target
+        } else { None };
         let surface = self.layer.wl_surface();
         let stride = (width * 4) as i32;
         let pool = self
@@ -663,7 +754,7 @@ impl RicePlate {
             }
         };
         paint_panel(canvas, width, height, &self.recipe, &groups,
-                    &self.clock, self.task_offset);
+                    &self.clock, self.task_offset, selected);
         surface.damage_buffer(0, 0, width as i32, height as i32);
         if let Err(error) = buffer.attach_to(surface) {
             eprintln!("RicePlate: failed to attach Wayland buffer: {error}");
@@ -678,7 +769,8 @@ impl RicePlate {
 }
 
 fn paint_panel(canvas: &mut [u8], width: u32, height: u32,
-               style: &PanelStyle, groups: &[TaskGroup], clock: &str, offset: usize) {
+               style: &PanelStyle, groups: &[TaskGroup], clock: &str, offset: usize,
+               selected: Option<KeyboardTarget>) {
     for pixel in canvas.chunks_exact_mut(4) {
         pixel.copy_from_slice(&style.background.to_le_bytes());
     }
@@ -690,6 +782,10 @@ fn paint_panel(canvas: &mut [u8], width: u32, height: u32,
                 draw_text(canvas, width, height,
                           placed.x + placed.width.saturating_sub(32) / 2,
                           height / 2 - 4, "Apps", style.foreground);
+                if selected == Some(KeyboardTarget::Launcher) {
+                    paint_focus_border(canvas, width, height, placed.x, placed.width,
+                                       style.foreground);
+                }
             }
             Widget::Tasks => {
                 let Some(view) = recipe::task_view(style, width, groups.len(), offset) else {
@@ -711,6 +807,10 @@ fn paint_panel(canvas: &mut [u8], width: u32, height: u32,
                     let label = task_groups::visible_label(group, cell_width);
                     draw_text(canvas, width, height, x + 10, height / 2 - 4,
                               &label, style.foreground);
+                    if selected == Some(KeyboardTarget::Task(view.start + index)) {
+                        paint_focus_border(canvas, width, height, x, cell_width,
+                                           style.foreground);
+                    }
                 }
                 if view.prev {
                     draw_text(canvas, width, height, placed.x + view.content_width + 8,
@@ -735,6 +835,17 @@ fn paint_panel(canvas: &mut [u8], width: u32, height: u32,
             }
         }
     }
+}
+
+fn paint_focus_border(canvas: &mut [u8], width: u32, height: u32,
+                      x: u32, cell_width: u32, color: u32) {
+    if cell_width < 6 || height < 6 { return; }
+    let inset = x.saturating_add(2);
+    let inside = cell_width.saturating_sub(4);
+    fill_rect(canvas, width, height, inset, 2, inside, 2, color);
+    fill_rect(canvas, width, height, inset, height - 4, inside, 2, color);
+    fill_rect(canvas, width, height, inset, 2, 2, height - 4, color);
+    fill_rect(canvas, width, height, x.saturating_add(cell_width - 4), 2, 2, height - 4, color);
 }
 
 fn logout_available() -> bool {
@@ -1042,6 +1153,10 @@ impl CompositorHandler for RicePlate {
 
 impl LayerShellHandler for RicePlate {
     fn closed(&mut self, _: &Connection, _: &QueueHandle<Self>, layer: &LayerSurface) {
+        if self.focused_panel.as_ref() == Some(layer.wl_surface()) {
+            self.focused_panel = None;
+            self.focused_target = None;
+        }
         if layer.wl_surface() == self.layer.wl_surface() {
             self.closed = true;
         } else if let Some(index) = self.mirrors.iter().position(|mirror|
@@ -1245,7 +1360,7 @@ impl SeatHandler for RicePlate {
     fn remove_capability(
         &mut self,
         _: &Connection,
-        _: &QueueHandle<Self>,
+        qh: &QueueHandle<Self>,
         _: wl_seat::WlSeat,
         capability: Capability,
     ) {
@@ -1260,6 +1375,13 @@ impl SeatHandler for RicePlate {
                 keyboard.release();
             }
             self.menu_focused = false;
+            if let Some(index) = self.focused_icon.take() {
+                self.redraw_icon(index);
+                self.save_icon_positions();
+            }
+            self.focused_panel = None;
+            self.focused_target = None;
+            self.request_redraw(qh);
         }
     }
     fn remove_seat(&mut self, _: &Connection, _: &QueueHandle<Self>, seat: wl_seat::WlSeat) {
@@ -1273,7 +1395,7 @@ impl KeyboardHandler for RicePlate {
     fn enter(
         &mut self,
         _: &Connection,
-        _: &QueueHandle<Self>,
+        qh: &QueueHandle<Self>,
         _: &wl_keyboard::WlKeyboard,
         surface: &wl_surface::WlSurface,
         _: u32,
@@ -1285,6 +1407,26 @@ impl KeyboardHandler for RicePlate {
             .as_ref()
             .is_some_and(|menu| menu.surface.wl_surface() == surface)
             && self.menu_state.visible;
+        if let Some((mirror, width, offset)) = self.panel_geometry(surface) {
+            let groups = self.grouped_tasks();
+            let active = groups.iter().position(|group| group.active);
+            self.focused_panel = Some(surface.clone());
+            self.focused_target = task_navigation::initial(
+                &self.recipe, width, groups.len(), active,
+            );
+            let next = task_navigation::reveal(
+                &self.recipe, width, groups.len(), offset, self.focused_target,
+            );
+            if let Some(index) = mirror {
+                self.mirrors[index].task_offset = next;
+            } else {
+                self.task_offset = next;
+            }
+            self.request_redraw(qh);
+        } else if self.focused_panel.take().is_some() {
+            self.focused_target = None;
+            self.request_redraw(qh);
+        }
         let next = self.icon_layers.iter()
             .position(|icon| icon.surface.wl_surface() == surface && icon.placed.is_some());
         if self.focused_icon != next {
@@ -1319,6 +1461,11 @@ impl KeyboardHandler for RicePlate {
                 self.save_icon_positions();
             }
         }
+        if self.focused_panel.as_ref() == Some(surface) {
+            self.focused_panel = None;
+            self.focused_target = None;
+            self.request_redraw(qh);
+        }
     }
 
     fn press_key(
@@ -1329,6 +1476,9 @@ impl KeyboardHandler for RicePlate {
         _: u32,
         event: KeyEvent,
     ) {
+        if self.handle_panel_key(event.keysym, qh) {
+            return;
+        }
         if let Some(index) = self.focused_icon {
             match event.keysym {
                 Keysym::Return | Keysym::KP_Enter | Keysym::space => {
@@ -1401,7 +1551,11 @@ impl KeyboardHandler for RicePlate {
         serial: u32,
         event: KeyEvent,
     ) {
-        self.press_key(conn, qh, keyboard, serial, event);
+        // Never repeat Enter/Space: holding a key must not launch multiple apps.
+        if matches!(event.keysym, Keysym::Left | Keysym::Right | Keysym::Up
+            | Keysym::Down | Keysym::Tab | Keysym::ISO_Left_Tab) {
+            self.press_key(conn, qh, keyboard, serial, event);
+        }
     }
 
     fn release_key(
@@ -1545,32 +1699,18 @@ impl PointerHandler for RicePlate {
                         &self.recipe,
                     ) {
                         Some(Hit::Launcher) => {
-                            if mirror_index.is_some() {
-                                // The existing fuzzel picker opens on the
-                                // focused output; a native menu per output
-                                // remains part of the parity roadmap.
-                                self.activate_action("applications", qh);
-                            } else if self.menu_layer.is_some() {
-                                self.set_menu_visible(!self.menu_state.visible, qh);
-                            } else {
-                                self.activate_action("applications", qh);
+                            if self.focused_panel.as_ref() == Some(&event.surface) {
+                                self.focused_target = Some(KeyboardTarget::Launcher);
+                                self.request_redraw(qh);
                             }
+                            self.activate_launcher(mirror_index, qh);
                         }
                         Some(Hit::Task(index)) => {
-                            if let Some(group) = groups.get(index) {
-                                let active_index = group
-                                    .members
-                                    .iter()
-                                    .copied()
-                                    .find(|&member| self.tasks[member].active);
-                                let (target, minimize) =
-                                    task_groups::click_target(group, active_index);
-                                if minimize {
-                                    self.tasks[target].handle.set_minimized();
-                                } else if let Some(seat) = self.primary_seat.as_ref() {
-                                    self.tasks[target].handle.activate(seat);
-                                }
+                            if self.focused_panel.as_ref() == Some(&event.surface) {
+                                self.focused_target = Some(KeyboardTarget::Task(index));
+                                self.request_redraw(qh);
                             }
+                            self.activate_group(index);
                         }
                         Some(Hit::PreviousTasks) => {
                             if let Some(view) = recipe::task_view(
@@ -1729,13 +1869,31 @@ mod tests {
         let height = style.height;
         let mut first = vec![0_u8; (width * height * 4) as usize];
         let mut second = vec![0_u8; (width * height * 4) as usize];
-        paint_panel(&mut first, width, height, &style, &[], "12:00", 0);
-        paint_panel(&mut second, width, height, &style, &[], "12:00", 0);
+        paint_panel(&mut first, width, height, &style, &[], "12:00", 0, None);
+        paint_panel(&mut second, width, height, &style, &[], "12:00", 0, None);
         assert_eq!(first, second);
         assert_eq!(&first[(width * (height / 2) + 400) as usize * 4..][..4],
                    &style.background.to_le_bytes());
         assert!(first.chunks_exact(4).any(|pixel|
             pixel == style.active.to_le_bytes()));
+    }
+
+    #[test]
+    fn keyboard_focus_frame_only_marks_the_selected_panel_widget() {
+        let style = recipe::load("classic").unwrap();
+        let width = 960;
+        let height = style.height;
+        let len = (width * height * 4) as usize;
+        let mut normal = vec![0; len];
+        let mut selected = vec![0; len];
+        paint_panel(&mut normal, width, height, &style, &[], "12:00", 0, None);
+        paint_panel(&mut selected, width, height, &style, &[], "12:00", 0,
+                    Some(KeyboardTarget::Launcher));
+        assert_ne!(normal, selected);
+        let launcher = recipe::layout(&style, width, 0).into_iter()
+            .find(|item| item.widget == Widget::Launcher).unwrap();
+        let pixel = ((2 * width + launcher.x + 10) * 4) as usize;
+        assert_eq!(&selected[pixel..pixel + 4], &style.foreground.to_le_bytes());
     }
 
     #[test]
