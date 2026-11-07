@@ -253,7 +253,8 @@ fn validate_menu(menu: &Menu) -> Result<(), Box<dyn Error>> {
         }
         for action in &group.actions {
             if !["applications", "terminal", "lock", "logout",
-                 "wifi-toggle", "audio-mute", "audio-up", "audio-down"].contains(&action.as_str())
+                 "wifi-toggle", "audio-mute", "audio-up", "audio-down", "notifications"]
+                .contains(&action.as_str())
                 || !seen.insert(action.as_str())
             {
                 return Err("Menu contains unsupported or duplicate action".into());
@@ -760,6 +761,8 @@ mod tests {
         let menu = recipe.menu.as_ref().unwrap();
         assert_eq!(menu.groups[1].actions,
                    ["wifi-toggle", "audio-mute", "audio-up", "audio-down"]);
+        assert_eq!(menu.groups[2].actions,
+                   ["notifications", "lock", "logout"]);
     }
 
     #[test]

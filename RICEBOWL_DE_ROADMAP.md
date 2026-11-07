@@ -249,6 +249,16 @@ affecting XFCE, including a failed-session recovery. **Not yet signed off.**
 
 ### 3 — RiceSpice and RicePop
 
+- [x] Add a **first interactive native RicePop active-notification view** to
+  the existing RicePlate schema-v4/v5 menu. A deliberately selected
+  `notifications` action asynchronously reads the already-validated Mako
+  bridge; a bounded three-row viewport offers keyboard/pointer selection,
+  refresh, and explicit single-ID dismissal through the same CLI. Loading,
+  empty, unreachable, stale and denial states are visible. Closing the view
+  discards message content; there is no resident poller, second D-Bus owner,
+  history replay or arbitrary recipe-supplied command. This is an incremental
+  **active-alert inbox**, not full RicePop history, OSD, rich notification
+  actions, accessibility signoff or independent native notification hosting.
 - [x] Add an **on-demand RicePop/Mako notification inventory** for the opt-in
   Wayland session: `de notifications --json` reads bounded active and past
   notifications from the session's existing Mako host, strips embedded action
@@ -291,8 +301,10 @@ affecting XFCE, including a failed-session recovery. **Not yet signed off.**
   Bluetooth, accessibility, power, timezone and user preferences.
 - [ ] Delegate privileged actions to polkit/system services; never add a
   privileged always-on RiceBowl daemon by default.
-- [ ] Provide consistent quick actions, notifications, OSD and history,
-  including disabled/error/permission states.
+- [ ] Complete native notification history and OSD, assistive semantics,
+  other session notification backends and consistent permission/error states
+  across quick actions and full settings pages. The first active-alert inbox
+  and single-ID dismissal are now implemented.
 - [ ] Integrate a secure lock screen, idle policy and suspend/resume.
 
 **Done when:** common desktop settings and recovery workflows no longer

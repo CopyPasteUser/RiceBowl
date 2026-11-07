@@ -1,5 +1,15 @@
 # RiceBowl changelog
 
+## Unreleased — Native RicePop active alerts
+
+- Add an opt-in native RicePlate menu view for actual active Mako notifications
+  with bounded three-row navigation, page movement, explicit refresh, and
+  individual dismissal through RicePop's already-validated Python adapter.
+- Fetch only on explicit opening/refresh, keep Mako as sole notification owner,
+  avoid duplicate daemons or background message polling and discard private
+  content when leaving. Show unavailable/empty/loading/refused states.
+  History UI, OSD, AT semantics and real hardware tests are still open.
+
 ## Unreleased — RicePop Wayland notification bridge
 
 - Add opt-in, read-only `ricebowl de notifications --json` integration with the
@@ -7,7 +17,7 @@
   bounded active/history records and explicit unavailable/error state without
   storing messages, invoking third-party actions or launching a second daemon.
 - Keep personal notification contents available only through an explicit user
-  query. The native notification center/OSD is not implemented yet.
+  query. The broader history notification center/OSD is not implemented yet.
 
 ## Unreleased — RicePack v2 bundled wallpaper integrity
 

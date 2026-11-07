@@ -37,7 +37,8 @@ ICON_WIDTH = 104
 ICON_HEIGHT = 88
 ICON_ACTIONS = frozenset(("applications", "terminal", "lock"))
 MENU_ACTIONS = frozenset(("applications", "terminal", "lock", "logout",
-                          "wifi-toggle", "audio-mute", "audio-up", "audio-down"))
+                          "wifi-toggle", "audio-mute", "audio-up", "audio-down",
+                          "notifications"))
 WALLPAPERS = frozenset(("aero-seven-blue", "aero-seven-night", "luna-hills",
                         "classic-teal", "ten-blue", "ten-midnight", "chrome-pastel",
                         "frutiger-future", "aurora-day", "aurora-night"))
