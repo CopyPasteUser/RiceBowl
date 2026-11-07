@@ -556,10 +556,6 @@ impl RicePlate {
                 }
                 self.request_redraw(qh);
             }
-            Keysym::space if self.menu_state.view == native_menu::View::Search => {
-                self.menu_state.search_input(" ");
-                None
-            }
             Keysym::Return | Keysym::KP_Enter | Keysym::space => {
                 match self.focused_target {
                     Some(KeyboardTarget::Launcher) => self.activate_launcher(mirror, qh),
@@ -2321,6 +2317,10 @@ impl KeyboardHandler for RicePlate {
             }
             Keysym::Right => {
                 self.menu_state.group_by(menu, 1);
+                None
+            }
+            Keysym::space if self.menu_state.view == native_menu::View::Search => {
+                self.menu_state.search_input(" ");
                 None
             }
             Keysym::Return | Keysym::KP_Enter | Keysym::space => {
