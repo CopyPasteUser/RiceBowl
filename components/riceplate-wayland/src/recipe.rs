@@ -25,7 +25,7 @@ pub const ICON_WIDTH: u32 = 104;
 pub const ICON_HEIGHT: u32 = 88;
 const MAX_DESKTOP_ICONS: usize = 8;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct DesktopIcon {
     pub label: String,
     pub action: String,
@@ -80,6 +80,7 @@ pub struct TaskViewport {
 }
 
 pub struct PanelStyle {
+    pub id: String,
     pub height: u32,
     pub top: bool,
     /// Launcher, per-task and clock logical widths (schema v1 uses defaults).
@@ -517,6 +518,7 @@ pub fn parse(raw: &str, expected_id: Option<&str>) -> Result<PanelStyle, Box<dyn
         _ => return Err("Shell menu, desktop, tokens and responsive require schema v4".into()),
     }
     Ok(PanelStyle {
+        id: recipe.id,
         height: recipe.panel.height,
         top: recipe.panel.position == "top",
         widths,

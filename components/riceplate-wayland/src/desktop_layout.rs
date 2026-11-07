@@ -4,6 +4,17 @@
 use crate::recipe::{DesktopIcon, ICON_HEIGHT, ICON_WIDTH};
 
 const GAP: u32 = 8;
+pub const MAX_SAVED_POSITION: u32 = 16_384;
+
+/// Wayland pointer coordinates are surface-relative, including during a grab.
+/// Use the current surface placement to prevent jumps as its margin moves.
+pub fn dragged_to(current: (u32, u32), anchor: (f64, f64), pointer: (f64, f64)) -> (u32, u32) {
+    let moved = |origin: u32, delta: f64| {
+        (f64::from(origin) + delta).round().clamp(0.0, f64::from(MAX_SAVED_POSITION)) as u32
+    };
+    (moved(current.0, pointer.0 - anchor.0),
+     moved(current.1, pointer.1 - anchor.1))
+}
 
 fn overlaps(x: u32, y: u32, other_x: u32, other_y: u32) -> bool {
     x.abs_diff(other_x) < ICON_WIDTH && y.abs_diff(other_y) < ICON_HEIGHT
@@ -113,5 +124,14 @@ mod tests {
             assert!(visible.iter().skip(index + 1).all(|&(ox, oy)|
                     !overlaps(x, y, ox, oy)));
         }
+    }
+
+    #[test]
+    fn pointer_motion_translates_positions_without_underflow_or_jumps() {
+        assert_eq!(dragged_to((32, 96), (20.0, 10.0), (60.0, 30.0)), (72, 116));
+        assert_eq!(dragged_to((72, 116), (20.0, 10.0), (20.0, 10.0)), (72, 116));
+        assert_eq!(dragged_to((32, 96), (20.0, 10.0), (-200.0, -200.0)), (0, 0));
+        assert_eq!(dragged_to((16_380, 16_380), (0.0, 0.0), (100.0, 100.0)),
+                   (MAX_SAVED_POSITION, MAX_SAVED_POSITION));
     }
 }
