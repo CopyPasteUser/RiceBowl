@@ -36,7 +36,8 @@ MAX_DESKTOP_ICONS = 8
 ICON_WIDTH = 104
 ICON_HEIGHT = 88
 ICON_ACTIONS = frozenset(("applications", "terminal", "lock"))
-MENU_ACTIONS = frozenset(("applications", "terminal", "lock", "logout"))
+MENU_ACTIONS = frozenset(("applications", "terminal", "lock", "logout",
+                          "wifi-toggle", "audio-mute", "audio-up", "audio-down"))
 WALLPAPERS = frozenset(("aero-seven-blue", "aero-seven-night", "luna-hills",
                         "classic-teal", "ten-blue", "ten-midnight", "chrome-pastel",
                         "frutiger-future", "aurora-day", "aurora-night"))
@@ -797,11 +798,16 @@ def labwc_menu(recipe: PanelRecipe) -> str:
         "logout": ("Log out of RiceBowl", "Exit", None),
     }
     for index, group in enumerate(groups):
-        if index:
+        # RiceSpice quick actions belong to native RicePlate's bounded worker;
+        # Waybar/labwc fallback does not pretend to provide an equivalent.
+        supported = [action for action in group.actions if action in action_specs]
+        if not supported:
+            continue
+        if menu.findall("menu"):
             ET.SubElement(menu, "separator")
         submenu = ET.SubElement(menu, "menu", {"id": f"rice-group-{index}",
                                                  "label": group.title})
-        for action_id in group.actions:
+        for action_id in supported:
             label, action, command = action_specs[action_id]
             item = ET.SubElement(submenu, "item", {"label": label})
             attributes = {"name": action}

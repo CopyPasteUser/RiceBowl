@@ -4,6 +4,45 @@
 
 use std::{io::Read, process::{Command, Stdio}, thread, time::{Duration, Instant}};
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ControlAction {
+    WifiToggle,
+    AudioMute,
+    AudioUp,
+    AudioDown,
+}
+
+impl ControlAction {
+    pub fn from_id(id: &str) -> Option<Self> {
+        match id {
+            "wifi-toggle" => Some(Self::WifiToggle),
+            "audio-mute" => Some(Self::AudioMute),
+            "audio-up" => Some(Self::AudioUp),
+            "audio-down" => Some(Self::AudioDown),
+            _ => None,
+        }
+    }
+
+    pub fn apply(self) -> bool {
+        let command = match self {
+            Self::WifiToggle => {
+                let Some(state) = command_output("nmcli", &["--wait", "1", "radio", "wifi"])
+                else { return false; };
+                match state.trim() {
+                    "enabled" => ("nmcli", vec!["--wait", "3", "radio", "wifi", "off"]),
+                    "disabled" => ("nmcli", vec!["--wait", "3", "radio", "wifi", "on"]),
+                    _ => return false,
+                }
+            }
+            Self::AudioMute => ("wpctl", vec!["set-mute", "@DEFAULT_AUDIO_SINK@", "toggle"]),
+            Self::AudioUp => ("wpctl", vec!["set-volume", "@DEFAULT_AUDIO_SINK@", "5%+",
+                                             "--limit", "1.0"]),
+            Self::AudioDown => ("wpctl", vec!["set-volume", "@DEFAULT_AUDIO_SINK@", "5%-"]),
+        };
+        command_status(command.0, &command.1)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Network {
     Global,
@@ -95,15 +134,17 @@ impl SystemStatus {
     }
 }
 
-fn command_output(program: &str, args: &[&str]) -> Option<String> {
+fn spawn_bounded(program: &str, args: &[&str], output: bool) -> Option<(bool, String)> {
     let mut child = Command::new(program).args(args).env("LC_ALL", "C")
-        .stdin(Stdio::null()).stdout(Stdio::piped()).stderr(Stdio::null())
+        .stdin(Stdio::null())
+        .stdout(if output { Stdio::piped() } else { Stdio::null() })
+        .stderr(Stdio::null())
         .spawn().ok()?;
     let started = Instant::now();
     let status = loop {
         match child.try_wait() {
             Ok(Some(status)) => break status,
-            Ok(None) if started.elapsed() < Duration::from_millis(1200) => {
+            Ok(None) if started.elapsed() < Duration::from_millis(4000) => {
                 thread::sleep(Duration::from_millis(15));
             }
             _ => {
@@ -113,10 +154,20 @@ fn command_output(program: &str, args: &[&str]) -> Option<String> {
             }
         }
     };
-    if !status.success() { return None; }
     let mut output = String::new();
-    child.stdout.take()?.take(1024).read_to_string(&mut output).ok()?;
-    Some(output)
+    if let Some(stdout) = child.stdout.take() {
+        stdout.take(1024).read_to_string(&mut output).ok()?;
+    }
+    Some((status.success(), output))
+}
+
+fn command_output(program: &str, args: &[&str]) -> Option<String> {
+    spawn_bounded(program, args, true)
+        .and_then(|(success, value)| success.then_some(value))
+}
+
+fn command_status(program: &str, args: &[&str]) -> bool {
+    spawn_bounded(program, args, false).is_some_and(|(success, _)| success)
 }
 
 #[cfg(test)]
@@ -140,6 +191,17 @@ mod tests {
         assert_eq!(Audio::parse("Volume: 1.15"), Audio::Volume(115));
         for invalid in ["", "Volume: nan", "Volume: -2", "Volume: 12", "garbage"] {
             assert_eq!(Audio::parse(invalid), Audio::Unavailable);
+        }
+    }
+
+    #[test]
+    fn quick_actions_are_fixed_allowlisted_ids() {
+        assert_eq!(ControlAction::from_id("wifi-toggle"), Some(ControlAction::WifiToggle));
+        assert_eq!(ControlAction::from_id("audio-mute"), Some(ControlAction::AudioMute));
+        assert_eq!(ControlAction::from_id("audio-up"), Some(ControlAction::AudioUp));
+        assert_eq!(ControlAction::from_id("audio-down"), Some(ControlAction::AudioDown));
+        for invalid in ["", "terminal", "wifi off", "../../nmcli", "audio-volume 100"] {
+            assert_eq!(ControlAction::from_id(invalid), None);
         }
     }
 }

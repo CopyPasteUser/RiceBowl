@@ -1,5 +1,16 @@
 # RiceBowl changelog
 
+## Unreleased — RiceSpice native quick actions
+
+- Implement opt-in native-menu quick actions to toggle Wi-Fi, mute/unmute the
+  default audio sink and adjust volume by 5%. The existing sleeping RicePlate
+  worker executes only fixed NetworkManager/WirePlumber arguments with bounded
+  subprocess times and no shell/privileged helper. An asynchronous footer
+  reports applied, unavailable or permission-denied outcomes.
+- Ship a separate `quick-controls` schema-v4 example; the Waybar/labwc fallback
+  omits native-only actions instead of rendering dead buttons. The status
+  widgets remain labels, not misleading clickable toggles.
+
 ## Unreleased — Native desktop icons on multiple outputs
 
 - Replicate native schema-v5 desktop shortcuts on additional labwc outputs,

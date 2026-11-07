@@ -252,7 +252,8 @@ fn validate_menu(menu: &Menu) -> Result<(), Box<dyn Error>> {
             return Err("Invalid menu group".into());
         }
         for action in &group.actions {
-            if !["applications", "terminal", "lock", "logout"].contains(&action.as_str())
+            if !["applications", "terminal", "lock", "logout",
+                 "wifi-toggle", "audio-mute", "audio-up", "audio-down"].contains(&action.as_str())
                 || !seen.insert(action.as_str())
             {
                 return Err("Menu contains unsupported or duplicate action".into());
@@ -751,6 +752,15 @@ pub fn hit(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn native_quick_actions_are_recipe_allowlisted() {
+        let recipe = parse(include_str!("../../../examples/wayland/quick-controls.json"),
+                           Some("quick-controls")).unwrap();
+        let menu = recipe.menu.as_ref().unwrap();
+        assert_eq!(menu.groups[1].actions,
+                   ["wifi-toggle", "audio-mute", "audio-up", "audio-down"]);
+    }
 
     #[test]
     fn schema_v5_icons_are_strict_bounded_and_use_known_actions() {

@@ -239,6 +239,15 @@ affecting XFCE, including a failed-session recovery. **Not yet signed off.**
 
 ### 3 — RiceSpice and RicePop
 
+- [x] Deliver the first **real native RiceSpice quick actions** in the bounded
+  schema-v4 menu vocabulary: Wi-Fi radio toggle through NetworkManager,
+  default-sink mute/unmute and 5% volume steps through WirePlumber. Run only
+  after explicit pointer/keyboard selection on the existing worker thread;
+  show pending/success/failure feedback, never run a recipe-defined shell
+  command or create a privileged daemon. An opt-in example demonstrates the
+  controls; the Waybar/labwc fallback omits them. The status labels themselves
+  stay non-clickable. Device choosers, settings pages and notification ownership
+  remain open; hardware permission/device acceptance is still needed.
 - [ ] Implement usable native settings for screens, input, network, audio,
   Bluetooth, accessibility, power, timezone and user preferences.
 - [ ] Delegate privileged actions to polkit/system services; never add a

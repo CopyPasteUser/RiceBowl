@@ -10,6 +10,15 @@ wallpapers; neither adds a shell daemon or executable extension.
 | `heritage-workstation` | Classic desktop / OS-inspired | Bottom panel, square tasks, left desktop shortcuts | Bundled `classic-teal` | Applications, terminal, lock; logout in root menu |
 | `orbit-atelier` | Original evening-workspace concept | Tall top panel, separate central task area, right-area shortcuts | Bundled `aurora-night` | Same known Linux action IDs, different composition |
 
+`quick-controls.json` is a separate schema-v4 **native RiceSpice prototype**.
+Import it using `ricebowl de recipe-import --recipe "$PWD/examples/wayland/quick-controls.json"`,
+then explicitly preview it with `ricebowl de start --nested --panel native --recipe quick-controls`.
+Open its native start menu and choose **Quick actions** to toggle Wi-Fi radio,
+mute/unmute sound or change the default sink volume. The commands use existing
+user-session NetworkManager/WirePlumber permissions: refused or unavailable
+operations show an error in the menu. **Wi-Fi toggling can disconnect the
+session**; test locally when safe. The Waybar fallback hides those entries.
+
 ## Validate, inspect and render
 
 From the RiceBowl repository root on Linux:
