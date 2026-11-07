@@ -404,6 +404,13 @@ depend on the XFCE session.
   selected or applied. This **recipe-only** format references bundled assets;
   full visual asset manifests, preview evidence and multi-component apply
   transactions remain open.
+- [x] Upgrade **RicePack export to v2 with a real bundled wallpaper asset
+  receipt**: pin the wallpaper's installed bytes by SHA-256 and record separate
+  user-declared per-asset license, author, origin and source reference. Reject
+  corrupt/mismatched asset receipts at inspect/import and continue accepting
+  validated legacy v1 packs. The archive still contains only known recipe JSON,
+  **not** an external image or arbitrary code. Portable third-party asset
+  packaging, full cross-component apply and live rollback remain open.
 - [x] Add **explicit Creator next-login staging** (`de creator-status`,
   `de creator-stage`, `de creator-rollback`) with a required reviewed semantic
   SHA-256, optional compare-and-swap current-selection guard, one-level undo,

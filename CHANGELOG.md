@@ -1,5 +1,14 @@
 # RiceBowl changelog
 
+## Unreleased — RicePack v2 bundled wallpaper integrity
+
+- Deterministically export v2 RicePacks with a SHA-256 receipt for the exact
+  bundled wallpaper bytes plus optional, separate user-declared author/license/
+  origin/source metadata for that asset. Inspect/import verify the identity and
+  checksum; read-only validation still accepts legacy format-v1 archives.
+- Keep archive entries limited to `ricepack.json` and `recipe.json`, with no
+  executable payload or untrusted external asset. No automatic rice activation.
+
 ## Unreleased — RiceSpice native quick actions
 
 - Implement opt-in native-menu quick actions to toggle Wi-Fi, mute/unmute the

@@ -91,15 +91,20 @@ def describe_render() -> dict[str, object]:
 
 
 def describe_ricepack() -> dict[str, object]:
-    """Portable v1 recipe-only archive: no executable or external assets."""
+    """Portable v2 recipe archive with pinned bundled-asset receipts."""
     return {
-        "pack_version": 1,
+        "pack_version": 2,
+        "accepts_older_versions": [1],
         "format": "org.ricebowl.ricepack",
         "extension": ".ricepack",
         "entries": ["ricepack.json", "recipe.json"],
         "maximum_archive_bytes": 256 * 1024,
         "recipe_schema_versions": [1, 2, 3, 4, 5],
-        "asset_support": "bundled-wallpapers-only",
+        "asset_support": "bundled-wallpapers-only; sha256-pinned-reference-not-embedded",
+        "asset_manifest": {"since_version": 2, "version": 1,
+                           "fields": ["id", "sha256", "provenance"],
+                           "declared_provenance": ["author", "license", "origin", "source_reference"],
+                           "installed_wallpaper_must_match_digest": True},
         "third_party_assets": False,
         "arbitrary_code_or_scripts": False,
         "deterministic_export": True,
@@ -183,11 +188,11 @@ def describe_creator_api() -> dict[str, object]:
              "cli": "de capture --output NEW.png --json", "contract_version": 1},
             {"command": "pack-export", "effect": "create portable validated recipe archive",
              "cli": "de pack-export --recipe ID --output NEW.ricepack --json",
-             "contract_version": 1},
+             "contract_version": 2},
             {"command": "pack-inspect", "effect": "verify archive, schema and fingerprints",
-             "cli": "de pack-inspect --package FILE.ricepack --json", "contract_version": 1},
+             "cli": "de pack-inspect --package FILE.ricepack --json", "contract_version": 2},
             {"command": "pack-import", "effect": "install private recipe without selecting it",
-             "cli": "de pack-import --package FILE.ricepack --json", "contract_version": 1},
+             "cli": "de pack-import --package FILE.ricepack --json", "contract_version": 2},
             {"command": "creator-status", "effect": "read next Wayland login choice and fingerprint",
              "cli": "de creator-status --json", "contract_version": 1},
             {"command": "creator-stage", "effect": "review-gated next Wayland login choice",
