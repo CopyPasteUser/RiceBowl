@@ -1,7 +1,7 @@
 //! Native RicePlate experiment: an input-capable, idle event-driven layer surface.
 //! No session takeover: launch only inside an already running Wayland session.
 
-use std::{error::Error, process::Command, time::Duration};
+use std::{error::Error, process::Command, sync::mpsc, time::Duration};
 
 use chrono::{Datelike, Local, Timelike};
 use font8x8::{UnicodeFonts, BASIC_FONTS};
@@ -16,7 +16,12 @@ mod task_groups;
 mod task_navigation;
 use native_menu::{Hit as MenuHit, MenuState};
 use power::PowerStatus;
-use system_status::SystemStatus;
+use system_status::{ControlAction, SystemStatus};
+
+enum StatusEvent {
+    State(SystemStatus),
+    Control { success: bool, state: SystemStatus },
+}
 use calendar::{CalendarState, Hit as CalendarHit};
 use recipe::{Hit, PanelStyle, Widget};
 use task_navigation::Target as KeyboardTarget;
@@ -105,8 +110,14 @@ fn main() -> Result<(), Box<dyn Error>> {
     let status_present = |widget| recipe.sections.iter().flatten().any(|&item| item == widget)
         || recipe.compact.as_ref().is_some_and(|(_, sections)|
             sections.iter().flatten().any(|&item| item == widget));
-    let poll_network = status_present(Widget::Network);
-    let poll_audio = status_present(Widget::Audio);
+    let menu_controls: Vec<_> = recipe.menu.as_ref().into_iter()
+        .flat_map(|menu| menu.groups.iter())
+        .flat_map(|group| group.actions.iter())
+        .filter_map(|action| ControlAction::from_id(action)).collect();
+    let poll_network = status_present(Widget::Network)
+        || menu_controls.contains(&ControlAction::WifiToggle);
+    let poll_audio = status_present(Widget::Audio) || menu_controls.iter().any(|action|
+        matches!(action, ControlAction::AudioMute | ControlAction::AudioUp | ControlAction::AudioDown));
     if preview_calendar && !clock_present {
         return Err("Calendar preview requires a native clock widget".into());
     }
@@ -250,6 +261,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         clock: clock_now(),
         power: PowerStatus::current(),
         system_status: SystemStatus::default(),
+        control_sender: None,
         pointer: None,
         keyboard: None,
         focused_icon: None,
@@ -278,10 +290,24 @@ fn main() -> Result<(), Box<dyn Error>> {
         app.set_calendar_visible(true, &qh);
     }
     if poll_network || poll_audio {
-        let (sender, receiver) = channel::channel::<SystemStatus>();
+        let (sender, receiver) = channel::channel::<StatusEvent>();
+        // Zero-capacity rendezvous: repeated clicks cannot queue a burst of
+        // Wi-Fi toggles while the hardware service is slow or unavailable.
+        let (control_sender, controls) = mpsc::sync_channel::<ControlAction>(0);
+        app.control_sender = Some(control_sender);
         let redraw_qh = qh.clone();
         event_loop.handle().insert_source(receiver, move |event, _, app: &mut RicePlate| {
-            if let channel::Event::Msg(status) = event {
+            if let channel::Event::Msg(message) = event {
+                let status = match message {
+                    StatusEvent::State(status) => status,
+                    StatusEvent::Control { success, state } => {
+                        app.menu_state.notice = Some(if success {
+                            "Action applied"
+                        } else { "Unavailable or denied" });
+                        if app.menu_state.visible { app.redraw_menu(&redraw_qh); }
+                        state
+                    }
+                };
                 if app.system_status != status {
                     app.system_status = status;
                     app.request_redraw(&redraw_qh);
@@ -290,9 +316,24 @@ fn main() -> Result<(), Box<dyn Error>> {
         })?;
         // One sleeping worker, enabled only for rices using these widgets;
         // bounded subprocesses never block Wayland input or the frame loop.
-        std::thread::spawn(move || loop {
-            if sender.send(SystemStatus::read(poll_network, poll_audio)).is_err() { break; }
-            std::thread::sleep(Duration::from_secs(30));
+        std::thread::spawn(move || {
+            if sender.send(StatusEvent::State(SystemStatus::read(poll_network, poll_audio))).is_err() {
+                return;
+            }
+            loop {
+                match controls.recv_timeout(Duration::from_secs(30)) {
+                    Ok(action) => {
+                        let success = action.apply();
+                        let state = SystemStatus::read(poll_network, poll_audio);
+                        if sender.send(StatusEvent::Control { success, state }).is_err() { break; }
+                    }
+                    Err(mpsc::RecvTimeoutError::Timeout) => {
+                        if sender.send(StatusEvent::State(SystemStatus::read(poll_network, poll_audio)))
+                            .is_err() { break; }
+                    }
+                    Err(mpsc::RecvTimeoutError::Disconnected) => break,
+                }
+            }
         });
     }
     while !app.closed {
@@ -393,6 +434,7 @@ struct RicePlate {
     clock: String,
     power: PowerStatus,
     system_status: SystemStatus,
+    control_sender: Option<mpsc::SyncSender<ControlAction>>,
     pointer: Option<wl_pointer::WlPointer>,
     keyboard: Option<wl_keyboard::WlKeyboard>,
     focused_icon: Option<usize>,
@@ -769,6 +811,13 @@ impl RicePlate {
     }
 
     fn activate_action(&mut self, action: &str, qh: &QueueHandle<Self>) {
+        if let Some(control) = ControlAction::from_id(action) {
+            let sent = self.control_sender.as_ref()
+                .is_some_and(|sender| sender.try_send(control).is_ok());
+            self.menu_state.notice = Some(if sent { "Applying..." } else { "Busy or unavailable" });
+            self.redraw_menu(qh);
+            return;
+        }
         if self.menu_state.visible {
             self.set_menu_visible(false, qh);
         }
@@ -1299,6 +1348,10 @@ fn paint_menu(canvas: &mut [u8], menu: &recipe::NativeMenu, style: &PanelStyle, 
                 "lock" => "Lock screen",
                 "logout" if logout_available() => "Log out of RiceBowl",
                 "logout" => "Log out (unavailable)",
+                "wifi-toggle" => "Toggle Wi-Fi radio",
+                "audio-mute" => "Toggle speaker mute",
+                "audio-up" => "Volume +5%",
+                "audio-down" => "Volume -5%",
                 _ => "Unsupported",
             };
             draw_text(canvas, width, height, 20, top + 16, label, style.foreground);
@@ -1310,7 +1363,7 @@ fn paint_menu(canvas: &mut [u8], menu: &recipe::NativeMenu, style: &PanelStyle, 
         height,
         12,
         height - 16,
-        "Arrows  Enter  Esc close",
+        state.notice.unwrap_or("Arrows  Enter  Esc close"),
         style.foreground,
     );
 }

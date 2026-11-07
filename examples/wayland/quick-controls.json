@@ -1,0 +1,32 @@
+{
+  "schema_version": 4,
+  "id": "quick-controls",
+  "name": "RiceSpice Native Controls",
+  "panel": {
+    "position": "bottom",
+    "height": 40,
+    "metrics": {"launcher_width": 104, "task_width": 164, "clock_width": 96},
+    "layout": {
+      "start": [{"type": "widget", "id": "launcher"}, {"type": "widget", "id": "tasks"}],
+      "center": [],
+      "end": [{"type": "widget", "id": "network"}, {"type": "widget", "id": "audio"},
+              {"type": "widget", "id": "battery"}, {"type": "widget", "id": "clock"}]
+    }
+  },
+  "colors": {"background": "#203c59", "foreground": "#f3f7fa", "active": "#4179aa"},
+  "menu": {"title": "RiceBowl Controls", "groups": [
+    {"title": "Applications", "actions": ["applications", "terminal"]},
+    {"title": "Quick actions", "actions": ["wifi-toggle", "audio-mute", "audio-up", "audio-down"]},
+    {"title": "Session", "actions": ["lock", "logout"]}
+  ]},
+  "desktop": {"wallpaper": "classic-teal"},
+  "tokens": {"label_padding": 4, "task_radius": 6},
+  "responsive": {
+    "compact_max_width": 720,
+    "compact_layout": {
+      "start": [{"type": "widget", "id": "launcher"}],
+      "center": [{"type": "widget", "id": "tasks"}],
+      "end": [{"type": "widget", "id": "clock"}]
+    }
+  }
+}

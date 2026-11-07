@@ -22,6 +22,7 @@ pub struct MenuState {
     pub visible: bool,
     pub group: usize,
     pub selected: usize,
+    pub notice: Option<&'static str>,
 }
 
 impl MenuState {
@@ -29,6 +30,7 @@ impl MenuState {
         self.visible = true;
         self.group = 0;
         self.selected = 0;
+        self.notice = None;
     }
 
     pub fn close(&mut self) {
