@@ -15,7 +15,7 @@
   },
   "colors": {"background": "#203c59", "foreground": "#f3f7fa", "active": "#4179aa"},
   "menu": {"title": "RiceBowl Controls", "groups": [
-    {"title": "Applications", "actions": ["applications", "terminal"]},
+    {"title": "Applications", "actions": ["applications", "terminal", "settings"]},
     {"title": "Quick actions", "actions": ["wifi-toggle", "audio-mute", "audio-up", "audio-down"]},
     {"title": "Session", "actions": ["notifications", "lock", "logout"]}
   ]},

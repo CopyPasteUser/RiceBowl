@@ -253,7 +253,7 @@ fn validate_menu(menu: &Menu) -> Result<(), Box<dyn Error>> {
         }
         for action in &group.actions {
             if !["applications", "terminal", "lock", "logout",
-                 "wifi-toggle", "audio-mute", "audio-up", "audio-down", "notifications"]
+                 "wifi-toggle", "audio-mute", "audio-up", "audio-down", "notifications", "settings"]
                 .contains(&action.as_str())
                 || !seen.insert(action.as_str())
             {

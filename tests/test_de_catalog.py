@@ -60,7 +60,10 @@ class ComponentCatalogTests(unittest.TestCase):
         self.assertTrue(shell["native-menu"]["close_on_output_removal"])
         self.assertEqual(shell["native-menu"]["notifications"]["action"], "notifications")
         self.assertTrue(shell["native-menu"]["notifications"]["dismiss_one"])
-        self.assertFalse(shell["native-menu"]["notifications"]["history_ui"])
+        self.assertEqual(shell["native-menu"]["notifications"]["history_ui"],
+                         "read-only-past-tab")
+        self.assertEqual(shell["native-menu"]["settings"]["action"], "settings")
+        self.assertFalse(shell["native-menu"]["settings"]["fully_native_settings"])
         self.assertFalse(shell["calendar-popup"]["events"])
         self.assertFalse(shell["calendar-popup"]["localized_month_labels"])
         self.assertTrue(shell["calendar-popup"]["close_on_output_removal"])

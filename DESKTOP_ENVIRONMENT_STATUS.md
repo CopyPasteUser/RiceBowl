@@ -17,7 +17,7 @@ modify global session settings.
 | Desktop shortcuts | Schema-v5 native shortcut surfaces, drag repositioning, owner-private **per-named-output positions**, independent multi-output reflow, hotplug, Tab/Shift-Tab | Cross-monitor drag semantics, output identity without stable names and mixed-DPI/device tests |
 | Wallpaper / appearances | Original bundled wallpapers, composable panel groups, labels, gaps, tokens, original example rices | Full desktop widgets, rich layout primitives, complete cross-app window decorations |
 | Hardware indicators | Kernel-backed battery; NetworkManager connectivity and WirePlumber sink status on a bounded worker | Device picker, Bluetooth status, event subscriptions and finer status detail |
-| RiceSpice controls | Allowlisted native-menu Wi-Fi toggle, volume ±5%, mute; asynchronous feedback; on-demand real audio input/output inventory and explicit default selection | Native settings UI, per-stream routing, displays, input, Bluetooth, accessibility, time and power |
+| RiceSpice controls | Allowlisted native-menu Wi-Fi/volume/mute; on-demand GTK settings hub with real audio sink/source defaults, Wi-Fi radio, BlueZ paired-device and adapter controls, explicit lock/confirmed logind suspend and next-login rice choice | Fully native display/input/accessibility/timezone editors (presently delegated to installed system tools), per-stream routing, physical hardware/AT QA |
 | RicePop notifications | Opt-in native three-row Active/Past tabs in RicePlate, bounded keyboard/pointer selection, on-demand refresh and ID-bound dismissal **only** for active alerts, using Mako as the existing owner | OSD, rich actions, native notification owner and non-Mako backends; physical accessibility QA |
 | Session safety | Opt-in session, user polkit agent when installed, optional Mako/swayidle/swaylock, compositor exit cleanup | Complete suspend/resume and hardware recovery acceptance |
 | Creator authoring | Schema-v1–v5 validation, offline private draft edits, component catalog and API inventory, nested native render/capture and visual comparisons | Broad desktop composition, complete action/state bindings, high-fidelity mockup conversion |
@@ -34,9 +34,12 @@ non-clickable; the separate validated native-menu actions perform changes.
 - **RicePlate** is the resident native Rust shell renderer; one process renders
   all panels, popups and supported desktop shortcut surfaces.
 - **RiceSpice** delegates ordinary controls to NetworkManager and WirePlumber
-  through fixed arguments. On-demand input/output device selection uses the
-  existing PulseAudio-compatible server via `pactl`. No custom recipe commands
-  or privileged daemon.
+  through fixed arguments. Its on-demand GTK3 settings window uses the existing
+  PulseAudio-compatible server via `pactl` for default sinks/sources and BlueZ
+  for Bluetooth, with explicit user actions and bounded workers. Display,
+  input, timezone and accessibility pages currently hand off to installed
+  system editors, reporting absent editors. No custom recipe commands or
+  privileged daemon.
 - **RicePop** delegates delivery to the installed Mako host. The optional
   native menu queries active and past notifications only when opened/refreshed,
   displays history read-only and discards both sets of private messages when
@@ -74,6 +77,9 @@ ricebowl de notification-dismiss --notification-id 12 --json
 ricebowl de audio-devices --json
 # After reviewing a returned device name, explicitly choose it:
 ricebowl de audio-default --device-kind sink --device-name "$DEVICE_NAME" --json
+
+# On-demand RiceSpice settings (not a background service):
+ricebowl de settings
 ```
 
 Wi-Fi toggling can disconnect the current session. Notification JSON may
@@ -102,8 +108,9 @@ The next substantial release gates, in recommended order:
 
 1. Real native SNI tray, correct item ownership/actions and per-output focus;
    complete panel keyboard/accessibility behavior.
-2. Reusable native RiceSpice settings pages with hardware service adapters,
-   device selectors, permission handling and recovery, including suspend/lock.
+2. Complete RiceSpice's remaining delegated system editors as native pages,
+   then verify device selectors, permission/error recovery and suspend/lock on
+   actual hardware (an on-demand settings hub already exists).
 3. RicePop OSD, richer notification presentation and accessibility semantics
    without a duplicate owner or private-message replay; a read-only history
    tab is available already.
