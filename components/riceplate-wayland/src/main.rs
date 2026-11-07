@@ -98,9 +98,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     };
     let mut recipe = recipe::load(recipe_name)?;
-    if let Err(error) = icon_positions::restore(&mut recipe) {
+    let icon_outputs = icon_positions::restore(&mut recipe).unwrap_or_else(|error| {
         eprintln!("RicePlate: ignored invalid saved desktop icon positions: {error}");
-    }
+        icon_positions::OutputPositions::default()
+    });
     if preview_menu && recipe.menu.is_none() {
         return Err("Native menu preview requires schema v4/v5".into());
     }
@@ -270,6 +271,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         focused_target: None,
         icon_drag: None,
         icon_position_dirty: false,
+        icon_outputs,
         menu_focused: false,
         primary_seat: None,
         primary_output: None,
@@ -443,6 +445,7 @@ struct RicePlate {
     focused_target: Option<KeyboardTarget>,
     icon_drag: Option<IconDrag>,
     icon_position_dirty: bool,
+    icon_outputs: icon_positions::OutputPositions,
     menu_focused: bool,
     primary_seat: Option<wl_seat::WlSeat>,
     primary_output: Option<wl_output::WlOutput>,
@@ -537,7 +540,7 @@ impl RicePlate {
         if !self.icon_position_dirty {
             return;
         }
-        if let Err(error) = icon_positions::save(&self.recipe) {
+        if let Err(error) = icon_positions::save(&self.recipe, &self.icon_outputs) {
             eprintln!("RicePlate: cannot persist desktop icon positions: {error}");
             return;
         }
@@ -1027,6 +1030,41 @@ impl RicePlate {
         Some((width as u32, height as u32))
     }
 
+    fn icon_output_name(&self, layer_index: usize) -> Option<String> {
+        let layer = self.icon_layers.get(layer_index)?;
+        let output = layer.bound_output.as_ref().or(self.primary_output.as_ref())
+            .or(layer.output.as_ref())?;
+        self.outputs.info(output)?.name
+    }
+
+    fn icon_coordinates(&self, layer_index: usize) -> icon_positions::Coordinates {
+        let layer = &self.icon_layers[layer_index];
+        let original = &self.recipe.desktop_icons[layer.recipe_index];
+        self.icon_output_name(layer_index).as_deref()
+            .and_then(|name| self.icon_outputs.for_output(name, self.recipe.desktop_icons.len()))
+            .and_then(|positions| positions.get(layer.recipe_index)).copied()
+            .unwrap_or(icon_positions::Coordinates { x: original.x, y: original.y })
+    }
+
+    fn move_icon(&mut self, layer_index: usize, desired: (u32, u32)) {
+        let recipe_index = self.icon_layers[layer_index].recipe_index;
+        let coords = icon_positions::Coordinates { x: desired.0, y: desired.1 };
+        if let Some(output) = self.icon_output_name(layer_index) {
+            if let Err(error) = self.icon_outputs.set(&output, &self.recipe.desktop_icons,
+                                                       recipe_index, coords) {
+                eprintln!("RicePlate: not saving display-specific icon position: {error}");
+                return;
+            }
+        } else {
+            // Compositors that hide output names still support legacy global
+            // positions; never fabricate a supposedly stable monitor ID.
+            let icon = &mut self.recipe.desktop_icons[recipe_index];
+            (icon.x, icon.y) = desired;
+        }
+        self.reflow_icons();
+        self.icon_position_dirty = true;
+    }
+
     fn reflow_icons(&mut self) {
         for index in 0..self.icon_layers.len() {
             let layer = &self.icon_layers[index];
@@ -1035,8 +1073,16 @@ impl RicePlate {
             let Some((width, height)) = output.and_then(|o| self.logical_output_size(o)) else {
                 continue;
             };
+            let name = self.icon_output_name(index);
+            let mut local_icons = self.recipe.desktop_icons.clone();
+            if let Some(positions) = name.as_deref().and_then(|name|
+                self.icon_outputs.for_output(name, local_icons.len())) {
+                for (icon, position) in local_icons.iter_mut().zip(positions) {
+                    (icon.x, icon.y) = (position.x, position.y);
+                }
+            }
             let placement = desktop_layout::place(
-                &self.recipe.desktop_icons, width, height,
+                &local_icons, width, height,
                 self.recipe.top, self.recipe.height,
             )[layer.recipe_index];
             let restored = {
@@ -2050,17 +2096,16 @@ impl KeyboardHandler for RicePlate {
                     self.activate_action(&action, qh);
                 }
                 Keysym::Left | Keysym::Right | Keysym::Up | Keysym::Down => {
-                    let recipe_index = self.icon_layers[index].recipe_index;
-                    let icon = &mut self.recipe.desktop_icons[recipe_index];
+                    let coords = self.icon_coordinates(index);
+                    let (mut x, mut y) = (coords.x, coords.y);
                     match event.keysym {
-                        Keysym::Left => icon.x = icon.x.saturating_sub(16),
-                        Keysym::Right => icon.x = icon.x.saturating_add(16).min(desktop_layout::MAX_SAVED_POSITION),
-                        Keysym::Up => icon.y = icon.y.saturating_sub(16),
-                        Keysym::Down => icon.y = icon.y.saturating_add(16).min(desktop_layout::MAX_SAVED_POSITION),
+                        Keysym::Left => x = x.saturating_sub(16),
+                        Keysym::Right => x = x.saturating_add(16).min(desktop_layout::MAX_SAVED_POSITION),
+                        Keysym::Up => y = y.saturating_sub(16),
+                        Keysym::Down => y = y.saturating_add(16).min(desktop_layout::MAX_SAVED_POSITION),
                         _ => unreachable!(),
                     }
-                    self.reflow_icons();
-                    self.icon_position_dirty = true;
+                    self.move_icon(index, (x, y));
                 }
                 Keysym::Escape => {
                     self.save_icon_positions();
@@ -2232,11 +2277,7 @@ impl PointerHandler for RicePlate {
                                 drag.moved = true;
                             }
                             if drag.moved && desired != current {
-                                let recipe_index = self.icon_layers[index].recipe_index;
-                                let icon = &mut self.recipe.desktop_icons[recipe_index];
-                                (icon.x, icon.y) = desired;
-                                self.reflow_icons();
-                                self.icon_position_dirty = true;
+                                self.move_icon(index, desired);
                             }
                         }
                     }
