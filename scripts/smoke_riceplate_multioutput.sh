@@ -152,6 +152,30 @@ dbus-run-session -- sh -eu -c '
     /usr/bin/python3 "$source_root/scripts/check_wayland_menu_outputs.py" \
         --closed "$runtime/menu-after-on.png"
     kill -0 "$plate" 2>/dev/null || { echo "Native menu exited after output recovery" >&2; exit 1; }
+    # With the popup closed, a schema-v5 desktop shortcut must paint on both
+    # output-bound Bottom layers and recover when a monitor returns.
+    kill "$plate" 2>/dev/null || :
+    wait "$plate" 2>/dev/null || :
+    plate=
+    "$native" --recipe "$runtime/desktop-v5.json" >"$runtime/plate-icons.log" 2>&1 &
+    plate=$!
+    sleep 1.5
+    kill -0 "$plate" 2>/dev/null || { echo "Native icon preview exited" >&2; exit 1; }
+    grim -o "$first" "$runtime/first-icons.png"
+    grim -o "$second" "$runtime/second-icons.png"
+    /usr/bin/python3 "$source_root/scripts/check_wayland_icon_outputs.py" \
+        "$runtime/first-icons.png" "$runtime/second-icons.png"
+    wlr-randr --output "$second" --off
+    sleep 0.7
+    grim -o "$first" "$runtime/icons-after-off.png"
+    /usr/bin/python3 "$source_root/scripts/check_wayland_icon_outputs.py" \
+        "$runtime/icons-after-off.png"
+    wlr-randr --output "$second" --on
+    sleep 0.8
+    grim -o "$second" "$runtime/icons-after-on.png"
+    /usr/bin/python3 "$source_root/scripts/check_wayland_icon_outputs.py" \
+        "$runtime/icons-after-on.png"
+    kill -0 "$plate" 2>/dev/null || { echo "Native icons exited after hotplug" >&2; exit 1; }
     # These are real grim captures from two actual compositor outputs. Keep
     # them in the workflow artifact for inspection rather than discarding
     # all evidence with the private runtime directory.
@@ -169,5 +193,9 @@ dbus-run-session -- sh -eu -c '
     cp "$runtime/second-menu.png" "$captures/second-menu.png"
     cp "$runtime/remaining-menu-off.png" "$captures/remaining-menu-off.png"
     cp "$runtime/menu-after-on.png" "$captures/menu-after-on.png"
-    echo "Native RicePlate painted two outputs, output-bound calendars/menus and survived hotplug"
+    cp "$runtime/first-icons.png" "$captures/first-icons.png"
+    cp "$runtime/second-icons.png" "$captures/second-icons.png"
+    cp "$runtime/icons-after-off.png" "$captures/icons-after-off.png"
+    cp "$runtime/icons-after-on.png" "$captures/icons-after-on.png"
+    echo "Native RicePlate painted two outputs, output-bound menus/calendars/icons and survived hotplug"
 ' sh "$source_root" "$runtime" "$native"

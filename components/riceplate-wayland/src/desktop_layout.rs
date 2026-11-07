@@ -6,6 +6,18 @@ use crate::recipe::{DesktopIcon, ICON_HEIGHT, ICON_WIDTH};
 const GAP: u32 = 8;
 pub const MAX_SAVED_POSITION: u32 = 16_384;
 
+/// Cycle a keyboard selection through visible icon surfaces only. A hidden
+/// icon must never receive Enter or keyboard-movement actions.
+pub fn navigate(visible: &[bool], current: usize, delta: isize) -> Option<usize> {
+    if visible.is_empty() || !visible.iter().any(|&item| item) { return None; }
+    let mut next = current % visible.len();
+    for _ in 0..visible.len() {
+        next = (next as isize + delta).rem_euclid(visible.len() as isize) as usize;
+        if visible[next] { return Some(next); }
+    }
+    None
+}
+
 /// Wayland pointer coordinates are surface-relative, including during a grab.
 /// Use the current surface placement to prevent jumps as its margin moves.
 pub fn dragged_to(current: (u32, u32), anchor: (f64, f64), pointer: (f64, f64)) -> (u32, u32) {
@@ -74,6 +86,16 @@ mod tests {
 
     fn icon(x: u32, y: u32) -> DesktopIcon {
         DesktopIcon { label: "Apps".into(), action: "applications".into(), x, y }
+    }
+
+    #[test]
+    fn keyboard_navigation_skips_hidden_icons_and_wraps() {
+        let visible = [true, false, true, false];
+        assert_eq!(navigate(&visible, 0, 1), Some(2));
+        assert_eq!(navigate(&visible, 2, 1), Some(0));
+        assert_eq!(navigate(&visible, 0, -1), Some(2));
+        assert_eq!(navigate(&[false, false], 0, 1), None);
+        assert_eq!(navigate(&[], 0, 1), None);
     }
 
     #[test]

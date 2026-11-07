@@ -211,6 +211,16 @@ affecting XFCE, including a failed-session recovery. **Not yet signed off.**
   lower-priority status slots before sacrificing task groups on small screens.
   They are intentionally non-clickable until real RiceSpice quick actions
   exist. The SNI tray and actual network/audio device controls remain open.
+- [x] Replicate **native desktop shortcut surfaces on all known outputs** in
+  one RicePlate process with fixed secondary-output ownership; reflow each
+  output independently against its logical dimensions and panel reservation,
+  recover the shortcut layers after hot-unplug/replug, and keep private saved
+  coordinates shared per recipe rather than multiplying per-monitor state.
+  Keyboard `Tab`/`Shift-Tab` cycles only visible icons on the focused output;
+  Enter launches and arrows move the selected shortcut. The two-output
+  labwc CI now checks original rendered icon pixels before/after hotplug.
+  Physical mixed-DPI, compositor-dependent initial output ownership and
+  assistive-technology acceptance remain separate.
 - [ ] Build a Wayland-native panel through `wlr-layer-shell`.
 - [ ] Populate tasks/windows through a supported foreign-toplevel protocol.
 - [ ] Implement launchers, task groups, tray, calendar, menus and keyboard
