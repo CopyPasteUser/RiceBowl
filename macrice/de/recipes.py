@@ -38,7 +38,7 @@ ICON_HEIGHT = 88
 ICON_ACTIONS = frozenset(("applications", "terminal", "lock"))
 MENU_ACTIONS = frozenset(("applications", "terminal", "lock", "logout",
                           "wifi-toggle", "audio-mute", "audio-up", "audio-down",
-                          "notifications"))
+                          "notifications", "settings"))
 WALLPAPERS = frozenset(("aero-seven-blue", "aero-seven-night", "luna-hills",
                         "classic-teal", "ten-blue", "ten-midnight", "chrome-pastel",
                         "frutiger-future", "aurora-day", "aurora-night"))
@@ -796,6 +796,7 @@ def labwc_menu(recipe: PanelRecipe) -> str:
     action_specs = {
         "applications": ("Applications", "Execute", "fuzzel"),
         "terminal": ("Terminal", "Execute", "foot"),
+        "settings": ("RiceSpice settings", "Execute", "ricebowl de settings"),
         "lock": ("Lock screen", "Execute", "swaylock -f"),
         "logout": ("Log out of RiceBowl", "Exit", None),
     }

@@ -74,6 +74,7 @@ def parser() -> argparse.ArgumentParser:
         "check", "start", "shell", "catalog", "creator-api", "review", "draft-edit", "visual-compare",
         "capture", "render", "creator-status", "creator-stage", "creator-rollback",
         "pack-export", "pack-inspect", "pack-import", "notifications", "notification-dismiss",
+        "settings",
         "audio-devices", "audio-default",
         "recipes", "recipe-init", "recipe-import", "recipe-export", "recipe-current",
         "recipe-select", "recipe-restore", "taskotto-export"))
@@ -207,6 +208,12 @@ def main(argv: list[str] | None = None) -> int:
                     print(f"RiceBowl Creator API v{contract['api_version']} (offline, on demand)")
                     for item in contract["commands"]:
                         print(f"  {item['command']:18} {item['effect']}")
+                return 0
+            if args.action == "settings":
+                if args.json or args.nested or args.recipe or args.panel != "waybar":
+                    raise ValueError("de settings opens a window and takes no session options")
+                from .de.settings import launch
+                launch()
                 return 0
             if args.action in ("notifications", "notification-dismiss"):
                 if args.nested or args.recipe or args.panel != "waybar" or not args.json:

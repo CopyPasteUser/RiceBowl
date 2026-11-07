@@ -1,5 +1,23 @@
 # RiceBowl changelog
 
+## Unreleased — RiceSpice on-demand settings hub
+
+- Add a real opt-in GTK3 RiceSpice settings window from the fixed `settings`
+  shell action (`ricebowl de settings`), with nine navigable categories and
+  keyboard-focusable controls. The application runs only while open.
+- Wire actual checked settings to PulseAudio-compatible device selection,
+  NetworkManager Wi-Fi state, BlueZ paired devices/adapter power, screen lock,
+  confirmed logind suspend and private next-login rice choice. Use bounded
+  worker concurrency and stale-state guards, not UI-thread D-Bus or shell.
+- Clearly delegate displays, pointer/input, accessibility and timezone to
+  installed system editors; missing editors are reported rather than emulated.
+  Complete native editors, a live pack transaction and hardware acceptance
+  remain open. No privileged service, permission bypass or default-session
+  takeover is introduced.
+- Make the existing two-output Waybar CI smoke wait for **genuine rendered
+  panel pixels** (bounded retries), not merely a newly spawned Waybar PID.
+  Persistent missing panels still fail the same pixel check.
+
 ## Unreleased — Native RicePop history tabs
 
 - Extend the opt-in RicePlate/Mako notification view with a distinct read-only

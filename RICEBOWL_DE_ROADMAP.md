@@ -249,6 +249,19 @@ affecting XFCE, including a failed-session recovery. **Not yet signed off.**
 
 ### 3 — RiceSpice and RicePop
 
+- [x] Introduce the **on-demand RiceSpice settings window**, launched through
+  a validated `settings` menu action or `ricebowl de settings`. It presents nine
+  clearly separated settings categories. Real native controls cover reviewed
+  audio default sink/source selection, NetworkManager Wi-Fi radio with stale
+  state protection, BlueZ adapter power/paired device connections and explicit
+  lock or confirmed logind suspend (disabled in nested previews). Reviewed
+  next-login rice selection is also available with an explicit commit action.
+  Service operations run off the GTK thread with bounded concurrency; missing
+  services and denied/indeterminate outcomes are visible. Displays, input,
+  accessibility and timezone explicitly delegate to **installed** supported
+  system settings tools, with honest unavailable state. No privileged daemon,
+  raw command injection, unconfirmed live rice apply or duplicate system owner.
+  Fully native editors and actual hardware/keyboard/AT acceptance remain open.
 - [x] Expose **native read-only Mako history** in RicePlate's opt-in RicePop
   view as a second Active/Past tab with pointer and Left/Right keyboard access,
   bounded three-row navigation, on-demand refresh and explicit empty/error

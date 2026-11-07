@@ -866,6 +866,7 @@ impl RicePlate {
         let (program, args): (&str, &[&str]) = match action {
             "applications" => ("fuzzel", &[]),
             "terminal" => ("foot", &[]),
+            "settings" => ("ricebowl", &["de", "settings"]),
             "lock" => ("swaylock", &["-f"]),
             "logout" => ("labwc", &["--exit"]),
             _ => return, // Validated recipe contract disallows other IDs.
@@ -1451,6 +1452,7 @@ fn paint_menu(canvas: &mut [u8], menu: &recipe::NativeMenu, style: &PanelStyle, 
                 "audio-up" => "Volume +5%",
                 "audio-down" => "Volume -5%",
                 "notifications" => "Notifications",
+                "settings" => "RiceSpice settings",
                 _ => "Unsupported",
             };
             draw_text(canvas, width, height, 20, top + 16, label, style.foreground);

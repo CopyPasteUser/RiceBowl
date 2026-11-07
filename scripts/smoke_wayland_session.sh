@@ -89,6 +89,24 @@ dbus-run-session -- sh -eu -c '
         sed -n "1,100p" "$runtime/labwc.log" >&2
         exit 1
     fi
+    # A live Waybar PID does not mean the layer surface has rendered yet.
+    # Retry *real pixel validation* for at most four seconds per output;
+    # never accept a missing panel merely because the process exists.
+    wait_for_panel_pixels() {
+        output=$1
+        capture=$2
+        attempt=0
+        while [ "$attempt" -lt 16 ]; do
+            if grim -o "$output" "$capture" \
+                    && /usr/bin/python3 "$project_root/scripts/check_wayland_panel_outputs.py" \
+                        "$capture" >/dev/null 2>&1; then
+                return 0
+            fi
+            attempt=$((attempt + 1))
+            sleep 0.25
+        done
+        /usr/bin/python3 "$project_root/scripts/check_wayland_panel_outputs.py" "$capture"
+    }
     if [ "${WLR_HEADLESS_OUTPUTS:-1}" -eq 2 ]; then
         # The supported Waybar fallback must provide a real, usable taskbar
         # on both monitors, including after a compositor output is unplugged
@@ -100,19 +118,16 @@ dbus-run-session -- sh -eu -c '
         fi
         first=$1
         second=$2
-        sleep 1
-        grim -o "$first" "$runtime/first.png"
-        grim -o "$second" "$runtime/second.png"
+        wait_for_panel_pixels "$first" "$runtime/first.png"
+        wait_for_panel_pixels "$second" "$runtime/second.png"
         /usr/bin/python3 "$project_root/scripts/check_wayland_panel_outputs.py" \
             "$runtime/first.png" "$runtime/second.png"
         wlr-randr --output "$second" --off
-        sleep 1
-        grim -o "$first" "$runtime/first-after-off.png"
+        wait_for_panel_pixels "$first" "$runtime/first-after-off.png"
         /usr/bin/python3 "$project_root/scripts/check_wayland_panel_outputs.py" \
             "$runtime/first-after-off.png"
         wlr-randr --output "$second" --on
-        sleep 1
-        grim -o "$second" "$runtime/second-restored.png"
+        wait_for_panel_pixels "$second" "$runtime/second-restored.png"
         /usr/bin/python3 "$project_root/scripts/check_wayland_panel_outputs.py" \
             "$runtime/second-restored.png"
         echo "Waybar fallback stayed visible across two outputs and one hotplug cycle"

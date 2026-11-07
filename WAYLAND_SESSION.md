@@ -1,8 +1,9 @@
 # RiceBowl (Wayland Preview) — first login-session track
 
 **Experimental / opt-in.** This is an independently selectable labwc session
-with a temporary native Waybar panel, not the finished RicePlate/RiceSpice/
-RicePop desktop. The current XFCE/X11 rice suite and its backups stay intact.
+with an optional native RicePlate panel and a Waybar fallback, not yet a
+finished RicePlate/RiceSpice/RicePop desktop. The current XFCE/X11 rice suite
+and its backups stay intact.
 Mint 22/Ubuntu 24.04's labwc **0.7.1** is supported by using its
 `--startup` command and requesting compositor exit when the shell finishes.
 
@@ -63,6 +64,24 @@ From another desktop, `ricebowl de start --nested` explicitly launches a
 separate compositor with activation-environment updates disabled, so it
 doesn't hijack the current desktop's D-Bus/systemd Wayland variables.
 The compositor still requires hardware/driver support for a nested backend.
+
+### RiceSpice settings preview
+
+`ricebowl de settings` opens a **standalone GTK3 window on demand**, with
+keyboard-focusable navigation for Network, Sound, Bluetooth, Displays, Input,
+Accessibility, Date & Time, Power & Security, and Rice & Appearance. It is
+also available as a fixed `settings` action in schema-v4/v5 native menus, e.g.
+the bundled `quick-controls` example. It never starts at login by default.
+
+Network, audio and Bluetooth controls query the actual NetworkManager,
+PulseAudio-compatible sound server and BlueZ; changes are explicitly selected,
+bounded and verified, and may still require authorization. Suspend requests
+use logind after confirmation; **nested preview sessions disable suspend**.
+The appearance page only selects a rice for the *next* Wayland login. Missing
+services and unverified operations show an error. Display/input/accessibility/
+time preferences still launch a supported installed system editor if available;
+no native RiceSpice implementation is claimed for those pages yet. Do not
+change network, Bluetooth or power settings during an important remote session.
 
 ### RicePlate layout recipes (first data-only contract)
 
