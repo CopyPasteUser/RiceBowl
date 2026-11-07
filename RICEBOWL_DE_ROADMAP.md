@@ -453,7 +453,8 @@ depend on the XFCE session.
   packaging, full cross-component apply and live rollback remain open.
 - [x] **Preserve imported RicePack authorship and license declarations across
   re-export**: a v1 owner-private data-only sidecar is written before a
-  validated recipe becomes visible, bound to its semantic hash. Re-exporting
+  validated recipe becomes visible, bound to its semantic hash and the exact
+  original bundled-wallpaper bytes. Re-exporting
   the installed recipe automatically carries both rice and wallpaper
   attribution forward. A modified recipe, missing privacy permissions,
   incompatible existing receipt or symlink fails closed; an interrupted

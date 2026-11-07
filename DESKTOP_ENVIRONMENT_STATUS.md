@@ -84,7 +84,7 @@ the CLI reports that the state may already have changed; inspect again.
 
 Implementation evidence includes [native icons PR #143](https://github.com/CopyPasteUser/Ricebowl/pull/143)
 and [Mako bridge PR #141](https://github.com/CopyPasteUser/Ricebowl/pull/141).
-Local automated suites most recently passed **914 Python tests** (16 skipped
+Local automated suites most recently passed **915 Python tests** (16 skipped
 for session/hardware constraints) and **53 native Rust tests**. GitHub's
 `Tests`, `Native RicePlate prototype` and `Wayland session preview` workflows
 have passed on the corresponding merged milestones. Native CI renders actual screenshots under headless labwc, including

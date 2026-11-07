@@ -181,6 +181,26 @@ class PortableRicePackTests(unittest.TestCase):
                 self.assertEqual(caught.exception.code, "provenance_stale")
                 self.assertFalse((root / "must-fail.ricepack").exists())
 
+    def test_imported_attribution_cannot_be_reused_for_changed_artwork_bytes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source = root / "original.json"
+            recipes.create_from_template(source="classic", destination=source,
+                                         recipe_id="artwork-guard", name="Artwork Guard",
+                                         schema_version=5)
+            archive = root / "safe.ricepack"
+            pack.export_pack(str(source), archive)
+            config = root / "config"
+            config.mkdir(mode=0o700)
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": str(config)}):
+                pack.import_pack(archive)
+                with mock.patch("macrice.de.pack._bundled_wallpaper",
+                                return_value=("aero-seven-blue", "0" * 64)):
+                    with self.assertRaises(pack.PackError) as caught:
+                        pack.export_pack("artwork-guard", root / "wrong-artwork.ricepack")
+                self.assertEqual(caught.exception.code, "provenance_stale")
+                self.assertFalse((root / "wrong-artwork.ricepack").exists())
+
     def test_retries_interrupted_import_only_with_identical_receipt(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

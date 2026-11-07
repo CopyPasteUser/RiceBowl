@@ -60,12 +60,14 @@ def _asset_receipt(recipe: recipes.PanelRecipe, provenance: dict[str, str]) -> d
                                         "provenance": provenance}}
 
 
-def _provenance_receipt(manifest: dict[str, Any]) -> bytes:
+def _provenance_receipt(manifest: dict[str, Any], recipe: recipes.PanelRecipe) -> bytes:
     """Bind imported license/origin attribution to the exact reviewed recipe."""
     wallpaper = (manifest["asset_manifest"]["wallpaper"]["provenance"]
                  if manifest["format_version"] == 2 else dict(_DEFAULT_PROVENANCE))
+    wallpaper_id, wallpaper_sha = _bundled_wallpaper(recipe)
     return _json_bytes({"version": 1,
                         "semantic_sha256": manifest["recipe"]["semantic_sha256"],
+                        "wallpaper_id": wallpaper_id, "wallpaper_sha256": wallpaper_sha,
                         "provenance": manifest["provenance"],
                         "wallpaper_provenance": wallpaper})
 
@@ -81,13 +83,19 @@ def _stored_provenance(recipe: recipes.PanelRecipe) -> tuple[dict[str, str], dic
         return None
     saved = _parse_object(_read_owned_file(location, suffix=_RECEIPT_SUFFIX,
                                           limit=MAX_METADATA_BYTES, owner_private=True))
-    if (set(saved) != {"version", "semantic_sha256", "provenance", "wallpaper_provenance"}
+    if (set(saved) != {"version", "semantic_sha256", "wallpaper_id",
+                      "wallpaper_sha256", "provenance", "wallpaper_provenance"}
             or type(saved["version"]) is not int or saved["version"] != 1
-            or type(saved["semantic_sha256"]) is not str):
+            or type(saved["semantic_sha256"]) is not str
+            or type(saved["wallpaper_id"]) is not str
+            or type(saved["wallpaper_sha256"]) is not str):
         raise PackError("Malformed imported provenance receipt", code="provenance_unavailable")
     canonical = review._manifest(recipe)
     if saved["semantic_sha256"] != review._semantic_hash(canonical):
         raise PackError("Imported rice changed since its license/provenance receipt",
+                        code="provenance_stale")
+    if (saved["wallpaper_id"], saved["wallpaper_sha256"]) != _bundled_wallpaper(recipe):
+        raise PackError("Bundled artwork changed since its license/provenance receipt",
                         code="provenance_stale")
     main = _provenance(saved["provenance"] if type(saved["provenance"]) is dict else {})
     wallpaper = _provenance(saved["wallpaper_provenance"]
@@ -331,7 +339,7 @@ def import_pack(source: Path) -> dict[str, Any]:
         receipt = folder / f"{metadata['recipe']['id']}{_RECEIPT_SUFFIX}"
         if os.path.lexists(destination):
             raise PackError("Cannot replace an installed recipe", code="import_unavailable")
-        attribution = _provenance_receipt(metadata)
+        attribution = _provenance_receipt(metadata, recipes.parse(payload))
         if os.path.lexists(receipt):
             # A previous interrupted import may have published its receipt
             # before the recipe. Reuse only byte-identical private metadata.
