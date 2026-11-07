@@ -1,5 +1,17 @@
 # RiceBowl changelog
 
+## Unreleased — interactive native Wayland calendar (7 November 2026)
+
+- Make the primary native RicePlate clock open a bounded, rice-colored calendar
+  layer-shell popup, with local dates, leap-year-aware month grids, month
+  navigation, a Today button, day selection and arrow/PageUp/PageDown/Escape
+  keyboard controls. The popup is in-process and sleeps between input events.
+- Keep secondary-output clocks passive while per-output popup ownership is
+  unfinished. Do not alter Waybar or XFCE clock behavior.
+- Extend real headless labwc CI with a visible calendar screenshot and pixel
+  distinction from the normal desktop, plus pure Rust date, hit and drawing
+  tests. Physical input/focus and accessibility signoff remain outstanding.
+
 ## Unreleased — keyboard-accessible native Wayland taskbar (7 November 2026)
 
 - Support on-demand keyboard focus for the primary and secondary native

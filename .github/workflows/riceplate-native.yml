@@ -128,7 +128,7 @@ jobs:
               'isolated-v5': (1024, 768, 1),
           }
           captures = {}
-          for label in ('shell-v4', 'desktop-v5', 'menu-v5', *expected):
+          for label in ('shell-v4', 'desktop-v5', 'menu-v5', 'calendar-v5', *expected):
               screenshot = Path(f'dist/riceplate-native-preview/{label}.png')
               data = screenshot.read_bytes()
               assert data[:8] == bytes.fromhex('89504e470d0a1a0a'), f'{label}: not a PNG capture'
@@ -185,6 +185,11 @@ jobs:
               captures[label] = data
           assert captures['shell-v4'] != captures['desktop-v5'], 'Icons missing from v5 framebuffer'
           assert captures['menu-v5'] != captures['desktop-v5'], 'Native menu did not render in Wayland frame'
+          assert captures['calendar-v5'] != captures['desktop-v5'], 'Native calendar did not render in Wayland frame'
+          with Image.open(directory / 'calendar-v5.png') as image:
+              header = image.convert('RGB').getpixel((700, 50))
+          assert all(abs(actual - expected) <= 2 for actual, expected in
+                     zip(header, (65, 121, 170))), f'native calendar popup header missing: {header}'
           (directory / 'capture-manifest.json').write_text(json.dumps(manifest, indent=2, sort_keys=True) + '\n')
           PY
       - name: Render both Creator demonstrators at four real output geometries
