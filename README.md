@@ -8,7 +8,7 @@
 
 A lightweight, modular Linux desktop project for recreating classic OS experiences and building original **AI-assisted rices** from reusable components.
 
-[Desktop gallery](screenshots/current/README.md) · [Wayland roadmap](RICEBOWL_DE_ROADMAP.md) · [Get started](#try-it)
+[Desktop gallery](screenshots/current/README.md) · [Desktop status](DESKTOP_ENVIRONMENT_STATUS.md) · [Wayland roadmap](RICEBOWL_DE_ROADMAP.md) · [Get started](#try-it)
 
 </div>
 
@@ -20,7 +20,9 @@ Today, RiceBowl is a **seven-style XFCE/X11 ricing suite**: Windows 98, XP Luna,
 
 It is also becoming an independent, floating **Wayland desktop environment based on labwc**. Its long-term goal is a *desktop construction kit*: give an AI a reference screenshot or an original mockup, and use validated layout recipes and shared functional components to build a usable rice—without writing a new desktop shell for each design.
 
-The optional Wayland preview has declarative nested panels, a genuine labwc root menu, wallpapers, visual tokens, compact layouts and safe offline recipe editing. Its experimental native Rust RicePlate shell supports **clickable desktop icons** with single-output reflow through schema-v5 recipes. An offline Creator CLI now supports isolated real-shell screenshots, visual comparison and **portable, validated `.ricepack` recipe exchange**. Movable icons, custom visual assets, desktop widgets, automated mockup conversion and the 1.0 release are still in development. The established XFCE session remains available.
+The **opt-in Wayland preview** already runs with labwc and a native Rust RicePlate panel: real window/task groups, keyboard-accessible menus and calendar, responsive layouts, movable desktop shortcuts on multiple outputs, battery/network/audio status and limited Wi-Fi/audio controls. RicePop can read the existing Mako notification history on demand. An offline Creator CLI validates and edits recipes, renders the real shell in isolated labwc, compares captures and exports **RicePack v2** packages with verified bundled-wallpaper references.
+
+**It is not yet a complete replacement desktop.** A native StatusNotifier tray, full RiceSpice settings, a graphical RicePop notification center, portable third-party assets, live rice switching with rollback and real-device QA are still missing. The existing seven-style XFCE/X11 environment remains the default. See the [honest feature and release-gate matrix](DESKTOP_ENVIRONMENT_STATUS.md).
 
 ## Try it
 
@@ -40,6 +42,7 @@ Select a rice in the Hub; installation alone does not change your desktop. Use `
 ## Explore
 
 - [Wayland preview, installation and safety](WAYLAND_SESSION.md)
+- [Current desktop environment implementation status](DESKTOP_ENVIRONMENT_STATUS.md)
 - [AI-friendly shell recipes and components](WAYLAND_SESSION.md#schema-v5-native-desktop-icons-preview)
 - [Two real Wayland Creator example rices and reproducible captures](examples/wayland/README.md)
 - [Desktop environment development roadmap](RICEBOWL_DE_ROADMAP.md)
