@@ -77,17 +77,21 @@ ricebowl de start --nested --recipe chrome
 ```
 
 For offline authoring agents and mockup-to-rice experiments, the **read-only,
-versioned panel component catalog** describes what the current native and
+versioned shell component catalog** describes what the current native and
 Waybar backends actually implement:
 
 ```bash
 ricebowl de catalog --json
 ```
 
-The versioned `catalog_version` (currently **5**) identifies the response format, while
+The versioned `catalog_version` (currently **6**) identifies the response format, while
 `recipe.schema_versions` (currently **1, 2, 3, 4, 5**) identifies supported recipe versions. Each
-component has a known ID, real backend support level, fixed behavior and
-keyboard-availability flag. Unsupported functionality is reported explicitly
+panel widget has a known ID, real backend support level, fixed behavior and
+keyboard-availability flag. The `shell_components` collection separately
+describes native menu, output-bound calendar and desktop shortcut actions,
+pointer/keyboard support, output ownership and known limitations. It does not
+claim that the clock can be opened from a keyboard-only panel focus or that
+desktop icons migrate between outputs. Unsupported functionality is reported explicitly
 instead of presenting an imaginary action or widget. This catalog never reads
 private desktop state, invokes a model or changes a rice. The cross-command
 Creator inventory is available through `ricebowl de creator-api --json`.

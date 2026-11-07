@@ -314,7 +314,10 @@ depend on the XFCE session.
   schema versions and explicitly reported unsupported components/states.
 - [x] Publish the first **read-only, versioned panel-component inventory**
   (`ricebowl de catalog --json`), with stable IDs, true native/Waybar support,
-  strict recipe limits, known fixed behaviors, and missing keyboard controls.
+  strict recipe limits and known fixed behaviors. The original inventory was
+  panel-only; an additive catalog-v6 contract now reports actual native
+  launcher/task keyboard support, output-bound menu/calendar behavior and
+  desktop icon drag/move/persistence alongside explicit missing capabilities.
   Full menu/desktop/settings component discovery, richer accessibility semantics,
   Creator draft commands and examples remain open under the catalog gate above.
 - [x] Add an on-demand, **read-only semantic recipe review** (`ricebowl de

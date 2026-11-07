@@ -337,7 +337,7 @@ def main(argv: list[str] | None = None) -> int:
                 if args.json:
                     print(json.dumps(catalog, indent=2))
                 else:
-                    print(f"RiceBowl panel component catalog v{catalog['catalog_version']}")
+                    print(f"RiceBowl shell component catalog v{catalog['catalog_version']}")
                     print("Supported by the experimental native panel / Waybar fallback:")
                     for component in catalog["components"]:
                         print(f"  {component['id']:8} {component['native']:12} / {component['waybar']}")
