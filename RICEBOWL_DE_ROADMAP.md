@@ -168,7 +168,7 @@ affecting XFCE, including a failed-session recovery. **Not yet signed off.**
   Escape, guarded labwc logout, on-demand keyboard focus, headless open-menu
   screenshot and pure state/painting tests. The labwc fallback root menu
   remains available. Search, pins, desktop-icon keyboard navigation and
-  multi-output menu ownership are not delivered by this slice.
+  multi-output menu ownership arrived in a later slice.
 - [x] Add a **two-output labwc/Waybar fallback acceptance smoke** that captures
   genuine panel pixels separately on both headless monitors, disconnects one
   output, verifies the remaining panel, re-enables it and verifies panel
@@ -190,11 +190,17 @@ affecting XFCE, including a failed-session recovery. **Not yet signed off.**
   its hidden surface on reconnect. Real two-output labwc CI proves the popup
   appears on exactly one output and the shell survives unplug/replug, with
   screenshot evidence. Physical mixed-DPI/input/accessibility QA stays open.
+- [x] Make **native schema-v4/v5 start menus output-aware**: each panel opens
+  its own output-bound layer-shell popup with the same safe grouped actions
+  and keyboard controls. Keep one active popup, close it when its monitor
+  disappears and recreate the hidden surface on reconnect. A genuine
+  two-output labwc smoke captures exactly one visible menu and verifies
+  unplug/replug; physical mouse/keyboard and assistive QA remain open.
 - [ ] Build a Wayland-native panel through `wlr-layer-shell`.
 - [ ] Populate tasks/windows through a supported foreign-toplevel protocol.
 - [ ] Implement launchers, task groups, tray, calendar, menus and keyboard
   navigation; avoid invisible or fake controls. Native task/menu keyboard
-  controls and output-aware calendars are partially implemented; tray,
+  controls, output-aware calendars and menus are partially implemented; tray,
   events/localization, global accessibility and full interaction parity
   are still missing.
 - [ ] Expose reusable, composable shell primitives and stable interaction/state

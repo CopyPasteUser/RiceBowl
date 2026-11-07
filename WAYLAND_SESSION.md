@@ -317,8 +317,11 @@ use Left/Right or Tab to move between its launcher and window groups, Enter
 or Space to activate, and Escape to clear its focus selection. The focused
 group is visibly outlined and automatically paged into view on that output;
 this is a first keyboard pathway, not screen-reader or device signoff.
-Native menu and desktop icons still belong to the primary output: the
-secondary launcher opens the accessible fuzzel picker.
+Native desktop icons still belong to the primary output. For schema-v4/v5
+recipes each secondary launcher now opens its own native menu on that output;
+recipes without a native menu keep the accessible fuzzel picker. Only one
+menu is visible at a time, and unplugging the owning output closes it instead
+of teleporting it to another screen.
 Every **native panel clock now opens a functional calendar on its own output**.
 Only one popup is visible at a time; the other outputs remain unobstructed.
 Choose months
@@ -333,7 +336,8 @@ desktop release. CI sets `RICEBOWL_DE_CALENDAR_OUTPUT=secondary` inside an
 isolated nested session to exercise the secondary-calendar preview.
 The `smoke_riceplate_multioutput.sh` CI test verifies two native panel frames
 and a secondary disconnect/reconnect, plus output-bound calendar screenshot
-proof and popup cleanup after hotplug. Genuine compositor screenshots are
+proof, a secondary native-menu screenshot and popup cleanup after hotplug.
+Genuine compositor screenshots are
 included in the `riceplate-native-preview` workflow artifact. Actual mixed-DPI,
 primary-output removal, and keyboard/menu parity on secondary screens remain
 open acceptance items.
