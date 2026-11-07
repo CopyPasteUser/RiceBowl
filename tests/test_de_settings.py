@@ -99,6 +99,9 @@ class RiceSpiceSettingsTests(unittest.TestCase):
             launch.assert_called_once_with()
         with mock.patch("sys.stderr"):
             self.assertEqual(main(["de", "settings", "--nested"]), 1)
+        with mock.patch("macrice.de.settings._gtk_modules", side_effect=ValueError("missing Gtk")), \
+                mock.patch("sys.stderr"):
+            self.assertEqual(main(["de", "settings"]), 1)
 
 
 if __name__ == "__main__":

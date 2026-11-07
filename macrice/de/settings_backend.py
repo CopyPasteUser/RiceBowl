@@ -17,7 +17,7 @@ class SettingsError(ValueError):
 
 
 EXTERNAL_PAGES = {
-    "displays": (("wdisplays",), ("nwg-displays",)),
+    "displays": (("wdisplays",),),
     "input": (("gnome-control-center", "mouse"),),
     "accessibility": (("gnome-control-center", "universal-access"),),
     "timezone": (("gnome-control-center", "datetime"),),

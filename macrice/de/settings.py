@@ -275,7 +275,7 @@ class RiceSpiceWindow:
             self._text("Available system editor: " + tool[0])
             self._button("Open system settings…", lambda: self._background(
                 lambda: backend.open_external(page),
-                lambda _result: self._state("System settings opened")), primary=True)
+                lambda _result: self._state("System settings launch requested")), primary=True)
 
     def _power(self):
         self._text("Lock the current desktop or request a system suspend.",
@@ -337,7 +337,10 @@ class RiceSpiceWindow:
 
 
 def launch() -> None:
-    Gtk, Gdk, GLib = _gtk_modules()
+    try:
+        Gtk, Gdk, GLib = _gtk_modules()
+    except (ImportError, ValueError) as exc:
+        raise backend.SettingsError("RiceSpice requires GTK3 introspection support") from exc
     ok, _arguments = Gtk.init_check([])
     if not ok:
         raise backend.SettingsError("A working graphical display is required for RiceSpice")
