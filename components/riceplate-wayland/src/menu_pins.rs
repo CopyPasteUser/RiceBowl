@@ -131,15 +131,18 @@ mod tests {
     use super::*;
     use std::os::unix::fs::symlink;
 
+    const TEST_ID: &str = "mockup-desktop";
+
     fn menu() -> NativeMenu {
-        crate::recipe::load("classic").unwrap().menu.unwrap()
+        crate::recipe::parse(include_str!("../../../tests/fixtures/riceplate-desktop-v5.json"),
+                             Some(TEST_ID)).unwrap().menu.unwrap()
     }
 
     fn location() -> PathBuf {
         let nonce = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
         let root = env::temp_dir().join(format!("riceplate-pins-{}-{nonce}", std::process::id()));
         fs::create_dir(&root).unwrap();
-        root.join("ricebowl/native-menu-pins/classic.json")
+        root.join("ricebowl/native-menu-pins/mockup-desktop.json")
     }
 
     #[test]
@@ -148,8 +151,8 @@ mod tests {
         let data = menu();
         let action = data.groups[0].actions[0].clone();
         let pins = vec![action];
-        save_at(&location, "classic", &data, &pins).unwrap();
-        assert_eq!(restore_at(&location, "classic", &data).unwrap(), pins);
+        save_at(&location, TEST_ID, &data, &pins).unwrap();
+        assert_eq!(restore_at(&location, TEST_ID, &data).unwrap(), pins);
         assert_eq!(fs::metadata(&location).unwrap().mode() & 0o077, 0);
         assert_eq!(fs::metadata(location.parent().unwrap()).unwrap().mode() & 0o077, 0);
         fs::remove_dir_all(location.ancestors().nth(3).unwrap()).unwrap();
@@ -160,23 +163,23 @@ mod tests {
         let data = menu();
         let first = data.groups[0].actions[0].clone();
         let saved = SavedPins { schema_version: 1, recipe: "other".into(), pins: vec![first.clone()] };
-        assert!(parse(&serde_json::to_vec(&saved).unwrap(), "classic", &data).is_err());
+        assert!(parse(&serde_json::to_vec(&saved).unwrap(), TEST_ID, &data).is_err());
         assert!(!valid("../classic", &data, &[first.clone()]));
-        assert!(!valid("classic", &data, &[first.clone(), first]));
-        assert!(!valid("classic", &data, &["not-a-recipe-action".into()]));
+        assert!(!valid(TEST_ID, &data, &[first.clone(), first]));
+        assert!(!valid(TEST_ID, &data, &["not-a-recipe-action".into()]));
     }
 
     #[test]
     fn will_not_follow_symlinks_or_overwrite_foreign_data() {
         let location = location();
         let data = menu();
-        save_at(&location, "classic", &data, &[]).unwrap();
+        save_at(&location, TEST_ID, &data, &[]).unwrap();
         let victim = location.ancestors().nth(2).unwrap().join("untouched.txt");
         fs::write(&victim, b"KEEP").unwrap();
         fs::remove_file(&location).unwrap();
         symlink(&victim, &location).unwrap();
-        assert!(restore_at(&location, "classic", &data).is_err());
-        assert!(save_at(&location, "classic", &data, &[]).is_err());
+        assert!(restore_at(&location, TEST_ID, &data).is_err());
+        assert!(save_at(&location, TEST_ID, &data, &[]).is_err());
         assert_eq!(fs::read(victim).unwrap(), b"KEEP");
         fs::remove_dir_all(location.ancestors().nth(3).unwrap()).unwrap();
     }
