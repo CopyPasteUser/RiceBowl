@@ -462,13 +462,14 @@ def imported_recipes() -> list[tuple[PanelRecipe, Path]]:
     directory = _private_recipe_dir(create=False)
     if not directory.exists():
         return []
-    entries = sorted(directory.iterdir())
+    # RicePack import keeps data-only `.ricepack-provenance` receipts next to
+    # recipes. They are not recipe candidates and must not consume the 128
+    # validated-recipe slots or be accidentally parsed as recipe JSON.
+    entries = sorted(path for path in directory.iterdir() if path.suffix == ".json")
     if len(entries) > 128:
         raise RecipeError("Too many imported recipes (limit 128)")
     found = []
     for path in entries:
-        if path.suffix != ".json":
-            continue
         recipe = load(str(path))
         if recipe.recipe_id != path.stem or recipe.recipe_id in BUILTINS:
             raise RecipeError(f"Imported recipe ID does not match its filename: {path.name}")

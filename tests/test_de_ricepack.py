@@ -155,6 +155,12 @@ class PortableRicePackTests(unittest.TestCase):
                 saved_manifest = pack.export_pack("original-y2k", roundtrip)["manifest"]
                 self.assertEqual(saved_manifest["provenance"], exported["manifest"]["provenance"])
                 self.assertEqual(saved_manifest["asset_manifest"], exported["manifest"]["asset_manifest"])
+                # The import receipt is not a recipe and must never appear in
+                # component discovery or consume the recipe collection quota.
+                self.assertEqual(len(recipes.imported_recipes()), 1)
+                for index in range(128):
+                    (target.parent / f"other-{index}.ricepack-provenance").write_text("{}")
+                self.assertEqual(len(recipes.imported_recipes()), 1)
                 with self.assertRaises(pack.PackError) as caught:
                     pack.import_pack(archive)
                 self.assertEqual(caught.exception.code, "import_unavailable")
