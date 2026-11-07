@@ -199,7 +199,8 @@ class RiceSpiceWindow:
             self._state("Wi-Fi radio: enabled" if enabled else "Wi-Fi radio: disabled")
             self._button("Disable Wi-Fi" if enabled else "Enable Wi-Fi", lambda: self._background(
                 lambda: backend.set_wifi(not enabled, expected=enabled),
-                lambda _result: self.show_page("network")), primary=True).show()
+                lambda _result: self.show_page("network")), primary=True)
+            self.content.show_all()
 
         self._background(backend.wifi_state, present)
 
