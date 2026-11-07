@@ -169,7 +169,7 @@ def describe_creator_api() -> dict[str, object]:
         "success_exit_code": 0,
         "invalid_options_exit_code": 1,
         "operation_error_exit_code": 2,
-        "active_session_mutation": "none of the Creator commands changes the active desktop",
+        "active_session_mutation": "Creator authoring commands never change the active desktop; notification-dismiss is an explicit RicePop exception",
         "next_login_selection_mutation": "creator-stage/rollback only; requires explicit invocation",
         "commands": [
             {"command": "catalog", "effect": "read-only component discovery",
@@ -188,6 +188,9 @@ def describe_creator_api() -> dict[str, object]:
              "cli": "de capture --output NEW.png --json", "contract_version": 1},
             {"command": "notifications", "effect": "read live Mako alerts and prior history without replaying actions",
              "cli": "de notifications --json", "contract_version": 1},
+            {"command": "notification-dismiss", "effect": "explicitly dismiss one currently active Mako alert; never invoke its actions",
+             "cli": "de notification-dismiss --notification-id UINT32 --json", "contract_version": 1,
+             "mutates_active_session": True},
             {"command": "pack-export", "effect": "create portable validated recipe archive",
              "cli": "de pack-export --recipe ID --output NEW.ricepack --json",
              "contract_version": 2},
@@ -209,7 +212,7 @@ def describe_creator_api() -> dict[str, object]:
             "Not a screenshot-to-rice converter or editable GUI",
             "Only schema-v1..v5 panel/shell preview and bundled wallpapers",
             "No automatic apply; Wayland session remains experimental",
-            "Keyboard, tray, native device controls and multi-monitor acceptance remain open",
+            "Native tray, complete settings, notification center and physical multi-monitor acceptance remain open",
         ],
     }
 

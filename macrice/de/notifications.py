@@ -1,8 +1,9 @@
-"""On-demand, read-only RicePop bridge to the sole existing Wayland host.
+"""On-demand RicePop bridge to the sole existing Wayland notification host.
 
 In the experimental labwc session, mako owns org.freedesktop.Notifications.
-This module never starts another daemon, mutates D-Bus state, replays actions,
-persists messages or polls in the background.
+The inventory is read-only; an explicit ID-bound dismissal is supported.
+Neither path starts a daemon, replays third-party actions, persists messages
+or polls in the background.
 """
 
 from __future__ import annotations
@@ -73,6 +74,49 @@ def inspect() -> dict[str, Any]:
             "mutates_active_desktop": False, "source_contains_private_messages": True}
 
 
-def invalid(error: NotificationBridgeError) -> dict[str, Any]:
+def dismiss(notification_id: int) -> dict[str, Any]:
+    """Explicitly close one currently active Mako notification, never invoke an action.
+
+    An ID must have been returned by a fresh bounded read. It may disappear
+    before the dismissal, in which case Mako's own method decides the result;
+    we never fall back to `dismiss --all` or to replaying notification actions.
+    """
+    if type(notification_id) is not int or not 0 < notification_id <= 2**32 - 1:
+        raise NotificationBridgeError("Notification ID must be a nonzero uint32",
+                                      "invalid_notification_id")
+    command = shutil.which("makoctl")
+    if command is None:
+        raise NotificationBridgeError("makoctl is not installed")
+    try:
+        snapshot = subprocess.run([command, "list", "-j"], capture_output=True,
+                                  timeout=3, check=False)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise NotificationBridgeError("Notification host is unreachable") from exc
+    if snapshot.returncode:
+        raise NotificationBridgeError("Notification host rejected the active list")
+    active, truncated = _records(snapshot.stdout)
+    if truncated:
+        # An incomplete list cannot prove this ID is a currently active entry.
+        raise NotificationBridgeError("Active notification inventory is truncated",
+                                      "ambiguous_notification_id")
+    if notification_id not in {record["id"] for record in active}:
+        raise NotificationBridgeError("Notification is no longer active",
+                                      "notification_not_found")
+    try:
+        outcome = subprocess.run([command, "dismiss", "-n", str(notification_id)],
+                                 capture_output=True, timeout=3, check=False)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise NotificationBridgeError("Notification dismissal could not be completed") from exc
+    if outcome.returncode:
+        raise NotificationBridgeError("Notification host rejected dismissal",
+                                      "dismiss_failed")
+    return {"ok": True, "backend": "mako", "dismissed": True,
+            "notification_id": notification_id, "mutates_active_desktop": True,
+            "actions_replayed": False, "all_notifications_affected": False}
+
+
+def invalid(error: NotificationBridgeError, *, attempted_dismiss: bool = False) -> dict[str, Any]:
     return {"ok": False, "backend": "mako", "active": [], "history": [],
-            "read_only": True, "error": {"code": error.code, "message": str(error)}}
+            "read_only": not attempted_dismiss,
+            "dismissed": False,
+            "error": {"code": error.code, "message": str(error)}}

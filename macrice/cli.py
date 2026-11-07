@@ -73,7 +73,7 @@ def parser() -> argparse.ArgumentParser:
     de.add_argument("action", choices=(
         "check", "start", "shell", "catalog", "creator-api", "review", "draft-edit", "visual-compare",
         "capture", "render", "creator-status", "creator-stage", "creator-rollback",
-        "pack-export", "pack-inspect", "pack-import", "notifications",
+        "pack-export", "pack-inspect", "pack-import", "notifications", "notification-dismiss",
         "recipes", "recipe-init", "recipe-import", "recipe-export", "recipe-current",
         "recipe-select", "recipe-restore", "taskotto-export"))
     de.add_argument("--json", action="store_true", help="Read-only machine-readable preflight")
@@ -89,6 +89,8 @@ def parser() -> argparse.ArgumentParser:
     de.add_argument("--edit", type=Path, help="Owner-controlled absolute JSON edit operations for de draft-edit")
     de.add_argument("--metadata", type=Path, help="Optional provenance JSON for de pack-export")
     de.add_argument("--package", type=Path, help="Absolute .ricepack file for de pack-inspect/import")
+    de.add_argument("--notification-id", type=int,
+                    help="One active notification ID for explicit de notification-dismiss")
     de.add_argument("--expect-sha256", help="Reviewed recipe semantic SHA-256 for de creator-stage")
     de.add_argument("--expect-active", help="Optional concurrency guard for de creator-stage/rollback")
     de.add_argument("--panel", choices=("waybar", "native"), default="waybar",
@@ -168,6 +170,8 @@ def main(argv: list[str] | None = None) -> int:
                 raise ValueError("--metadata only applies to de pack-export")
             if args.action not in ("pack-inspect", "pack-import") and args.package is not None:
                 raise ValueError("--package only applies to de pack-inspect/import")
+            if args.action != "notification-dismiss" and args.notification_id is not None:
+                raise ValueError("--notification-id only applies to de notification-dismiss")
             if args.action != "creator-stage" and args.expect_sha256 is not None:
                 raise ValueError("--expect-sha256 only applies to de creator-stage")
             if args.action not in ("creator-stage", "creator-rollback") and args.expect_active is not None:
@@ -196,14 +200,17 @@ def main(argv: list[str] | None = None) -> int:
                     for item in contract["commands"]:
                         print(f"  {item['command']:18} {item['effect']}")
                 return 0
-            if args.action == "notifications":
+            if args.action in ("notifications", "notification-dismiss"):
                 if args.nested or args.recipe or args.panel != "waybar" or not args.json:
-                    raise ValueError("de notifications requires --json and no session options")
-                from .de.notifications import NotificationBridgeError, inspect, invalid
+                    raise ValueError("RicePop notification commands require --json and no session options")
+                if args.action == "notification-dismiss" and args.notification_id is None:
+                    raise ValueError("de notification-dismiss requires --notification-id")
+                from .de.notifications import NotificationBridgeError, dismiss, inspect, invalid
                 try:
-                    result = inspect()
+                    result = inspect() if args.action == "notifications" else dismiss(args.notification_id)
                 except NotificationBridgeError as error:
-                    print(json.dumps(invalid(error), indent=2))
+                    print(json.dumps(invalid(error,
+                                             attempted_dismiss=args.action == "notification-dismiss"), indent=2))
                     return 2
                 print(json.dumps(result, indent=2, ensure_ascii=False))
                 return 0
