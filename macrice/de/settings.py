@@ -31,6 +31,7 @@ def _gtk_modules():
     import gi
 
     gi.require_version("Gtk", "3.0")
+    gi.require_version("Gdk", "3.0")
     from gi.repository import Gdk, GLib, Gtk
 
     return Gtk, Gdk, GLib
