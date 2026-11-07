@@ -32,9 +32,16 @@ class SettingsGuiTests(unittest.TestCase):
             self.assertTrue(window.window.get_visible())
             self.assertEqual(len(window.nav_buttons), 9)
             for name, _title, _description in settings.SECTIONS:
+                before = window.generation
                 window.show_page(name)
+                self.assertEqual(window.generation, before + 1,
+                                 "Changing one page must never recursively activate a nav button")
                 self.assertEqual(window.page, name)
                 self.assertTrue(window.nav_buttons[name].get_active())
+            before = window.generation
+            window.nav_buttons["audio"].clicked()
+            self.assertEqual(window.page, "audio")
+            self.assertEqual(window.generation, before + 1)
             GLib.timeout_add(160, lambda: (window.window.destroy(), False)[1])
             Gtk.main()
             self.assertTrue(window.closed)

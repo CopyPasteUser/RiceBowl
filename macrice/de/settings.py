@@ -65,6 +65,7 @@ class RiceSpiceWindow:
         self.busy = False
         self.closed = False
         self.page = "network"
+        self._selecting_nav = False
         provider = Gtk.CssProvider()
         provider.load_from_data(CSS)
         if Gdk.Screen.get_default() is not None:
@@ -91,7 +92,8 @@ class RiceSpiceWindow:
             button = Gtk.ToggleButton(label=title)
             button.get_child().set_xalign(0)
             button.get_accessible().set_name(f"RiceSpice {title} settings")
-            button.connect("clicked", lambda _button, name=key: self.show_page(name))
+            button.connect("clicked", lambda _button, name=key:
+                           None if self._selecting_nav else self.show_page(name))
             navigation.pack_start(button, False, False, 0)
             self.nav_buttons[key] = button
 
@@ -167,9 +169,13 @@ class RiceSpiceWindow:
         self.generation += 1
         self.busy = False
         self.page = name
-        for key, button in self.nav_buttons.items():
-            if button.get_active() != (key == name):
-                button.set_active(key == name)
+        self._selecting_nav = True
+        try:
+            for key, button in self.nav_buttons.items():
+                if button.get_active() != (key == name):
+                    button.set_active(key == name)
+        finally:
+            self._selecting_nav = False
         for widget in tuple(self.content.get_children()):
             widget.destroy()
         _key, title, description = next(section for section in SECTIONS if section[0] == name)
