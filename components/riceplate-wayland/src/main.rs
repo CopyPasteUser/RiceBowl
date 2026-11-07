@@ -143,7 +143,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // One small Bottom-layer surface per icon: transparent desktop space is
     // never covered by a full-screen input-catching window.
     let mut icon_layers = Vec::new();
-    for icon in &recipe.desktop_icons {
+    for (recipe_index, icon) in recipe.desktop_icons.iter().enumerate() {
         let surface = layer_shell.create_layer_surface(
             &qh,
             compositor.create_surface(&qh),
@@ -158,10 +158,12 @@ fn main() -> Result<(), Box<dyn Error>> {
         surface.set_keyboard_interactivity(KeyboardInteractivity::OnDemand);
         surface.commit();
         icon_layers.push(IconLayer {
+            recipe_index,
             surface,
             pool: None,
             configured: false,
             output: None,
+            bound_output: None,
             placed: Some((icon.x, icon.y)),
         });
     }
@@ -251,6 +253,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         pointer: None,
         keyboard: None,
         focused_icon: None,
+        keyboard_icon_surface: None,
         focused_panel: None,
         focused_target: None,
         icon_drag: None,
@@ -323,10 +326,12 @@ struct Task {
 }
 
 struct IconLayer {
+    recipe_index: usize,
     surface: LayerSurface,
     pool: Option<SlotPool>,
     configured: bool,
     output: Option<wl_output::WlOutput>,
+    bound_output: Option<wl_output::WlOutput>,
     placed: Option<(u32, u32)>,
 }
 
@@ -391,6 +396,7 @@ struct RicePlate {
     pointer: Option<wl_pointer::WlPointer>,
     keyboard: Option<wl_keyboard::WlKeyboard>,
     focused_icon: Option<usize>,
+    keyboard_icon_surface: Option<wl_surface::WlSurface>,
     focused_panel: Option<wl_surface::WlSurface>,
     focused_target: Option<KeyboardTarget>,
     icon_drag: Option<IconDrag>,
@@ -531,6 +537,43 @@ impl RicePlate {
                 task_offset: 0,
             });
         }
+        // Desktop shortcut surfaces follow the same explicit secondary output
+        // ownership as panels. No full-screen input-grabbing wallpaper layer.
+        let before = self.icon_layers.len();
+        self.icon_layers.retain(|icon| icon.bound_output.as_ref()
+            .is_none_or(|output| outputs.contains(output)));
+        if before != self.icon_layers.len() {
+            // Layer indices can shift after hot-unplug. Never leave an icon
+            // keyboard target or drag pointing at a different surface.
+            self.focused_icon = None;
+            self.keyboard_icon_surface = None;
+            self.icon_drag = None;
+            self.save_icon_positions();
+        }
+        for output in &outputs {
+            for (recipe_index, icon) in self.recipe.desktop_icons.iter().enumerate() {
+                if self.icon_layers.iter().any(|layer|
+                    layer.recipe_index == recipe_index && layer.bound_output.as_ref() == Some(output)) {
+                    continue;
+                }
+                let surface = self.layer_shell.create_layer_surface(
+                    qh, self.compositor.create_surface(qh), Layer::Bottom,
+                    Some("riceplate-output-desktop-icon"), Some(output),
+                );
+                surface.set_anchor(Anchor::TOP | Anchor::LEFT);
+                surface.set_size(recipe::ICON_WIDTH, recipe::ICON_HEIGHT);
+                surface.set_margin(icon.y as i32, 0, 0, icon.x as i32);
+                surface.set_exclusive_zone(-1);
+                surface.set_keyboard_interactivity(KeyboardInteractivity::OnDemand);
+                surface.commit();
+                self.icon_layers.push(IconLayer {
+                    recipe_index, surface, pool: None, configured: false,
+                    output: Some(output.clone()), bound_output: Some(output.clone()),
+                    placed: Some((icon.x, icon.y)),
+                });
+            }
+        }
+        self.reflow_icons();
         self.menu_mirrors.retain(|menu|
             menu.output.as_ref().is_some_and(|output| outputs.contains(output)));
         if self.menu_layer.is_some() {
@@ -907,7 +950,7 @@ impl RicePlate {
                 return;
             }
         };
-        let icon = &self.recipe.desktop_icons[index];
+        let icon = &self.recipe.desktop_icons[layer.recipe_index];
         paint_icon(canvas, icon, self.recipe.active, self.recipe.foreground,
                    self.focused_icon == Some(index));
         surface.damage_buffer(0, 0, width as i32, height as i32);
@@ -936,27 +979,17 @@ impl RicePlate {
     }
 
     fn reflow_icons(&mut self) {
-        // The current preview creates one set of layer surfaces, owned by the
-        // compositing output to which they were assigned. Full multi-output
-        // desktop replication is a separate, gated milestone.
-        let Some(output) = self
-            .primary_output
-            .clone()
-            .or_else(|| self.icon_layers.iter().find_map(|icon| icon.output.clone()))
-        else {
-            return;
-        };
-        let Some((width, height)) = self.logical_output_size(&output) else {
-            return;
-        };
-        let placements = desktop_layout::place(
-            &self.recipe.desktop_icons,
-            width,
-            height,
-            self.recipe.top,
-            self.recipe.height,
-        );
-        for (index, placement) in placements.into_iter().enumerate() {
+        for index in 0..self.icon_layers.len() {
+            let layer = &self.icon_layers[index];
+            let output = layer.bound_output.as_ref().or(self.primary_output.as_ref())
+                .or(layer.output.as_ref());
+            let Some((width, height)) = output.and_then(|o| self.logical_output_size(o)) else {
+                continue;
+            };
+            let placement = desktop_layout::place(
+                &self.recipe.desktop_icons, width, height,
+                self.recipe.top, self.recipe.height,
+            )[layer.recipe_index];
             let restored = {
                 let layer = &mut self.icon_layers[index];
                 if layer.placed == placement {
@@ -1823,6 +1856,7 @@ impl SeatHandler for RicePlate {
             }
             self.menu_focused = false;
             self.calendar_focused = false;
+            self.keyboard_icon_surface = None;
             if let Some(index) = self.focused_icon.take() {
                 self.redraw_icon(index);
                 self.save_icon_positions();
@@ -1876,6 +1910,7 @@ impl KeyboardHandler for RicePlate {
         }
         let next = self.icon_layers.iter()
             .position(|icon| icon.surface.wl_surface() == surface && icon.placed.is_some());
+        self.keyboard_icon_surface = next.map(|_| surface.clone());
         if self.focused_icon != next {
             let previous = self.focused_icon;
             self.focused_icon = next;
@@ -1899,12 +1934,12 @@ impl KeyboardHandler for RicePlate {
         if self.active_calendar.as_ref() == Some(surface) && self.calendar_focused {
             self.set_calendar_visible(false, qh);
         }
-        if let Some(index) = self.focused_icon {
-            if self.icon_layers[index].surface.wl_surface() == surface {
-                self.focused_icon = None;
+        if self.keyboard_icon_surface.as_ref() == Some(surface) {
+            self.keyboard_icon_surface = None;
+            if let Some(index) = self.focused_icon.take() {
                 self.redraw_icon(index);
-                self.save_icon_positions();
             }
+            self.save_icon_positions();
         }
         if self.focused_panel.as_ref() == Some(surface) {
             self.focused_panel = None;
@@ -1942,14 +1977,28 @@ impl KeyboardHandler for RicePlate {
         if self.handle_panel_key(event.keysym, qh) {
             return;
         }
-        if let Some(index) = self.focused_icon {
+        if let Some(index) = self.focused_icon.filter(|_| self.keyboard_icon_surface.is_some()) {
             match event.keysym {
+                Keysym::Tab | Keysym::ISO_Left_Tab => {
+                    let output = self.icon_layers[index].bound_output.as_ref();
+                    let visible: Vec<_> = self.icon_layers.iter()
+                        .map(|icon| icon.placed.is_some() && icon.bound_output.as_ref() == output)
+                        .collect();
+                    let delta = if event.keysym == Keysym::ISO_Left_Tab { -1 } else { 1 };
+                    if let Some(next) = desktop_layout::navigate(&visible, index, delta) {
+                        self.focused_icon = Some(next);
+                        self.redraw_icon(index);
+                        self.redraw_icon(next);
+                    }
+                }
                 Keysym::Return | Keysym::KP_Enter | Keysym::space => {
-                    let action = self.recipe.desktop_icons[index].action.clone();
+                    let action = self.recipe.desktop_icons[self.icon_layers[index].recipe_index]
+                        .action.clone();
                     self.activate_action(&action, qh);
                 }
                 Keysym::Left | Keysym::Right | Keysym::Up | Keysym::Down => {
-                    let icon = &mut self.recipe.desktop_icons[index];
+                    let recipe_index = self.icon_layers[index].recipe_index;
+                    let icon = &mut self.recipe.desktop_icons[recipe_index];
                     match event.keysym {
                         Keysym::Left => icon.x = icon.x.saturating_sub(16),
                         Keysym::Right => icon.x = icon.x.saturating_add(16).min(desktop_layout::MAX_SAVED_POSITION),
@@ -2130,7 +2179,8 @@ impl PointerHandler for RicePlate {
                                 drag.moved = true;
                             }
                             if drag.moved && desired != current {
-                                let icon = &mut self.recipe.desktop_icons[index];
+                                let recipe_index = self.icon_layers[index].recipe_index;
+                                let icon = &mut self.recipe.desktop_icons[recipe_index];
                                 (icon.x, icon.y) = desired;
                                 self.reflow_icons();
                                 self.icon_position_dirty = true;
@@ -2140,7 +2190,8 @@ impl PointerHandler for RicePlate {
                     PointerEventKind::Release { button: BTN_LEFT, .. } => {
                         if let Some(drag) = self.icon_drag.take() {
                             if drag.index == index && !drag.moved {
-                                let action = self.recipe.desktop_icons[index].action.clone();
+                                let action = self.recipe.desktop_icons[
+                                    self.icon_layers[index].recipe_index].action.clone();
                                 self.activate_action(&action, qh);
                             } else if drag.index == index {
                                 self.save_icon_positions();

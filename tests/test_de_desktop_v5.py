@@ -30,7 +30,7 @@ class DesktopV5Tests(unittest.TestCase):
         self.assertEqual(catalog.describe()["recipe"]["shell_extensions"]["desktop"]["icons"]["native"],
                          "interactive-layer-surfaces")
         self.assertEqual(catalog.describe()["recipe"]["shell_extensions"]["desktop"]["icons"]["native_placement"],
-                         "single-output-logical-bounds-reflow")
+                         "per-output-logical-bounds-reflow")
 
     def test_template_edit_review_preserves_source_and_private_output(self):
         with tempfile.TemporaryDirectory() as folder:

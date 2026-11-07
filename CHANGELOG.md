@@ -1,5 +1,14 @@
 # RiceBowl changelog
 
+## Unreleased — Native desktop icons on multiple outputs
+
+- Replicate native schema-v5 desktop shortcuts on additional labwc outputs,
+  with independent logical-bounds placement and hotplug recovery in the same
+  RicePlate process. Keyboard Tab/Shift-Tab moves between visible shortcuts on
+  the focused monitor; Enter/Space activates the selected known action.
+- Assert actual icon backplate pixels in two-output headless labwc captures
+  before and after unplug/replug. No new daemon or default-session changes.
+
 ## Unreleased — live native network/audio status (7 November 2026)
 
 - Render real NetworkManager connectivity states and WirePlumber default-sink

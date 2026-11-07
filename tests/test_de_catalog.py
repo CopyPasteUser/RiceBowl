@@ -62,7 +62,7 @@ class ComponentCatalogTests(unittest.TestCase):
         self.assertFalse(shell["calendar-popup"]["localized_month_labels"])
         self.assertTrue(shell["calendar-popup"]["close_on_output_removal"])
         self.assertEqual(shell["desktop-shortcut"]["actions"], sorted(recipes.ICON_ACTIONS))
-        self.assertFalse(shell["desktop-shortcut"]["hotplug_across_outputs"])
+        self.assertTrue(shell["desktop-shortcut"]["hotplug_across_outputs"])
         self.assertFalse(shell["desktop-shortcut"]["arbitrary_commands"])
         icons = info["recipe"]["shell_extensions"]["desktop"]["icons"]
         self.assertTrue(icons["keyboard_navigation"])
