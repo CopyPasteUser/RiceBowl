@@ -3,8 +3,9 @@
 
 use std::{error::Error, process::Command, time::Duration};
 
-use chrono::{Local, Timelike};
+use chrono::{Datelike, Local, Timelike};
 use font8x8::{UnicodeFonts, BASIC_FONTS};
+mod calendar;
 mod desktop_layout;
 mod icon_positions;
 mod native_menu;
@@ -12,6 +13,7 @@ mod recipe;
 mod task_groups;
 mod task_navigation;
 use native_menu::{Hit as MenuHit, MenuState};
+use calendar::{CalendarState, Hit as CalendarHit};
 use recipe::{Hit, PanelStyle, Widget};
 use task_navigation::Target as KeyboardTarget;
 use smithay_client_toolkit::{
@@ -70,17 +72,19 @@ fn main() -> Result<(), Box<dyn Error>> {
         return Ok(());
     }
     if matches!(arguments.as_slice(), [arg] if arg == "--help") {
-        println!("Usage: riceplate-native [--recipe classic|chrome|/absolute/private.json [--preview-menu]]");
+        println!("Usage: riceplate-native [--recipe classic|chrome|/absolute/private.json [--preview-menu|--preview-calendar]]");
         return Ok(());
     }
-    let (recipe_name, preview_menu) = match arguments.as_slice() {
-        [] => ("classic", false),
-        [flag, recipe] if flag == "--recipe" => (recipe.as_str(), false),
+    let (recipe_name, preview_menu, preview_calendar) = match arguments.as_slice() {
+        [] => ("classic", false, false),
+        [flag, recipe] if flag == "--recipe" => (recipe.as_str(), false, false),
         [flag, recipe, preview] if flag == "--recipe" && preview == "--preview-menu" =>
-            (recipe.as_str(), true),
+            (recipe.as_str(), true, false),
+        [flag, recipe, preview] if flag == "--recipe" && preview == "--preview-calendar" =>
+            (recipe.as_str(), false, true),
         _ => {
             return Err(
-                "Usage: riceplate-native [--recipe classic|chrome|/absolute/private.json]".into(),
+                "Usage: riceplate-native [--recipe classic|chrome|/absolute/private.json [--preview-menu|--preview-calendar]]".into(),
             )
         }
     };
@@ -90,6 +94,12 @@ fn main() -> Result<(), Box<dyn Error>> {
     }
     if preview_menu && recipe.menu.is_none() {
         return Err("Native menu preview requires schema v4/v5".into());
+    }
+    let clock_present = recipe.sections.iter().flatten().any(|widget| *widget == Widget::Clock)
+        || recipe.compact.as_ref().is_some_and(|(_, sections)|
+            sections.iter().flatten().any(|widget| *widget == Widget::Clock));
+    if preview_calendar && !clock_present {
+        return Err("Calendar preview requires a native clock widget".into());
     }
     let conn = Connection::connect_to_env()?;
     let (globals, event_queue) = registry_queue_init(&conn)?;
@@ -182,6 +192,26 @@ fn main() -> Result<(), Box<dyn Error>> {
         }
     });
 
+    // One owner-private calendar popup, idle and parked until the clock is used.
+    let calendar_layer = clock_present.then(|| {
+        let surface = layer_shell.create_layer_surface(
+            &qh, compositor.create_surface(&qh), Layer::Top,
+            Some("riceplate-native-calendar"), None,
+        );
+        surface.set_anchor((if recipe.top { Anchor::TOP } else { Anchor::BOTTOM }) | Anchor::RIGHT);
+        surface.set_size(calendar::WIDTH, calendar::HEIGHT);
+        surface.set_margin(
+            if recipe.top { recipe.height as i32 } else { 0 },
+            MAX_WIDTH as i32, // Park beyond the visible output while closed.
+            if recipe.top { 0 } else { recipe.height as i32 },
+            0,
+        );
+        surface.set_exclusive_zone(-1);
+        surface.set_keyboard_interactivity(KeyboardInteractivity::None);
+        surface.commit();
+        CalendarLayer { surface, pool: None, configured: false }
+    });
+
     let mut app = RicePlate {
         compositor,
         layer_shell,
@@ -193,7 +223,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         mirrors: Vec::new(),
         icon_layers,
         menu_layer,
+        calendar_layer,
         menu_state: MenuState::default(),
+        calendar_state: CalendarState::new(Local::now().date_naive()),
+        calendar_focused: false,
         recipe,
         clock: clock_now(),
         pointer: None,
@@ -219,6 +252,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         needs_redraw: false,
     };
     if preview_menu { app.set_menu_visible(true, &qh); }
+    if preview_calendar { app.set_calendar_visible(true, &qh); }
     while !app.closed {
         // Calloop sleeps on Wayland's fd and wakes at the next minute,
         // so the clock updates without any resident 1 Hz poll/frame loop.
@@ -227,6 +261,11 @@ fn main() -> Result<(), Box<dyn Error>> {
         if app.clock != current {
             app.clock = current;
             app.request_redraw(&qh);
+        }
+        let today = Local::now().date_naive();
+        if app.calendar_state.today != today {
+            app.calendar_state.today = today;
+            if app.calendar_state.visible { app.redraw_calendar(&qh); }
         }
     }
     app.save_icon_positions();
@@ -262,6 +301,12 @@ struct MenuLayer {
     configured: bool,
 }
 
+struct CalendarLayer {
+    surface: LayerSurface,
+    pool: Option<SlotPool>,
+    configured: bool,
+}
+
 struct PanelMirror {
     output: wl_output::WlOutput,
     surface: LayerSurface,
@@ -285,7 +330,10 @@ struct RicePlate {
     mirrors: Vec<PanelMirror>,
     icon_layers: Vec<IconLayer>,
     menu_layer: Option<MenuLayer>,
+    calendar_layer: Option<CalendarLayer>,
     menu_state: MenuState,
+    calendar_state: CalendarState,
+    calendar_focused: bool,
     recipe: PanelStyle,
     clock: String,
     pointer: Option<wl_pointer::WlPointer>,
@@ -475,6 +523,7 @@ impl RicePlate {
     }
 
     fn set_menu_visible(&mut self, visible: bool, qh: &QueueHandle<Self>) {
+        if visible && self.calendar_state.visible { self.set_calendar_visible(false, qh); }
         let Some(layer) = self.menu_layer.as_ref() else {
             return;
         };
@@ -556,6 +605,68 @@ impl RicePlate {
         surface.damage_buffer(0, 0, native_menu::WIDTH as i32, native_menu::HEIGHT as i32);
         if let Err(error) = buffer.attach_to(surface) {
             eprintln!("RicePlate: native menu attach failed: {error}");
+            self.closed = true;
+            return;
+        }
+        layer.surface.commit();
+    }
+
+    fn set_calendar_visible(&mut self, visible: bool, qh: &QueueHandle<Self>) {
+        if self.calendar_layer.is_none() { return; }
+        if visible && self.menu_state.visible { self.set_menu_visible(false, qh); }
+        if visible {
+            self.calendar_state.open(Local::now().date_naive());
+        } else {
+            self.calendar_state.visible = false;
+            self.calendar_focused = false;
+        }
+        let layer = self.calendar_layer.as_ref().unwrap();
+        layer.surface.set_keyboard_interactivity(if visible {
+            KeyboardInteractivity::OnDemand
+        } else {
+            KeyboardInteractivity::None
+        });
+        layer.surface.set_margin(
+            if self.recipe.top { self.recipe.height as i32 } else { 0 },
+            if visible { 8 } else { MAX_WIDTH as i32 },
+            if self.recipe.top { 0 } else { self.recipe.height as i32 },
+            0,
+        );
+        layer.surface.commit();
+        if visible { self.redraw_calendar(qh); }
+    }
+
+    fn redraw_calendar(&mut self, _qh: &QueueHandle<Self>) {
+        let Some(layer) = self.calendar_layer.as_mut() else { return; };
+        if !layer.configured || !self.calendar_state.visible { return; }
+        let surface = layer.surface.wl_surface();
+        // Keep the popup's shared-memory allocation lazy during idle sessions.
+        if layer.pool.is_none() {
+            let bytes = (calendar::WIDTH * calendar::HEIGHT * 4 * 3) as usize;
+            match SlotPool::new(bytes, &self.shm) {
+                Ok(pool) => layer.pool = Some(pool),
+                Err(error) => {
+                    eprintln!("RicePlate: calendar allocation failed: {error}");
+                    self.set_calendar_visible(false, _qh);
+                    return;
+                }
+            }
+        }
+        let Some(pool) = layer.pool.as_mut() else { return; };
+        let (buffer, canvas) = match pool.create_buffer(
+            calendar::WIDTH as i32, calendar::HEIGHT as i32,
+            (calendar::WIDTH * 4) as i32, wl_shm::Format::Argb8888,
+        ) {
+            Ok(result) => result,
+            Err(error) => {
+                eprintln!("RicePlate: calendar buffer unavailable: {error}");
+                return;
+            }
+        };
+        paint_calendar(canvas, &self.recipe, &self.calendar_state);
+        surface.damage_buffer(0, 0, calendar::WIDTH as i32, calendar::HEIGHT as i32);
+        if let Err(error) = buffer.attach_to(surface) {
+            eprintln!("RicePlate: calendar attach failed: {error}");
             self.closed = true;
             return;
         }
@@ -942,6 +1053,54 @@ fn paint_menu(canvas: &mut [u8], menu: &recipe::NativeMenu, style: &PanelStyle, 
     );
 }
 
+fn paint_calendar(canvas: &mut [u8], style: &PanelStyle, state: &CalendarState) {
+    let width = calendar::WIDTH;
+    let height = calendar::HEIGHT;
+    for pixel in canvas.chunks_exact_mut(4) {
+        pixel.copy_from_slice(&style.background.to_le_bytes());
+    }
+    fill_rect(canvas, width, height, 0, 0, width, 56, style.active);
+    draw_text(canvas, width, height, 12, 22,
+              &state.month.format("%B %Y").to_string(), style.foreground);
+    draw_text(canvas, width, height, 262, 22, "<", style.foreground);
+    draw_text(canvas, width, height, 306, 22, ">", style.foreground);
+    for (index, weekday) in ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"].iter().enumerate() {
+        draw_text(canvas, width, height,
+                  calendar::GRID_X + index as u32 * calendar::CELL_WIDTH + 12,
+                  82, weekday, style.foreground);
+    }
+    let muted = {
+        let foreground = style.foreground;
+        let background = style.background;
+        let channel = |shift| {
+            (((foreground >> shift) & 0xff_u32) + 2_u32 * ((background >> shift) & 0xff_u32)) / 3_u32
+        };
+        0xff00_0000_u32 | (channel(16) << 16) | (channel(8) << 8) | channel(0)
+    };
+    for (index, (day, this_month)) in state.cells().into_iter().enumerate() {
+        let x = calendar::GRID_X + (index % 7) as u32 * calendar::CELL_WIDTH;
+        let y = calendar::GRID_Y + (index / 7) as u32 * calendar::CELL_HEIGHT;
+        if day == state.today {
+            fill_rounded_rect(canvas, width, height, x + 4, y + 2,
+                              calendar::CELL_WIDTH - 8, calendar::CELL_HEIGHT - 4,
+                              7, style.active);
+        }
+        if day == state.selected {
+            fill_rect(canvas, width, height, x + 4, y + 1,
+                      calendar::CELL_WIDTH - 8, 2, style.foreground);
+            fill_rect(canvas, width, height, x + 4, y + calendar::CELL_HEIGHT - 3,
+                      calendar::CELL_WIDTH - 8, 2, style.foreground);
+        }
+        let label = day.day().to_string();
+        draw_text(canvas, width, height,
+                  x + (calendar::CELL_WIDTH - label.len() as u32 * 8) / 2,
+                  y + 13, &label, if this_month { style.foreground } else { muted });
+    }
+    fill_rounded_rect(canvas, width, height, 12, 322, 92, 28, 4, style.active);
+    draw_text(canvas, width, height, 31, 332, "Today", style.foreground);
+    draw_text(canvas, width, height, 183, 332, "Esc to close", style.foreground);
+}
+
 fn paint_icon(canvas: &mut [u8], icon: &recipe::DesktopIcon, active: u32,
               foreground: u32, focused: bool) {
     let width = recipe::ICON_WIDTH;
@@ -1169,6 +1328,12 @@ impl LayerShellHandler for RicePlate {
         {
             self.menu_layer = None;
             self.menu_state.close();
+        } else if self.calendar_layer.as_ref()
+            .is_some_and(|calendar| calendar.surface.wl_surface() == layer.wl_surface())
+        {
+            self.calendar_layer = None;
+            self.calendar_state.visible = false;
+            self.calendar_focused = false;
         } else if let Some(icon) = self
             .icon_layers
             .iter_mut()
@@ -1210,6 +1375,19 @@ impl LayerShellHandler for RicePlate {
             mirror.height = height;
             mirror.configured = true;
             self.redraw_mirror(index, qh);
+            return;
+        }
+        if let Some(calendar_layer) = self.calendar_layer.as_mut()
+            .filter(|calendar| calendar.surface.wl_surface() == layer.wl_surface())
+        {
+            if config.new_size != (calendar::WIDTH, calendar::HEIGHT) {
+                eprintln!("RicePlate: compositor proposed unsupported calendar dimensions");
+                self.calendar_layer = None;
+                self.calendar_state.visible = false;
+                return;
+            }
+            calendar_layer.configured = true;
+            self.redraw_calendar(qh);
             return;
         }
         if let Some(menu_layer) = self
@@ -1375,6 +1553,7 @@ impl SeatHandler for RicePlate {
                 keyboard.release();
             }
             self.menu_focused = false;
+            self.calendar_focused = false;
             if let Some(index) = self.focused_icon.take() {
                 self.redraw_icon(index);
                 self.save_icon_positions();
@@ -1407,6 +1586,9 @@ impl KeyboardHandler for RicePlate {
             .as_ref()
             .is_some_and(|menu| menu.surface.wl_surface() == surface)
             && self.menu_state.visible;
+        self.calendar_focused = self.calendar_layer.as_ref()
+            .is_some_and(|calendar| calendar.surface.wl_surface() == surface)
+            && self.calendar_state.visible;
         if let Some((mirror, width, offset)) = self.panel_geometry(surface) {
             let groups = self.grouped_tasks();
             let active = groups.iter().position(|group| group.active);
@@ -1454,6 +1636,10 @@ impl KeyboardHandler for RicePlate {
         {
             self.set_menu_visible(false, qh);
         }
+        if self.calendar_layer.as_ref().is_some_and(|calendar|
+            calendar.surface.wl_surface() == surface) && self.calendar_focused {
+            self.set_calendar_visible(false, qh);
+        }
         if let Some(index) = self.focused_icon {
             if self.icon_layers[index].surface.wl_surface() == surface {
                 self.focused_icon = None;
@@ -1476,6 +1662,24 @@ impl KeyboardHandler for RicePlate {
         _: u32,
         event: KeyEvent,
     ) {
+        if self.calendar_state.visible && self.calendar_focused {
+            match event.keysym {
+                Keysym::Left => self.calendar_state.move_selection(-1),
+                Keysym::Right => self.calendar_state.move_selection(1),
+                Keysym::Up => self.calendar_state.move_selection(-7),
+                Keysym::Down => self.calendar_state.move_selection(7),
+                Keysym::Prior => self.calendar_state.shift(-1),
+                Keysym::Next => self.calendar_state.shift(1),
+                Keysym::Home => self.calendar_state.go_today(Local::now().date_naive()),
+                Keysym::Escape => {
+                    self.set_calendar_visible(false, qh);
+                    return;
+                }
+                _ => return,
+            }
+            self.redraw_calendar(qh);
+            return;
+        }
         if self.handle_panel_key(event.keysym, qh) {
             return;
         }
@@ -1593,6 +1797,22 @@ impl PointerHandler for RicePlate {
         events: &[PointerEvent],
     ) {
         for event in events {
+            if self.calendar_layer.as_ref().is_some_and(|calendar|
+                &event.surface == calendar.surface.wl_surface()) {
+                if let PointerEventKind::Press { button: BTN_LEFT, .. } = event.kind {
+                    match self.calendar_state.hit(event.position.0, event.position.1) {
+                        Some(CalendarHit::Previous) => self.calendar_state.shift(-1),
+                        Some(CalendarHit::Next) => self.calendar_state.shift(1),
+                        Some(CalendarHit::Today) => {
+                            self.calendar_state.go_today(Local::now().date_naive());
+                        }
+                        Some(CalendarHit::Day(day)) => self.calendar_state.select(day),
+                        None => continue,
+                    }
+                    self.redraw_calendar(qh);
+                }
+                continue;
+            }
             if self
                 .menu_layer
                 .as_ref()
@@ -1704,6 +1924,13 @@ impl PointerHandler for RicePlate {
                                 self.request_redraw(qh);
                             }
                             self.activate_launcher(mirror_index, qh);
+                        }
+                        Some(Hit::Clock) => {
+                            // The first calendar popup belongs to the primary
+                            // shell output; mirrored clock labels remain passive.
+                            if mirror_index.is_none() {
+                                self.set_calendar_visible(!self.calendar_state.visible, qh);
+                            }
                         }
                         Some(Hit::Task(index)) => {
                             if self.focused_panel.as_ref() == Some(&event.surface) {
@@ -1894,6 +2121,23 @@ mod tests {
             .find(|item| item.widget == Widget::Launcher).unwrap();
         let pixel = ((2 * width + launcher.x + 10) * 4) as usize;
         assert_eq!(&selected[pixel..pixel + 4], &style.foreground.to_le_bytes());
+    }
+
+    #[test]
+    fn calendar_painter_renders_actual_month_and_day_states() {
+        let style = recipe::load("classic").unwrap();
+        let today = chrono::NaiveDate::from_ymd_opt(2024, 2, 29).unwrap();
+        let mut state = CalendarState::new(today);
+        state.open(today);
+        let mut february = vec![0; (calendar::WIDTH * calendar::HEIGHT * 4) as usize];
+        let mut march = vec![0; february.len()];
+        paint_calendar(&mut february, &style, &state);
+        assert_eq!(&february[..4], &style.active.to_le_bytes());
+        assert!(february.chunks_exact(4).any(|pixel|
+            pixel == style.foreground.to_le_bytes()));
+        state.shift(1);
+        paint_calendar(&mut march, &style, &state);
+        assert_ne!(february, march, "real month names/days must change the pixels");
     }
 
     #[test]

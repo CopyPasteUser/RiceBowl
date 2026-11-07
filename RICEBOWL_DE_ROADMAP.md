@@ -132,8 +132,14 @@ affecting XFCE, including a failed-session recovery. **Not yet signed off.**
   geometry, placement and visual tokens, without pretending unimplemented
   system indicators are functional native widgets.
 - [x] Add a real local-time clock with minute-boundary event-loop wakeups,
-  non-clickable until a calendar exists, plus activate/minimize task clicks.
-  A complete taskbar (tray, keyboard controls) remains outstanding.
+  plus activate/minimize task clicks. Tray and full interactions remain open.
+- [x] Add a **functional first native calendar** to the primary Wayland clock:
+  a focusable, rice-token-themed popup with actual local month/day geometry,
+  leap years, month/today buttons, selection and Escape/arrow/PageUp/PageDown
+  navigation. It lives in RicePlate without a new process or online service;
+  pure Rust date/hit/paint tests and a real labwc calendar capture gate are
+  included. The secondary-output clock remains non-clickable; event creation,
+  localization, assistive-tech and physical-device QA remain open.
 - [x] Support owner-private, bounded custom schema-v1 JSON recipes in native
   RicePlate, and position implemented widgets from ordered start/center/end
   sections with matching hit testing and small-display overflow behavior.
@@ -181,8 +187,9 @@ affecting XFCE, including a failed-session recovery. **Not yet signed off.**
 - [ ] Populate tasks/windows through a supported foreign-toplevel protocol.
 - [ ] Implement launchers, task groups, tray, calendar, menus and keyboard
   navigation; avoid invisible or fake controls. Native task/menu keyboard
-  controls are partially implemented; tray, calendar, global accessibility
-  and full interaction parity are still missing.
+  controls and a primary-output calendar are partially implemented; tray,
+  calendar parity on other outputs, global accessibility and full interaction
+  parity are still missing.
 - [ ] Expose reusable, composable shell primitives and stable interaction/state
   bindings so substantially different rice layouts share core behavior.
 - [ ] Render wallpapers and desktop icons with correct layer, focus, hit tests,

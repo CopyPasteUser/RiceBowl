@@ -64,6 +64,7 @@ pub struct PlacedWidget {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Hit {
     Launcher,
+    Clock,
     Task(usize),
     PreviousTasks,
     NextTasks,
@@ -707,7 +708,7 @@ pub fn hit(
                     Some(Hit::Task(view.start + index))
                 }
             }
-            Widget::Clock => None,
+            Widget::Clock => Some(Hit::Clock),
             Widget::Gap(_) | Widget::Label(_) => None,
         };
     }
@@ -753,7 +754,7 @@ mod tests {
         assert_eq!(hit(110.0, 800, 2, 0, &a), Some(Hit::Task(0)));
         assert_eq!(hit(110.0, 800, 2, 0, &b), None);
         assert_eq!(hit(250.0, 800, 2, 0, &b), Some(Hit::Task(0)));
-        assert_eq!(hit(760.0, 800, 2, 0, &b), None);
+        assert_eq!(hit(760.0, 800, 2, 0, &b), Some(Hit::Clock));
         assert_eq!(hit(150.0, 180, 20, 0, &b), None);
         assert!(layout(&b, 180, 20)
             .iter()
@@ -773,7 +774,7 @@ mod tests {
                 "\"end\": [\"network\", \"audio\", \"battery\", \"launcher\", \"tasks\", \"tray\"]",
             );
         let style = parse(&reordered, Some("classic")).unwrap();
-        assert_eq!(hit(40.0, 800, 2, 0, &style), None);
+        assert_eq!(hit(40.0, 800, 2, 0, &style), Some(Hit::Clock));
         assert_eq!(hit(390.0, 800, 2, 0, &style), Some(Hit::Launcher));
         assert_eq!(hit(490.0, 800, 2, 0, &style), Some(Hit::Task(0)));
     }
@@ -894,7 +895,7 @@ mod tests {
         assert_eq!(task.x, 188);
         assert_eq!(hit(120.0, 800, 2, 0, &style), None);
         assert_eq!(hit(189.0, 800, 2, 0, &style), Some(Hit::Task(0)));
-        assert_eq!(hit(705.0, 800, 2, 0, &style), None);
+        assert_eq!(hit(705.0, 800, 2, 0, &style), Some(Hit::Clock));
     }
 
     #[test]

@@ -86,8 +86,9 @@ dbus-run-session -- sh -eu -c '
         sed -n "1,70p" "$runtime/labwc.log" >&2
         exit 1
     fi
-    for recipe in classic chrome "$runtime/custom.json" "$runtime/nested.json" "$runtime/shell-v4.json" "$runtime/desktop-v5.json" "$runtime/overflow-v5.json" "$runtime/desktop-v5-menu"; do
+    for recipe in classic chrome "$runtime/custom.json" "$runtime/nested.json" "$runtime/shell-v4.json" "$runtime/desktop-v5.json" "$runtime/overflow-v5.json" "$runtime/desktop-v5-menu" "$runtime/desktop-v5-calendar"; do
         case "$recipe" in
+            */desktop-v5-calendar) label=calendar-v5 ;;
             */desktop-v5-menu) label=menu-v5 ;;
             */overflow-v5.json) label=overflow-v5 ;;
             */desktop-v5.json) label=desktop-v5 ;;
@@ -98,6 +99,8 @@ dbus-run-session -- sh -eu -c '
         esac
         if [ "$label" = menu-v5 ]; then
             WAYLAND_DISPLAY=wayland-0 "$native" --recipe "$runtime/desktop-v5.json" --preview-menu >"$runtime/plate-$label.log" 2>&1 &
+        elif [ "$label" = calendar-v5 ]; then
+            WAYLAND_DISPLAY=wayland-0 "$native" --recipe "$runtime/desktop-v5.json" --preview-calendar >"$runtime/plate-$label.log" 2>&1 &
         else
             WAYLAND_DISPLAY=wayland-0 "$native" --recipe "$recipe" >"$runtime/plate-$label.log" 2>&1 &
         fi
@@ -112,7 +115,7 @@ dbus-run-session -- sh -eu -c '
                 exit 1 ;;
         esac
         echo "Native RicePlate $label layer surface remained alive"
-        if [ "$label" = shell-v4 ] || [ "$label" = desktop-v5 ] || [ "$label" = menu-v5 ]; then
+        if [ "$label" = shell-v4 ] || [ "$label" = desktop-v5 ] || [ "$label" = menu-v5 ] || [ "$label" = calendar-v5 ]; then
             WAYLAND_DISPLAY=wayland-0 grim - > "$runtime/$label.png"
             cp "$runtime/$label.png" "$source_root/dist/riceplate-native-preview/$label.png"
             echo "Captured real native RicePlate $label framebuffer"

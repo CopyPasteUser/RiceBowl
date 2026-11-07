@@ -319,6 +319,13 @@ group is visibly outlined and automatically paged into view on that output;
 this is a first keyboard pathway, not screen-reader or device signoff.
 Native menu and desktop icons still belong to the primary output: the
 secondary launcher opens the accessible fuzzel picker.
+The **primary native clock now opens a functional calendar**. Choose months
+with the previous/next controls, select a date or return with **Today**;
+arrow keys move between days, PageUp/PageDown switch months and Escape closes
+the popup. Dates come from the local system clock (no extra daemon).
+Secondary panel clocks remain display-only until native calendar popups are
+output-aware. The `--preview-calendar` native flag is intended for headless
+labwc CI (the shown dates follow its local clock), not for a full desktop release.
 The `smoke_riceplate_multioutput.sh` CI test verifies two native panel frames
 and a secondary disconnect/reconnect, with four genuine compositor screenshots
 included in the `riceplate-native-preview` workflow artifact. Actual mixed-DPI,
